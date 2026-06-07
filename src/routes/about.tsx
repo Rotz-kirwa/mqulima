@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Target, Users, Heart, Award } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import brianImg from "@/assets/team/brian.jpg";
+import faithImg from "@/assets/team/faith.jpg";
+import samuelImg from "@/assets/team/samuel.jpg";
+import lydiaImg from "@/assets/team/lydia.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -13,10 +17,10 @@ export const Route = createFileRoute("/about")({
 });
 
 const team = [
-  { name: "Brian Kiprono", role: "Co-founder & CEO", emoji: "👨🏾‍💼" },
-  { name: "Faith Achieng", role: "Co-founder & Head of Vet Services", emoji: "👩🏾‍⚕️" },
-  { name: "Dr. Samuel Mwangi", role: "Chief Agronomist", emoji: "👨🏾‍🔬" },
-  { name: "Lydia Wambui", role: "Head of Community", emoji: "👩🏾‍🌾" },
+  { name: "Brian Kiprono", role: "Co-founder & CEO", image: brianImg },
+  { name: "Faith Achieng", role: "Co-founder & Head of Vet Services", image: faithImg },
+  { name: "Dr. Samuel Mwangi", role: "Chief Agronomist", image: samuelImg },
+  { name: "Lydia Wambui", role: "Head of Community", image: lydiaImg },
 ];
 
 const impact = [
@@ -71,7 +75,7 @@ function About() {
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {team.map((m) => (
               <div key={m.name} className="group rounded-3xl border border-border bg-card p-6 text-center shadow-card transition hover:-translate-y-1 hover:shadow-elegant">
-                <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-secondary to-accent text-4xl">{m.emoji}</div>
+                <img src={m.image} alt={m.name} loading="lazy" width={80} height={80} className="mx-auto h-20 w-20 rounded-full object-cover ring-2 ring-primary/20" />
                 <div className="mt-4 font-bold text-forest">{m.name}</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">{m.role}</div>
               </div>
