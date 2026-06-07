@@ -56,10 +56,10 @@ export const marketPrices = [
 ];
 
 export const articles = [
-  { id: "a1", category: "Crops", title: "How to double your maize yield in the long rains", excerpt: "A field-tested 5-step protocol from Trans Nzoia smallholders averaging 45 bags/acre.", readTime: "6 min" },
-  { id: "a2", category: "Livestock", title: "Mastitis prevention: a dairy farmer's playbook", excerpt: "Cut your cow's mastitis incidence by 70% with this milking routine.", readTime: "4 min" },
-  { id: "a3", category: "Climate", title: "Reading the 2026 long-rains forecast for Western Kenya", excerpt: "What KMD's outlook means for your planting calendar this season.", readTime: "5 min" },
-  { id: "a4", category: "Business", title: "From smallholder to agripreneur: pricing your produce right", excerpt: "Stop selling at farm-gate prices. Here's how to access premium markets.", readTime: "7 min" },
+  { id: "a1", category: "Crops", title: "How to double your maize yield in the long rains", excerpt: "A field-tested 5-step protocol from Trans Nzoia smallholders averaging 45 bags/acre.", readTime: "6 min", image: articleMaize },
+  { id: "a2", category: "Livestock", title: "Mastitis prevention: a dairy farmer's playbook", excerpt: "Cut your cow's mastitis incidence by 70% with this milking routine.", readTime: "4 min", image: articleDairy },
+  { id: "a3", category: "Climate", title: "Reading the 2026 long-rains forecast for Western Kenya", excerpt: "What KMD's outlook means for your planting calendar this season.", readTime: "5 min", image: articleClimate },
+  { id: "a4", category: "Business", title: "From smallholder to agripreneur: pricing your produce right", excerpt: "Stop selling at farm-gate prices. Here's how to access premium markets.", readTime: "7 min", image: articleBusiness },
 ];
 
 export const aiSymptoms = [
