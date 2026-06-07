@@ -42,8 +42,13 @@ function Knowledge() {
           <div className="grid gap-4 sm:grid-cols-2">
             {[...articles, ...articles].slice(0, 6).map((a, i) => (
               <article key={i} className="group overflow-hidden rounded-3xl border border-border bg-card shadow-card transition hover:-translate-y-1 hover:shadow-elegant">
-                <div className="grid h-44 place-items-center bg-gradient-to-br from-secondary to-accent text-6xl">
-                  {a.category === "Crops" ? "🌾" : a.category === "Livestock" ? "🐄" : a.category === "Climate" ? "☁️" : "📈"}
+                <div className="h-44 overflow-hidden">
+                  <img
+                    src={a.image}
+                    alt={a.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
