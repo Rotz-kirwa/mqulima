@@ -6,6 +6,10 @@ import p5Img from "@/assets/products/p5.jpg";
 import p6Img from "@/assets/products/p6.jpg";
 import p7Img from "@/assets/products/p7.jpg";
 import p8Img from "@/assets/products/p8.jpg";
+import articleMaize from "@/assets/articles/article-maize.jpg";
+import articleDairy from "@/assets/articles/article-dairy.jpg";
+import articleClimate from "@/assets/articles/article-climate.jpg";
+import articleBusiness from "@/assets/articles/article-business.jpg";
 
 export type Product = {
   id: string;
