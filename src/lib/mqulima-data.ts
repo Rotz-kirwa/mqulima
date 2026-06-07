@@ -1,3 +1,12 @@
+import p1Img from "@/assets/products/p1.jpg";
+import p2Img from "@/assets/products/p2.jpg";
+import p3Img from "@/assets/products/p3.jpg";
+import p4Img from "@/assets/products/p4.jpg";
+import p5Img from "@/assets/products/p5.jpg";
+import p6Img from "@/assets/products/p6.jpg";
+import p7Img from "@/assets/products/p7.jpg";
+import p8Img from "@/assets/products/p8.jpg";
+
 export type Product = {
   id: string;
   name: string;
@@ -12,14 +21,14 @@ export type Product = {
 };
 
 export const products: Product[] = [
-  { id: "p1", name: "Mavuno Planting Fertilizer", category: "Fertilizers", price: 3450, unit: "50kg bag", brand: "Mavuno", stock: 124, image: "🌾", description: "Balanced NPK for maize, beans and vegetables. Boosts root development.", badge: "Bestseller" },
-  { id: "p2", name: "DK 8031 Hybrid Maize Seed", category: "Seeds", price: 680, unit: "2kg pack", brand: "Dekalb", stock: 312, image: "🌽", description: "Drought-tolerant hybrid, matures in 120 days. Ideal for Rift Valley." },
-  { id: "p3", name: "Ridomil Gold MZ 68WG", category: "Pesticides", price: 1250, unit: "1kg", brand: "Syngenta", stock: 88, image: "🧪", description: "Systemic fungicide for late blight in tomatoes and potatoes.", badge: "New" },
-  { id: "p4", name: "Maclick Super Dewormer", category: "Livestock", price: 980, unit: "500ml", brand: "Norbrook", stock: 56, image: "🐄", description: "Broad-spectrum dewormer for cattle, sheep and goats." },
-  { id: "p5", name: "CAN Top Dressing Fertilizer", category: "Fertilizers", price: 3200, unit: "50kg bag", brand: "Yara", stock: 210, image: "🌱", description: "Calcium Ammonium Nitrate — fast nitrogen release for top dressing." },
-  { id: "p6", name: "Knapsack Sprayer 16L", category: "Equipment", price: 4500, unit: "1 unit", brand: "Cooper", stock: 34, image: "🚿", description: "Heavy-duty manual sprayer with adjustable nozzle and brass lance." },
-  { id: "p7", name: "Sukari F1 Tomato Seed", category: "Seeds", price: 1850, unit: "10g", brand: "Royal Seed", stock: 142, image: "🍅", description: "Determinate hybrid, high yielding, resistant to bacterial wilt." },
-  { id: "p8", name: "Layers Mash Premium", category: "Livestock", price: 3650, unit: "70kg", brand: "Unga Feeds", stock: 78, image: "🐔", description: "Complete ration for laying hens. Boosts egg production and shell quality.", badge: "Bulk -10%" },
+  { id: "p1", name: "Mavuno Planting Fertilizer", category: "Fertilizers", price: 3450, unit: "50kg bag", brand: "Mavuno", stock: 124, image: p1Img, description: "Balanced NPK for maize, beans and vegetables. Boosts root development.", badge: "Bestseller" },
+  { id: "p2", name: "DK 8031 Hybrid Maize Seed", category: "Seeds", price: 680, unit: "2kg pack", brand: "Dekalb", stock: 312, image: p2Img, description: "Drought-tolerant hybrid, matures in 120 days. Ideal for Rift Valley." },
+  { id: "p3", name: "Ridomil Gold MZ 68WG", category: "Pesticides", price: 1250, unit: "1kg", brand: "Syngenta", stock: 88, image: p3Img, description: "Systemic fungicide for late blight in tomatoes and potatoes.", badge: "New" },
+  { id: "p4", name: "Maclick Super Dewormer", category: "Livestock", price: 980, unit: "500ml", brand: "Norbrook", stock: 56, image: p4Img, description: "Broad-spectrum dewormer for cattle, sheep and goats." },
+  { id: "p5", name: "CAN Top Dressing Fertilizer", category: "Fertilizers", price: 3200, unit: "50kg bag", brand: "Yara", stock: 210, image: p5Img, description: "Calcium Ammonium Nitrate — fast nitrogen release for top dressing." },
+  { id: "p6", name: "Knapsack Sprayer 16L", category: "Equipment", price: 4500, unit: "1 unit", brand: "Cooper", stock: 34, image: p6Img, description: "Heavy-duty manual sprayer with adjustable nozzle and brass lance." },
+  { id: "p7", name: "Sukari F1 Tomato Seed", category: "Seeds", price: 1850, unit: "10g", brand: "Royal Seed", stock: 142, image: p7Img, description: "Determinate hybrid, high yielding, resistant to bacterial wilt." },
+  { id: "p8", name: "Layers Mash Premium", category: "Livestock", price: 3650, unit: "70kg", brand: "Unga Feeds", stock: 78, image: p8Img, description: "Complete ration for laying hens. Boosts egg production and shell quality.", badge: "Bulk -10%" },
 ];
 
 export const services = [

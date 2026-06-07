@@ -64,8 +64,8 @@ function Shop() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((p) => (
               <article key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:-translate-y-1 hover:shadow-elegant">
-                <div className="relative aspect-square bg-gradient-to-br from-secondary to-accent">
-                  <div className="grid h-full place-items-center text-7xl">{p.image}</div>
+                <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-secondary to-accent">
+                  <img src={p.image} alt={p.name} loading="lazy" width={1024} height={1024} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   {p.badge && <span className="absolute left-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold-foreground">{p.badge}</span>}
                 </div>
                 <div className="flex flex-1 flex-col p-4">
