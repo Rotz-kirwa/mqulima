@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Target, Users, Heart, Award } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import brianImg from "@/assets/team/brian.jpg";
+import faithImg from "@/assets/team/faith.jpg";
+import samuelImg from "@/assets/team/samuel.jpg";
+import lydiaImg from "@/assets/team/lydia.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
