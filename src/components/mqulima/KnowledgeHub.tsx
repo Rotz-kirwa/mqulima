@@ -16,9 +16,12 @@ export function KnowledgeHub() {
         <div className="space-y-4 lg:col-span-2">
           {articles.map((a, i) => (
             <article key={a.id} className={`group flex gap-5 rounded-3xl border border-border bg-card p-5 shadow-card transition hover:-translate-y-1 hover:shadow-elegant md:p-6 ${i === 0 ? "md:p-8" : ""}`}>
-              <div className={`grid shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-secondary to-accent text-4xl ${i === 0 ? "h-32 w-32 md:text-6xl" : "h-24 w-24 md:text-5xl"}`}>
-                {a.category === "Crops" ? "🌾" : a.category === "Livestock" ? "🐄" : a.category === "Climate" ? "☁️" : "📈"}
-              </div>
+              <img
+                src={a.image}
+                alt={a.title}
+                loading="lazy"
+                className={`shrink-0 rounded-2xl object-cover shadow-sm transition duration-300 group-hover:scale-[1.02] ${i === 0 ? "h-32 w-32" : "h-24 w-24"}`}
+              />
               <div className="flex flex-1 flex-col">
                 <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
                   <span className="rounded-full bg-primary/10 px-2.5 py-1 text-primary">{a.category}</span>
