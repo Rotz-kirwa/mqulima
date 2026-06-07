@@ -17,10 +17,10 @@ export const Route = createFileRoute("/about")({
 });
 
 const team = [
-  { name: "Brian Kiprono", role: "Co-founder & CEO", emoji: "👨🏾‍💼" },
-  { name: "Faith Achieng", role: "Co-founder & Head of Vet Services", emoji: "👩🏾‍⚕️" },
-  { name: "Dr. Samuel Mwangi", role: "Chief Agronomist", emoji: "👨🏾‍🔬" },
-  { name: "Lydia Wambui", role: "Head of Community", emoji: "👩🏾‍🌾" },
+  { name: "Brian Kiprono", role: "Co-founder & CEO", image: brianImg },
+  { name: "Faith Achieng", role: "Co-founder & Head of Vet Services", image: faithImg },
+  { name: "Dr. Samuel Mwangi", role: "Chief Agronomist", image: samuelImg },
+  { name: "Lydia Wambui", role: "Head of Community", image: lydiaImg },
 ];
 
 const impact = [
