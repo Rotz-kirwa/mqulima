@@ -3,7 +3,7 @@ import { stats } from "@/lib/mqulima-data";
 export function StatsBar() {
   const loop = [...stats, ...stats];
   return (
-    <section className="border-y border-border bg-forest text-forest-foreground">
+    <section className="border-y border-border bg-gradient-to-r from-forest via-blue/90 to-forest text-forest-foreground">
       <div className="relative overflow-hidden py-5">
         <div className="flex animate-marquee whitespace-nowrap">
           {loop.map((s, i) => (

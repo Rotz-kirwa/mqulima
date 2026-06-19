@@ -37,7 +37,7 @@ export function ShopPreview() {
                 <button
                   onClick={() => toast.success(`${p.name} added to cart`)}
                   aria-label="Add to cart"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:scale-110 hover:bg-primary-glow"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-gold text-gold-foreground shadow-gold/30 transition hover:scale-110 hover:brightness-105"
                 >
                   <Plus className="h-4 w-4" />
                 </button>

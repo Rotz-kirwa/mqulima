@@ -107,7 +107,7 @@ function Card({ title, icon: Icon, cta, link, children }: { title: string; icon:
           <Icon className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold uppercase tracking-wider text-forest">{title}</h3>
         </div>
-        <Link to={link} className="text-xs font-semibold text-primary hover:underline">{cta}</Link>
+        <Link to={link} className="text-xs font-semibold text-blue hover:underline">{cta}</Link>
       </div>
       <div className="space-y-2.5">{children}</div>
     </div>

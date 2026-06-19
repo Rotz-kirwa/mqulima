@@ -5,7 +5,8 @@ import { SectionHeading } from "./SectionHeading";
 
 export function KnowledgeHub() {
   return (
-    <section className="container-px mx-auto max-w-7xl py-20">
+    <section className="bg-sepia/60 py-20">
+      <div className="container-px mx-auto max-w-7xl">
       <SectionHeading
         eyebrow="Knowledge Hub"
         title="Learn. Earn. Repeat."
@@ -59,6 +60,7 @@ export function KnowledgeHub() {
             ))}
           </ul>
         </div>
+      </div>
       </div>
     </section>
   );

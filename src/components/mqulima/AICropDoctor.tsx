@@ -24,7 +24,7 @@ export function AICropDoctor() {
               <button
                 key={s.id}
                 onClick={() => setPicked(s.id)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${picked === s.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:border-primary/50"}`}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${picked === s.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:border-primary/40 hover:bg-primary/5"}`}
               >
                 {s.label}
               </button>
@@ -59,7 +59,7 @@ export function AICropDoctor() {
                     <div className="mt-0.5 text-base font-extrabold">{product.name}</div>
                     <div className="text-xs">KES {product.price.toLocaleString()} · {product.unit}</div>
                   </div>
-                  <button className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2.5 text-xs font-bold text-forest-foreground transition hover:scale-105">
+                  <button className="inline-flex items-center gap-1.5 rounded-full bg-blue px-4 py-2.5 text-xs font-bold text-white shadow-blue/20 transition hover:scale-105 active:scale-95">
                     Buy now <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>

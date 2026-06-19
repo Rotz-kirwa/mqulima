@@ -51,7 +51,7 @@ function Community() {
         <div className="mt-10 rounded-3xl border border-border bg-card shadow-card">
           <div className="flex items-center justify-between border-b border-border p-5">
             <h2 className="text-lg font-bold text-forest">Trending discussions</h2>
-            <button className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Start a topic</button>
+            <button className="rounded-full bg-gold px-4 py-2 text-xs font-bold text-gold-foreground shadow-gold/30 transition hover:scale-105">Start a topic</button>
           </div>
           <ul className="divide-y divide-border">
             {topics.map((t, i) => (

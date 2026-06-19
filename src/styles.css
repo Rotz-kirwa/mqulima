@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Mqulima — Premium Agri-Tech Design System
- * Palette: forest green #2D6A4F, gold #F4A261, dark forest #1B2E1F, cream white
+ * Mqulima — Classic Agri-Tech Design System
+ * Green primary · Yellow actions · Blue secondary · Sepia blog
  */
 
 @theme inline {
@@ -37,9 +37,14 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
+  --color-blue: var(--blue);
+  --color-blue-foreground: var(--blue-foreground);
   --color-forest: var(--forest);
   --color-forest-foreground: var(--forest-foreground);
   --color-cream: var(--cream);
+  --color-sepia: var(--sepia);
+  --color-sepia-foreground: var(--sepia-foreground);
+  --color-sepia-muted: var(--sepia-muted);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
@@ -51,66 +56,77 @@
 :root {
   --radius: 0.875rem;
 
-  /* Brand */
-  --primary: oklch(0.46 0.08 155);          /* #2D6A4F forest green */
-  --primary-foreground: oklch(0.98 0.01 95);
-  --primary-glow: oklch(0.58 0.11 152);
-  --gold: oklch(0.78 0.13 65);              /* #F4A261 */
-  --gold-foreground: oklch(0.22 0.03 145);
-  --forest: oklch(0.27 0.04 150);           /* #1B2E1F dark forest */
-  --forest-foreground: oklch(0.97 0.02 95);
-  --cream: oklch(0.985 0.012 90);
+  /* ── Brand ── */
+  --primary: oklch(0.43 0.12 152);            /* Rich emerald green */
+  --primary-foreground: oklch(0.98 0.005 150);
+  --primary-glow: oklch(0.53 0.14 148);
+  --gold: oklch(0.82 0.17 86);                /* Vivid golden yellow — action */
+  --gold-foreground: oklch(0.16 0.04 80);
+  --blue: oklch(0.52 0.14 252);               /* Classic royal blue — secondary */
+  --blue-foreground: oklch(0.98 0 0);
+  --forest: oklch(0.19 0.05 152);             /* Deep forest — dark surfaces */
+  --forest-foreground: oklch(0.97 0.01 90);
+  --cream: oklch(0.985 0.01 85);
+  --sepia: oklch(0.935 0.032 72);             /* Warm parchment — blog bg */
+  --sepia-foreground: oklch(0.28 0.04 55);
+  --sepia-muted: oklch(0.89 0.04 68);
 
-  /* Surfaces */
-  --background: oklch(0.985 0.008 95);      /* warm cream-white */
-  --foreground: oklch(0.22 0.03 145);
+  /* ── Surfaces ── */
+  --background: oklch(0.988 0.005 85);        /* Warm off-white */
+  --foreground: oklch(0.17 0.04 152);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.03 145);
+  --card-foreground: oklch(0.17 0.04 152);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.03 145);
+  --popover-foreground: oklch(0.17 0.04 152);
 
-  --secondary: oklch(0.95 0.02 95);
-  --secondary-foreground: oklch(0.27 0.04 150);
-  --muted: oklch(0.955 0.015 95);
-  --muted-foreground: oklch(0.48 0.03 145);
-  --accent: oklch(0.94 0.06 80);            /* warm sand */
-  --accent-foreground: oklch(0.27 0.04 150);
+  --secondary: oklch(0.955 0.012 88);
+  --secondary-foreground: oklch(0.19 0.05 152);
+  --muted: oklch(0.955 0.008 88);
+  --muted-foreground: oklch(0.46 0.025 152);
+  --accent: oklch(0.94 0.04 75);
+  --accent-foreground: oklch(0.19 0.05 152);
 
-  --destructive: oklch(0.58 0.22 27);
+  --destructive: oklch(0.55 0.22 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.58 0.13 150);
+  --success: oklch(0.55 0.14 150);
 
-  --border: oklch(0.91 0.015 95);
-  --input: oklch(0.91 0.015 95);
-  --ring: oklch(0.46 0.08 155);
+  --border: oklch(0.915 0.012 85);
+  --input: oklch(0.915 0.012 85);
+  --ring: oklch(0.43 0.12 152);
 
-  /* Gradients & shadows */
-  --gradient-hero: linear-gradient(180deg, color-mix(in oklab, var(--forest) 78%, transparent), color-mix(in oklab, var(--forest) 30%, transparent) 60%, color-mix(in oklab, var(--forest) 90%, transparent));
+  /* ── Gradients & Shadows ── */
+  --gradient-hero: linear-gradient(180deg, color-mix(in oklab, var(--forest) 84%, transparent), color-mix(in oklab, var(--forest) 22%, transparent) 50%, color-mix(in oklab, var(--forest) 90%, transparent));
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
-  --gradient-gold: linear-gradient(135deg, var(--gold), oklch(0.84 0.11 70));
-  --shadow-elegant: 0 24px 60px -24px color-mix(in oklab, var(--forest) 35%, transparent);
-  --shadow-card: 0 8px 24px -12px color-mix(in oklab, var(--forest) 18%, transparent);
-  --shadow-gold: 0 16px 40px -16px color-mix(in oklab, var(--gold) 55%, transparent);
+  --gradient-gold: linear-gradient(135deg, var(--gold), oklch(0.88 0.14 92));
+  --gradient-blue: linear-gradient(135deg, var(--blue), oklch(0.60 0.12 258));
+  --shadow-elegant: 0 20px 50px -18px color-mix(in oklab, var(--forest) 28%, transparent);
+  --shadow-card: 0 4px 16px -8px color-mix(in oklab, var(--forest) 12%, transparent);
+  --shadow-gold: 0 12px 32px -12px color-mix(in oklab, var(--gold) 50%, transparent);
+  --shadow-blue: 0 12px 32px -12px color-mix(in oklab, var(--blue) 40%, transparent);
 }
 
 .dark {
-  --background: oklch(0.18 0.02 150);
-  --foreground: oklch(0.97 0.01 95);
-  --card: oklch(0.22 0.03 150);
-  --card-foreground: oklch(0.97 0.01 95);
-  --popover: oklch(0.22 0.03 150);
-  --popover-foreground: oklch(0.97 0.01 95);
-  --primary: oklch(0.62 0.12 153);
-  --primary-foreground: oklch(0.15 0.02 150);
-  --secondary: oklch(0.28 0.03 150);
-  --secondary-foreground: oklch(0.97 0.01 95);
-  --muted: oklch(0.28 0.03 150);
-  --muted-foreground: oklch(0.7 0.02 95);
-  --accent: oklch(0.32 0.05 80);
-  --accent-foreground: oklch(0.97 0.01 95);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.62 0.12 153);
+  --background: oklch(0.16 0.02 152);
+  --foreground: oklch(0.97 0.01 90);
+  --card: oklch(0.20 0.03 152);
+  --card-foreground: oklch(0.97 0.01 90);
+  --popover: oklch(0.20 0.03 152);
+  --popover-foreground: oklch(0.97 0.01 90);
+  --primary: oklch(0.60 0.14 150);
+  --primary-foreground: oklch(0.14 0.02 152);
+  --secondary: oklch(0.26 0.03 152);
+  --secondary-foreground: oklch(0.97 0.01 90);
+  --muted: oklch(0.26 0.03 152);
+  --muted-foreground: oklch(0.68 0.02 90);
+  --accent: oklch(0.30 0.05 75);
+  --accent-foreground: oklch(0.97 0.01 90);
+  --blue: oklch(0.60 0.14 252);
+  --sepia: oklch(0.30 0.04 72);
+  --sepia-foreground: oklch(0.90 0.02 75);
+  --sepia-muted: oklch(0.35 0.04 68);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.60 0.14 150);
 }
 
 @layer base {
@@ -152,6 +168,9 @@
 @utility bg-gradient-primary {
   background-image: var(--gradient-primary);
 }
+@utility bg-gradient-blue {
+  background-image: var(--gradient-blue);
+}
 @utility shadow-elegant {
   box-shadow: var(--shadow-elegant);
 }
@@ -160,6 +179,9 @@
 }
 @utility shadow-gold {
   box-shadow: var(--shadow-gold);
+}
+@utility shadow-blue {
+  box-shadow: var(--shadow-blue);
 }
 
 @keyframes marquee {

@@ -47,7 +47,7 @@ function About() {
         <div className="grid gap-6 md:grid-cols-4">
           {impact.map((s) => (
             <div key={s.label} className="rounded-3xl border border-border bg-card p-7 text-center shadow-card">
-              <div className="text-4xl font-extrabold text-primary">{s.value}</div>
+              <div className="text-4xl font-extrabold text-blue">{s.value}</div>
               <div className="mt-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{s.label}</div>
             </div>
           ))}
@@ -60,7 +60,7 @@ function About() {
             { icon: Award, title: "Our Promise", text: "If a Mqulima product doesn't perform as advertised, we replace it or refund — full stop." },
           ].map((c) => (
             <div key={c.title} className="rounded-3xl border border-border bg-card p-7 shadow-card">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary"><c.icon className="h-6 w-6" /></div>
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue/10 text-blue"><c.icon className="h-6 w-6" /></div>
               <h3 className="mt-4 text-xl font-extrabold text-forest">{c.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{c.text}</p>
             </div>

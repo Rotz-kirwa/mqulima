@@ -20,7 +20,7 @@ export function WeatherWidget() {
         />
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Forecast */}
-          <div className="rounded-3xl bg-gradient-to-br from-forest to-primary p-7 text-forest-foreground shadow-elegant lg:col-span-2">
+          <div className="rounded-3xl bg-gradient-to-br from-blue to-primary p-7 text-forest-foreground shadow-elegant lg:col-span-2">
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-xs font-bold uppercase tracking-[0.18em] text-gold">5-day forecast</div>

@@ -1,15 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingCart, Menu, X, Leaf, Globe, User } from "lucide-react";
+import { ShoppingCart, Menu, X, Globe, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { MqulimaLogo } from "./MqulimaLogo";
 
 const nav = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
   { to: "/services", label: "Services" },
+  { to: "/climate", label: "Climate" },
   { to: "/knowledge", label: "Knowledge Hub" },
   { to: "/community", label: "Community" },
   { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
 ];
 
 export function Navbar() {
@@ -18,13 +21,11 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container-px mx-auto flex h-16 max-w-7xl items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-card">
-            <Leaf className="h-5 w-5 text-primary-foreground" />
-          </div>
+        <Link to="/" className="flex items-center gap-3">
+          <MqulimaLogo size={52} />
           <div className="leading-tight">
-            <div className="text-lg font-extrabold tracking-tight text-forest">Mqulima</div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Digital Farming</div>
+            <div className="text-2xl font-black tracking-tighter text-forest lowercase">mqulima</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground mt-0.5">Digital Farming</div>
           </div>
         </Link>
 
@@ -34,7 +35,7 @@ export function Navbar() {
               key={n.to}
               to={n.to}
               className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "rounded-full px-4 py-2 text-sm font-semibold bg-secondary text-forest" }}
+              activeProps={{ className: "rounded-full px-4 py-2 text-sm font-semibold bg-primary/10 text-primary ring-1 ring-primary/20" }}
               activeOptions={{ exact: n.to === "/" }}
             >
               {n.label}

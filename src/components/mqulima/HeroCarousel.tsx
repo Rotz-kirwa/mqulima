@@ -2,16 +2,20 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import heroFarmer from "@/assets/hero-farmer.jpg";
 import heroVet from "@/assets/hero-vet.jpg";
 import heroSoil from "@/assets/hero-soil.jpg";
 import heroCommunity from "@/assets/hero-community.jpg";
 import heroDelivery from "@/assets/hero-delivery.jpg";
+import heroLivestock from "@/assets/hero-livestock.png";
+import heroMarketplace from "@/assets/hero-marketplace.png";
+import heroPoultry from "@/assets/hero-poultry.png";
 
 const slides = [
-  { image: heroFarmer, eyebrow: "The Mqulima Movement", title: "The Future of Farming Starts Here", subtitle: "Premium agrovet supplies, expert services and AI intelligence — delivered to your farm gate.", cta: "Shop Products", to: "/shop" },
+  { image: heroPoultry, eyebrow: "Poultry Excellence", title: "Next-Gen Poultry Farm Management", subtitle: "Automated feed solutions, high-grade layers, vaccines, and direct access to poultry professionals.", cta: "Shop Poultry Feed", to: "/shop" },
   { image: heroVet, eyebrow: "Vet Care On Demand", title: "Expert Vet Care, One Click Away", subtitle: "Certified vets at your farm within 24 hours. From dairy cows to layers — we've got your livestock.", cta: "Book Appointment", to: "/services" },
+  { image: heroLivestock, eyebrow: "Livestock Excellence", title: "High-Yield Livestock Operations", subtitle: "Certified veterinary dispatch, top-grade dairy feeds, and precision health monitoring for maximum production.", cta: "Book Veterinary Care", to: "/services" },
   { image: heroSoil, eyebrow: "Soil Intelligence", title: "Know Your Soil. Maximize Your Yield.", subtitle: "Lab-grade soil testing with crop-specific recommendations. Stop guessing. Start growing.", cta: "Request Soil Test", to: "/services" },
+  { image: heroMarketplace, eyebrow: "Agrovet Soko", title: "Your Digital Agrovet Store", subtitle: "Browse premium fertilizers, certified seeds, and modern farming equipment with secure delivery.", cta: "Shop Marketplace", to: "/shop" },
   { image: heroCommunity, eyebrow: "Farmers Winning Together", title: "Join 5,000+ Farmers Already Winning", subtitle: "Real conversations. Real success stories. A nationwide community of Kenyan growers.", cta: "Join Community", to: "/community" },
   { image: heroDelivery, eyebrow: "Anywhere in Kenya", title: "Order. We Deliver to Your Farm.", subtitle: "Same-day in 20+ counties. M-Pesa or card. Track every order from warehouse to gate.", cta: "Shop Now", to: "/shop" },
 ];
@@ -64,7 +68,7 @@ export function HeroCarousel() {
                   {s.cta}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
-                <Link to="/about" className="rounded-full border border-white/30 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">
+                <Link to="/about" className="rounded-full border border-blue/40 bg-blue/15 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-blue/30">
                   Learn more
                 </Link>
               </div>

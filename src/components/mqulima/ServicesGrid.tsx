@@ -32,7 +32,7 @@ export function ServicesGrid() {
               </div>
               <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.price}</span>
-                <span className="text-xs font-bold text-primary group-hover:underline">Book now →</span>
+                <span className="text-xs font-bold text-blue group-hover:underline">Book now →</span>
               </div>
             </Link>
           ))}

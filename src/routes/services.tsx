@@ -67,7 +67,7 @@ function ServicesPage() {
                 <p className="mt-1 text-sm text-muted-foreground">A confirmation SMS has been sent to your phone.</p>
                 <div className="mt-5 rounded-xl bg-secondary px-5 py-3 text-sm">Reference: <span className="font-mono font-bold text-forest">{done}</span></div>
                 <Tracker />
-                <button onClick={() => setDone(null)} className="mt-6 text-sm font-semibold text-primary hover:underline">Book another service</button>
+                <button onClick={() => setDone(null)} className="mt-6 text-sm font-semibold text-blue hover:underline">Book another service</button>
               </div>
             ) : (
               <>
@@ -112,7 +112,7 @@ function ServicesPage() {
                 <div className="mt-8 flex items-center justify-between">
                   <button disabled={step === 1} onClick={() => setStep(step - 1)} className="text-sm font-semibold text-muted-foreground hover:text-foreground disabled:opacity-30">← Back</button>
                   {step < 3 ? (
-                    <button onClick={() => setStep(step + 1)} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary-glow">
+                    <button onClick={() => setStep(step + 1)} className="inline-flex items-center gap-2 rounded-full bg-blue px-6 py-3 text-sm font-bold text-blue-foreground shadow-blue/30 transition hover:brightness-110">
                       Continue <ArrowRight className="h-4 w-4" />
                     </button>
                   ) : (
