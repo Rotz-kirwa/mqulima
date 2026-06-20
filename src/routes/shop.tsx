@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -33,17 +33,16 @@ import {
   shopCounties,
   type ShopProduct
 } from "@/lib/shop-data";
-import { ProductCard } from "@/components/shop/ProductCard";
-import { QuickViewModal } from "@/components/shop/QuickViewModal";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
+import { ProductCard, ProductCardSkeleton } from "@/components/shop/ProductCard";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { useCart } from "@/lib/cart-context";
+
+const FeaturedCrops = lazy(() =>
+  import("@/components/shop/FeaturedCrops").then((m) => ({ default: m.FeaturedCrops }))
+);
+const QuickViewModal = lazy(() =>
+  import("@/components/shop/QuickViewModal").then((m) => ({ default: m.QuickViewModal }))
+);
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -146,7 +145,6 @@ function ShopPage() {
   const [quickViewProduct, setQuickViewProduct] = useState<ShopProduct | null>(null);
 
   // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [priceRange, setPriceRange] = useState<number>(3000);
   const [selectedCounty, setSelectedCounty] = useState("All");
@@ -160,11 +158,9 @@ function ShopPage() {
 
   // Filter drawer/popover display
   const [activeFilterTab, setActiveFilterTab] = useState<string | null>(null);
-  
-  // UI states
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+
+  // Backward compatibility helper for pagination resets
+  const setCurrentPage = (val: any) => {};
 
   // Particle fly animation coordinates
   const [flyingParticles, setFlyingParticles] = useState<{ id: number; startX: number; startY: number; image: string }[]>([]);
@@ -178,17 +174,56 @@ function ShopPage() {
     return cartItems.reduce((acc, item) => acc + item.quantity, 0);
   }, [cartItems]);
 
-  // Auto-moving Products Carousel Autoplay State
-  const [carouselApi, setCarouselApi] = useState<any>(null);
+  // Search input and debounced search query state
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Auto-play crop slides timer
   useEffect(() => {
-    if (!carouselApi) return;
-    const timer = setInterval(() => {
-      carouselApi.scrollNext();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [carouselApi]);
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  // Loading state for skeletons
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Pagination / Infinite scrolling state
+  const [visibleCount, setVisibleCount] = useState(8);
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 8);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = observerRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [observerRef]);
+
+  // Reset page count when filters change
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [searchQuery, selectedCategory, priceRange, selectedCounty, minRating, organicOnly, verifiedOnly, sortBy]);
 
   // Flash Sale countdown timer
   const [timeLeft, setTimeLeft] = useState(0);
@@ -284,11 +319,9 @@ function ShopPage() {
   }, []);
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredProducts, currentPage]);
+  const displayedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
 
   // Handle Add To Cart and trigger fly animation
   const handleAddToCart = (product: ShopProduct, event: React.MouseEvent) => {
@@ -404,16 +437,16 @@ function ShopPage() {
                 <input
                   type="text"
                   placeholder="Search for fresh produce, seeds, tools..."
-                  value={searchQuery}
+                  value={searchInput}
                   onChange={(e) => {
                     setSelectedProduct(null); // return to search grid
-                    setSearchQuery(e.target.value);
+                    setSearchInput(e.target.value);
                     setCurrentPage(1);
                   }}
                   className="w-full bg-transparent text-xs text-[#1A1A1A] outline-none placeholder:text-[#6B7280]"
                 />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="text-[#6B7280] hover:text-[#1A1A1A]">
+                {searchInput && (
+                  <button onClick={() => setSearchInput("")} className="text-[#6B7280] hover:text-[#1A1A1A]">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -626,42 +659,11 @@ function ShopPage() {
             exit={{ opacity: 0 }}
           >
             {/* 2. CROP SHOWCASE HERO CAROUSEL */}
-            <div className="container-px mx-auto max-w-7xl mt-8 mb-8 text-left">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1A6B3C]">Direct Farm Harvest</span>
-                  <h2 className="mt-1 text-lg font-black text-[#1A1A1A] md:text-xl tracking-tight uppercase">Featured Crops</h2>
-                </div>
-              </div>
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: true,
-                }}
-                setApi={setCarouselApi}
-                className="w-full relative"
-              >
-                <CarouselContent className="-ml-4">
-                  {cropSlides.map((item, idx) => (
-                    <CarouselItem key={idx} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
-                      <div 
-                        onClick={() => handleOrderCrop(item.name)}
-                        className="group relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white transition-all duration-300 hover:border-[#1A6B3C] hover:shadow-md cursor-pointer aspect-[4/5]"
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-3 md:-left-12 h-10 w-10 rounded-full bg-white/90 hover:bg-white text-[#1A1A1A] border border-[#E5E7EB] shadow-md hover:scale-105 transition-all duration-200 z-10" />
-                <CarouselNext className="right-3 md:-right-12 h-10 w-10 rounded-full bg-white/90 hover:bg-white text-[#1A1A1A] border border-[#E5E7EB] shadow-md hover:scale-105 transition-all duration-200 z-10" />
-              </Carousel>
-            </div>
+            <Suspense fallback={
+              <div className="container-px mx-auto max-w-7xl mt-8 mb-8 text-left h-[260px] animate-shimmer rounded-2xl" />
+            }>
+              <FeaturedCrops cropSlides={cropSlides} onOrderCrop={handleOrderCrop} />
+            </Suspense>
 
             {/* 3. TRUST BAR */}
             <section className="bg-white border-b border-[#F0F0F0] py-4">
@@ -1047,15 +1049,7 @@ function ShopPage() {
               {isLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {Array.from({ length: 8 }).map((_, idx) => (
-                    <div key={idx} className="bg-white p-3 border border-[#E5E7EB] animate-pulse">
-                      <div className="aspect-square w-full bg-[#F0F0F0] shimmer" />
-                      <div className="mt-3 space-y-2">
-                        <div className="h-4 w-5/6 rounded bg-[#F0F0F0]" />
-                        <div className="h-3 w-1/3 rounded bg-[#F0F0F0]" />
-                        <div className="h-4 w-2/3 rounded bg-[#F0F0F0] mt-4" />
-                        <div className="h-8 w-full rounded bg-[#F0F0F0] mt-4" />
-                      </div>
-                    </div>
+                    <ProductCardSkeleton key={idx} layout={layout} />
                   ))}
                 </div>
               ) : filteredProducts.length === 0 ? (
@@ -1073,7 +1067,7 @@ function ShopPage() {
               ) : (
                 <div>
                   <div className={layout === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "flex flex-col gap-4"}>
-                    {paginatedProducts.map((product) => (
+                    {displayedProducts.map((product) => (
                       <ProductCard
                         key={product.id}
                         product={product}
@@ -1088,41 +1082,10 @@ function ShopPage() {
                     ))}
                   </div>
 
-                  {/* Shopify-Style Numbered Pagination */}
-                  {totalPages > 1 && (
-                    <div className="mt-12 flex items-center justify-center gap-1.5 border-t border-[#F0F0F0] pt-6">
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="grid h-9 w-9 place-items-center rounded-lg border border-[#F0F0F0] bg-white text-[#6B7280] transition hover:border-[#1A6B3C]/20 hover:text-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <ChevronLeft className="h-4.5 w-4.5" />
-                      </button>
-
-                      {Array.from({ length: totalPages }).map((_, idx) => {
-                        const pageNum = idx + 1;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`h-9 w-9 rounded-lg text-xs font-bold transition ${
-                              currentPage === pageNum
-                                ? "bg-[#1A6B3C] text-white"
-                                : "border border-[#F0F0F0] bg-white text-[#6B7280] hover:border-[#1A6B3C]/20"
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="grid h-9 w-9 place-items-center rounded-lg border border-[#F0F0F0] bg-white text-[#6B7280] transition hover:border-[#1A6B3C]/20 hover:text-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <ChevronRight className="h-4.5 w-4.5" />
-                      </button>
+                  {/* Infinite scroll load trigger */}
+                  {visibleCount < filteredProducts.length && (
+                    <div ref={observerRef} className="mt-12 flex items-center justify-center py-6">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1A6B3C] border-t-transparent" />
                     </div>
                   )}
                 </div>

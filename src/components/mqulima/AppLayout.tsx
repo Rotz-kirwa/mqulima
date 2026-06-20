@@ -1,8 +1,11 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode, Suspense } from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { WhatsAppButton } from "./WhatsAppButton";
-import { CartDrawer } from "../shop/CartDrawer";
+
+const CartDrawer = React.lazy(() =>
+  import("../shop/CartDrawer").then((m) => ({ default: m.CartDrawer }))
+);
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,7 +14,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <Footer />
       <WhatsAppButton />
-      <CartDrawer />
+      <Suspense fallback={null}>
+        <CartDrawer />
+      </Suspense>
     </div>
   );
 }
