@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Package, Calendar, Heart, Bell, Award, TrendingUp, MapPin } from "lucide-react";
+import { Package, Calendar, Heart, Bell, Award, TrendingUp, MapPin, Download, Wifi, WifiOff, Settings } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { usePWA } from "@/hooks/usePWA";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -13,6 +17,36 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
+  const {
+    isOnline,
+    isInstallable,
+    isInstalled,
+    triggerInstall,
+    notificationPermission,
+    requestNotificationPermission,
+  } = usePWA();
+
+  const [channels, setChannels] = useState({
+    sowing: true,
+    market: false,
+    weather: true,
+  });
+
+  const handleToggleChannel = async (key: "sowing" | "market" | "weather", value: boolean) => {
+    if (value && notificationPermission !== "granted") {
+      const result = await requestNotificationPermission();
+      if (result !== "granted") {
+        return; // Don't turn on if permission denied
+      }
+    }
+    setChannels((prev) => ({ ...prev, [key]: value }));
+    if (value) {
+      toast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts enabled!`);
+    } else {
+      toast.info(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts disabled.`);
+    }
+  };
+
   return (
     <AppLayout>
       <section className="bg-gradient-to-br from-forest to-primary py-12 text-forest-foreground">
@@ -33,6 +67,93 @@ function Dashboard() {
 
       <section className="container-px mx-auto max-w-7xl py-12">
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* PWA & Notification Center Card */}
+          <Card title="PWA & Notification Center" icon={Settings} cta="App Settings" link="/dashboard">
+            <div className="space-y-4">
+              {/* Connection Status & Mode */}
+              <div className="flex items-center justify-between rounded-xl bg-secondary/50 px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">System Status</div>
+                  <div className="text-xs text-muted-foreground">
+                    {isInstalled ? "Running as standalone app" : "Running in browser"}
+                  </div>
+                </div>
+                <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                  isOnline ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
+                }`}>
+                  {isOnline ? (
+                    <>
+                      <Wifi className="h-3 w-3 text-success" /> Online
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="h-3 w-3 text-destructive" /> Offline
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Install Button if Installable */}
+              {isInstallable && (
+                <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 text-center">
+                  <p className="text-xs font-medium text-foreground mb-3">
+                    Install Mqulima on your device for fast, offline-capable access to your farm tools.
+                  </p>
+                  <button
+                    onClick={triggerInstall}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-gold-foreground transition hover:bg-gold/80"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Install App
+                  </button>
+                </div>
+              )}
+
+              {isInstalled && !isInstallable && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center text-xs font-medium text-primary">
+                  ✓ Mqulima is installed on your device
+                </div>
+              )}
+
+              {/* Simulated Notification Toggles */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alert Subscriptions</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div className="pr-2">
+                    <div className="text-sm font-semibold text-foreground">Sowing Windows</div>
+                    <div className="text-[11px] text-muted-foreground">Alerts for perfect planting times</div>
+                  </div>
+                  <Switch
+                    checked={channels.sowing}
+                    onCheckedChange={(checked) => handleToggleChannel("sowing", checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="pr-2">
+                    <div className="text-sm font-semibold text-foreground">Market Rates</div>
+                    <div className="text-[11px] text-muted-foreground">Daily updates for crop prices</div>
+                  </div>
+                  <Switch
+                    checked={channels.market}
+                    onCheckedChange={(checked) => handleToggleChannel("market", checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="pr-2">
+                    <div className="text-sm font-semibold text-foreground">AI Weather Alerts</div>
+                    <div className="text-[11px] text-muted-foreground">Extreme weather warning notifications</div>
+                  </div>
+                  <Switch
+                    checked={channels.weather}
+                    onCheckedChange={(checked) => handleToggleChannel("weather", checked)}
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
+
           <Card title="My Orders" icon={Package} cta="View all" link="/shop">
             {[
               { id: "ORD-2841", item: "Mavuno Fertilizer × 3", status: "Out for delivery", color: "bg-gold/20 text-gold-foreground" },

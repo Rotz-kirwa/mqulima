@@ -1,0 +1,24 @@
+{
+  "name": "Mqulima Digital Farming",
+  "short_name": "Mqulima",
+  "description": "Kenya's #1 Digital Farming Ecosystem. Shop agrovet supplies, book vet/soil services, get AI diagnostics, and view climate advice.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFBF7",
+  "theme_color": "#2D6A2F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

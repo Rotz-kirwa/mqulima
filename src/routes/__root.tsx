@@ -7,10 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { WifiOff } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { usePWA } from "../hooks/usePWA";
 
 function NotFoundComponent() {
   return (
@@ -70,6 +72,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
@@ -98,8 +102,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { isOnline } = usePWA();
+
   return (
     <QueryClientProvider client={queryClient}>
+      {!isOnline && (
+        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
+          <WifiOff className="h-4 w-4" />
+          <span>You are currently offline. Pages you've visited are available offline.</span>
+        </div>
+      )}
       <Outlet />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

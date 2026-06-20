@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingCart, Menu, X, Globe, User } from "lucide-react";
+import { ShoppingCart, Menu, X, Globe, User, Download } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MqulimaLogo } from "./MqulimaLogo";
+import { usePWA } from "@/hooks/usePWA";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -18,6 +19,7 @@ const nav = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<"EN" | "SW">("EN");
+  const { isInstallable, triggerInstall } = usePWA();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container-px mx-auto flex h-16 max-w-7xl items-center justify-between">
@@ -44,6 +46,16 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {isInstallable && (
+            <button
+              onClick={triggerInstall}
+              className="flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-bold text-gold-foreground transition duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+              aria-label="Install App"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Install App</span>
+            </button>
+          )}
           <button
             onClick={() => setLang(lang === "EN" ? "SW" : "EN")}
             className="hidden items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground/80 transition hover:bg-secondary md:flex"
@@ -73,6 +85,17 @@ export function Navbar() {
               </Link>
             ))}
             <Link to="/dashboard" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-secondary">My Dashboard</Link>
+            {isInstallable && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  triggerInstall();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-left text-sm font-bold text-gold hover:bg-secondary"
+              >
+                <Download className="h-4 w-4 text-gold" /> Install App
+              </button>
+            )}
           </nav>
         </div>
       )}
