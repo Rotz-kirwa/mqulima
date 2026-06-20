@@ -24,10 +24,10 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container-px mx-auto flex h-16 max-w-7xl items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <MqulimaLogo size={52} />
-          <div className="leading-tight">
-            <div className="text-2xl font-black tracking-tighter text-forest lowercase">mqulima</div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground mt-0.5">Digital Farming</div>
+          <MqulimaLogo size={48} />
+          <div className="flex flex-col justify-center leading-none">
+            <div className="font-serif text-[22px] font-normal tracking-[0.08em] text-foreground uppercase">MQULIMA</div>
+            <div className="text-[10px] font-medium tracking-normal text-[#2D6A2F] lowercase mt-0.5 italic">...taking you first class</div>
           </div>
         </Link>
 

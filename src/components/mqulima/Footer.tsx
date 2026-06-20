@@ -8,9 +8,12 @@ export function Footer() {
       <div className="container-px mx-auto max-w-7xl py-16">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <div className="flex flex-col items-start gap-2.5">
-              <MqulimaLogo size={60} />
-              <div className="text-3xl font-black tracking-tighter text-white lowercase">mqulima</div>
+            <div className="flex items-center gap-3">
+              <MqulimaLogo size={52} />
+              <div className="flex flex-col justify-center leading-none text-white">
+                <div className="font-serif text-[22px] font-normal tracking-[0.08em] uppercase">MQULIMA</div>
+                <div className="text-[10px] font-medium tracking-normal text-gold lowercase mt-0.5 italic">...taking you first class</div>
+              </div>
             </div>
             <p className="mt-4 max-w-sm text-sm text-forest-foreground/70">
               Kenya's #1 digital farming ecosystem. From seed to sale — agrovet shop, expert services and AI intelligence built for every farmer, every county.
