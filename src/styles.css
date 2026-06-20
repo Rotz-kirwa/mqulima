@@ -57,22 +57,22 @@
   --radius: 0.875rem;
 
   /* ── Brand ── */
-  --primary: oklch(0.43 0.12 152);            /* Rich emerald green */
+  --primary: oklch(0.43 0.12 152); /* Rich emerald green */
   --primary-foreground: oklch(0.98 0.005 150);
   --primary-glow: oklch(0.53 0.14 148);
-  --gold: oklch(0.82 0.17 86);                /* Vivid golden yellow — action */
+  --gold: oklch(0.82 0.17 86); /* Vivid golden yellow — action */
   --gold-foreground: oklch(0.16 0.04 80);
-  --blue: oklch(0.52 0.14 252);               /* Classic royal blue — secondary */
+  --blue: oklch(0.52 0.14 252); /* Classic royal blue — secondary */
   --blue-foreground: oklch(0.98 0 0);
-  --forest: oklch(0.19 0.05 152);             /* Deep forest — dark surfaces */
+  --forest: oklch(0.19 0.05 152); /* Deep forest — dark surfaces */
   --forest-foreground: oklch(0.97 0.01 90);
   --cream: oklch(0.985 0.01 85);
-  --sepia: oklch(0.935 0.032 72);             /* Warm parchment — blog bg */
+  --sepia: oklch(0.935 0.032 72); /* Warm parchment — blog bg */
   --sepia-foreground: oklch(0.28 0.04 55);
   --sepia-muted: oklch(0.89 0.04 68);
 
   /* ── Surfaces ── */
-  --background: oklch(0.988 0.005 85);        /* Warm off-white */
+  --background: oklch(0.988 0.005 85); /* Warm off-white */
   --foreground: oklch(0.17 0.04 152);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.17 0.04 152);
@@ -95,10 +95,15 @@
   --ring: oklch(0.43 0.12 152);
 
   /* ── Gradients & Shadows ── */
-  --gradient-hero: linear-gradient(180deg, color-mix(in oklab, var(--forest) 84%, transparent), color-mix(in oklab, var(--forest) 22%, transparent) 50%, color-mix(in oklab, var(--forest) 90%, transparent));
+  --gradient-hero: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--forest) 84%, transparent),
+    color-mix(in oklab, var(--forest) 22%, transparent) 50%,
+    color-mix(in oklab, var(--forest) 90%, transparent)
+  );
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
   --gradient-gold: linear-gradient(135deg, var(--gold), oklch(0.88 0.14 92));
-  --gradient-blue: linear-gradient(135deg, var(--blue), oklch(0.60 0.12 258));
+  --gradient-blue: linear-gradient(135deg, var(--blue), oklch(0.6 0.12 258));
   --shadow-elegant: 0 20px 50px -18px color-mix(in oklab, var(--forest) 28%, transparent);
   --shadow-card: 0 4px 16px -8px color-mix(in oklab, var(--forest) 12%, transparent);
   --shadow-gold: 0 12px 32px -12px color-mix(in oklab, var(--gold) 50%, transparent);
@@ -108,25 +113,25 @@
 .dark {
   --background: oklch(0.16 0.02 152);
   --foreground: oklch(0.97 0.01 90);
-  --card: oklch(0.20 0.03 152);
+  --card: oklch(0.2 0.03 152);
   --card-foreground: oklch(0.97 0.01 90);
-  --popover: oklch(0.20 0.03 152);
+  --popover: oklch(0.2 0.03 152);
   --popover-foreground: oklch(0.97 0.01 90);
-  --primary: oklch(0.60 0.14 150);
+  --primary: oklch(0.6 0.14 150);
   --primary-foreground: oklch(0.14 0.02 152);
   --secondary: oklch(0.26 0.03 152);
   --secondary-foreground: oklch(0.97 0.01 90);
   --muted: oklch(0.26 0.03 152);
   --muted-foreground: oklch(0.68 0.02 90);
-  --accent: oklch(0.30 0.05 75);
+  --accent: oklch(0.3 0.05 75);
   --accent-foreground: oklch(0.97 0.01 90);
-  --blue: oklch(0.60 0.14 252);
-  --sepia: oklch(0.30 0.04 72);
-  --sepia-foreground: oklch(0.90 0.02 75);
+  --blue: oklch(0.6 0.14 252);
+  --sepia: oklch(0.3 0.04 72);
+  --sepia-foreground: oklch(0.9 0.02 75);
   --sepia-muted: oklch(0.35 0.04 68);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.60 0.14 150);
+  --ring: oklch(0.6 0.14 150);
 }
 
 @layer base {
@@ -143,7 +148,10 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
@@ -151,8 +159,12 @@
 
 @utility container-px {
   padding-inline: 1.25rem;
-  @media (min-width: 768px) { padding-inline: 2rem; }
-  @media (min-width: 1280px) { padding-inline: 4rem; }
+  @media (min-width: 768px) {
+    padding-inline: 2rem;
+  }
+  @media (min-width: 1280px) {
+    padding-inline: 4rem;
+  }
 }
 
 @utility text-gradient-gold {
@@ -185,16 +197,25 @@
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 @utility animate-marquee {
   animation: marquee 40s linear infinite;
 }
 
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 @utility animate-float {
   animation: float-slow 4s ease-in-out infinite;

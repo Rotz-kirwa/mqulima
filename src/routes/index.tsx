@@ -13,7 +13,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Mqulima — Kenya's #1 Digital Farming Ecosystem" },
-      { name: "description", content: "Shop agrovet supplies, book vets & soil services, diagnose crops with AI, and join 5,000+ Kenyan farmers winning with Mqulima." },
+      {
+        name: "description",
+        content:
+          "Shop agrovet supplies, book vets & soil services, diagnose crops with AI, and join 5,000+ Kenyan farmers winning with Mqulima.",
+      },
     ],
   }),
   component: Index,

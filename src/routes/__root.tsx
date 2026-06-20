@@ -13,6 +13,8 @@ import { WifiOff } from "lucide-react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { usePWA } from "../hooks/usePWA";
+import { AuthProvider } from "@/lib/auth";
+import { CartProvider } from "../lib/cart-context";
 
 function NotFoundComponent() {
   return (
@@ -42,16 +44,28 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Something went wrong. Try again or head home.</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          This page didn't load
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Something went wrong. Try again or head home.
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
           </button>
-          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</a>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -64,19 +78,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Mqulima — Kenya's #1 Digital Farming Ecosystem" },
-      { name: "description", content: "Shop agrovet supplies, book vet & soil services, get AI crop diagnoses, and join 5,000+ Kenyan farmers winning with Mqulima." },
+      {
+        name: "description",
+        content:
+          "Shop agrovet supplies, book vet & soil services, get AI crop diagnoses, and join 5,000+ Kenyan farmers winning with Mqulima.",
+      },
       { name: "theme-color", content: "#2D6A4F" },
       { property: "og:title", content: "Mqulima — Kenya's #1 Digital Farming Ecosystem" },
-      { property: "og:description", content: "From seed to sale — agrovet shop, expert services, weather intelligence and an AI Crop Doctor built for Kenyan farmers." },
+      {
+        property: "og:description",
+        content:
+          "From seed to sale — agrovet shop, expert services, weather intelligence and an AI Crop Doctor built for Kenyan farmers.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      {
+        httpEquiv: "Content-Security-Policy",
+        content:
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://i.pinimg.com; connect-src 'self' https://api.open-meteo.com; frame-src https://www.openstreetmap.org;",
+      },
     ],
     links: [
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
     ],
   }),
@@ -106,14 +136,18 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {!isOnline && (
-        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
-          <WifiOff className="h-4 w-4" />
-          <span>You are currently offline. Pages you've visited are available offline.</span>
-        </div>
-      )}
-      <Outlet />
-      <Toaster richColors position="top-right" />
+      <AuthProvider>
+        <CartProvider>
+          {!isOnline && (
+            <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
+              <WifiOff className="h-4 w-4" />
+              <span>You are currently offline. Pages you've visited are available offline.</span>
+            </div>
+          )}
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

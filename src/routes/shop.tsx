@@ -1,111 +1,212 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, Heart, Star, SlidersHorizontal, 
-  Grid, List, CheckCircle2, MapPin, Sparkles, ShieldCheck, 
-  Truck, RotateCcw, PhoneCall, ChevronUp, Eye, X, ArrowRight 
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Truck,
+  CheckCircle2,
+  Lock,
+  Clock,
+  X,
+  SlidersHorizontal,
+  Star,
+  MapPin,
+  ChevronDown,
+  Check,
+  Grid,
+  List,
+  Eye,
+  Trash2,
+  Minus,
+  Plus,
+  ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  shopProducts,
+  shopCategories,
+  shopCounties,
+  type ShopProduct
+} from "@/lib/shop-data";
+import { ProductCard } from "@/components/shop/ProductCard";
+import { QuickViewModal } from "@/components/shop/QuickViewModal";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 import { AppLayout } from "@/components/mqulima/AppLayout";
-
-// Product images
-import p1Img from "@/assets/products/p1.jpg";
-import p2Img from "@/assets/products/p2.jpg";
-import p3Img from "@/assets/products/p3.jpg";
-import p4Img from "@/assets/products/p4.jpg";
-import p5Img from "@/assets/products/p5.jpg";
-import p6Img from "@/assets/products/p6.jpg";
-import p7Img from "@/assets/products/p7.jpg";
-import p8Img from "@/assets/products/p8.jpg";
+import { useCart } from "@/lib/cart-context";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
-      { title: "Mqulima Marketplace — Elite Agri-Commerce" },
-      { name: "description", content: "Africa's largest digital agricultural marketplace. Verified inputs, equipment, seeds, and fertilizers delivered directly to your county." },
+      { title: "Mqulima Shop — Fresh Produce & Agri-Products" },
+      {
+        name: "description",
+        content: "Experience premium African agricultural e-commerce. Buy fresh vegetables, grains, seeds, tools, and organic certified produce direct from farms.",
+      },
     ],
   }),
-  component: Shop,
+  component: ShopPage,
 });
 
-interface Product {
-  id: string;
-  name: string;
-  category: "Seeds" | "Fertilizers" | "Equipment" | "Irrigation" | "Pest Control" | "Organics";
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  badge?: "BESTSELLER" | "NEW" | "TOP PICK" | "ORGANIC" | "LOW STOCK" | "";
-  image: string;
-  brand: string;
-  stock: number;
-  description: string;
-  county: string;
-  organic: boolean;
-  verifiedSeller: boolean;
-}
-
-const mockProducts: Product[] = [
-  { id: "p1", name: "Dap Fertilizer 50kg", category: "Fertilizers", price: 3200, originalPrice: 4200, rating: 4.8, badge: "BESTSELLER", image: p1Img, brand: "Chapa Meli", stock: 124, description: "Premium Diammonium Phosphate (DAP) fertilizer. Excellent for planting crops to boost root system development.", county: "Nakuru", organic: false, verifiedSeller: true },
-  { id: "p2", name: "Hybrid Maize Seeds 2kg", category: "Seeds", price: 850, originalPrice: 1100, rating: 4.9, badge: "NEW", image: p2Img, brand: "Dekalb", stock: 312, description: "DK 8031 hybrid variety. Drought-tolerant, early maturing, high-yielding crop suited for medium altitudes.", county: "Uasin Gishu", organic: false, verifiedSeller: true },
-  { id: "p3", name: "Solar Water Pump", category: "Equipment", price: 24000, originalPrice: 28500, rating: 4.6, badge: "TOP PICK", image: p6Img, brand: "SunPower", stock: 15, description: "Solar-powered water pump system for sustainable farm irrigation. Submersible pump includes solar panel controls.", county: "Machakos", organic: false, verifiedSeller: true },
-  { id: "p4", name: "Organic Compost 20kg", category: "Organics", price: 1100, originalPrice: 1400, rating: 4.7, badge: "ORGANIC", image: p3Img, brand: "EcoGrow", stock: 88, description: "Premium microbial-rich organic compost. Restores soil biology, enhances moisture retention.", county: "Kiambu", organic: true, verifiedSeller: false },
-  { id: "p5", name: "CAN Fertilizer 50kg", category: "Fertilizers", price: 2900, rating: 4.5, badge: "", image: p5Img, brand: "Yara", stock: 210, description: "Calcium Ammonium Nitrate top-dressing fertilizer. Fast release of nitrogen for vigorous leafy growth.", county: "Eldoret", organic: false, verifiedSeller: true },
-  { id: "p6", name: "Tomato F1 Seeds 10g", category: "Seeds", price: 420, originalPrice: 600, rating: 4.8, badge: "LOW STOCK", image: p7Img, brand: "Royal Seed", stock: 8, description: "Sukari F1 determinate tomato seeds. Highly resistant to bacterial wilt and nematodes.", county: "Kirinyaga", organic: false, verifiedSeller: true },
-  { id: "p7", name: "Knapsack Sprayer 16L", category: "Equipment", price: 3800, rating: 4.4, badge: "", image: p6Img, brand: "Cooper", stock: 34, description: "Manual shoulder-mounted garden and field sprayer. Adjustable nozzle with reinforced pressure chamber.", county: "Nairobi", organic: false, verifiedSeller: false },
-  { id: "p8", name: "Drip Irrigation Kit (1 Acre)", category: "Irrigation", price: 18500, originalPrice: 22000, rating: 4.9, badge: "BESTSELLER", image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=600&auto=format&fit=crop", brand: "DripTech", stock: 45, description: "Complete drip irrigation kit covering up to 1 acre. Includes main pipes, lateral lines, emitters, and valves.", county: "Kajiado", organic: false, verifiedSeller: true },
-  { id: "p9", name: "Pyrethrum Pest Spray 1L", category: "Pest Control", price: 650, rating: 4.3, badge: "", image: p4Img, brand: "PyCo", stock: 67, description: "Natural, organic pesticide derived from pyrethrum flowers. Effectively eliminates aphids and armyworms.", county: "Nakuru", organic: true, verifiedSeller: true },
-  { id: "p10", name: "NPK Fertilizer 50kg", category: "Fertilizers", price: 3100, rating: 4.7, badge: "", image: p1Img, brand: "Mavuno", stock: 95, description: "17-17-17 balanced crop fertilizer. Supports optimal development throughout all growth phases.", county: "Uasin Gishu", organic: false, verifiedSeller: true },
-  { id: "p11", name: "Vegetable Seed Kit (10 varieties)", category: "Seeds", price: 1200, originalPrice: 1600, rating: 4.8, badge: "NEW", image: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?q=80&w=600&auto=format&fit=crop", brand: "Kenya Seed", stock: 120, description: "All-in-one kitchen garden seed pack including kale, cabbage, spinach, coriander, carrots, onions, and more.", county: "Kiambu", organic: true, verifiedSeller: true },
-  { id: "p12", name: "Garden Hand Tools Set", category: "Equipment", price: 2200, rating: 4.5, badge: "", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=600&auto=format&fit=crop", brand: "Stanley", stock: 52, description: "Heavy-duty steel garden hand tools including trowel, cultivator rake, weeder, and pruning shears.", county: "Nairobi", organic: false, verifiedSeller: false }
+const cropSlides = [
+  {
+    name: "Avocado",
+    title: "Premium Hass Avocados",
+    description: "Creamy, buttery textures and high oil-content. Hand-selected Grade A Hass varieties ready for export and local delivery.",
+    image: "https://i.pinimg.com/736x/bd/6e/49/bd6e49db2306c22d5b19f8cf284f4908.jpg",
+    qualityTags: ["The Fresh Harvest", "Premium Quality", "Grade A", "Organic"],
+    availability: "In Stock",
+    availabilityType: "success",
+    price: 30,
+    unit: "piece"
+  },
+  {
+    name: "Bananas",
+    title: "Sun-Ripened Sweet Bananas",
+    description: "Naturally grown, pesticide-free sweet yellow bananas. Harvested at peak maturity from family orchard farms.",
+    image: "https://i.pinimg.com/736x/5f/f9/df/5ff9df1121c6bc9f0d77c9385c5bb086.jpg",
+    qualityTags: ["Fresh", "Naturally Grown", "Pesticide-Free", "Farm Fresh"],
+    availability: "Available Today",
+    availabilityType: "info",
+    price: 15,
+    unit: "bunch"
+  },
+  {
+    name: "Cabbages",
+    title: "Crisp Volcanic Green Cabbages",
+    description: "Firm, crunchy, iron-rich heads of green cabbage grown in rich volcanic soils. Harvested fresh at sunrise.",
+    image: "https://i.pinimg.com/736x/f2/cc/ba/f2ccbafdd490c446be68de1f01555675.jpg",
+    qualityTags: ["Farm Fresh", "Organic", "Grade A", "Pesticide-Free"],
+    availability: "Ready for Harvest",
+    availabilityType: "success",
+    price: 80,
+    unit: "head"
+  },
+  {
+    name: "Peanuts",
+    title: "Sun-Dried Red-Skin Peanuts",
+    description: "Crunchy, high-protein raw peanuts. Perfectly sun-dried and hand-sorted for the highest snack and seed grade.",
+    image: "https://i.pinimg.com/736x/bf/00/8e/bf008eb95a19f445240aad86ebe391b6.jpg",
+    qualityTags: ["Naturally Grown", "Fresh Harvest", "Premium Quality"],
+    availability: "Limited Stock",
+    availabilityType: "warning",
+    price: 150,
+    unit: "kg"
+  },
+  {
+    name: "Cereals",
+    title: "Premium High-Yield Grains",
+    description: "Cleanly sifted, dried sorghum, millet, and maize cereals. Ideal for long-term storage and high-quality meals.",
+    image: "https://i.pinimg.com/736x/ae/f4/f1/aef4f1fef5b031d49f03b5f155fa7d20.jpg",
+    qualityTags: ["Grade A", "Export Quality", "Premium Quality"],
+    availability: "Pre-Order",
+    availabilityType: "info",
+    price: 120,
+    unit: "kg"
+  },
+  {
+    name: "Mangoes",
+    title: "Juicy Machakos Apple Mangoes",
+    description: "Sweet, fleshy, fiberless Kent and Apple mangoes sourced from sun-soaked eastern region organic orchards.",
+    image: "https://i.pinimg.com/736x/e6/54/29/e654296e5b46b5d5a3f961fb9994d5b3.jpg",
+    qualityTags: ["Fresh Harvest", "Organic", "Export Quality", "Naturally Grown"],
+    availability: "Seasonal",
+    availabilityType: "warning",
+    price: 45,
+    unit: "piece"
+  },
 ];
 
-const categories = [
-  { id: "All", label: "All Items", icon: "📦" },
-  { id: "Seeds", label: "Seeds", icon: "🌱" },
-  { id: "Fertilizers", label: "Fertilizers", icon: "🧪" },
-  { id: "Equipment", label: "Equipment", icon: "🚜" },
-  { id: "Irrigation", label: "Irrigation", icon: "💧" },
-  { id: "Pest Control", label: "Pest Control", icon: "🐛" },
-  { id: "Organics", label: "Organics", icon: "🌿" }
-];
+type CartItem = {
+  product: ShopProduct;
+  quantity: number;
+};
 
-const countiesList = ["All", "Nakuru", "Uasin Gishu", "Kiambu", "Machakos", "Kirinyaga", "Nairobi", "Kajiado"];
-
-const trustedSellers = [
-  { name: "AgroPlus Dealers", location: "Nakuru County", rating: 4.9, sales: "14,200+ bags", avatar: "🟢" },
-  { name: "Yara Premium Hub", location: "Eldoret County", rating: 4.8, sales: "9,800+ bags", avatar: "🟡" },
-  { name: "Rift Seed Distributors", location: "Kitale County", rating: 4.7, sales: "11,500+ packs", avatar: "🔵" },
-  { name: "Greenfield Diagnostics", location: "Kiambu County", rating: 4.9, sales: "6,400+ units", avatar: "🟣" }
-];
-
-function Shop() {
-  const [q, setQ] = useState("");
-  const [selectedCat, setSelectedCat] = useState("All");
-  const [priceRange, setPriceRange] = useState(30000);
-  const [minRating, setMinRating] = useState(0);
-  const [selectedCounty, setSelectedCounty] = useState("All");
-  const [onlyOrganic, setOnlyOrganic] = useState(false);
-  const [onlyVerified, setOnlyVerified] = useState(false);
-  const [sortBy, setSortBy] = useState("relevance");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+function ShopPage() {
+  // Navigation & Cart state from global context
+  const { cartItems, cartOpen, setCartOpen, addToCart, buyNow } = useCart();
+  const [cartBump, setCartBump] = useState(false);
+  const [wishlist, setWishlist] = useState<Set<string>>(new Set(["p1", "p4"]));
+  const [recentlyViewed, setRecentlyViewed] = useState<ShopProduct[]>([]);
   
-  // Interactive States
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set(["p1", "p8"]));
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [newsletterEmail, setNewsletterEmail] = useState("");
+  // Grid/List Layout Mode
+  const [layout, setLayout] = useState<"grid" | "list">("grid");
 
-  // Countdown timer for Flash Deals (starts at 4h 32m 17s)
-  const [timeLeft, setTimeLeft] = useState(4 * 3600 + 32 * 60 + 17);
+  // Quick View selected product
+  const [quickViewProduct, setQuickViewProduct] = useState<ShopProduct | null>(null);
+
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [priceRange, setPriceRange] = useState<number>(3000);
+  const [selectedCounty, setSelectedCounty] = useState("All");
+  const [minRating, setMinRating] = useState<number>(0);
+  const [organicOnly, setOrganicOnly] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("relevance");
+  
+  // Detail page selection
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
+
+  // Filter drawer/popover display
+  const [activeFilterTab, setActiveFilterTab] = useState<string | null>(null);
+  
+  // UI states
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  // Particle fly animation coordinates
+  const [flyingParticles, setFlyingParticles] = useState<{ id: number; startX: number; startY: number; image: string }[]>([]);
+  
+  // Refs
+  const cartIconRef = useRef<HTMLAnchorElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+
+  // Compute dynamic cart total quantity
+  const cartCount = useMemo(() => {
+    return cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  }, [cartItems]);
+
+  // Auto-moving Products Carousel Autoplay State
+  const [carouselApi, setCarouselApi] = useState<any>(null);
+
+  // Auto-play crop slides timer
+  useEffect(() => {
+    if (!carouselApi) return;
+    const timer = setInterval(() => {
+      carouselApi.scrollNext();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [carouselApi]);
+
+  // Flash Sale countdown timer
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 4 * 3600 + 32 * 60 + 17));
+    setIsMounted(true);
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      return Math.floor((midnight.getTime() - now.getTime()) / 1000);
+    };
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, []);
 
   const formatCountdown = (seconds: number) => {
@@ -115,813 +216,1017 @@ function Shop() {
     return `${h}:${m}:${s}`;
   };
 
-  // Scroll to Top visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleAddToCart = (name: string) => {
-    toast.success(`Added ${name} to cart!`);
-  };
-
-  const toggleWishlist = (id: string) => {
-    const updated = new Set(wishlist);
-    if (updated.has(id)) {
-      updated.delete(id);
-      toast.info("Removed from wishlist");
+  const handleOrderCrop = (cropName: string) => {
+    const matched = shopProducts.find(
+      (p) => p.name.toLowerCase().includes(cropName.toLowerCase()) || cropName.toLowerCase().includes(p.name.toLowerCase())
+    );
+    if (matched) {
+      setSelectedProduct(matched);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      updated.add(id);
-      toast.success("Saved to wishlist!");
+      setSearchQuery(cropName);
+      const gridSection = document.getElementById("product-grid-section");
+      gridSection?.scrollIntoView({ behavior: "smooth" });
     }
-    setWishlist(updated);
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail) return;
-    toast.success("Thank you for subscribing! Agri-deals are headed your way.");
-    setNewsletterEmail("");
+  // Simulate skeleton loaders on filtering
+  const handleCategoryChange = (category: string) => {
+    setSelectedProduct(null); // return to store grid
+    setSelectedCategory(category);
+    setIsLoading(true);
+    setCurrentPage(1);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
   };
 
-  // Filtered & Sorted products
+  // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
-    return mockProducts.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(q.toLowerCase()) || p.brand.toLowerCase().includes(q.toLowerCase()) || p.description.toLowerCase().includes(q.toLowerCase());
-      const matchesCategory = selectedCat === "All" || p.category === selectedCat;
-      const matchesPrice = p.price <= priceRange;
-      const matchesRating = p.rating >= minRating;
-      const matchesCounty = selectedCounty === "All" || p.county === selectedCounty;
-      const matchesOrganic = !onlyOrganic || p.organic;
-      const matchesVerified = !onlyVerified || p.verifiedSeller;
+    const query = searchQuery.trim().toLowerCase();
+    
+    return shopProducts
+      .filter((product) => {
+        // Category chip filter
+        if (selectedCategory === "Organic") {
+          if (!product.organic) return false;
+        } else if (selectedCategory !== "All" && product.category !== selectedCategory) {
+          return false;
+        }
 
-      return matchesSearch && matchesCategory && matchesPrice && matchesRating && matchesCounty && matchesOrganic && matchesVerified;
-    }).sort((a, b) => {
-      if (sortBy === "price-low") return a.price - b.price;
-      if (sortBy === "price-high") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "newest") return a.badge === "NEW" ? -1 : 1;
-      return 0;
-    });
-  }, [q, selectedCat, priceRange, minRating, selectedCounty, onlyOrganic, onlyVerified, sortBy]);
+        // Search text query
+        if (query) {
+          const searchContent = `${product.name} ${product.brand} ${product.category} ${product.description}`.toLowerCase();
+          if (!searchContent.includes(query)) return false;
+        }
 
-  const flashDeals = useMemo(() => {
-    return mockProducts.filter(p => p.originalPrice);
+        // Extra filter inputs
+        if (product.price > priceRange) return false;
+        if (product.rating < minRating) return false;
+        if (selectedCounty !== "All" && product.county !== selectedCounty) return false;
+        if (organicOnly && !product.organic) return false;
+        if (verifiedOnly && !product.verifiedSeller) return false;
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "price-low") return a.price - b.price;
+        if (sortBy === "price-high") return b.price - a.price;
+        if (sortBy === "rating") return b.rating - a.rating;
+        if (sortBy === "newest") return Number(b.badge === "New") - Number(a.badge === "New");
+        return 0; // relevance / natural
+      });
+  }, [searchQuery, selectedCategory, priceRange, selectedCounty, minRating, organicOnly, verifiedOnly, sortBy]);
+
+  // Flash Sale products
+  const flashSaleProducts = useMemo(() => {
+    return shopProducts.filter((p) => p.originalPrice).slice(0, 4);
   }, []);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProducts, currentPage]);
+
+  // Handle Add To Cart and trigger fly animation
+  const handleAddToCart = (product: ShopProduct, event: React.MouseEvent) => {
+    // Generate flying particle coordinates
+    const particle = {
+      id: Date.now(),
+      startX: event.clientX || window.innerWidth / 2,
+      startY: event.clientY || window.innerHeight / 2,
+      image: product.image
+    };
+
+    setFlyingParticles((prev) => [...prev, particle]);
+    
+    // Add to cart using global context
+    addToCart(product, 1);
+  };
+
+  const handleBuyNow = (product: ShopProduct, event: React.MouseEvent) => {
+    buyNow(product);
+  };
+
+  // Toggle wishlist handler
+  const handleToggleWishlist = (id: string) => {
+    setWishlist((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        toast.info("Removed from wishlist");
+      } else {
+        next.add(id);
+        toast.success("Added to wishlist!");
+      }
+      return next;
+    });
+  };
+
+  // Select product for full page details
+  const handleSelectProduct = (product: ShopProduct) => {
+    setSelectedProduct(product);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    
+    // Add to recently viewed if not already in it
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((p) => p.id !== product.id);
+      return [product, ...filtered].slice(0, 5);
+    });
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
+    setPriceRange(3000);
+    setSelectedCounty("All");
+    setMinRating(0);
+    setOrganicOnly(false);
+    setVerifiedOnly(false);
+    setSortBy("relevance");
+    setSelectedProduct(null);
+    toast.success("Filters cleared");
+  };
+
+  // Check active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (priceRange < 3000) count++;
+    if (selectedCounty !== "All") count++;
+    if (minRating > 0) count++;
+    if (organicOnly) count++;
+    if (verifiedOnly) count++;
+    return count;
+  }, [priceRange, selectedCounty, minRating, organicOnly, verifiedOnly]);
 
   return (
     <AppLayout>
-      <div className="bg-background text-foreground">
-        
-        {/* 1. HERO FILTER BANNER */}
-        <section className="relative border-b border-border/60 bg-gradient-to-br from-primary/5 via-background to-secondary/30 py-16">
-          <div className="container-px mx-auto max-w-7xl text-center">
+      <div className="min-h-screen bg-[#FAFAF8] text-[#1A1A1A] font-sans antialiased pb-16">
+        {/* ADD TO CART PARTICLE ANIMATION */}
+        <AnimatePresence>
+          {flyingParticles.map((particle) => (
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              key={particle.id}
+              initial={{ x: particle.startX, y: particle.startY, scale: 0.8, opacity: 1 }}
+              animate={{
+                x: window.innerWidth - 60,
+                y: 20,
+                scale: 0.1,
+                opacity: 0.2
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.75, ease: "easeInOut" }}
+              onAnimationComplete={() => {
+                setFlyingParticles((prev) => prev.filter((p) => p.id !== particle.id));
+                setCartBump(true);
+                setTimeout(() => setCartBump(false), 250);
+              }}
+              className="fixed z-[9999] h-12 w-12 pointer-events-none overflow-hidden rounded-full border-2 border-[#1A6B3C] bg-white shadow-lg"
             >
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> Direct Farm Delivery
-              </span>
-              <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-                Africa's Largest <span className="text-primary">Agri-Marketplace</span>
-              </h1>
-              <p className="mt-4 mx-auto max-w-xl text-sm text-muted-foreground md:text-base">
-                Over 50,000 certified agricultural products sourced directly from verified manufacturers. Hand-delivered to your gate.
-              </p>
+              <img src={particle.image} className="h-full w-full object-cover" />
             </motion.div>
+          ))}
+        </AnimatePresence>
 
-            {/* Live Stats Row */}
-            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-3 gap-4 rounded-2xl border border-border/80 bg-card p-6 shadow-elegant">
-              <div className="text-center">
-                <div className="text-xl font-bold font-mono text-primary sm:text-2xl">12,400+</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">Active Farmers</div>
-              </div>
-              <div className="border-x border-border/80 text-center">
-                <div className="text-xl font-bold font-mono text-primary sm:text-2xl">3,200+</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">Verified Inputs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold font-mono text-primary sm:text-2xl">47</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">Counties Reached</div>
-              </div>
+        {/* Search Input, Title, and Category Pills */}
+        <div className="bg-white border-b border-[#F0F0F0] py-6 text-left">
+          <div className="container-px mx-auto max-w-7xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-serif font-black tracking-tight text-[#1A1A1A] uppercase">Agri-Marketplace</h1>
+              <p className="text-xs text-[#6B7280]">Fresh produce, hybrid seeds, tools, and organic certified inputs direct from trusted farmers.</p>
             </div>
-
-            {/* Live Search Inputs */}
-            <div className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-border bg-card px-5 py-3 shadow-elegant">
-              <Search className="h-4.5 w-4.5 text-muted-foreground" />
-              <input 
-                value={q} 
-                onChange={(e) => setQ(e.target.value)} 
-                placeholder="Search seeds, fertilizers, tools..." 
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" 
-              />
-              {q && (
-                <button onClick={() => setQ("")} className="text-muted-foreground hover:text-foreground">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Category Pill Filters */}
-            <div className="mt-8 overflow-x-auto scrollbar-none py-2">
-              <div className="flex justify-center gap-3 min-w-max px-4">
-                {categories.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedCat(c.id)}
-                    className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-bold transition-all duration-300 ${
-                      selectedCat === c.id 
-                        ? "border-primary bg-primary text-primary-foreground shadow-md" 
-                        : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                    }`}
-                  >
-                    <span>{c.icon}</span>
-                    <span>{c.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 2. FLASH DEALS STRIP */}
-        <section className="border-y border-red-100 bg-red-50/50 py-6 overflow-hidden">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <span className="inline-block animate-pulse rounded bg-red-600 px-2.5 py-1 text-xs font-bold tracking-widest text-white">
-                  ⚡ FLASH DEALS
-                </span>
-                <div className="text-sm font-bold text-red-950">
-                  Ends in: <span className="font-mono text-primary">{formatCountdown(timeLeft)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Horizontally scrollable Deals Strip */}
-            <div className="mt-6 flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-              {flashDeals.map((deal) => {
-                const pct = deal.originalPrice ? Math.round(((deal.originalPrice - deal.price) / deal.originalPrice) * 100) : 0;
-                return (
-                  <div 
-                    key={deal.id} 
-                    className="w-[280px] shrink-0 rounded-2xl border border-red-100 bg-card p-3 shadow-elegant transition hover:border-red-300"
-                  >
-                    <div className="relative h-32 overflow-hidden rounded-xl bg-secondary">
-                      <img 
-                        src={deal.image} 
-                        alt={deal.name} 
-                        className="h-full w-full object-cover transition duration-300 hover:scale-105" 
-                      />
-                      <span className="absolute left-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                        -{pct}% OFF
-                      </span>
-                    </div>
-                    <div className="mt-3">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{deal.brand}</span>
-                      <h3 className="line-clamp-1 text-sm font-bold text-foreground">{deal.name}</h3>
-                      <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-sm font-bold font-mono text-primary">KES {deal.price.toLocaleString()}</span>
-                        <span className="text-xs font-mono text-muted-foreground line-through">KES {deal.originalPrice?.toLocaleString()}</span>
-                      </div>
-                      <button 
-                        onClick={() => handleAddToCart(deal.name)}
-                        className="mt-3 w-full rounded-lg bg-red-600/10 border border-red-600/30 py-2 text-center text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white transition"
-                      >
-                        Claim Deal
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 3. MAIN PRODUCT GRID */}
-        <section className="container-px mx-auto max-w-7xl py-12">
-          <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-            
-            {/* FILTER SIDEBAR (Left) */}
-            <aside className="hidden flex-col gap-6 lg:flex">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-elegant">
-                <h2 className="text-sm font-extrabold uppercase tracking-wider text-foreground border-b border-border pb-3 flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4 text-primary" /> Search Filters
-                </h2>
-
-                {/* Price Range Slider */}
-                <div className="mt-6">
-                  <label className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Max Price (KES)</label>
-                  <div className="mt-2 flex items-center justify-between text-xs font-mono text-foreground">
-                    <span>0</span>
-                    <span className="text-primary font-bold">KES {priceRange.toLocaleString()}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="400" 
-                    max="30000" 
-                    step="200"
-                    value={priceRange} 
-                    onChange={(e) => setPriceRange(Number(e.target.value))}
-                    className="mt-3 w-full accent-primary" 
-                  />
-                </div>
-
-                {/* County Location */}
-                <div className="mt-6">
-                  <label className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">County Location</label>
-                  <select 
-                    value={selectedCounty} 
-                    onChange={(e) => setSelectedCounty(e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none"
-                  >
-                    {countiesList.map(c => (
-                      <option key={c} value={c}>{c === "All" ? "All Counties" : c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Ratings */}
-                <div className="mt-6">
-                  <label className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Minimum Rating</label>
-                  <div className="mt-2 flex flex-col gap-2">
-                    {[0, 4.5, 4.8].map((stars) => (
-                      <button 
-                        key={stars}
-                        onClick={() => setMinRating(stars)}
-                        className={`flex items-center gap-2 text-xs transition ${minRating === stars ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        <div className={`h-3 w-3 rounded-full border ${minRating === stars ? "border-primary bg-primary" : "border-border bg-background"}`} />
-                        {stars === 0 ? "All Ratings" : `${stars} ★ & Above`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Toggles */}
-                <div className="mt-6 space-y-3 border-t border-border pt-4">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/80">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyOrganic} 
-                      onChange={(e) => setOnlyOrganic(e.target.checked)}
-                      className="h-4 w-4 rounded accent-primary bg-background border-border" 
-                    />
-                    <span>🌱 Certified Organic</span>
-                  </label>
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/80">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyVerified} 
-                      onChange={(e) => setOnlyVerified(e.target.checked)}
-                      className="h-4 w-4 rounded accent-primary bg-background border-border" 
-                    />
-                    <span>✅ Verified Sellers</span>
-                  </label>
-                </div>
-
-                {/* Clear Filters Button */}
-                <button 
-                  onClick={() => {
-                    setPriceRange(30000);
-                    setMinRating(0);
-                    setSelectedCounty("All");
-                    setOnlyOrganic(false);
-                    setOnlyVerified(false);
-                    setSelectedCat("All");
-                    setQ("");
-                    toast.success("Filters cleared");
+            <div className="relative w-full md:max-w-md">
+              <div className="relative flex items-center h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#FAFAF8] px-4 transition-all focus-within:border-[#1A6B3C] focus-within:bg-white focus-within:ring-1 focus-within:ring-[#1A6B3C]/10 shadow-sm">
+                <Search className="h-4.5 w-4.5 text-[#6B7280] mr-2" />
+                <input
+                  type="text"
+                  placeholder="Search for fresh produce, seeds, tools..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSelectedProduct(null); // return to search grid
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
                   }}
-                  className="mt-6 w-full rounded-lg bg-secondary py-2 text-center text-xs font-bold text-foreground hover:bg-primary hover:text-primary-foreground transition"
-                >
-                  Reset Filters
-                </button>
-
+                  className="w-full bg-transparent text-xs text-[#1A1A1A] outline-none placeholder:text-[#6B7280]"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} className="text-[#6B7280] hover:text-[#1A1A1A]">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
-            </aside>
+            </div>
+          </div>
 
-            {/* PRODUCT LISTINGS (Right) */}
-            <main>
-              
-              {/* Sort bar & Results count */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-                <div className="text-xs font-bold text-muted-foreground">
-                  Showing <span className="text-foreground font-extrabold">{filteredProducts.length}</span> results 
-                  {selectedCat !== "All" && ` for '${selectedCat}'`}
+          {/* Category Pills */}
+          <div className="container-px mx-auto max-w-7xl mt-6">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {shopCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  className={`flex items-center gap-1.5 shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 border ${
+                    selectedCategory === cat.id && !selectedProduct
+                      ? "bg-[#1A6B3C] border-[#1A6B3C] text-white shadow-sm"
+                      : "bg-[#FAFAF8] border-[#E8ECE9] text-[#6B7280] hover:border-[#1A6B3C]/20 hover:text-[#1A1A1A]"
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      {/* SWAPPABLE MAIN BODY */}
+      <AnimatePresence mode="wait">
+        {selectedProduct ? (
+          // PRODUCT DETAILS VIEW (MATCHING SECOND SCREENSHOT)
+          <motion.div
+            key="product-details"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.3 }}
+            className="pb-16"
+          >
+            {/* Breadcrumb strip */}
+            <div className="bg-white border-b border-[#F0F0F0] py-3 text-left">
+              <div className="container-px mx-auto max-w-7xl flex items-center gap-1.5 text-xs text-[#6B7280]">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedProduct(null);
+                  }}
+                  className="hover:text-[#1A6B3C]"
+                >
+                  Home
+                </a>
+                <span>/</span>
+                <span className="hover:text-[#1A6B3C]">Shop</span>
+                <span>/</span>
+                <span className="hover:text-[#1A6B3C]">{selectedProduct.category}</span>
+                <span>/</span>
+                <span className="text-[#1A1A1A] font-semibold">{selectedProduct.name}</span>
+              </div>
+            </div>
+
+            {/* Product details panel */}
+            <div className="container-px mx-auto max-w-7xl mt-8">
+              <div className="grid gap-8 md:grid-cols-2 bg-white p-6 md:p-10 border border-[#E5E7EB] text-left">
+                
+                {/* Left Column: Image with red OFFER badge */}
+                <div className="relative aspect-square w-full bg-white flex items-center justify-center p-4 border border-[#F0F0F0]">
+                  <img
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    className="h-full w-full object-contain max-h-[400px]"
+                  />
+                  <span className="absolute left-4 top-4 rounded-sm bg-red-600 px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
+                    Offer
+                  </span>
+                  {selectedProduct.organic && (
+                    <span className="absolute left-4 top-12 rounded-sm bg-[#1A6B3C] px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
+                      Organic
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">Sort by:</span>
-                    <select 
-                      value={sortBy} 
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="rounded bg-card border border-border px-2 py-1 text-foreground outline-none text-xs"
-                    >
-                      <option value="relevance">Relevance</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                      <option value="rating">Rating</option>
-                      <option value="newest">New Releases</option>
-                    </select>
+                {/* Right Column: Information & Key Specs */}
+                <div className="flex flex-col">
+                  {/* Category breadcrumb path */}
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
+                    {selectedProduct.category}
+                  </span>
+
+                  {/* Title */}
+                  <h1 className="mt-2 text-2xl font-extrabold text-[#1A1A1A] md:text-3xl leading-tight">
+                    {selectedProduct.name}
+                  </h1>
+
+                  {/* Stars Rating & In stock badge */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex items-center gap-0.5 text-xs text-[#F5A623]">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4.5 w-4.5 ${
+                            i < Math.floor(selectedProduct.rating) ? "fill-[#F5A623] text-[#F5A623]" : "text-gray-200"
+                          }`}
+                        />
+                      ))}
+                      <span className="font-bold text-[#1A1A1A] ml-1">{selectedProduct.rating}</span>
+                      <span className="text-[#6B7280] text-xs ml-1">({selectedProduct.reviewsCount} Reviews)</span>
+                    </div>
+                    <div className="h-3 w-px bg-gray-200" />
+                    <span className="rounded-sm border border-[#1A6B3C]/30 bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-bold text-[#1A6B3C] uppercase tracking-wider">
+                      In Stock
+                    </span>
                   </div>
 
-                  <div className="flex items-center border border-border rounded-lg overflow-hidden bg-card">
-                    <button 
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2 transition ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => setViewMode("list")}
-                      className={`p-2 transition ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
+                  {/* Key Features Bullet List (styled like the second screenshot) */}
+                  <div className="mt-6">
+                    <h3 className="text-xs font-extrabold text-[#1A1A1A] uppercase tracking-wider">
+                      {selectedProduct.name} Key Features
+                    </h3>
+                    <ul className="mt-3 space-y-2 text-xs text-[#1A1A1A]">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>County Origin:</strong> {selectedProduct.county} County</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>Cultivator:</strong> {selectedProduct.brand} (Verified Seller)</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>Organic Certified:</strong> {selectedProduct.organic ? "Yes (Grade A Natural)" : "No (Standard Farm Yield)"}</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>Farming Style:</strong> Sourced directly from rich volcanic soils</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>Packaging:</strong> Recyclable eco-wash bundle</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#1A6B3C] font-bold">•</span>
+                        <span><strong>Stock Level:</strong> {selectedProduct.stock} units remaining</span>
+                      </li>
+                    </ul>
                   </div>
-                </div>
-              </div>
 
-              {/* Mobile Filter Button */}
-              <div className="mt-4 flex lg:hidden">
-                <button 
-                  onClick={() => setShowFiltersMobile(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-xs font-bold text-foreground"
-                >
-                  <SlidersHorizontal className="h-4 w-4 text-primary" /> Filter & Sort Options
-                </button>
-              </div>
-
-              {/* Products Grid / List */}
-              {filteredProducts.length === 0 ? (
-                <div className="mt-12 rounded-3xl border border-dashed border-border bg-card/50 py-24 text-center">
-                  <span className="text-4xl">🔎</span>
-                  <h3 className="mt-4 text-lg font-bold text-foreground">No products found</h3>
-                  <p className="mt-2 text-xs text-muted-foreground">Try adjusting your search criteria or resetting filters.</p>
-                </div>
-              ) : viewMode === "grid" ? (
-                <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {filteredProducts.map((p) => (
-                    <article 
-                      key={p.id} 
-                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-3 shadow-elegant transition hover:scale-[1.01] hover:border-primary/45 hover:shadow-elegant"
-                    >
-                      {/* Badge */}
-                      {p.badge && (
-                        <span className="absolute left-5 top-5 z-10 rounded bg-gold px-2.5 py-1 text-[8px] font-bold text-gold-foreground">
-                          {p.badge}
+                  {/* Pricing display in red */}
+                  <div className="mt-6 border-t border-[#F0F0F0] pt-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-sans text-2xl font-black text-red-600">
+                        KSh {selectedProduct.price.toLocaleString()}
+                      </span>
+                      {selectedProduct.originalPrice && (
+                        <span className="font-sans text-sm text-[#6B7280] line-through">
+                          KSh {selectedProduct.originalPrice.toLocaleString()}
                         </span>
                       )}
+                    </div>
+                    <span className="text-[10px] text-[#6B7280]">per {selectedProduct.unit}</span>
+                  </div>
 
-                      {/* Wishlist Heart */}
-                      <button 
-                        onClick={() => toggleWishlist(p.id)}
-                        className="absolute right-5 top-5 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-foreground shadow backdrop-blur transition hover:scale-110 active:scale-95"
+                  {/* Lock Exact Price click trigger */}
+                  <button
+                    onClick={() => toast.success(`Exact unit price is locked at KSh ${selectedProduct.price}!`)}
+                    className="mt-4 flex w-fit items-center gap-1.5 rounded-sm border border-[#E5E7EB] bg-white px-4 py-1.5 text-xs font-bold text-[#1A1A1A] hover:bg-[#FAFAF8]"
+                  >
+                    <span>Click to View Exact Price</span>
+                    <span>∨</span>
+                  </button>
+
+                  {/* Green alert corporate / care contact panel */}
+                  <div className="mt-6 rounded-sm bg-[#E8F5E9] p-4 text-xs text-[#1A6B3C] leading-relaxed border border-[#1A6B3C]/10">
+                    <ul className="space-y-1.5 list-disc list-inside">
+                      <li>Our Corporate customers can place bulk orders at <a href="mailto:corporates@mqulima.com" className="underline font-semibold">corporates@mqulima.com</a></li>
+                      <li>Call Mqulima Care for direct assistance at <strong className="font-bold">0745 063030</strong></li>
+                      <li><strong>NB:</strong> Freshness guarantee registration is verified upon delivery dispatch</li>
+                      <li><strong>Disclaimer:</strong> We cannot guarantee that the exact soil specs on this page are 100% correct, but all produce is verified organic.</li>
+                    </ul>
+                  </div>
+
+                  {/* Cart Action Buttons */}
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      onClick={(e) => handleAddToCart(selectedProduct, e)}
+                      className="flex-1 rounded-sm bg-[#1A6B3C] py-3 text-xs font-bold text-white uppercase tracking-wider text-center hover:bg-[#155430] transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={() => handleToggleWishlist(selectedProduct.id)}
+                      className="grid h-11 w-11 place-items-center rounded-sm border border-[#E5E7EB] bg-white text-[#6B7280] hover:text-red-500 transition-colors"
+                      aria-label="Wishlist"
+                    >
+                      <Heart className={`h-5 w-5 ${wishlist.has(selectedProduct.id) ? "fill-red-500 text-red-500" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          // STOREFRONT GRID VIEW
+          <motion.div
+            key="storefront-grid"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* 2. CROP SHOWCASE HERO CAROUSEL */}
+            <div className="container-px mx-auto max-w-7xl mt-8 mb-8 text-left">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1A6B3C]">Direct Farm Harvest</span>
+                  <h2 className="mt-1 text-lg font-black text-[#1A1A1A] md:text-xl tracking-tight uppercase">Featured Crops</h2>
+                </div>
+              </div>
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                setApi={setCarouselApi}
+                className="w-full relative"
+              >
+                <CarouselContent className="-ml-4">
+                  {cropSlides.map((item, idx) => (
+                    <CarouselItem key={idx} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                      <div 
+                        onClick={() => handleOrderCrop(item.name)}
+                        className="group relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white transition-all duration-300 hover:border-[#1A6B3C] hover:shadow-md cursor-pointer aspect-[4/5]"
                       >
-                        <Heart className={`h-4 w-4 ${wishlist.has(p.id) ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-foreground"}`} />
-                      </button>
-
-                      {/* Image Area */}
-                      <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
-                        <img 
-                          src={p.image} 
-                          alt={p.name} 
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
                         />
-                        
-                        {/* Quick View Button on Hover */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <button 
-                            onClick={() => setQuickViewProduct(p)}
-                            className="flex items-center gap-1.5 rounded-full bg-blue px-4 py-2 text-xs font-bold text-white shadow-blue/20 transition hover:scale-105 active:scale-95"
-                          >
-                            <Eye className="h-4 w-4" /> Quick View
-                          </button>
-                        </div>
                       </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-3 md:-left-12 h-10 w-10 rounded-full bg-white/90 hover:bg-white text-[#1A1A1A] border border-[#E5E7EB] shadow-md hover:scale-105 transition-all duration-200 z-10" />
+                <CarouselNext className="right-3 md:-right-12 h-10 w-10 rounded-full bg-white/90 hover:bg-white text-[#1A1A1A] border border-[#E5E7EB] shadow-md hover:scale-105 transition-all duration-200 z-10" />
+              </Carousel>
+            </div>
 
-                      {/* Product Metadata */}
-                      <div className="flex flex-1 flex-col pt-3">
-                        <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <span>{p.brand}</span>
-                          <span className="flex items-center gap-1 text-primary">
-                            <MapPin className="h-2.5 w-2.5" /> {p.county}
+            {/* 3. TRUST BAR */}
+            <section className="bg-white border-b border-[#F0F0F0] py-4">
+              <div className="container-px mx-auto max-w-7xl">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 items-center">
+                  
+                  <div className="flex items-center gap-3 justify-center md:justify-start">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#1A6B3C]/10 text-[#1A6B3C]">
+                      <Truck className="h-5 w-5" />
+                    </div>
+                    <div className="text-left leading-none">
+                      <div className="text-xs font-bold text-[#1A1A1A]">Fast Delivery</div>
+                      <span className="text-[10px] text-[#6B7280]">Same-day dispatch</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 justify-center md:border-l md:border-[#F0F0F0] md:pl-4">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#1A6B3C]/10 text-[#1A6B3C]">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div className="text-left leading-none">
+                      <div className="text-xs font-bold text-[#1A1A1A]">Quality Assured</div>
+                      <span className="text-[10px] text-[#6B7280]">100% verified produce</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 justify-center border-l border-[#F0F0F0] pl-4">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#1A6B3C]/10 text-[#1A6B3C]">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                      </svg>
+                    </div>
+                    <div className="text-left leading-none">
+                      <div className="text-xs font-bold text-[#1A1A1A]">Farm Direct</div>
+                      <span className="text-[10px] text-[#6B7280]">Fresh from growers</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 justify-center border-l border-[#F0F0F0] pl-4">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#1A6B3C]/10 text-[#1A6B3C]">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <div className="text-left leading-none">
+                      <div className="text-xs font-bold text-[#1A1A1A]">Secure Payment</div>
+                      <span className="text-[10px] text-[#6B7280]">M-Pesa integrated</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+            {/* 4. FLASH SALE SECTION */}
+            <section className="py-10 bg-white border-b border-[#F0F0F0]">
+              <div className="container-px mx-auto max-w-7xl">
+                <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-lg font-black tracking-tight text-[#1A1A1A] flex items-center gap-1">
+                      ⚡ Flash Sale
+                    </span>
+                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Ends in: <span className="font-mono text-red-700">{isMounted ? formatCountdown(timeLeft) : "00:00:00"}</span></span>
+                    </div>
+                  </div>
+                  <a
+                    href="#product-grid-section"
+                    className="text-xs font-bold text-[#1A6B3C] hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const gridSection = document.getElementById("product-grid-section");
+                      gridSection?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    See All Deals →
+                  </a>
+                </div>
+
+                <div className="mt-6 flex gap-4 overflow-x-auto pb-4 scrollbar-none">
+                  {flashSaleProducts.map((product) => {
+                    const discount = product.originalPrice
+                      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                      : 0;
+
+                    return (
+                      <div
+                        key={product.id}
+                        className="w-[260px] shrink-0 bg-white p-3 border border-[#E5E7EB] hover:border-[#1A6B3C] transition-all cursor-pointer text-left"
+                        onClick={() => handleSelectProduct(product)}
+                      >
+                        <div className="relative aspect-square overflow-hidden bg-white">
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="h-full w-full object-contain transition-transform duration-300 hover:scale-103"
+                            loading="lazy"
+                          />
+                          <span className="absolute left-2.5 top-2.5 rounded-sm bg-red-600 px-2 py-0.5 text-[9px] font-extrabold text-white">
+                            -{discount}% OFF
                           </span>
                         </div>
                         
-                        <h3 className="mt-1 line-clamp-2 text-sm font-bold text-foreground group-hover:text-primary transition">
-                          {p.name}
-                        </h3>
-
-                        {/* Ratings */}
-                        <div className="mt-2 flex items-center gap-1 text-xs text-yellow-500">
-                          <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-                          <span className="font-bold">{p.rating}</span>
-                          <span className="text-[10px] text-muted-foreground">(45 reviews)</span>
-                        </div>
-
-                        {/* Price row */}
-                        <div className="mt-auto pt-3">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-base font-bold font-mono text-primary">KES {p.price.toLocaleString()}</span>
-                            {p.originalPrice && (
-                              <span className="text-xs font-mono text-muted-foreground line-through">KES {p.originalPrice.toLocaleString()}</span>
-                            )}
+                        <div className="mt-3">
+                          <h3 className="line-clamp-1 text-sm font-bold text-[#1A1A1A] hover:text-[#1A6B3C]">
+                            {product.name}
+                          </h3>
+                          <span className="text-[10px] text-[#6B7280]">by {product.brand}</span>
+                          
+                          <div className="mt-2 flex flex-col">
+                            <span className="font-sans text-sm font-extrabold text-red-600">
+                              KSh {product.price.toLocaleString()}
+                            </span>
+                            <span className="font-sans text-[11px] text-[#6B7280] line-through mt-0.5">
+                              KSh {product.originalPrice?.toLocaleString()}
+                            </span>
                           </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">per unit</div>
 
-                          {/* Add to Cart button */}
-                          <button 
-                            onClick={() => handleAddToCart(p.name)}
-                            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-2.5 text-xs font-bold text-gold-foreground shadow-gold hover:scale-[1.02] active:scale-100 transition-all duration-300"
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBuyNow(product, e);
+                            }}
+                            className="mt-3.5 w-full rounded-sm border border-[#1A6B3C] bg-white py-1.5 text-center text-xs font-bold text-[#1A6B3C] hover:bg-[#1A6B3C] hover:text-white transition-colors"
                           >
-                            Add to Cart
+                            Buy Now
                           </button>
                         </div>
                       </div>
-                    </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* 5. FILTER + SORT BAR */}
+            <section
+              ref={filterBarRef}
+              className="sticky top-[64px] z-30 bg-white/95 backdrop-blur-md border-b border-[#F0F0F0] py-3"
+            >
+              <div className="container-px mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3 text-left">
+                <div className="text-xs text-[#6B7280]">
+                  Showing <strong className="text-[#1A1A1A]">{filteredProducts.length}</strong> products
+                  {selectedCategory !== "All" && (
+                    <span> in <strong className="text-[#1A6B3C]">{selectedCategory}</strong></span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-[#6B7280] flex items-center gap-1 mr-1">
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-[#1A6B3C]" /> Filter:
+                  </span>
+
+                  {/* Price Range Pill */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveFilterTab(activeFilterTab === "price" ? null : "price")}
+                      className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        priceRange < 3000 ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                      }`}
+                    >
+                      <span>Max Price: KES {priceRange.toLocaleString()}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {activeFilterTab === "price" && (
+                      <div className="absolute left-0 mt-2 z-50 w-56 rounded-2xl border border-[#F0F0F0] bg-white p-4 shadow-xl">
+                        <div className="flex items-center justify-between text-xs text-[#6B7280]">
+                          <span>Min: KES 0</span>
+                          <span>Max: KES 3,000</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="50"
+                          max="3000"
+                          step="50"
+                          value={priceRange}
+                          onChange={(e) => setPriceRange(Number(e.target.value))}
+                          className="w-full mt-2 accent-[#1A6B3C]"
+                        />
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            onClick={() => setActiveFilterTab(null)}
+                            className="rounded-lg bg-[#1A6B3C] px-3 py-1 text-[10px] font-bold text-white"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Location Pill */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveFilterTab(activeFilterTab === "county" ? null : "county")}
+                      className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        selectedCounty !== "All" ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                      }`}
+                    >
+                      <span>Location: {selectedCounty === "All" ? "All Counties" : selectedCounty}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {activeFilterTab === "county" && (
+                      <div className="absolute left-0 mt-2 z-50 w-48 rounded-2xl border border-[#F0F0F0] bg-white p-2 shadow-xl">
+                        <div className="max-h-48 overflow-y-auto">
+                          {shopCounties.map((c) => (
+                            <button
+                              key={c}
+                              onClick={() => {
+                                setSelectedCounty(c);
+                                setActiveFilterTab(null);
+                                setCurrentPage(1);
+                              }}
+                              className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium ${
+                                selectedCounty === c ? "bg-[#1A6B3C]/5 text-[#1A6B3C]" : "text-[#6B7280] hover:bg-[#FAFAF8]"
+                              }`}
+                            >
+                              <span>{c === "All" ? "All Counties" : c}</span>
+                              {selectedCounty === c && <Check className="h-3.5 w-3.5" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rating Pill */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveFilterTab(activeFilterTab === "rating" ? null : "rating")}
+                      className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        minRating > 0 ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                      }`}
+                    >
+                      <span>Rating: {minRating === 0 ? "All" : `${minRating} ★+`}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {activeFilterTab === "rating" && (
+                      <div className="absolute left-0 mt-2 z-50 w-40 rounded-2xl border border-[#F0F0F0] bg-white p-2 shadow-xl">
+                        {[0, 4.5, 4.8].map((stars) => (
+                          <button
+                            key={stars}
+                            onClick={() => {
+                              setMinRating(stars);
+                              setActiveFilterTab(null);
+                              setCurrentPage(1);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium ${
+                              minRating === stars ? "bg-[#1A6B3C]/5 text-[#1A6B3C]" : "text-[#6B7280] hover:bg-[#FAFAF8]"
+                            }`}
+                          >
+                            <span>{stars === 0 ? "All Ratings" : `${stars} ★ & Above`}</span>
+                            {minRating === stars && <Check className="h-3.5 w-3.5" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Organic Switch Pill */}
+                  <button
+                    onClick={() => {
+                      setOrganicOnly(!organicOnly);
+                      setCurrentPage(1);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      organicOnly ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                    }`}
+                  >
+                    🌿 Organic
+                  </button>
+
+                  {/* Verified Seller Switch Pill */}
+                  <button
+                    onClick={() => {
+                      setVerifiedOnly(!verifiedOnly);
+                      setCurrentPage(1);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      verifiedOnly ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                    }`}
+                  >
+                    ✅ Verified Sellers
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="rounded-lg border border-[#F0F0F0] bg-white px-3 py-2 text-xs font-semibold text-[#1A1A1A] outline-none transition hover:border-[#1A6B3C]/20"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                    <option value="newest">Newest Releases</option>
+                  </select>
+
+                  {/* Grid/List Toggle */}
+                  <div className="flex items-center border border-[#F0F0F0] rounded-lg bg-white p-0.5">
+                    <button
+                      onClick={() => setLayout("grid")}
+                      className={`p-1.5 rounded-md transition ${layout === "grid" ? "bg-[#1A6B3C] text-white" : "text-[#6B7280] hover:text-[#1A1A1A]"}`}
+                      aria-label="Grid view"
+                    >
+                      <Grid className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setLayout("list")}
+                      className={`p-1.5 rounded-md transition ${layout === "list" ? "bg-[#1A6B3C] text-white" : "text-[#6B7280] hover:text-[#1A1A1A]"}`}
+                      aria-label="List view"
+                    >
+                      <List className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={resetFilters}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1A6B3C]/5 text-[#1A6B3C] hover:bg-[#1A6B3C]/10 transition-colors"
+                      aria-label="Clear all filters"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* ACTIVE REMOVABLE FILTER CHIPS */}
+            {activeFiltersCount > 0 && (
+              <section className="container-px mx-auto max-w-7xl pt-4">
+                <div className="flex flex-wrap items-center gap-1.5 text-left">
+                  <span className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mr-1">Active filters:</span>
+                  
+                  {priceRange < 3000 && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
+                      <span>Price &lt; KES {priceRange}</span>
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceRange(3000)} />
+                    </span>
+                  )}
+
+                  {selectedCounty !== "All" && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
+                      <span>County: {selectedCounty}</span>
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCounty("All")} />
+                    </span>
+                  )}
+
+                  {minRating > 0 && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
+                      <span>Rating: {minRating}★+</span>
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setMinRating(0)} />
+                    </span>
+                  )}
+
+                  {organicOnly && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
+                      <span>Organic</span>
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setOrganicOnly(false)} />
+                    </span>
+                  )}
+
+                  {verifiedOnly && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
+                      <span>Verified Seller</span>
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setVerifiedOnly(false)} />
+                    </span>
+                  )}
+
+                  <button onClick={resetFilters} className="text-xs font-bold text-[#6B7280] hover:text-[#1A6B3C] ml-1">
+                    Clear All
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {/* 6. MAIN PRODUCT GRID */}
+            <section id="product-grid-section" className="container-px mx-auto max-w-7xl py-8">
+              {isLoading ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, idx) => (
+                    <div key={idx} className="bg-white p-3 border border-[#E5E7EB] animate-pulse">
+                      <div className="aspect-square w-full bg-[#F0F0F0] shimmer" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-5/6 rounded bg-[#F0F0F0]" />
+                        <div className="h-3 w-1/3 rounded bg-[#F0F0F0]" />
+                        <div className="h-4 w-2/3 rounded bg-[#F0F0F0] mt-4" />
+                        <div className="h-8 w-full rounded bg-[#F0F0F0] mt-4" />
+                      </div>
+                    </div>
                   ))}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-[#F0F0F0] bg-white py-20 text-center">
+                  <span className="text-4xl">🔎</span>
+                  <h3 className="mt-4 text-base font-extrabold text-[#1A1A1A]">No products match your criteria</h3>
+                  <p className="mt-2 text-xs text-[#6B7280]">Try adjusting search keywords, location filters, or reset filters.</p>
+                  <button
+                    onClick={resetFilters}
+                    className="mt-6 rounded-lg bg-[#1A6B3C] px-5 py-2 text-xs font-bold text-white hover:bg-[#155430]"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
               ) : (
-                // List View Mode
-                <div className="mt-8 space-y-4">
-                  {filteredProducts.map((p) => (
-                    <article 
-                      key={p.id} 
-                      className="group flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 sm:flex-row shadow-elegant transition hover:border-primary/45"
-                    >
-                      <div className="relative aspect-square w-full shrink-0 sm:w-44 overflow-hidden rounded-xl bg-secondary">
-                        <img src={p.image} alt={p.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-                      </div>
-                      <div className="flex flex-1 flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            <span>{p.brand} · {p.category}</span>
-                            <span className="flex items-center gap-1 text-primary">
-                              <MapPin className="h-3 w-3" /> {p.county} County
-                            </span>
-                          </div>
-                          <h3 className="mt-1 text-base font-bold text-foreground group-hover:text-primary transition">{p.name}</h3>
-                          <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{p.description}</p>
-                        </div>
-                        
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-lg font-bold font-mono text-primary">KES {p.price.toLocaleString()}</span>
-                            {p.originalPrice && (
-                              <span className="text-xs font-mono text-muted-foreground line-through">KES {p.originalPrice.toLocaleString()}</span>
-                            )}
-                          </div>
+                <div>
+                  <div className={layout === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "flex flex-col gap-4"}>
+                    {paginatedProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        layout={layout}
+                        isWishlisted={wishlist.has(product.id)}
+                        onAddToCart={handleAddToCart}
+                        onToggleWishlist={handleToggleWishlist}
+                        onSelectProduct={handleSelectProduct}
+                        onQuickView={setQuickViewProduct}
+                        onBuyNow={handleBuyNow}
+                      />
+                    ))}
+                  </div>
 
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => setQuickViewProduct(p)}
-                              className="rounded-lg border border-border bg-background p-2 text-muted-foreground hover:text-foreground transition"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleAddToCart(p.name)}
-                              className="rounded-xl bg-gold px-6 py-2.5 text-xs font-bold text-gold-foreground shadow-gold"
-                            >
-                              Add to Cart
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+                  {/* Shopify-Style Numbered Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-12 flex items-center justify-center gap-1.5 border-t border-[#F0F0F0] pt-6">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="grid h-9 w-9 place-items-center rounded-lg border border-[#F0F0F0] bg-white text-[#6B7280] transition hover:border-[#1A6B3C]/20 hover:text-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronLeft className="h-4.5 w-4.5" />
+                      </button>
+
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const pageNum = idx + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`h-9 w-9 rounded-lg text-xs font-bold transition ${
+                              currentPage === pageNum
+                                ? "bg-[#1A6B3C] text-white"
+                                : "border border-[#F0F0F0] bg-white text-[#6B7280] hover:border-[#1A6B3C]/20"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="grid h-9 w-9 place-items-center rounded-lg border border-[#F0F0F0] bg-white text-[#6B7280] transition hover:border-[#1A6B3C]/20 hover:text-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronRight className="h-4.5 w-4.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
+            </section>
 
-            </main>
-          </div>
-        </section>
+            {/* 7. FEATURED CATEGORIES BANNER */}
+            <section className="py-12 bg-white border-y border-[#F0F0F0]">
+              <div className="container-px mx-auto max-w-7xl">
+                <div className="text-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#1A6B3C]">Visual Showcases</span>
+                  <h2 className="mt-2 text-2xl font-black text-[#1A1A1A] md:text-3xl tracking-tight">Browse Premium Showrooms</h2>
+                </div>
 
-        {/* 4. SPONSORED / FEATURED SELLERS */}
-        <section className="border-t border-border/60 bg-secondary/20 py-16">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="text-center">
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">Verified Supply Chain</span>
-              <h2 className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">Trusted Sellers Near You</h2>
-            </div>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {trustedSellers.map((seller, idx) => (
-                <div 
-                  key={idx} 
-                  className="rounded-2xl border border-border bg-card p-5 text-center shadow-elegant transition hover:border-primary/30"
-                >
-                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-background text-xl border border-border">
-                    {seller.avatar}
-                  </div>
-                  <h3 className="mt-3 text-sm font-bold text-foreground">{seller.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">{seller.location}</p>
-                  <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-yellow-500">
-                    <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-                    <span className="font-bold">{seller.rating}</span>
-                    <span className="text-muted-foreground">· {seller.sales}</span>
-                  </div>
-                  <button 
-                    onClick={() => toast.info(`Visiting store for ${seller.name}...`)}
-                    className="mt-5 w-full rounded-xl bg-background border border-border py-2 text-xs font-bold text-foreground hover:border-primary transition"
+                <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div
+                    onClick={() => handleCategoryChange("Vegetables")}
+                    className="group relative h-48 cursor-pointer overflow-hidden rounded-2xl border border-transparent transition-all duration-300 hover:border-[#F5A623]"
                   >
-                    Visit Store
-                  </button>
+                    <img
+                      src="https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=600&auto=format&fit=crop"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      alt="Fresh Vegetables"
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute bottom-5 left-5 text-left">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F5A623]">Organic Farm Direct</span>
+                      <h3 className="text-base font-black text-white mt-1">Fresh Vegetables</h3>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => handleCategoryChange("Fruits")}
+                    className="group relative h-48 cursor-pointer overflow-hidden rounded-2xl border border-transparent transition-all duration-300 hover:border-[#F5A623]"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?q=80&w=600&auto=format&fit=crop"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      alt="Organic Fruits"
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute bottom-5 left-5 text-left">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F5A623]">Hass & Local Varieties</span>
+                      <h3 className="text-base font-black text-white mt-1">Organic Fruits</h3>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => handleCategoryChange("Farm Tools")}
+                    className="group relative h-48 cursor-pointer overflow-hidden rounded-2xl border border-transparent transition-all duration-300 hover:border-[#F5A623]"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=600&auto=format&fit=crop"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      alt="Farm Equipment"
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute bottom-5 left-5 text-left">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F5A623]">Heavy-Duty & Hand Tools</span>
+                      <h3 className="text-base font-black text-white mt-1">Farm Equipment</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 8. RECENTLY VIEWED (Personalized Strip) */}
+      {recentlyViewed.length > 0 && (
+        <section className="py-10 bg-[#FAFAF8] border-b border-[#F0F0F0]">
+          <div className="container-px mx-auto max-w-7xl text-left">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#1A1A1A] mb-5">Recently Viewed</h2>
+            
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+              {recentlyViewed.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => handleSelectProduct(product)}
+                  className="w-[180px] shrink-0 bg-white p-2.5 border border-[#E5E7EB] hover:border-[#1A6B3C] cursor-pointer shadow-sm transition-all text-left"
+                >
+                  <div className="aspect-square w-full overflow-hidden bg-white">
+                    <img src={product.image} className="h-full w-full object-contain" alt={product.name} />
+                  </div>
+                  <h3 className="line-clamp-1 text-xs font-bold text-[#1A1A1A] mt-2">{product.name}</h3>
+                  <div className="font-sans text-xs font-extrabold text-red-600 mt-1">KSh {product.price.toLocaleString()}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
+      )}
 
-        {/* 5. CATEGORY SHOWCASE (Bento Grid Layout) */}
-        <section className="border-t border-border/60 py-16">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="text-center">
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">Interactive Map</span>
-              <h2 className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">Premium Seed & Input Showcases</h2>
-            </div>
-
-            {/* Bento Grid */}
-            <div className="mt-10 grid gap-4 grid-cols-1 md:grid-cols-3">
-              
-              {/* Big Bento Card */}
-              <div 
-                onClick={() => setSelectedCat("Seeds")}
-                className="relative h-64 md:h-auto md:row-span-2 rounded-3xl border border-border bg-cover bg-center overflow-hidden cursor-pointer group shadow-elegant"
-                style={{ backgroundImage: `url(${p2Img})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition duration-300 group-hover:from-black/90" />
-                <div className="absolute bottom-6 left-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gold">🌱 Premium Seeds</span>
-                  <h3 className="text-lg font-black text-white mt-1">Hybrid Seed Varieties</h3>
-                  <p className="text-xs text-white/70 mt-1">Certified drought-resistant yields.</p>
-                </div>
-              </div>
-
-              {/* Medium Bento Card 1 */}
-              <div 
-                onClick={() => setSelectedCat("Fertilizers")}
-                className="relative h-48 rounded-3xl border border-border bg-cover bg-center overflow-hidden cursor-pointer group shadow-elegant"
-                style={{ backgroundImage: `url(${p5Img})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gold">🧪 Top Dressing</span>
-                  <h3 className="text-sm font-black text-white mt-1">Soil Nutrition & Fertilizer</h3>
-                </div>
-              </div>
-
-              {/* Medium Bento Card 2 */}
-              <div 
-                onClick={() => setSelectedCat("Equipment")}
-                className="relative h-48 rounded-3xl border border-border bg-cover bg-center overflow-hidden cursor-pointer group shadow-elegant"
-                style={{ backgroundImage: `url(${p6Img})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gold">🚜 Mechanized farming</span>
-                  <h3 className="text-sm font-black text-white mt-1">Equipment & Garden Tools</h3>
-                </div>
-              </div>
-
-              {/* Small Bento Cards */}
-              <div 
-                onClick={() => setSelectedCat("Irrigation")}
-                className="relative h-48 md:col-span-2 rounded-3xl border border-border bg-card p-6 flex flex-col justify-between cursor-pointer hover:border-primary/40 transition shadow-elegant group"
-              >
-                <div className="flex h-10 w-10 place-items-center justify-center rounded-xl bg-secondary text-lg border border-border">💧</div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-primary">Irrigation Systems</span>
-                  <h3 className="text-base font-black text-foreground mt-1">Drip Kits & Solar Pumps</h3>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* 6. TRUST BADGES STRIP */}
-        <section className="border-t border-border/60 bg-secondary/10 py-10">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="grid gap-6 grid-cols-2 md:grid-cols-5 text-center">
-              <div className="flex flex-col items-center">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary"><ShieldCheck className="h-5 w-5 animate-pulse" /></div>
-                <h4 className="mt-2 text-xs font-bold text-foreground">🔒 Secure M-Pesa</h4>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary"><Truck className="h-5 w-5" /></div>
-                <h4 className="mt-2 text-xs font-bold text-foreground">🚚 Nationwide Delivery</h4>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary"><CheckCircle2 className="h-5 w-5" /></div>
-                <h4 className="mt-2 text-xs font-bold text-foreground">✅ Verified Sellers Only</h4>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary"><RotateCcw className="h-5 w-5" /></div>
-                <h4 className="mt-2 text-xs font-bold text-foreground">🔄 Easy Returns</h4>
-              </div>
-              <div className="flex flex-col items-center col-span-2 md:col-span-1">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary"><PhoneCall className="h-5 w-5" /></div>
-                <h4 className="mt-2 text-xs font-bold text-foreground">📞 24/7 Farmer Support</h4>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. NEWSLETTER / DEALS SIGNUP */}
-        <section className="border-t border-border/60 py-16">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="rounded-3xl border border-border bg-card p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-elegant">
-              <div className="max-w-md text-left">
-                <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">Get Farm Deals Before Anyone Else</h2>
-                <p className="mt-2 text-xs text-muted-foreground">Subscribe to get weekly discounts, certified crop calendars, and local market price alerts.</p>
-              </div>
-              <form onSubmit={handleNewsletterSubmit} className="flex w-full max-w-md gap-2">
-                <input 
-                  type="email" 
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="Enter your email address" 
-                  className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
-                  required
-                />
-                <button 
-                  type="submit" 
-                  className="rounded-xl bg-gold px-6 py-3 text-xs font-bold text-gold-foreground shadow-gold hover:scale-[1.02] transition"
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div>
-          </div>
-        </section>
-
-        {/* QUICK VIEW MODAL */}
-        <AnimatePresence>
-          {quickViewProduct && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="relative w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-elegant md:p-8"
-              >
-                <button 
-                  onClick={() => setQuickViewProduct(null)}
-                  className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-
-                <div className="grid gap-6 md:grid-cols-2 text-left">
-                  <div className="aspect-square overflow-hidden rounded-2xl bg-secondary">
-                    <img src={quickViewProduct.image} alt={quickViewProduct.name} className="h-full w-full object-cover" />
-                  </div>
-                  
-                  <div className="flex flex-col justify-between">
-                    <div>
-                      {quickViewProduct.badge && (
-                        <span className="rounded bg-gold px-2.5 py-1 text-[8px] font-bold text-gold-foreground">
-                          {quickViewProduct.badge}
-                        </span>
-                      )}
-                      <h3 className="mt-3 text-xl font-bold text-foreground">{quickViewProduct.name}</h3>
-                      <div className="mt-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">{quickViewProduct.brand}</div>
-                      
-                      <p className="mt-4 text-xs text-muted-foreground leading-relaxed">{quickViewProduct.description}</p>
-                      
-                      <div className="mt-4 space-y-1 text-xs text-foreground/80">
-                        <div>County Origin: <span className="font-bold text-primary">{quickViewProduct.county}</span></div>
-                        <div>Stock Level: <span className="font-bold text-primary">{quickViewProduct.stock} units remaining</span></div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 border-t border-border pt-4">
-                      <div className="text-2xl font-bold font-mono text-primary">KES {quickViewProduct.price.toLocaleString()}</div>
-                      <button 
-                        onClick={() => {
-                          handleAddToCart(quickViewProduct.name);
-                          setQuickViewProduct(null);
-                        }}
-                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3 text-xs font-bold text-gold-foreground shadow-gold"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* MOBILE COLLAPSIBLE FILTERS DRAWER */}
-        <AnimatePresence>
-          {showFiltersMobile && (
-            <div className="fixed inset-0 z-50 flex items-end bg-black/60 lg:hidden">
-              <motion.div 
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25 }}
-                className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border bg-card p-6 shadow-elegant text-left"
-              >
-                <div className="flex items-center justify-between border-b border-border pb-4">
-                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">Filter & Sort Options</h3>
-                  <button onClick={() => setShowFiltersMobile(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-
-                {/* Price range */}
-                <div className="mt-6">
-                  <label className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Max Price (KES)</label>
-                  <div className="mt-2 flex items-center justify-between text-xs font-mono text-foreground">
-                    <span>0</span>
-                    <span className="text-primary font-bold">KES {priceRange.toLocaleString()}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="400" 
-                    max="30000" 
-                    step="200"
-                    value={priceRange} 
-                    onChange={(e) => setPriceRange(Number(e.target.value))}
-                    className="mt-3 w-full accent-primary" 
-                  />
-                </div>
-
-                {/* Location */}
-                <div className="mt-6">
-                  <label className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">County Location</label>
-                  <select 
-                    value={selectedCounty} 
-                    onChange={(e) => setSelectedCounty(e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none"
-                  >
-                    {countiesList.map(c => (
-                      <option key={c} value={c}>{c === "All" ? "All Counties" : c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Toggles */}
-                <div className="mt-6 space-y-3">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/80">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyOrganic} 
-                      onChange={(e) => setOnlyOrganic(e.target.checked)}
-                      className="h-4 w-4 rounded accent-primary bg-background border-border" 
-                    />
-                    <span>🌱 Certified Organic</span>
-                  </label>
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/80">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyVerified} 
-                      onChange={(e) => setOnlyVerified(e.target.checked)}
-                      className="h-4 w-4 rounded accent-primary bg-background border-border" 
-                    />
-                    <span>✅ Verified Sellers</span>
-                  </label>
-                </div>
-
-                <button 
-                  onClick={() => setShowFiltersMobile(false)}
-                  className="mt-8 w-full rounded-xl bg-gold py-3 text-xs font-bold text-gold-foreground shadow-gold"
-                >
-                  Apply Filters
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* FLOAT SCROLL TO TOP */}
-        <AnimatePresence>
-          {showScrollTop && (
-            <button 
-              onClick={scrollToTop}
-              className="fixed bottom-24 right-6 z-40 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 active:scale-95 transition"
-              aria-label="Scroll to top"
-            >
-              <ChevronUp className="h-5 w-5" />
-            </button>
-          )}
-        </AnimatePresence>
-
+      {/* 10. QUICK VIEW MODAL */}
+      <AnimatePresence>
+        {quickViewProduct && (
+          <QuickViewModal
+            product={quickViewProduct}
+            onClose={() => setQuickViewProduct(null)}
+            onAddToCart={handleAddToCart}
+          />
+        )}
+      </AnimatePresence>
       </div>
     </AppLayout>
   );

@@ -1,51 +1,52 @@
-const CACHE_NAME = 'mqulima-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png'
-];
+const CACHE_NAME = "mqulima-cache-v1";
+const ASSETS_TO_CACHE = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 // Install Event
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(ASSETS_TO_CACHE);
+      })
+      .then(() => self.skipWaiting()),
   );
 });
 
 // Activate Event
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cache) => {
+            if (cache !== CACHE_NAME) {
+              return caches.delete(cache);
+            }
+          }),
+        );
+      })
+      .then(() => self.clients.claim()),
   );
 });
 
 // Fetch Event
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // Bypass intercepting in local development mode to avoid Vite HMR / hot-reload conflicts
-  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+  if (self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1") {
     return;
   }
 
   // Avoid intercepting non-GET requests or non-http/https protocols
-  if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
+  if (event.request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
   // Network-First for HTML navigation/page requests (so they get fresh content when online, fallback to cache when offline)
-  if (event.request.mode === 'navigate') {
+  if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -65,9 +66,9 @@ self.addEventListener('fetch', (event) => {
               return cachedResponse;
             }
             // Fallback for navigation requests if nothing is cached
-            return caches.match('/');
+            return caches.match("/");
           });
-        })
+        }),
     );
     return;
   }
@@ -91,69 +92,67 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch((error) => {
-          console.warn('Service worker fetch failed for asset:', event.request.url, error);
+          console.warn("Service worker fetch failed for asset:", event.request.url, error);
           // Return a 503 response to avoid uncaught promise rejections and HTML MIME type errors for assets
-          return new Response('Asset not available offline', {
+          return new Response("Asset not available offline", {
             status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain' }
+            statusText: "Service Unavailable",
+            headers: { "Content-Type": "text/plain" },
           });
         });
-    })
+    }),
   );
 });
 
 // Push notification event listener
-self.addEventListener('push', (event) => {
-  let data = { title: 'Mqulima Alert', body: 'New farming updates are available for your area!' };
-  
+self.addEventListener("push", (event) => {
+  let data = { title: "Mqulima Alert", body: "New farming updates are available for your area!" };
+
   if (event.data) {
     try {
       data = event.data.json();
     } catch (e) {
-      data = { title: 'Mqulima Alert', body: event.data.text() };
+      data = { title: "Mqulima Alert", body: event.data.text() };
     }
   }
 
   const options = {
     body: data.body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: '1'
+      primaryKey: "1",
     },
     actions: [
-      { action: 'explore', title: 'Open Mqulima' },
-      { action: 'close', title: 'Close' }
-    ]
+      { action: "explore", title: "Open Mqulima" },
+      { action: "close", title: "Close" },
+    ],
   };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Notification click event listener
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  if (event.action === 'close') {
+  if (event.action === "close") {
     return;
   }
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        if (client.url === '/' && 'focus' in client) {
+        if (client.url === "/" && "focus" in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow("/");
       }
-    })
+    }),
   );
 });
