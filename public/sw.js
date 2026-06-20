@@ -39,8 +39,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First for HTML/page requests (so they get fresh content when online, fallback to cache when offline)
-  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || !url.pathname.includes('.')) {
+  // Network-First for HTML navigation/page requests (so they get fresh content when online, fallback to cache when offline)
+  if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -74,16 +74,26 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      return fetch(event.request).then((response) => {
-        // Cache static assets dynamically if they are from our origin
-        if (response.status === 200 && url.origin === self.location.origin) {
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseCopy);
+      return fetch(event.request)
+        .then((response) => {
+          // Cache static assets dynamically if they are from our origin
+          if (response.status === 200 && url.origin === self.location.origin) {
+            const responseCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseCopy);
+            });
+          }
+          return response;
+        })
+        .catch((error) => {
+          console.warn('Service worker fetch failed for asset:', event.request.url, error);
+          // Return a 503 response to avoid uncaught promise rejections and HTML MIME type errors for assets
+          return new Response('Asset not available offline', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' }
           });
-        }
-        return response;
-      });
+        });
     })
   );
 });
