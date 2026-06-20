@@ -77,6 +77,22 @@ export function usePWA() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
+    const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+    if (isDev) {
+      // In development mode, unregister any active service worker to avoid conflicts with Vite's HMR
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister().then((success) => {
+            if (success) {
+              console.log("Development mode: Unregistered active Service Worker");
+            }
+          });
+        }
+      });
+      return;
+    }
+
     const registerSW = () => {
       navigator.serviceWorker
         .register("/sw.js")

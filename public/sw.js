@@ -34,6 +34,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Bypass intercepting in local development mode to avoid Vite HMR / hot-reload conflicts
+  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+    return;
+  }
+
   // Avoid intercepting non-GET requests or non-http/https protocols
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
