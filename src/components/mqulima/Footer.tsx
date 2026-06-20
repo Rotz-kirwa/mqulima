@@ -1,12 +1,34 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import { MqulimaLogo } from "./MqulimaLogo";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    toast.success("Subscribed successfully!", {
+      description: "You will receive our weekly farming tips and agrovet offers.",
+    });
+    setEmail("");
+  };
+
+  const socialLinks = [
+    { Icon: Facebook, url: "https://facebook.com/mqulimake", label: "Facebook" },
+    { Icon: Instagram, url: "https://instagram.com/mqulima", label: "Instagram" },
+    { Icon: Twitter, url: "https://twitter.com/mqulimake", label: "Twitter" },
+  ];
+
   return (
-    <footer className="mt-24 bg-forest text-forest-foreground">
+    <footer className="mt-24 bg-[#1A3D2F] text-white/80">
       <div className="container-px mx-auto max-w-7xl py-16">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5 text-left">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
               <MqulimaLogo size={52} />
@@ -14,27 +36,53 @@ export function Footer() {
                 <div className="font-serif text-[22px] font-normal tracking-[0.08em] uppercase">
                   MQULIMA
                 </div>
-                <div className="text-[10px] font-medium tracking-normal text-gold lowercase mt-0.5 italic">
+                <div className="text-[10px] font-medium tracking-normal text-[#F5A623] lowercase mt-0.5 italic">
                   ...taking you first class
                 </div>
               </div>
             </div>
-            <p className="mt-4 max-w-sm text-sm text-forest-foreground/70">
-              Kenya's #1 digital farming ecosystem. From seed to sale — agrovet shop, expert
-              services and AI intelligence built for every farmer, every county.
+            <p className="mt-4 max-w-sm text-xs leading-relaxed text-white/60">
+              Kenya's #1 digital farming ecosystem. From seed to sale — agrovet shop, expert services and AI intelligence built for every farmer, every county.
             </p>
+            
+            {/* Social handles with real URLs */}
             <div className="mt-6 flex gap-3">
-              {[Facebook, Instagram, Twitter].map((Icon, i) => (
+              {socialLinks.map(({ Icon, url, label }) => (
                 <a
-                  key={i}
-                  href="#"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-blue hover:text-blue-foreground"
-                  aria-label="social"
+                  key={label}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-[#F5A623] hover:text-white"
+                  aria-label={label}
                 >
                   <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
+
+            {/* Newsletter form */}
+            <form onSubmit={handleSubscribe} className="mt-8 max-w-sm">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#F5A623] mb-2">
+                Subscribe to our newsletter
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 rounded-[8px] bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-[#F5A623] transition-all"
+                />
+                <button
+                  type="submit"
+                  className="rounded-[8px] bg-[#F5A623] hover:bg-[#E0951F] px-4 py-2.5 text-xs font-bold text-white transition-colors cursor-pointer"
+                >
+                  Subscribe
+                </button>
+              </div>
+            </form>
           </div>
 
           <FooterCol
@@ -57,22 +105,22 @@ export function Footer() {
             ]}
           />
           <div>
-            <h4 className="text-sm font-bold uppercase tracking-wider text-gold">Reach Us</h4>
-            <ul className="mt-4 space-y-3 text-sm text-forest-foreground/80">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-[#F5A623]">Reach Us</h4>
+            <ul className="mt-4 space-y-3 text-xs text-white/70">
               <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 text-gold" /> Eldoret HQ, Uasin Gishu
+                <MapPin className="mt-0.5 h-4 w-4 text-[#F5A623]" /> Eldoret HQ, Uasin Gishu
               </li>
               <li className="flex items-start gap-2">
-                <Phone className="mt-0.5 h-4 w-4 text-gold" /> +254 711 222 333
+                <Phone className="mt-0.5 h-4 w-4 text-[#F5A623]" /> +254 711 222 333
               </li>
               <li className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-4 w-4 text-gold" /> hello@mqulima.co.ke
+                <Mail className="mt-0.5 h-4 w-4 text-[#F5A623]" /> hello@mqulima.co.ke
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-xs text-forest-foreground/60 md:flex-row md:items-center">
+        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-[11px] text-white/40 md:flex-row md:items-center">
           <p>© 2026 Mqulima Kenya Ltd. All rights reserved.</p>
           <p>Made in Eldoret with ❤️ for African farmers.</p>
         </div>
@@ -84,11 +132,11 @@ export function Footer() {
 function FooterCol({ title, links }: { title: string; links: { to: string; label: string }[] }) {
   return (
     <div>
-      <h4 className="text-sm font-bold uppercase tracking-wider text-gold">{title}</h4>
-      <ul className="mt-4 space-y-2 text-sm">
+      <h4 className="text-sm font-bold uppercase tracking-wider text-[#F5A623]">{title}</h4>
+      <ul className="mt-4 space-y-2 text-xs">
         {links.map((l) => (
           <li key={l.label}>
-            <Link to={l.to} className="text-forest-foreground/80 transition hover:text-gold">
+            <Link to={l.to} className="text-white/70 transition hover:text-[#F5A623]">
               {l.label}
             </Link>
           </li>

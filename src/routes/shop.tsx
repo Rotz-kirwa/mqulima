@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -132,6 +132,7 @@ type CartItem = {
 };
 
 function ShopPage() {
+  const navigate = useNavigate();
   // Navigation & Cart state from global context
   const { cartItems, cartOpen, setCartOpen, addToCart, buyNow } = useCart();
   const [cartBump, setCartBump] = useState(false);
@@ -146,7 +147,7 @@ function ShopPage() {
 
   // Search & Filter state
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [priceRange, setPriceRange] = useState<number>(3000);
+  const [priceRange, setPriceRange] = useState<number>(10000);
   const [selectedCounty, setSelectedCounty] = useState("All");
   const [minRating, setMinRating] = useState<number>(0);
   const [organicOnly, setOrganicOnly] = useState(false);
@@ -194,6 +195,22 @@ function ShopPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Load localStorage data on mount
+  useEffect(() => {
+    try {
+      const storedViewed = localStorage.getItem("mqulima_recently_viewed");
+      if (storedViewed) {
+        setRecentlyViewed(JSON.parse(storedViewed));
+      }
+      const storedWishlist = localStorage.getItem("mqulima_wishlist");
+      if (storedWishlist) {
+        setWishlist(new Set(JSON.parse(storedWishlist)));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   // Pagination / Infinite scrolling state
   const [visibleCount, setVisibleCount] = useState(8);
   const observerRef = useRef<HTMLDivElement>(null);
@@ -228,19 +245,22 @@ function ShopPage() {
   // Flash Sale countdown timer
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const [saleEnded, setSaleEnded] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      return Math.floor((midnight.getTime() - now.getTime()) / 1000);
-    };
-    setTimeLeft(calculateTimeLeft());
+    const targetTime = Date.now() + 6 * 60 * 60 * 1000;
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    const updateTimer = () => {
+      const diff = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
+      setTimeLeft(diff);
+      if (diff <= 0) {
+        setSaleEnded(true);
+      }
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -354,27 +374,41 @@ function ShopPage() {
         next.add(id);
         toast.success("Added to wishlist!");
       }
+      try {
+        localStorage.setItem("mqulima_wishlist", JSON.stringify(Array.from(next)));
+      } catch (e) {
+        console.error(e);
+      }
       return next;
     });
   };
 
   // Select product for full page details
   const handleSelectProduct = (product: ShopProduct) => {
-    setSelectedProduct(product);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    navigate({
+      to: "/shop/$productId",
+      params: { productId: String(product.id) }
+    });
     
     // Add to recently viewed if not already in it
     setRecentlyViewed((prev) => {
       const filtered = prev.filter((p) => p.id !== product.id);
-      return [product, ...filtered].slice(0, 5);
+      const updated = [product, ...filtered].slice(0, 5);
+      try {
+        localStorage.setItem("mqulima_recently_viewed", JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
     });
   };
 
   // Reset all filters
   const resetFilters = () => {
+    setSearchInput("");
     setSearchQuery("");
     setSelectedCategory("All");
-    setPriceRange(3000);
+    setPriceRange(10000);
     setSelectedCounty("All");
     setMinRating(0);
     setOrganicOnly(false);
@@ -387,7 +421,7 @@ function ShopPage() {
   // Check active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (priceRange < 3000) count++;
+    if (priceRange < 10000) count++;
     if (selectedCounty !== "All") count++;
     if (minRating > 0) count++;
     if (organicOnly) count++;
@@ -717,86 +751,90 @@ function ShopPage() {
             </section>
 
             {/* 4. FLASH SALE SECTION */}
-            <section className="py-10 bg-white border-b border-[#F0F0F0]">
-              <div className="container-px mx-auto max-w-7xl">
-                <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-lg font-black tracking-tight text-[#1A1A1A] flex items-center gap-1">
-                      ⚡ Flash Sale
-                    </span>
-                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>Ends in: <span className="font-mono text-red-700">{isMounted ? formatCountdown(timeLeft) : "00:00:00"}</span></span>
+            {!saleEnded && (
+              <section className="py-10 bg-white border-b border-[#F0F0F0]">
+                <div className="container-px mx-auto max-w-7xl">
+                  <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-lg font-black tracking-tight text-[#1A1A1A] flex items-center gap-1">
+                        ⚡ Flash Sale
+                      </span>
+                      <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>Ends in: <span className="font-mono text-red-700">{isMounted ? formatCountdown(timeLeft) : "00:00:00"}</span></span>
+                      </div>
                     </div>
+                    <a
+                      href="#product-grid-section"
+                      className="text-xs font-bold text-[#2D6A4F] hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const gridSection = document.getElementById("product-grid-section");
+                        gridSection?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    >
+                      See All Deals →
+                    </a>
                   </div>
-                  <a
-                    href="#product-grid-section"
-                    className="text-xs font-bold text-[#1A6B3C] hover:underline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const gridSection = document.getElementById("product-grid-section");
-                      gridSection?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    See All Deals →
-                  </a>
-                </div>
 
-                <div className="mt-6 flex gap-4 overflow-x-auto pb-4 scrollbar-none">
-                  {flashSaleProducts.map((product) => {
-                    const discount = product.originalPrice
-                      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-                      : 0;
+                  <div className="mt-6 flex gap-4 overflow-x-auto pb-4 scrollbar-none">
+                    {flashSaleProducts.map((product) => {
+                      const discount = product.originalPrice
+                        ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                        : 0;
 
-                    return (
-                      <div
-                        key={product.id}
-                        className="w-[260px] shrink-0 bg-white p-3 border border-[#E5E7EB] hover:border-[#1A6B3C] transition-all cursor-pointer text-left"
-                        onClick={() => handleSelectProduct(product)}
-                      >
-                        <div className="relative aspect-square overflow-hidden bg-white">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-contain transition-transform duration-300 hover:scale-103"
-                            loading="lazy"
-                          />
-                          <span className="absolute left-2.5 top-2.5 rounded-sm bg-red-600 px-2 py-0.5 text-[9px] font-extrabold text-white">
-                            -{discount}% OFF
-                          </span>
-                        </div>
-                        
-                        <div className="mt-3">
-                          <h3 className="line-clamp-1 text-sm font-bold text-[#1A1A1A] hover:text-[#1A6B3C]">
-                            {product.name}
-                          </h3>
-                          <span className="text-[10px] text-[#6B7280]">by {product.brand}</span>
-                          
-                          <div className="mt-2 flex flex-col">
-                            <span className="font-sans text-sm font-extrabold text-red-600">
-                              KSh {product.price.toLocaleString()}
-                            </span>
-                            <span className="font-sans text-[11px] text-[#6B7280] line-through mt-0.5">
-                              KSh {product.originalPrice?.toLocaleString()}
+                      return (
+                        <div
+                          key={product.id}
+                          className="w-[260px] shrink-0 rounded-[12px] bg-white p-3 border border-[#E8ECE9] hover:border-[#2D6A4F] hover:shadow-md transition-all cursor-pointer text-left"
+                          onClick={() => handleSelectProduct(product)}
+                        >
+                          <div className="relative aspect-square overflow-hidden bg-[#FAFAF8] rounded-[8px]">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-full w-full object-cover transition-transform duration-300 hover:scale-103"
+                              loading="lazy"
+                            />
+                            <span className="absolute left-2.5 top-2.5 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-extrabold text-white">
+                              -{discount}% OFF
                             </span>
                           </div>
+                          
+                          <div className="mt-3">
+                            <h3 className="line-clamp-1 text-sm font-bold text-[#1A1A1A] hover:text-[#2D6A4F]">
+                              {product.name}
+                            </h3>
+                            <span className="text-[10px] text-[#6B7280]">by {product.brand}</span>
+                            
+                            <div className="mt-2 flex items-baseline gap-1">
+                              <span className="font-sans text-sm font-extrabold text-[#2D6A4F]">
+                                KES {product.price.toLocaleString()}
+                              </span>
+                              {product.originalPrice && (
+                                <span className="font-sans text-[11px] text-[#6B7280] line-through ml-2">
+                                  KES {product.originalPrice.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleBuyNow(product, e);
-                            }}
-                            className="mt-3.5 w-full rounded-sm border border-[#1A6B3C] bg-white py-1.5 text-center text-xs font-bold text-[#1A6B3C] hover:bg-[#1A6B3C] hover:text-white transition-colors"
-                          >
-                            Buy Now
-                          </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(product, e);
+                              }}
+                              className="mt-3.5 w-full rounded-[8px] border border-[#2D6A4F] bg-white py-1.5 text-center text-xs font-bold text-[#2D6A4F] hover:bg-[#2D6A4F] hover:text-white transition-colors"
+                            >
+                              Add to Cart
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* 5. FILTER + SORT BAR */}
             <section
@@ -821,7 +859,7 @@ function ShopPage() {
                     <button
                       onClick={() => setActiveFilterTab(activeFilterTab === "price" ? null : "price")}
                       className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                        priceRange < 3000 ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
+                        priceRange < 10000 ? "border-[#1A6B3C] bg-[#1A6B3C]/5 text-[#1A6B3C]" : "border-[#E8ECE9] text-[#6B7280]"
                       }`}
                     >
                       <span>Max Price: KES {priceRange.toLocaleString()}</span>
@@ -831,12 +869,12 @@ function ShopPage() {
                       <div className="absolute left-0 mt-2 z-50 w-56 rounded-2xl border border-[#F0F0F0] bg-white p-4 shadow-xl">
                         <div className="flex items-center justify-between text-xs text-[#6B7280]">
                           <span>Min: KES 0</span>
-                          <span>Max: KES 3,000</span>
+                          <span>Max: KES 10,000</span>
                         </div>
                         <input
                           type="range"
                           min="50"
-                          max="3000"
+                          max="10000"
                           step="50"
                           value={priceRange}
                           onChange={(e) => setPriceRange(Number(e.target.value))}
@@ -1002,10 +1040,10 @@ function ShopPage() {
                 <div className="flex flex-wrap items-center gap-1.5 text-left">
                   <span className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mr-1">Active filters:</span>
                   
-                  {priceRange < 3000 && (
+                  {priceRange < 10000 && (
                     <span className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold text-[#1A6B3C]">
                       <span>Price &lt; KES {priceRange}</span>
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceRange(3000)} />
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceRange(10000)} />
                     </span>
                   )}
 
@@ -1166,13 +1204,13 @@ function ShopPage() {
                 <div
                   key={product.id}
                   onClick={() => handleSelectProduct(product)}
-                  className="w-[180px] shrink-0 bg-white p-2.5 border border-[#E5E7EB] hover:border-[#1A6B3C] cursor-pointer shadow-sm transition-all text-left"
+                  className="w-[180px] shrink-0 rounded-[12px] bg-white p-2.5 border border-[#E8ECE9] hover:border-[#2D6A4F] cursor-pointer shadow-sm hover:shadow-md transition-all text-left"
                 >
-                  <div className="aspect-square w-full overflow-hidden bg-white">
-                    <img src={product.image} className="h-full w-full object-contain" alt={product.name} />
+                  <div className="aspect-square w-full overflow-hidden bg-[#FAFAF8] rounded-[8px]">
+                    <img src={product.image} className="h-full w-full object-cover" alt={product.name} />
                   </div>
                   <h3 className="line-clamp-1 text-xs font-bold text-[#1A1A1A] mt-2">{product.name}</h3>
-                  <div className="font-sans text-xs font-extrabold text-red-600 mt-1">KSh {product.price.toLocaleString()}</div>
+                  <div className="font-sans text-xs font-extrabold text-[#2D6A4F] mt-1">KES {product.price.toLocaleString()}</div>
                 </div>
               ))}
             </div>

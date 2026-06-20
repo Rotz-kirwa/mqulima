@@ -129,8 +129,8 @@ export function CartDrawer() {
                             <h4 className="text-xs font-bold text-[#1A1A1A] truncate">{item.product.name}</h4>
                             <span className="text-[10px] text-[#6B7280]">per {item.product.unit}</span>
                             <div className="mt-2 flex items-center justify-between">
-                              <span className="text-xs font-bold text-red-600">
-                                KSh {item.product.price.toLocaleString()}
+                              <span className="text-xs font-bold text-[#2D6A4F]">
+                                KES {item.product.price.toLocaleString()}
                               </span>
                               <div className="flex items-center border border-[#E5E7EB] rounded-md bg-white">
                                 <button
@@ -256,7 +256,7 @@ export function CartDrawer() {
                     <div className="h-px bg-[#E5E7EB] my-2" />
                     <div className="flex justify-between text-sm font-bold text-[#1A1A1A]">
                       <span>Total</span>
-                      <span className="text-red-600 font-extrabold font-mono">
+                      <span className="text-[#2D6A4F] font-extrabold font-mono">
                         KES {total.toLocaleString()}
                       </span>
                     </div>
