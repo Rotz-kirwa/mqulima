@@ -36,16 +36,16 @@ const navWithIcons = [
 ];
 
 const subNavItems = [
-  { label: "All Products", category: "All" },
-  { label: "Vegetables & Greens", category: "Vegetables" },
-  { label: "Fruits", category: "Fruits" },
-  { label: "Grains & Cereals", category: "Grains" },
-  { label: "Seeds & Seedlings", category: "Seeds" },
-  { label: "Livestock Feeds", category: "Livestock" },
-  { label: "Farm Tools & Equipment", category: "Farm Tools" },
-  { label: "Organic Products", category: "Organic" },
-  { label: "Pesticides & Fertilizers", category: "Pesticides" },
-  { label: "Dairy Products", category: "Dairy" },
+  { label: "All Products", category: "All", icon: "📦" },
+  { label: "Vegetables & Greens", category: "Vegetables", icon: "🥬" },
+  { label: "Fruits", category: "Fruits", icon: "🍎" },
+  { label: "Grains & Cereals", category: "Grains", icon: "🌾" },
+  { label: "Seeds & Seedlings", category: "Seeds", icon: "🌱" },
+  { label: "Livestock Feeds", category: "Livestock", icon: "🐄" },
+  { label: "Farm Tools & Equipment", category: "Farm Tools", icon: "🚜" },
+  { label: "Organic Products", category: "Organic", icon: "🌿" },
+  { label: "Pesticides & Fertilizers", category: "Pesticides", icon: "🧪" },
+  { label: "Dairy Products", category: "Dairy", icon: "🥛" },
 ];
 
 export function Navbar() {
@@ -422,17 +422,27 @@ export function Navbar() {
 
       {/* Sub Navbar Category Ribbon (Only visible on Shop routes, scrollable on all viewports) */}
       {isShopPage && (
-        <div className="border-t border-gray-150 bg-white">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 py-2 text-[10px] md:text-xs font-semibold text-gray-600">
-            {subNavItems.map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSubNavClick(item.category)}
-                className="hover:text-[#2D6A4F] whitespace-nowrap transition-colors"
-              >
-                {item.label}
-              </button>
-            ))}
+        <div className="border-y border-gray-200 bg-[#F9FAF9] py-2">
+          <div className="container-px mx-auto max-w-7xl">
+            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide px-3 text-xs font-semibold">
+              {subNavItems.map((item, idx) => {
+                const isActive = ((location.search as any)?.category || "All") === item.category;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleSubNavClick(item.category)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? "bg-[#2D6A4F] text-white border-[#2D6A4F] shadow-sm scale-102 font-bold"
+                        : "bg-white text-gray-600 border-gray-200 hover:text-[#2D6A4F] hover:border-[#2D6A4F]/30 hover:bg-[#2D6A4F]/5"
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
