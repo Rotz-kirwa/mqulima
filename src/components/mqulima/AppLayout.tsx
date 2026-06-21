@@ -8,15 +8,23 @@ const CartDrawer = React.lazy(() =>
 );
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
       <WhatsAppButton />
-      <Suspense fallback={null}>
-        <CartDrawer />
-      </Suspense>
+      {mounted && (
+        <Suspense fallback={null}>
+          <CartDrawer />
+        </Suspense>
+      )}
     </div>
   );
 }

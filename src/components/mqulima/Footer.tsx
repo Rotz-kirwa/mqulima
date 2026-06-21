@@ -1,11 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import { MqulimaLogo } from "./MqulimaLogo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export function Footer() {
   const [email, setEmail] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,28 +66,33 @@ export function Footer() {
               ))}
             </div>
 
-            {/* Newsletter form */}
-            <form onSubmit={handleSubscribe} className="mt-8 max-w-sm">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#F5A623] mb-2">
-                Subscribe to our newsletter
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 rounded-[8px] bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-[#F5A623] transition-all"
-                />
-                <button
-                  type="submit"
-                  className="rounded-[8px] bg-[#F5A623] hover:bg-[#E0951F] px-4 py-2.5 text-xs font-bold text-white transition-colors cursor-pointer"
-                >
-                  Subscribe
-                </button>
-              </div>
-            </form>
+            {/* Newsletter form - rendered after mount to prevent LastPass hydration mismatch */}
+            {isMounted ? (
+              <form onSubmit={handleSubscribe} className="mt-8 max-w-sm">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#F5A623] mb-2">
+                  Subscribe to our newsletter
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    data-lpignore="true"
+                    className="flex-1 rounded-[8px] bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-[#F5A623] transition-all"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-[8px] bg-[#F5A623] hover:bg-[#E0951F] px-4 py-2.5 text-xs font-bold text-white transition-colors cursor-pointer"
+                  >
+                    Subscribe
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-8 h-[76px] max-w-sm bg-white/5 rounded-[8px] animate-pulse" />
+            )}
           </div>
 
           <FooterCol

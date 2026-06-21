@@ -19,7 +19,7 @@ const SORTERS: Record<ProductSortKey, (a: ShopProduct, b: ShopProduct) => number
   "price-low": (a, b) => a.price - b.price,
   "price-high": (a, b) => b.price - a.price,
   rating: (a, b) => b.rating - a.rating,
-  newest: (a, b) => Number(b.badge === "NEW") - Number(a.badge === "NEW"),
+  newest: (a, b) => Number(b.badge === "New") - Number(a.badge === "New"),
 };
 
 export function useProductFilters(products: ShopProduct[]) {

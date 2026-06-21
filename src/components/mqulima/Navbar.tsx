@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { ShoppingCart, Menu, X, Globe, User, Download, Search } from "lucide-react";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MqulimaLogo } from "./MqulimaLogo";
@@ -21,7 +21,24 @@ const nav = [
   { to: "/contact", label: "Contact" },
 ];
 
+const subNavItems = [
+  { label: "All Products", category: "All" },
+  { label: "Vegetables & Greens", category: "Vegetables" },
+  { label: "Fruits", category: "Fruits" },
+  { label: "Grains & Cereals", category: "Grains" },
+  { label: "Seeds & Seedlings", category: "Seeds" },
+  { label: "Livestock Feeds", category: "Livestock" },
+  { label: "Farm Tools & Equipment", category: "Farm Tools" },
+  { label: "Organic Products", category: "Organic" },
+  { label: "Pesticides & Fertilizers", category: "Pesticides" },
+  { label: "Dairy Products", category: "Dairy" },
+];
+
 export function Navbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isShopPage = location.pathname.startsWith("/shop");
+
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<"EN" | "SW">("EN");
   const { isInstallable, triggerInstall } = usePWA();
@@ -36,6 +53,7 @@ export function Navbar() {
 
   // Account dropdown state
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [helpDropdownOpen, setHelpDropdownOpen] = useState(false);
 
   // Handle live suggestions filtering
   useEffect(() => {
@@ -50,22 +68,50 @@ export function Navbar() {
     setSuggestions(filtered);
   }, [searchQuery]);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSuggestions(false);
+    navigate({
+      to: "/shop",
+      search: {
+        q: searchQuery || undefined,
+        category: undefined,
+        seller: undefined
+      } as any
+    });
+  };
+
+  const handleSubNavClick = (category: string) => {
+    navigate({
+      to: "/shop",
+      search: {
+        category: category !== "All" ? category : undefined,
+        q: undefined,
+        seller: undefined
+      } as any
+    });
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
-      <div className="container-px mx-auto flex h-16 max-w-7xl items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <MqulimaLogo size={48} />
+      {/* =========================================================================
+         1. STANDARD MAIN NAVIGATION BAR (Always visible on all pages, including Shop)
+         ========================================================================= */}
+      <div className="container-px mx-auto flex h-16 max-w-7xl items-center justify-between gap-2">
+        {/* Logo left */}
+        <Link to="/" className="flex items-center gap-3 shrink-0">
+          <MqulimaLogo size={44} />
           <div className="flex flex-col justify-center leading-none text-left">
-            <div className="font-serif text-[20px] font-normal tracking-[0.08em] text-foreground uppercase">
+            <div className="font-serif text-[18px] font-normal tracking-[0.08em] text-foreground uppercase">
               MQULIMA
             </div>
-            <div className="text-[10px] font-medium tracking-normal text-[#2D6A4F] lowercase mt-0.5 italic">
+            <div className="text-[9px] font-medium tracking-normal text-[#2D6A4F] lowercase mt-0.5 italic">
               ...taking you first class
             </div>
           </div>
         </Link>
 
-        {/* Desktop Nav Items */}
+        {/* Desktop Navigation Items */}
         <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((n) => (
             <Link
@@ -83,7 +129,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Live Search Bar (Desktop) */}
+        {/* Desktop small search bar */}
         <div className="relative hidden xl:block w-56">
           <div className="relative">
             <input
@@ -100,9 +146,10 @@ export function Navbar() {
             />
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           </div>
-          {/* Live Suggestions Dropdown */}
+          
+          {/* Suggestions */}
           <AnimatePresence>
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && !isShopPage && suggestions.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -129,8 +176,8 @@ export function Navbar() {
           </AnimatePresence>
         </div>
 
-        {/* Right Side actions */}
-        <div className="flex items-center gap-2">
+        {/* Actions right */}
+        <div className="flex items-center gap-2 shrink-0">
           {isInstallable && (
             <button
               onClick={triggerInstall}
@@ -169,47 +216,47 @@ export function Navbar() {
                   className="absolute right-0 mt-2 w-48 rounded-xl border border-[#E8ECE9] bg-white p-2 shadow-lg z-50 text-left"
                 >
                   {user ? (
-                    <>
-                      <div className="px-2.5 py-1.5 text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">
-                        Signed in as <br />
-                        <span className="text-[#1A1A1A] normal-case font-extrabold">{user.email}</span>
-                      </div>
-                      <div className="h-px bg-[#E8ECE9] my-1" />
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
-                      >
-                        My Dashboard
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          toast.success("Successfully logged out");
-                          setTimeout(() => window.location.reload(), 800);
-                        }}
-                        className="w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-red-50 text-red-600"
-                      >
-                        Sign Out
-                      </button>
-                    </>
+                        <>
+                          <div className="px-2.5 py-1.5 text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">
+                            Signed in as <br />
+                            <span className="text-[#1A1A1A] normal-case font-extrabold truncate block">{user.email}</span>
+                          </div>
+                          <div className="h-px bg-[#E8ECE9] my-1" />
+                          <Link
+                            to="/dashboard"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
+                          >
+                            My Dashboard
+                          </Link>
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              toast.success("Successfully logged out");
+                              setTimeout(() => window.location.reload(), 800);
+                            }}
+                            className="w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-red-50 text-red-600"
+                          >
+                            Sign Out
+                          </button>
+                        </>
                   ) : (
-                    <>
-                      <Link
-                        to="/login"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
-                      >
-                        Sign In
-                      </Link>
-                      <Link
-                        to="/login"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
-                      >
-                        Register
-                      </Link>
-                    </>
+                        <>
+                          <Link
+                            to="/login"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
+                          >
+                            Sign In
+                          </Link>
+                          <Link
+                            to="/login"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
+                          >
+                            Register
+                          </Link>
+                        </>
                   )}
                 </motion.div>
               )}
@@ -241,6 +288,140 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* =========================================================================
+         2. JUMIA-STYLE MARKETPLACE HEADER (Only visible on Shop routes, stacked below)
+         ========================================================================= */}
+      {isShopPage && (
+        <div className="border-t border-gray-150 bg-[#F5F5F5] py-2.5 md:py-3.5">
+          <div className="px-3 md:px-4 mx-auto max-w-7xl flex items-center justify-between gap-3 md:gap-6">
+            {/* Marketplace Wide Search Bar */}
+            <div className="relative flex-1 max-w-3xl">
+              <form onSubmit={handleSearchSubmit} className="flex w-full items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products, categories, sellers..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 250)}
+                    className="w-full h-9 md:h-11 pl-9 pr-3 rounded-l-md border border-gray-300 bg-white text-xs md:text-sm focus:border-[#2D6A4F] outline-none transition-all text-left shadow-xs"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="h-9 md:h-11 px-4 md:px-8 rounded-r-md bg-[#F5A623] hover:bg-[#E0951F] text-white font-bold text-[11px] md:text-xs uppercase tracking-wider transition-colors shrink-0 shadow-xs"
+                >
+                  Search
+                </button>
+              </form>
+
+              {/* Suggestions Dropdown */}
+              <AnimatePresence>
+                {showSuggestions && suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute left-0 right-0 mt-1.5 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg z-50 text-left"
+                  >
+                    {suggestions.map((p) => (
+                      <Link
+                        key={p.id}
+                        to="/shop/$productId"
+                        params={{ productId: String(p.id) }}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setShowSuggestions(false);
+                        }}
+                        className="flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-gray-50 transition-colors"
+                      >
+                        <img
+                          src={p.image}
+                          className="w-8 h-8 rounded object-cover border border-gray-150"
+                          alt={p.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="100%" height="100%" fill="%23F4F6F4"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui" font-weight="bold" font-size="6" fill="%232D6A4F">MQ</text></svg>`;
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-[#1A1A1A] truncate">{p.name}</div>
+                          <div className="text-[10px] text-[#2D6A4F] font-semibold">KES {p.price.toLocaleString()}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Help & Support menu (Desktop/Tablet only) */}
+            <div className="hidden md:flex items-center gap-2 shrink-0">
+              <div className="relative">
+                <button
+                  onClick={() => setHelpDropdownOpen(!helpDropdownOpen)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:text-[#2D6A4F] transition-colors cursor-pointer shadow-xs"
+                >
+                  <HelpCircle className="h-4.5 w-4.5 text-gray-500" />
+                  <span>Help & Support</span>
+                  <span className="text-[8px] text-gray-400">▼</span>
+                </button>
+                <AnimatePresence>
+                  {helpDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      className="absolute right-0 mt-2 w-56 rounded-md border border-gray-200 bg-white p-3 shadow-lg z-50 text-left"
+                    >
+                      <div className="text-xs font-bold text-gray-800">Mqulima Help Center</div>
+                      <p className="text-[10px] text-gray-500 mt-1">Direct support and order assistance</p>
+                      <div className="h-px bg-gray-150 my-2" />
+                      <button
+                        onClick={() => {
+                          setHelpDropdownOpen(false);
+                          toast.info("Call Center: 0745 063030");
+                        }}
+                        className="w-full text-left text-xs font-semibold py-1 hover:text-[#2D6A4F]"
+                      >
+                        📞 Call Support: 0745 063030
+                      </button>
+                      <a
+                        href="mailto:support@mqulima.com"
+                        className="block text-xs font-semibold py-1 hover:text-[#2D6A4F]"
+                      >
+                        ✉️ Email: support@mqulima.com
+                      </a>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sub Navbar Category Ribbon (Only visible on Shop routes, scrollable on all viewports) */}
+      {isShopPage && (
+        <div className="border-t border-gray-150 bg-white">
+          <div className="px-3 md:px-4 mx-auto max-w-7xl overflow-x-auto scrollbar-none py-2 md:py-2.5 flex items-center justify-between gap-4 text-[10px] md:text-xs font-semibold text-gray-600">
+            {subNavItems.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSubNavClick(item.category)}
+                className="hover:text-[#2D6A4F] whitespace-nowrap transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Full-screen Mobile Hamburg Menu Slide-in */}
       <AnimatePresence>
         {open && (
@@ -262,7 +443,7 @@ export function Navbar() {
               className="absolute inset-y-0 right-0 w-full max-w-xs bg-white p-6 shadow-2xl flex flex-col justify-between text-left"
             >
               <div>
-                <div className="flex items-center justify-between border-b border-[#E8ECE9] pb-4 mb-6">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
                   <div className="font-serif text-lg font-bold tracking-wider text-[#1A1A1A]">MENU</div>
                   <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-secondary text-[#6B7280]">
                     <X className="h-5 w-5" />
@@ -271,17 +452,25 @@ export function Navbar() {
 
                 {/* Mobile Search input */}
                 <div className="relative mb-6">
-                  <input
-                    type="text"
-                    placeholder="Search produce..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-full border border-border bg-secondary/50 px-4 py-2 pl-9 text-xs outline-none focus:border-[#2D6A4F] focus:bg-white transition-all text-left"
-                  />
-                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <form onSubmit={handleSearchSubmit} className="flex w-full">
+                    <input
+                      type="text"
+                      placeholder="Search produce..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full rounded-l-full border border-border bg-[#F5F5F5] px-4 py-2 pl-9 text-xs outline-none focus:border-[#2D6A4F] focus:bg-white transition-all text-left"
+                    />
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <button
+                      type="submit"
+                      className="rounded-r-full bg-[#F5A623] px-3.5 text-xs text-white font-bold"
+                    >
+                      Go
+                    </button>
+                  </form>
                   
                   {suggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 rounded-xl border border-[#E8ECE9] bg-white p-2 shadow-lg z-50">
+                    <div className="absolute left-0 right-0 mt-1 rounded-md border border-gray-200 bg-white p-1.5 shadow-lg z-50">
                       {suggestions.map((p) => (
                         <Link
                           key={p.id}
@@ -291,9 +480,16 @@ export function Navbar() {
                             setSearchQuery("");
                             setOpen(false);
                           }}
-                          className="flex items-center gap-2 py-1.5 hover:bg-secondary rounded-lg px-2"
+                          className="flex items-center gap-2 py-1.5 hover:bg-secondary rounded px-2"
                         >
-                          <img src={p.image} className="w-6 h-6 rounded object-cover" />
+                          <img
+                            src={p.image}
+                            className="w-6 h-6 rounded object-cover"
+                            alt={p.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><rect width="100%" height="100%" fill="%23F4F6F4"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui" font-weight="bold" font-size="5" fill="%232D6A4F">MQ</text></svg>`;
+                            }}
+                          />
                           <span className="text-[11px] font-bold text-[#1A1A1A] truncate flex-1">{p.name}</span>
                         </Link>
                       ))}
@@ -319,14 +515,14 @@ export function Navbar() {
                 </nav>
               </div>
 
-              <div className="border-t border-[#E8ECE9] pt-6 space-y-3">
+              <div className="border-t border-gray-200 pt-6 space-y-3">
                 {user ? (
                   <>
                     <div className="text-[11px] text-[#6B7280]">Logged in as <strong className="text-[#1A1A1A]">{user.name}</strong></div>
                     <Link
                       to="/dashboard"
                       onClick={() => setOpen(false)}
-                      className="block text-center rounded-lg bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md"
+                      className="block text-center rounded bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md"
                     >
                       My Dashboard
                     </Link>
@@ -335,7 +531,7 @@ export function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setOpen(false)}
-                    className="block text-center rounded-lg bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md animate-pulse"
+                    className="block text-center rounded bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md"
                   >
                     Sign In
                   </Link>
@@ -346,7 +542,7 @@ export function Navbar() {
                       setOpen(false);
                       triggerInstall();
                     }}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#F5A623] py-2.5 text-xs font-bold text-[#1A1A1A] hover:bg-secondary"
+                    className="flex w-full items-center justify-center gap-2 rounded border border-[#F5A623] py-2.5 text-xs font-bold text-[#1A1A1A] hover:bg-secondary"
                   >
                     <Download className="h-4 w-4 text-[#F5A623]" /> Install App
                   </button>

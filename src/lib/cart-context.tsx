@@ -21,31 +21,35 @@ type CartContextType = {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => [
+    { product: shopProducts[0], quantity: 2 }, // Sukuma Wiki
+    { product: shopProducts[3], quantity: 1 }  // Avocado (Hass)
+  ]);
+
+  const [cartOpen, setCartOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Load from localStorage on client-side mount
+  useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("mqulima_cart");
       if (saved) {
         try {
-          return JSON.parse(saved);
+          setCartItems(JSON.parse(saved));
         } catch (e) {
           console.error("Failed to parse cart from localStorage", e);
         }
       }
     }
-    // Premium default items if cart is empty
-    return [
-      { product: shopProducts[0], quantity: 2 }, // Sukuma Wiki
-      { product: shopProducts[3], quantity: 1 }  // Avocado (Hass)
-    ];
-  });
+  }, []);
 
-  const [cartOpen, setCartOpen] = useState(false);
-
+  // Save to localStorage when cart items change
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (isMounted && typeof window !== "undefined") {
       localStorage.setItem("mqulima_cart", JSON.stringify(cartItems));
     }
-  }, [cartItems]);
+  }, [cartItems, isMounted]);
 
   const addToCart = (product: ShopProduct, quantity = 1) => {
     setCartItems((prev) => {

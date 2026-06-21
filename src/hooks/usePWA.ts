@@ -18,19 +18,21 @@ declare global {
 }
 
 export function usePWA() {
-  const [isOnline, setIsOnline] = useState<boolean>(
-    typeof window !== "undefined" ? navigator.onLine : true,
-  );
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isInstallable, setIsInstallable] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default",
-  );
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
   // Monitor network status
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Set client-side actual values after hydration
+    setIsOnline(navigator.onLine);
+    if ("Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
 
     const handleOnline = () => {
       setIsOnline(true);
