@@ -132,7 +132,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-[11px] text-white/40 md:flex-row md:items-center">
           <p>© 2026 Mqulima Kenya Ltd. All rights reserved.</p>
-          <p className="font-bold text-white/60">Built by Webmakers with ❤️ — Empowering African farmers with next-gen digital tools.</p>
+          <p className="font-bold text-white/60">Engineered by Webmakers</p>
         </div>
       </div>
     </footer>
