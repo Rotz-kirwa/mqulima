@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as PartnershipsRouteImport } from './routes/partnerships'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as ClimateRouteImport } from './routes/climate'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.$productId'
@@ -29,6 +31,11 @@ const ShopRoute = ShopRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnershipsRoute = PartnershipsRouteImport.update({
+  id: '/partnerships',
+  path: '/partnerships',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -61,6 +68,11 @@ const ClimateRoute = ClimateRouteImport.update({
   path: '/climate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -80,12 +92,14 @@ const ShopProductIdRoute = ShopProductIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
   '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -93,12 +107,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
   '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -107,12 +123,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/blog': typeof BlogRoute
   '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -122,12 +140,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/blog'
     | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/knowledge'
     | '/login'
+    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -135,12 +155,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/blog'
     | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/knowledge'
     | '/login'
+    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -148,12 +170,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/blog'
     | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/knowledge'
     | '/login'
+    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -162,12 +186,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  BlogRoute: typeof BlogRoute
   ClimateRoute: typeof ClimateRoute
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
+  PartnershipsRoute: typeof PartnershipsRoute
   ServicesRoute: typeof ServicesRoute
   ShopRoute: typeof ShopRouteWithChildren
 }
@@ -186,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partnerships': {
+      id: '/partnerships'
+      path: '/partnerships'
+      fullPath: '/partnerships'
+      preLoaderRoute: typeof PartnershipsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -230,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClimateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -267,12 +307,14 @@ const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  BlogRoute: BlogRoute,
   ClimateRoute: ClimateRoute,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
+  PartnershipsRoute: PartnershipsRoute,
   ServicesRoute: ServicesRoute,
   ShopRoute: ShopRouteWithChildren,
 }

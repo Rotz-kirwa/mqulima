@@ -103,6 +103,8 @@ export function Footer() {
               { to: "/climate", label: "Climate Info" },
               { to: "/knowledge", label: "Knowledge Hub" },
               { to: "/community", label: "Community" },
+              { to: "/blog", label: "Blog" },
+              { to: "/partnerships", label: "Partnerships" },
             ]}
           />
           <FooterCol

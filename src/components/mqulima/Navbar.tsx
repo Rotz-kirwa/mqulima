@@ -1,7 +1,8 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import {
   ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle,
-  Home, ShoppingBag, Briefcase, CloudSun, BookOpen, Users as UsersIcon, Info, Phone
+  Home, ShoppingBag, Briefcase, CloudSun, BookOpen, Users as UsersIcon, Info, Phone,
+  Handshake, FileText
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ const nav = [
   { to: "/climate", label: "Climate" },
   { to: "/knowledge", label: "Knowledge Hub" },
   { to: "/community", label: "Community" },
+  { to: "/blog", label: "Blog" },
+  { to: "/partnerships", label: "Partnerships" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -31,6 +34,8 @@ const navWithIcons = [
   { to: "/climate", label: "Climate", icon: CloudSun },
   { to: "/knowledge", label: "Knowledge Hub", icon: BookOpen },
   { to: "/community", label: "Community", icon: UsersIcon },
+  { to: "/blog", label: "Blog", icon: FileText },
+  { to: "/partnerships", label: "Partnerships", icon: Handshake },
   { to: "/about", label: "About", icon: Info },
   { to: "/contact", label: "Contact", icon: Phone },
 ];
@@ -127,15 +132,15 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation Items */}
-        <nav className="hidden items-center gap-x-4 xl:gap-x-6 lg:flex">
+        <nav className="hidden items-center gap-x-1.5 xl:gap-x-2.5 lg:flex">
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className="rounded-full px-3 xl:px-4 py-2 text-xs xl:text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground whitespace-nowrap"
+              className="rounded-full px-2 py-1.5 text-[11px] xl:text-xs font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground whitespace-nowrap"
               activeProps={{
                 className:
-                  "rounded-full px-3 xl:px-4 py-2 text-xs xl:text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] ring-1 ring-[#2D6A4F]/20 whitespace-nowrap",
+                  "rounded-full px-2 py-1.5 text-[11px] xl:text-xs font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] ring-1 ring-[#2D6A4F]/20 whitespace-nowrap",
               }}
               activeOptions={{ exact: n.to === "/" }}
             >
