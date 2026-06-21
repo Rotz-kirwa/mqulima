@@ -29,6 +29,12 @@ function ProductDetailPage() {
   }, [productId]);
 
   const [quantity, setQuantity] = useState(1);
+
+  // Scroll to top when product ID changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    setQuantity(1);
+  }, [productId]);
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
 
   // Load wishlist from localStorage
@@ -127,10 +133,13 @@ function ProductDetailPage() {
             {/* Left: Image Gallery */}
             <div className="relative aspect-square w-full overflow-hidden bg-white border border-[#E8ECE9] rounded-[16px] p-4 shadow-sm">
               <img
-                src={product.image}
+                src={product.image || '/placeholder-product.png'}
                 alt={product.name}
                 className="h-full w-full object-cover rounded-[12px]"
                 loading="eager"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder-product.png';
+                }}
               />
               {product.badge && (
                 <span className="absolute left-6 top-6 z-10 rounded-full bg-[#2D6A4F] px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
@@ -257,7 +266,14 @@ function ProductDetailPage() {
                     className="group rounded-[12px] bg-white p-3 border border-[#E8ECE9] hover:border-[#2D6A4F] hover:shadow-md transition duration-300"
                   >
                     <div className="aspect-square w-full overflow-hidden bg-[#FAFAF8] rounded-[8px]">
-                      <img src={p.image} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103" alt={p.name} />
+                      <img
+                        src={p.image || '/placeholder-product.png'}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103"
+                        alt={p.name}
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-product.png';
+                        }}
+                      />
                     </div>
                     <h4 className="line-clamp-1 text-xs font-bold text-[#1A1A1A] mt-3 group-hover:text-[#2D6A4F]">{p.name}</h4>
                     <div className="font-sans text-xs font-extrabold text-[#2D6A4F] mt-1">KES {p.price.toLocaleString()}</div>

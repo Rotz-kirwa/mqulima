@@ -542,7 +542,7 @@ function ShopPage() {
                   {/* Related tags subrow */}
                   <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     <span className="text-[10px] md:text-[11px] font-bold text-gray-500">Related:</span>
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full md:max-w-lg scrollbar-none flex-1">
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full md:max-w-lg scrollbar-hide flex-1">
                       {relatedTags.map((tag) => {
                         const isActive = searchText === tag;
                         return (

@@ -120,9 +120,12 @@ export function CartDrawer() {
                         >
                           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#FAFAF8] border border-[#E5E7EB] p-1">
                             <img
-                              src={item.product.image}
+                              src={item.product.image || '/placeholder-product.png'}
                               alt={item.product.name}
                               className="h-full w-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-product.png';
+                              }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
