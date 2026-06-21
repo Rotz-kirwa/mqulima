@@ -101,7 +101,7 @@ export function Footer() {
               { to: "/shop", label: "Agrovet Shop" },
               { to: "/services", label: "Services" },
               { to: "/climate", label: "Climate Info" },
-              { to: "/knowledge", label: "Knowledge Hub" },
+              { to: "/academy", label: "Academy" },
               { to: "/community", label: "Community" },
               { to: "/blog", label: "Blog" },
               { to: "/partnerships", label: "Partnerships" },

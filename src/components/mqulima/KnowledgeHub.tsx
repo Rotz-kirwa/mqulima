@@ -8,12 +8,12 @@ export function KnowledgeHub() {
     <section className="bg-sepia/60 py-20">
       <div className="container-px mx-auto max-w-7xl">
         <SectionHeading
-          eyebrow="Knowledge Hub"
+          eyebrow="Academy"
           title="Learn. Earn. Repeat."
           subtitle="Field guides, expert Q&A and live market prices — built for Kenyan farming realities."
           action={
             <Link
-              to="/knowledge"
+              to="/academy"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
             >
               All articles <ArrowRight className="h-4 w-4" />
