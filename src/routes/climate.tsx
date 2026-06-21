@@ -245,11 +245,12 @@ function ClimatePage() {
                       key={reg.id}
                       d={reg.svgPath}
                       onClick={() => setSelectedRegion(reg)}
-                      className={`cursor-pointer transition-all duration-300 stroke-border stroke-2 hover:fill-primary/20 ${
+                      className={`cursor-pointer transition-all duration-300 stroke-border stroke-2 hover:fill-opacity-20 ${
                         selectedRegion.id === reg.id
-                          ? "fill-primary/10 stroke-primary"
-                          : "fill-secondary/60"
+                          ? "fill-primary stroke-primary"
+                          : "fill-secondary"
                       }`}
+                      fillOpacity={selectedRegion.id === reg.id ? 0.1 : 0.6}
                     />
                   ))}
 
