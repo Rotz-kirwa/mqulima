@@ -145,15 +145,15 @@ function Contact() {
               {
                 icon: MessageCircle,
                 label: "WhatsApp Chat",
-                value: "+254 711 222 333",
-                href: "https://wa.me/254711222333",
+                value: "+254 723346134",
+                href: "https://wa.me/254723346134",
                 color: "text-[#25D366] bg-[#25D366]/10",
               },
               {
                 icon: Phone,
                 label: "Hotline Support",
-                value: "+254 711 222 333",
-                href: "tel:+254711222333",
+                value: "+254 723346134",
+                href: "tel:+254723346134",
                 color: "text-blue bg-blue/10",
               },
               {

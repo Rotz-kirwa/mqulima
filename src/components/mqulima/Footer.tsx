@@ -123,7 +123,7 @@ export function Footer() {
                 <MapPin className="mt-0.5 h-4 w-4 text-[#F5A623]" /> Eldoret HQ, Uasin Gishu
               </li>
               <li className="flex items-start gap-2">
-                <Phone className="mt-0.5 h-4 w-4 text-[#F5A623]" /> +254 711 222 333
+                <Phone className="mt-0.5 h-4 w-4 text-[#F5A623]" /> +254 723346134
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="mt-0.5 h-4 w-4 text-[#F5A623]" /> hello@mqulima.co.ke
