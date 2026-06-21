@@ -147,8 +147,8 @@ function RootComponent() {
               </div>
             )}
             <Outlet />
+            <Toaster richColors position="top-right" />
           </div>
-          <Toaster richColors position="top-right" />
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>

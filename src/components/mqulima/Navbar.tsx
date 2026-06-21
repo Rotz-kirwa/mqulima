@@ -408,7 +408,7 @@ export function Navbar() {
       {/* Sub Navbar Category Ribbon (Only visible on Shop routes, scrollable on all viewports) */}
       {isShopPage && (
         <div className="border-t border-gray-150 bg-white">
-          <div className="px-3 md:px-4 mx-auto max-w-7xl overflow-x-auto scrollbar-none py-2 md:py-2.5 flex items-center justify-between gap-4 text-[10px] md:text-xs font-semibold text-gray-600">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 py-2 text-[10px] md:text-xs font-semibold text-gray-600">
             {subNavItems.map((item, idx) => (
               <button
                 key={idx}

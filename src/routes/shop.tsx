@@ -530,7 +530,7 @@ function ShopPage() {
             </aside>
 
             {/* RIGHT CONTENT AREA */}
-            <main className="flex-1 bg-white border border-gray-200 rounded p-2 sm:p-4">
+            <main className="w-full lg:flex-1 bg-white border border-gray-200 rounded p-2 sm:p-4 min-w-0">
               
               {/* Results Header Bar */}
               <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 pb-3 gap-3">
@@ -640,7 +640,7 @@ function ShopPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-3">
                     {paginatedProducts.map((p) => {
                       const isWishlisted = wishlist.has(p.id);
                       const hasDiscount = !!(p.originalPrice && p.originalPrice > p.price);
@@ -649,7 +649,7 @@ function ShopPage() {
                         : 0;
 
                       // Badge background colors matching specifications
-                      let badgeBg = "bg-[#2D6A4F]"; // default Organic Green
+                      let badgeBg = "bg-green-700"; // default Organic Green
                       if (p.badge === "Flash Deal" || p.badge === "Anniversary Deal") badgeBg = "bg-[#00BCD4]";
                       if (p.badge === "Best Seller") badgeBg = "bg-[#F5A623]";
                       if (p.badge === "Bulk Deal") badgeBg = "bg-[#7B2D8B]";
@@ -658,102 +658,73 @@ function ShopPage() {
                         <div
                           key={p.id}
                           onClick={() => navigate({ to: "/shop/$productId", params: { productId: String(p.id) } })}
-                          className="group border border-[#E0E0E0] rounded-[4px] bg-white p-2 md:p-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.12)] transition-all flex flex-col justify-between h-full relative cursor-pointer overflow-hidden"
+                          className="group bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm flex flex-col w-full relative cursor-pointer"
                         >
-                          {/* Image Box */}
-                          <div className="relative aspect-square w-full bg-white flex items-center justify-center p-1.5 md:p-2 mb-1.5 md:mb-2 overflow-hidden min-w-0">
+                          {/* Image container — fixed height, no expansion */}
+                          <div className="relative w-full h-[160px] bg-gray-50">
                             <img
-                              src={p.image}
+                              src={p.image || '/placeholder-product.png'}
                               alt={p.name}
+                              className="w-full h-full object-cover"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="100%" height="100%" fill="%23F4F6F4"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui" font-weight="bold" font-size="12" fill="%232D6A4F">MQULIMA</text></svg>`;
+                                e.currentTarget.src = '/placeholder-product.png';
                               }}
-                              className="h-full w-full object-contain max-h-[110px] md:max-h-[160px] min-w-0 max-w-full"
-                              loading="lazy"
                             />
-                            
-                            {/* Top Left Badge */}
+                            {/* Badge */}
                             {p.badge && (
-                              <span className={`absolute left-0 top-0 rounded-r px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider ${badgeBg}`}>
+                              <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded text-white ${badgeBg}`}>
                                 {p.badge}
                               </span>
                             )}
-
-                            {/* Wishlist Heart Icon */}
+                            {/* Wishlist */}
                             <button
                               onClick={(e) => handleToggleWishlist(p.id, e)}
-                              className="absolute right-1 bottom-1 bg-white/90 p-1.5 rounded-full hover:bg-white shadow-sm transition text-gray-400 hover:text-red-500"
-                              aria-label="Wishlist"
+                              className="absolute bottom-2 right-2 bg-white/80 p-1.5 rounded-full hover:bg-white shadow-xs transition"
                             >
-                              <Heart className={`h-4.5 w-4.5 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+                              <Heart size={16} className={`text-gray-400 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
                             </button>
                           </div>
 
-                          {/* Info Column */}
-                          <div className="flex-1 flex flex-col justify-between text-left">
+                          {/* Card body */}
+                          <div className="p-2.5 flex flex-col gap-1 flex-1 text-left justify-between">
                             <div>
-                              {/* Product Name */}
-                              <h3 className="text-[12px] md:text-[13px] text-gray-800 line-clamp-2 leading-tight h-8 mb-1.5 font-medium hover:text-[#2D6A4F] transition-colors">
-                                {p.name}
-                              </h3>
+                              <p className="text-[11px] text-gray-400 uppercase tracking-wide">{p.brand}</p>
+                              <h3 className="text-[13px] font-semibold text-gray-800 leading-tight line-clamp-2">{p.name}</h3>
                               
-                              {/* Seller Muted Row */}
-                              <span className="text-[9px] text-gray-400 block -mt-1 mb-1 font-semibold uppercase">
-                                Seller: {p.brand}
-                              </span>
-
-                              {/* Price Row */}
-                              <div className="mt-1 flex flex-col">
-                                <span className="font-bold text-[#000000] text-sm">
-                                  KSh {p.price.toLocaleString()}
-                                </span>
+                              {/* Price row */}
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-sm font-bold text-gray-900">KSh {p.price.toLocaleString()}</span>
                                 {hasDiscount && (
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-sans text-[10px] text-[#888888] line-through">
-                                      KSh {p.originalPrice!.toLocaleString()}
-                                    </span>
-                                    <span className="text-[#E02020] font-bold text-[10px]">
-                                      -{discountPercentage}%
-                                    </span>
-                                  </div>
+                                  <>
+                                    <span className="text-[11px] text-gray-400 line-through">KSh {p.originalPrice!.toLocaleString()}</span>
+                                    <span className="text-[10px] text-red-500 font-bold">-{discountPercentage}%</span>
+                                  </>
                                 )}
                               </div>
-                            </div>
 
-                            {/* Star rating + review count */}
-                            <div className="mt-2 flex items-center gap-1 text-[11px] text-[#F5A623]">
-                              <div className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, sIdx) => (
-                                  <Star
-                                    key={sIdx}
-                                    className={`h-3 w-3 ${
-                                      sIdx < Math.floor(p.rating) ? "fill-[#F5A623] text-[#F5A623]" : "text-gray-200"
-                                    }`}
-                                  />
-                                ))}
+                              {/* Stars */}
+                              <div className="flex items-center gap-1 mt-1">
+                                <div className="flex items-center">
+                                  {Array.from({ length: 5 }).map((_, sIdx) => (
+                                    <Star
+                                      key={sIdx}
+                                      className={`h-3 w-3 ${
+                                        sIdx < Math.floor(p.rating) ? "fill-[#F5A623] text-[#F5A623]" : "text-gray-200"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-[11px] text-gray-400">({p.reviewsCount})</span>
                               </div>
-                              <span className="text-[#888888] text-[10px] ml-0.5">
-                                ({p.reviewsCount})
-                              </span>
                             </div>
-                          </div>
 
-                          {/* Mobile-visible Add to Cart Button */}
-                          <div className="mt-2.5 block md:hidden">
+                            {/* CTA */}
                             <button
                               onClick={(e) => handleAddToCartClick(p, e)}
-                              className="w-full bg-[#2D6A4F] hover:bg-[#1A5438] py-2 text-center text-[10px] font-bold text-white uppercase rounded-[4px] transition-colors"
+                              className="mt-2 w-full bg-green-800 hover:bg-green-700 text-white text-[12px] font-semibold py-2 rounded-lg transition-colors"
                             >
-                              Add to Cart
+                              ADD TO CART
                             </button>
-                          </div>
-
-                          {/* Hover Slide-up Button (Desktop only) */}
-                          <div
-                            onClick={(e) => handleAddToCartClick(p, e)}
-                            className="absolute bottom-0 left-0 right-0 bg-[#2D6A4F] hover:bg-[#1A5438] py-2.5 text-center text-xs font-bold text-white uppercase tracking-wider translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10 hidden md:block"
-                          >
-                            Add to Cart
                           </div>
                         </div>
                       );

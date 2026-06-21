@@ -1,84 +1,48 @@
-import { useEffect, useState, useRef } from "react";
+import { type ComponentType } from "react";
+import { Users, Wheat, MapPin, Stethoscope, TrendingUp, Truck } from "lucide-react";
 
-const statsWithIcons = [
-  { label: "Farmers Served", value: "5000+", icon: "👥" },
-  { label: "Products Available", value: "317", icon: "🌾" },
-  { label: "Counties Reached", value: "47+", icon: "📍" },
-  { label: "Consultations Done", value: "1200+", icon: "🩺" },
-  { label: "Avg. Yield Increase", value: "38%", icon: "📈" },
-  { label: "Same-Day Deliveries", value: "94%", icon: "🚚" },
+interface StatItem {
+  icon: ComponentType<{ className?: string }>;
+  value: string;
+  label: string;
+  iconColor: string;
+}
+
+const stats: StatItem[] = [
+  { icon: Users, value: "5,000+", label: "Farmers Served", iconColor: "text-blue-600" },
+  { icon: Wheat, value: "317",    label: "Products Available", iconColor: "text-emerald-600" },
+  { icon: MapPin, value: "47+",    label: "Counties Reached", iconColor: "text-rose-500" },
+  { icon: Stethoscope, value: "1,200+", label: "Consultations Done", iconColor: "text-sky-600" },
+  { icon: TrendingUp, value: "38%",    label: "Avg. Yield Increase", iconColor: "text-green-600" },
+  { icon: Truck, value: "94%",    label: "Same-Day Deliveries", iconColor: "text-orange-500" },
 ];
 
-function CountUp({ value }: { value: string }) {
-  const [count, setCount] = useState(0);
-  const target = parseInt(value.replace(/\D/g, ""), 10) || 0;
-  const suffix = value.replace(/[\d,]/g, ""); // extract characters like + or %
-  const elementRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          let startTime: number | null = null;
-          const duration = 1500; // 1.5 seconds
-
-          const animate = (currentTime: number) => {
-            if (!startTime) startTime = currentTime;
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            // easeOutQuad
-            const easeProgress = progress * (2 - progress);
-            const currentCount = Math.floor(easeProgress * target);
-
-            setCount(currentCount);
-
-            if (progress < 1) {
-              requestAnimationFrame(animate);
-            }
-          };
-
-          requestAnimationFrame(animate);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [target]);
-
-  return (
-    <span ref={elementRef}>
-      {count.toLocaleString()}{suffix}
-    </span>
-  );
+interface StatTileProps {
+  icon: ComponentType<{ className?: string }>;
+  value: string;
+  label: string;
+  iconColor: string;
 }
+
+const StatTile = ({ icon: Icon, value, label, iconColor }: StatTileProps) => (
+  <div className="flex items-center gap-3 px-8 border-r border-white/20 min-w-max">
+    <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+      <Icon className={`h-5 w-5 ${iconColor}`} />
+    </div>
+    <div>
+      <p className="text-white font-bold text-xl leading-none">{value}</p>
+      <p className="text-sky-100 text-[11px] uppercase tracking-widest mt-0.5 font-semibold">{label}</p>
+    </div>
+  </div>
+);
 
 export function StatsBar() {
   return (
-    <section className="bg-white border-y border-[#E8ECE9] py-8">
-      <div className="container-px mx-auto max-w-7xl">
-        {/* Responsive layout: scrollable list on mobile, grid on desktop */}
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none md:grid md:grid-cols-3 lg:grid-cols-6 lg:pb-0">
-          {statsWithIcons.map((s, idx) => (
-            <div
-              key={idx}
-              className="flex w-[160px] shrink-0 flex-col items-center justify-center rounded-[12px] bg-[#FAFAF8] p-4.5 border border-[#E8ECE9] text-center md:w-auto shadow-sm transition hover:shadow-md hover:border-[#2D6A4F]/30"
-            >
-              <div className="text-2xl mb-1.5">{s.icon}</div>
-              <div className="font-sans text-xl font-black text-[#2D6A4F]">
-                <CountUp value={s.value} />
-              </div>
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
+    <section className="bg-sky-500 py-4 overflow-hidden w-full">
+      <div className="flex w-max animate-ticker">
+        {[...stats, ...stats, ...stats, ...stats].map((stat, i) => (
+          <StatTile key={i} {...stat} />
+        ))}
       </div>
     </section>
   );
