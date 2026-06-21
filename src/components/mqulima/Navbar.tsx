@@ -112,15 +112,15 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation Items */}
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-x-4 xl:gap-x-6 lg:flex">
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className="rounded-full px-4.5 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground"
+              className="rounded-full px-3 xl:px-4 py-2 text-xs xl:text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground whitespace-nowrap"
               activeProps={{
                 className:
-                  "rounded-full px-4.5 py-2 text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] ring-1 ring-[#2D6A4F]/20",
+                  "rounded-full px-3 xl:px-4 py-2 text-xs xl:text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] ring-1 ring-[#2D6A4F]/20 whitespace-nowrap",
               }}
               activeOptions={{ exact: n.to === "/" }}
             >
@@ -432,7 +432,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs z-40"
             />
             {/* Drawer */}
             <motion.div
@@ -440,7 +440,8 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="absolute inset-y-0 right-0 w-full max-w-xs bg-white p-6 shadow-2xl flex flex-col justify-between text-left"
+              className="absolute inset-y-0 right-0 w-full max-w-xs bg-white opacity-100 shadow-lg p-6 flex flex-col justify-between text-left z-50"
+              style={{ backgroundColor: '#ffffff', opacity: 1 }}
             >
               <div>
                 <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
@@ -503,9 +504,9 @@ export function Navbar() {
                       key={n.to}
                       to={n.to}
                       onClick={() => setOpen(false)}
-                      className="rounded-lg px-4 py-2.5 text-sm font-semibold text-foreground/80 hover:bg-secondary transition-colors"
+                      className="rounded-lg px-6 py-4 text-sm font-semibold text-gray-900 hover:bg-secondary transition-colors whitespace-nowrap"
                       activeProps={{
-                        className: "rounded-lg px-4 py-2.5 text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] border-l-4 border-[#2D6A4F]"
+                        className: "rounded-lg px-6 py-4 text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] border-l-4 border-[#2D6A4F] whitespace-nowrap"
                       }}
                       activeOptions={{ exact: n.to === "/" }}
                     >
