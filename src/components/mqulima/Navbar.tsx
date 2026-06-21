@@ -1,5 +1,8 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
-import { ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle } from "lucide-react";
+import {
+  ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle,
+  Home, ShoppingBag, Briefcase, CloudSun, BookOpen, Users as UsersIcon, Info, Phone
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MqulimaLogo } from "./MqulimaLogo";
@@ -19,6 +22,17 @@ const nav = [
   { to: "/community", label: "Community" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
+];
+
+const navWithIcons = [
+  { to: "/", label: "Home", icon: Home },
+  { to: "/shop", label: "Shop", icon: ShoppingBag },
+  { to: "/services", label: "Services", icon: Briefcase },
+  { to: "/climate", label: "Climate", icon: CloudSun },
+  { to: "/knowledge", label: "Knowledge Hub", icon: BookOpen },
+  { to: "/community", label: "Community", icon: UsersIcon },
+  { to: "/about", label: "About", icon: Info },
+  { to: "/contact", label: "Contact", icon: Phone },
 ];
 
 const subNavItems = [
@@ -93,7 +107,8 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <>
+      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
       {/* =========================================================================
          1. STANDARD MAIN NAVIGATION BAR (Always visible on all pages, including Shop)
          ========================================================================= */}
@@ -421,6 +436,7 @@ export function Navbar() {
           </div>
         </div>
       )}
+    </header>
 
       {/* Full-screen Mobile Hamburg Menu Slide-in */}
       <AnimatePresence>
@@ -432,7 +448,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs z-40"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm z-40"
             />
             {/* Drawer */}
             <motion.div
@@ -440,13 +456,16 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="absolute inset-y-0 right-0 w-full max-w-xs bg-white opacity-100 shadow-lg p-6 flex flex-col justify-between text-left z-50"
-              style={{ backgroundColor: '#ffffff', opacity: 1 }}
+              className="absolute inset-y-0 right-0 w-full max-w-xs bg-[#121212] shadow-2xl p-6 flex flex-col justify-between text-left z-50 border-l border-white/5"
+              style={{ backgroundColor: '#121212', opacity: 1 }}
             >
               <div>
-                <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
-                  <div className="font-serif text-lg font-bold tracking-wider text-[#1A1A1A]">MENU</div>
-                  <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-secondary text-[#6B7280]">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <MqulimaLogo size={28} />
+                    <span className="font-serif text-base font-bold tracking-wider text-white uppercase">MQULIMA</span>
+                  </div>
+                  <button onClick={() => setOpen(false)} className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -459,19 +478,19 @@ export function Navbar() {
                       placeholder="Search produce..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full rounded-l-full border border-border bg-[#F5F5F5] px-4 py-2 pl-9 text-xs outline-none focus:border-[#2D6A4F] focus:bg-white transition-all text-left"
+                      className="w-full rounded-l-full border border-white/10 bg-white/5 px-4 py-2.5 pl-9 text-xs text-white outline-none focus:border-[#2D6A4F] focus:bg-white/10 transition-all text-left"
                     />
-                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" />
                     <button
                       type="submit"
-                      className="rounded-r-full bg-[#F5A623] px-3.5 text-xs text-white font-bold"
+                      className="rounded-r-full bg-[#F5A623] px-4 text-xs text-white font-bold hover:bg-[#E0951F] transition-colors"
                     >
                       Go
                     </button>
                   </form>
                   
                   {suggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 rounded-md border border-gray-200 bg-white p-1.5 shadow-lg z-50">
+                    <div className="absolute left-0 right-0 mt-1 rounded-md border border-white/10 bg-[#1A1A1A] p-1.5 shadow-lg z-50">
                       {suggestions.map((p) => (
                         <Link
                           key={p.id}
@@ -481,7 +500,7 @@ export function Navbar() {
                             setSearchQuery("");
                             setOpen(false);
                           }}
-                          className="flex items-center gap-2 py-1.5 hover:bg-secondary rounded px-2"
+                          className="flex items-center gap-2 py-1.5 hover:bg-white/5 rounded px-2"
                         >
                           <img
                             src={p.image}
@@ -491,39 +510,43 @@ export function Navbar() {
                               (e.target as HTMLImageElement).src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><rect width="100%" height="100%" fill="%23F4F6F4"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui" font-weight="bold" font-size="5" fill="%232D6A4F">MQ</text></svg>`;
                             }}
                           />
-                          <span className="text-[11px] font-bold text-[#1A1A1A] truncate flex-1">{p.name}</span>
+                          <span className="text-[11px] font-bold text-white truncate flex-1">{p.name}</span>
                         </Link>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <nav className="flex flex-col gap-1">
-                  {nav.map((n) => (
-                    <Link
-                      key={n.to}
-                      to={n.to}
-                      onClick={() => setOpen(false)}
-                      className="rounded-lg px-6 py-4 text-sm font-semibold text-gray-900 hover:bg-secondary transition-colors whitespace-nowrap"
-                      activeProps={{
-                        className: "rounded-lg px-6 py-4 text-sm font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] border-l-4 border-[#2D6A4F] whitespace-nowrap"
-                      }}
-                      activeOptions={{ exact: n.to === "/" }}
-                    >
-                      {n.label}
-                    </Link>
-                  ))}
+                <nav className="flex flex-col gap-1.5">
+                  {navWithIcons.map((n) => {
+                    const Icon = n.icon;
+                    return (
+                      <Link
+                        key={n.to}
+                        to={n.to}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-3.5 rounded-xl px-5 py-3.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors whitespace-nowrap"
+                        activeProps={{
+                          className: "flex items-center gap-3.5 rounded-xl px-5 py-3.5 text-sm font-bold bg-[#2D6A4F]/20 text-[#4CAF50] border-l-4 border-[#2D6A4F] whitespace-nowrap"
+                        }}
+                        activeOptions={{ exact: n.to === "/" }}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span>{n.label}</span>
+                      </Link>
+                    );
+                  })}
                 </nav>
               </div>
 
-              <div className="border-t border-gray-200 pt-6 space-y-3">
+              <div className="border-t border-white/10 pt-6 space-y-3">
                 {user ? (
                   <>
-                    <div className="text-[11px] text-[#6B7280]">Logged in as <strong className="text-[#1A1A1A]">{user.name}</strong></div>
+                    <div className="text-[11px] text-white/50">Logged in as <strong className="text-white">{user.name}</strong></div>
                     <Link
                       to="/dashboard"
                       onClick={() => setOpen(false)}
-                      className="block text-center rounded bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md"
+                      className="block text-center rounded-xl bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-md hover:bg-[#224f3b] transition-colors"
                     >
                       My Dashboard
                     </Link>
@@ -532,7 +555,7 @@ export function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setOpen(false)}
-                    className="block text-center rounded bg-[#2D6A4F] py-2.5 text-xs font-bold text-white shadow-md"
+                    className="block text-center rounded-xl bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-md hover:bg-[#224f3b] transition-colors"
                   >
                     Sign In
                   </Link>
@@ -543,7 +566,7 @@ export function Navbar() {
                       setOpen(false);
                       triggerInstall();
                     }}
-                    className="flex w-full items-center justify-center gap-2 rounded border border-[#F5A623] py-2.5 text-xs font-bold text-[#1A1A1A] hover:bg-secondary"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#F5A623] py-3 text-xs font-bold text-white hover:bg-white/5 transition-colors"
                   >
                     <Download className="h-4 w-4 text-[#F5A623]" /> Install App
                   </button>
@@ -553,6 +576,6 @@ export function Navbar() {
           </div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }
