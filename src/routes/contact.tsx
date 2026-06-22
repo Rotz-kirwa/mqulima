@@ -352,7 +352,7 @@ function Contact() {
               >
                 <iframe
                   title="Mqulima Eldoret HQ"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=35.2674,-0.5210,35.2974,-0.5010&layer=mapnik&marker=-0.511,35.2825"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=35.2300,0.4800,35.3100,0.5500&layer=mapnik&marker=0.5143,35.2697"
                   className="h-full w-full border-none"
                   loading="lazy"
                 />
