@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
-import { HeroCarousel } from "@/components/mqulima/HeroCarousel";
+import { HomeHero } from "@/components/mqulima/HomeHero";
 import { StatsBar } from "@/components/mqulima/StatsBar";
 import { ShopPreview } from "@/components/mqulima/ShopPreview";
 import { ServicesGrid } from "@/components/mqulima/ServicesGrid";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <AppLayout>
-      <HeroCarousel />
+      <HomeHero />
       <StatsBar />
       <ShopPreview />
       <ServicesGrid />
