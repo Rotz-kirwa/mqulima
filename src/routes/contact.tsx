@@ -1,445 +1,282 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import {
-  Phone,
-  Mail,
-  MapPin,
-  MessageCircle,
-  ChevronDown,
-  Send,
-  CheckCircle,
-  Search,
-  HelpCircle,
-  FileText,
-} from "lucide-react";
-import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Phone, Mail, MapPin, ChevronDown } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
-import { counties } from "@/lib/mqulima-data";
+import { ContactForm } from "@/components/contact/ContactForm";
+import { MapEmbed } from "@/components/contact/MapEmbed";
+import { FaqAccordion } from "@/components/contact/FaqAccordion";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us · Mqulima Support" },
+      { title: "Contact Us · Mqulima" },
       {
         name: "description",
-        content:
-          "Reach out to Mqulima Hub. Connect via WhatsApp, phone, email, or visit our Eldoret HQ. Get expert agricultural assistance.",
+        content: "Get in touch with Kenya's premium digital farming network. Connect with our expert support team.",
       },
     ],
   }),
-  component: Contact,
+  component: ContactPage,
 });
 
-const faqs = [
-  {
-    q: "How fast is delivery?",
-    a: "Same-day in 12 counties (Uasin Gishu, Nakuru, Kiambu and more). 1–2 days everywhere else in Kenya.",
-  },
-  {
-    q: "Do you accept M-Pesa?",
-    a: "Yes — M-Pesa Express, Paybill and card payments are all supported at checkout.",
-  },
-  {
-    q: "Are vet visits really 24-hour response?",
-    a: "Bookings made before 4pm are confirmed for same or next day. Emergencies are dispatched within hours.",
-  },
-  {
-    q: "How does soil testing work?",
-    a: "We collect samples from your farm, lab-test them, then send a written report with crop-specific fertilizer prescriptions.",
-  },
-  {
-    q: "Can I order wholesale?",
-    a: "Yes — orders above 10 units automatically get tiered pricing. For very large orders contact sales@mqulima.co.ke.",
-  },
-  {
-    q: "Is the AI Crop Doctor free?",
-    a: "Yes, completely free for all registered Mqulima farmers.",
-  },
-  {
-    q: "Which counties do you serve?",
-    a: "20+ counties and growing. Check coverage at checkout or call our hotline.",
-  },
-  {
-    q: "Do you offer agricultural insurance?",
-    a: "Yes — we partner with leading insurers for crop and livestock cover. Ask any rep for details.",
-  },
-  {
-    q: "How do I earn loyalty points?",
-    a: "1 point per KES 10 spent. Redeem for discounts, free deliveries or service credits.",
-  },
-  {
-    q: "Can I become a Mqulima agent?",
-    a: "Absolutely. Visit our Careers page or WhatsApp us to join the agent network.",
-  },
-];
-
-function Contact() {
-  // Form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [county, setCounty] = useState("");
-  const [inquiryType, setInquiryType] = useState("General Inquiry");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  // FAQ Search state
-  const [faqSearch, setFaqSearch] = useState("");
-
-  const filteredFaqs = useMemo(() => {
-    if (!faqSearch.trim()) return faqs;
-    const query = faqSearch.toLowerCase();
-    return faqs.filter(
-      (f) => f.q.toLowerCase().includes(query) || f.a.toLowerCase().includes(query),
-    );
-  }, [faqSearch]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    setLoading(true);
-    // TODO: replace with real API call (e.g. createServerFn or email service)
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      toast.success("Demo message captured. A representative would normally contact you shortly.");
-      setName("");
-      setEmail("");
-      setPhone("");
-      setCounty("");
-      setMessage("");
-    }, 1200);
+function ContactPage() {
+  // Stagger animation variants for headline words
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.12,
+      },
+    },
   };
+
+  const wordVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1], // easeOutExpo
+      },
+    },
+  };
+
+  const channelCards = [
+    {
+      title: "Talk to Us",
+      value: "+254 723 346 134",
+      detail: "Mon–Fri, 8AM–6PM EAT",
+      icon: Phone,
+      href: "tel:+254723346134",
+    },
+    {
+      title: "Email Us",
+      value: "Mqulima001@gmail.com",
+      detail: "Quick response guarantee",
+      icon: Mail,
+      href: "mailto:Mqulima001@gmail.com",
+    },
+    {
+      title: "Visit Us",
+      value: "Junction, along Eldoret Iten Highway",
+      detail: "Click to view location",
+      icon: MapPin,
+      href: "https://maps.google.com/?q=Junction,+Eldoret+Iten+Highway",
+    },
+  ];
 
   return (
     <AppLayout>
-      <div className="bg-background text-foreground">
-        {/* Banner Section */}
-        <section className="bg-gradient-to-br from-forest to-primary py-16 text-forest-foreground text-center md:text-left">
-          <div className="container-px mx-auto max-w-7xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
-              Get in touch
-            </span>
-            <h1 className="mt-3 text-4xl font-extrabold md:text-5xl">We're a WhatsApp away.</h1>
-            <p className="mt-2 max-w-xl text-forest-foreground/80">
-              Connect with agronomy experts, order agents, or customer service representatives 7
-              days a week.
-            </p>
+      {/* Main Page Shell - Light Cream Background */}
+      <div className="bg-background text-[#1A1A1A] min-h-screen font-sans relative overflow-hidden select-none">
+        
+        {/* Topographic Line-Map Background Texture (Subtle on Light Theme) */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="topo-pattern" width="160" height="160" patternUnits="userSpaceOnUse">
+                <path d="M10 20 Q 30 10 50 40 T 100 30 T 150 45" fill="none" stroke="#2D6A4F" strokeWidth="1.2"/>
+                <path d="M0 60 Q 40 85 80 50 T 160 80" fill="none" stroke="#2D6A4F" strokeWidth="1.2"/>
+                <path d="M20 100 Q 60 70 100 115 T 160 90" fill="none" stroke="#2D6A4F" strokeWidth="1.2"/>
+                <path d="M0 135 Q 50 155 100 130 T 160 145" fill="none" stroke="#2D6A4F" strokeWidth="1.2"/>
+                <path d="M40 0 Q 70 30 110 10 T 160 20" fill="none" stroke="#2D6A4F" strokeWidth="1.2"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#topo-pattern)" />
+          </svg>
+        </div>
+
+        {/* SECTION 1 — HERO (Forest Green Gradient Banner matching other routes) */}
+        <section className="relative min-h-[45vh] md:min-h-[50vh] flex flex-col justify-center items-center text-center px-6 py-10 md:py-14 z-10 bg-gradient-to-br from-forest to-primary text-white border-b border-[#1E3A2F]/20">
+          <div className="max-w-4xl mx-auto flex flex-col items-center">
+            {/* Eyebrow */}
+            <motion.span
+              initial={{ opacity: 0, letterSpacing: "0.1em" }}
+              animate={{ opacity: 1, letterSpacing: "0.22em" }}
+              transition={{ duration: 0.8 }}
+              className="text-[10px] md:text-xs font-black uppercase text-[#F5A623] tracking-[0.22em] mb-2 md:mb-4"
+            >
+              GET IN TOUCH
+            </motion.span>
+
+            {/* Headline Display Staggered */}
+            <motion.h1
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="text-[32px] md:text-[56px] font-normal leading-[1.05] tracking-tight text-white select-text"
+              style={{ fontFamily: "'DM Serif Display', 'Playfair Display', serif" }}
+            >
+              <div className="block overflow-hidden pb-1">
+                <motion.span variants={wordVariants} className="inline-block mr-3">Let's</motion.span>
+                <motion.span variants={wordVariants} className="inline-block mr-3">Grow</motion.span>
+              </div>
+              <div className="block overflow-hidden pb-2 text-[#F5A623]">
+                <motion.span variants={wordVariants} className="inline-block mr-3">Something</motion.span>
+                <motion.span variants={wordVariants} className="inline-block">Real.</motion.span>
+              </div>
+            </motion.h1>
+
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="mt-3 md:mt-6 text-xs md:text-base text-white/80 max-w-xl leading-relaxed select-text"
+            >
+              Whether you're a farmer, cooperative, investor, or partner — we want to hear from you. Mqulima is built on relationships.
+            </motion.p>
+
+            {/* Scroll Down CTA */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              className="mt-6 md:mt-10 flex flex-col items-center gap-1.5 cursor-pointer"
+              onClick={() => {
+                const element = document.getElementById("contact-content");
+                element?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              <span className="text-[10px] md:text-xs font-extrabold uppercase tracking-widest text-[#F5A623] hover:text-white transition-colors duration-200">
+                Tell us what you need
+              </span>
+              <motion.div
+                animate={{ y: [0, 6, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                className="text-[#F5A623]"
+              >
+                <ChevronDown className="h-5 w-5" />
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Content Section */}
-        <section className="container-px mx-auto max-w-7xl py-12">
-          {/* Quick Channels */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: MessageCircle,
-                label: "WhatsApp Chat",
-                value: "+254 723346134",
-                href: "https://wa.me/254723346134",
-                color: "text-[#25D366] bg-[#25D366]/10",
-              },
-              {
-                icon: Phone,
-                label: "Hotline Support",
-                value: "+254 723346134",
-                href: "tel:+254723346134",
-                color: "text-blue bg-blue/10",
-              },
-              {
-                icon: Mail,
-                label: "Email Sales",
-                value: "hello@mqulima.co.ke",
-                href: "mailto:hello@mqulima.co.ke",
-                color: "text-primary bg-primary/10",
-              },
-              {
-                icon: MapPin,
-                label: "Eldoret HQ",
-                value: "Uganda Rd, opp. Poly",
-                href: "#map",
-                color: "text-gold bg-gold/10",
-              },
-            ].map((c) => (
-              <a
-                key={c.label}
-                href={c.href}
-                className="group flex items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-elegant transition hover:-translate-y-1 hover:border-primary/40"
-              >
-                <div
-                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${c.color} transition-colors group-hover:bg-primary group-hover:text-primary-foreground`}
-                >
-                  <c.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {c.label}
-                  </div>
-                  <div className="mt-0.5 text-sm font-semibold text-foreground">{c.value}</div>
-                </div>
-              </a>
-            ))}
-          </div>
-
-          {/* Form & Map Section */}
-          <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            {/* Interactive Ticket Form */}
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-elegant md:p-8">
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-foreground">Send a message</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    We typically reply within 15 minutes.
+        {/* SECTION 2 — CONTACT SPLIT */}
+        <section id="contact-content" className="relative z-10 max-w-7xl mx-auto py-24 px-6 scroll-mt-20">
+          <div className="grid gap-12 lg:grid-cols-[4fr_6fr]">
+            
+            {/* Left Column - Cards & Trust Signals */}
+            <div className="space-y-8 flex flex-col justify-between text-left">
+              <div className="space-y-6">
+                <div className="max-w-md">
+                  <span className="text-[10px] font-black uppercase text-[#2D6A4F] tracking-widest">CHANNELS</span>
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-[#1A1A1A] mt-1">Direct Outlets</h2>
+                  <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                    Connect directly via phone, email, or schedule a physical visitation at our offices.
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                  </span>
-                  Agents online
-                </div>
-              </div>
 
-              {success ? (
-                <div className="py-12 text-center">
-                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-                    <CheckCircle className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-base font-bold text-foreground">
-                    Thank you, message received!
-                  </h3>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Your support ticket has been registered. Reference: MQ-DEMO-
-                    {Date.now().toString(36).toUpperCase().slice(-4)}
-                  </p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    (Demo mode — no backend submission occurred.)
-                  </p>
-                  <button
-                    onClick={() => setSuccess(false)}
-                    className="mt-6 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold text-foreground hover:bg-secondary transition"
-                  >
-                    Send another message
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="John Doe"
-                        className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="john@example.com"
-                        className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="e.g. 0712345678"
-                        className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        County
-                      </label>
-                      <select
-                        value={county}
-                        onChange={(e) => setCounty(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
-                      >
-                        <option value="">Select County</option>
-                        {counties.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      Inquiry Type
-                    </label>
-                    <select
-                      value={inquiryType}
-                      onChange={(e) => setInquiryType(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                <div className="space-y-4">
+                  {channelCards.map((card, idx) => (
+                    <motion.a
+                      key={card.title}
+                      href={card.href}
+                      target={card.title === "Visit Us" ? "_blank" : undefined}
+                      rel={card.title === "Visit Us" ? "noopener noreferrer" : undefined}
+                      initial={{ opacity: 0, x: -15 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.1, duration: 0.5 }}
+                      className="flex items-start gap-4 bg-white border border-gray-200 hover:border-[#2D6A4F] rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer"
+                      style={{ borderLeft: "3px solid #2D6A4F" }}
                     >
-                      <option value="General Inquiry">General Inquiry</option>
-                      <option value="Order Status">Order Status / Delivery</option>
-                      <option value="Soil Testing">Soil Testing Booking</option>
-                      <option value="Vet Service">Vet Visit Request</option>
-                      <option value="Agronomy Advice">Agronomy Advice</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      Message *
-                    </label>
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      rows={4}
-                      placeholder="Tell us what you need help with..."
-                      className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary resize-none"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3 text-xs font-bold text-gold-foreground shadow-gold hover:scale-[1.01] transition-transform disabled:opacity-70"
-                  >
-                    {loading ? (
-                      <>Sending...</>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" /> Send Ticket
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Map & Office Address */}
-            <div className="flex flex-col gap-6">
-              <div
-                id="map"
-                className="overflow-hidden rounded-3xl border border-border shadow-card flex-1 min-h-[300px]"
-              >
-                <iframe
-                  title="Mqulima Eldoret HQ"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=35.2300,0.4800,35.3100,0.5500&layer=mapnik&marker=0.5143,35.2697"
-                  className="h-full w-full border-none"
-                  loading="lazy"
-                />
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#2D6A4F]/10 text-[#2D6A4F] group-hover:bg-[#2D6A4F] group-hover:text-white transition-colors duration-200">
+                        <card.icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                          {card.title}
+                        </div>
+                        <div className="mt-0.5 text-base font-extrabold text-[#1A1A1A] select-text">
+                          {card.value}
+                        </div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">
+                          {card.detail}
+                        </div>
+                      </div>
+                    </motion.a>
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-elegant flex items-center gap-4">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-                  <MapPin className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    Physical Office Headquarters
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Uganda Highway Road, Opposite Eldoret Polytechnic, Eldoret, Kenya
-                  </p>
+              {/* Trust Signal Row */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <span className="text-[#2D6A4F]">✓ 500+ Farmers Served</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-[#2D6A4F]">✓ Verified Cooperative Partners</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-[#2D6A4F]">✓ Secure Data</span>
                 </div>
               </div>
             </div>
+
+            {/* Right Column - Form */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <ContactForm />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* SECTION 3 — EMBEDDED MAP */}
+        <section className="w-full">
+          <MapEmbed />
+        </section>
+
+        {/* SECTION 4 — FAQ ACCORDION */}
+        <section className="relative z-10 max-w-7xl mx-auto py-24 px-6 border-t border-gray-200">
+          <div className="text-center mb-12">
+            <span className="text-xs font-black uppercase text-[#2D6A4F] tracking-[0.2em]">KNOWLEDGE BASE</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-[#1A1A1A]" style={{ fontFamily: "'DM Serif Display', 'Playfair Display', serif" }}>
+              Frequently Asked Questions
+            </h2>
+            <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+              Get immediate details on listing products, coverage areas, and security.
+            </p>
           </div>
 
-          {/* Interactive FAQ Search Finder */}
-          <div className="mt-20">
-            <div className="text-center">
-              <HelpCircle className="mx-auto h-8 w-8 text-primary" />
-              <h2 className="mt-2 text-3xl font-extrabold text-foreground">
-                Frequently Asked Questions
+          <FaqAccordion />
+        </section>
+
+        {/* SECTION 5 — FOOTER CTA BAND */}
+        <section className="w-full relative overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7 }}
+            className="w-full bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] py-20 px-6 text-center border-t border-[#1E3A2F]"
+          >
+            <div className="max-w-4xl mx-auto space-y-8">
+              <h2 className="text-3xl md:text-5xl font-normal text-[#F0EDE6] tracking-tight leading-none" style={{ fontFamily: "'DM Serif Display', 'Playfair Display', serif" }}>
+                Ready to transform your farm?
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Instant answers to common customer questions.
-              </p>
-            </div>
-
-            {/* Finder Search Box */}
-            <div className="mx-auto mt-6 flex max-w-lg items-center gap-2 rounded-full border border-border bg-card px-4 py-2 shadow-elegant">
-              <Search className="h-4.5 w-4.5 text-muted-foreground" />
-              <input
-                type="text"
-                value={faqSearch}
-                onChange={(e) => setFaqSearch(e.target.value)}
-                placeholder="Search FAQs (e.g. M-Pesa, delivery...)"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-              {faqSearch && (
-                <button
-                  onClick={() => setFaqSearch("")}
-                  className="text-muted-foreground hover:text-foreground text-xs font-bold"
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a
+                  href="/shop"
+                  className="w-full sm:w-auto bg-[#F5A623] hover:bg-[#E0951F] text-[#0A0F0D] font-extrabold text-sm py-3.5 px-8 rounded-xl shadow-lg transition duration-200"
                 >
-                  Clear
-                </button>
-              )}
+                  Get Started Free
+                </a>
+                <a
+                  href="/about"
+                  className="w-full sm:w-auto border-2 border-white/80 hover:border-white hover:bg-white/10 text-white font-extrabold text-sm py-3.5 px-8 rounded-xl transition duration-200"
+                >
+                  Download the App
+                </a>
+              </div>
             </div>
-
-            <div className="mt-8 divide-y divide-border overflow-hidden rounded-3xl border border-border bg-card shadow-elegant">
-              {filteredFaqs.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground">
-                  No FAQs matching your search query.
-                </div>
-              ) : (
-                filteredFaqs.map((f, i) => <FAQ key={i} q={f.q} a={f.a} />)
-              )}
-            </div>
-          </div>
+          </motion.div>
         </section>
       </div>
     </AppLayout>
-  );
-}
-
-function FAQ({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-border last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-4 p-5 text-left transition hover:bg-secondary/40"
-      >
-        <span className="font-bold text-foreground text-sm">{q}</span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && (
-        <div className="px-5 pb-5 text-xs text-muted-foreground leading-relaxed animate-fade-in">
-          {a}
-        </div>
-      )}
-    </div>
   );
 }

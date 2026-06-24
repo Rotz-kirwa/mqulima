@@ -43,7 +43,7 @@ function AcademyPage() {
     const courseObj = initialCourses.find(c => c.id === courseId);
     setSelectedCourse({
       id: courseId,
-      title: courseObj ? courseObj.title : "Modern Soil Health for East African Smallholders",
+      title: courseObj ? courseObj.title : "Modern Soil Health for Kenyan Smallholders",
       price: price
     });
     setPhoneNumber("");

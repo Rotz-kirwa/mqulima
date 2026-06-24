@@ -31,7 +31,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-24 bg-[#1A3D2F] text-white/80">
+    <footer className="bg-[#1A3D2F] text-white/80">
       <div className="container-px mx-auto max-w-7xl py-16">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5 text-left">
           <div className="lg:col-span-2">
@@ -100,7 +100,6 @@ export function Footer() {
             links={[
               { to: "/shop", label: "Agrovet Shop" },
               { to: "/services", label: "Services" },
-              { to: "/climate", label: "Climate Info" },
               { to: "/academy", label: "Academy" },
               { to: "/community", label: "Community" },
               { to: "/blog", label: "Blog" },
@@ -120,13 +119,13 @@ export function Footer() {
             <h4 className="text-sm font-bold uppercase tracking-wider text-[#F5A623]">Reach Us</h4>
             <ul className="mt-4 space-y-3 text-xs text-white/70">
               <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 text-[#F5A623]" /> Eldoret HQ, Uasin Gishu
+                <MapPin className="mt-0.5 h-4 w-4 text-[#F5A623]" /> Junction, along Eldoret Iten Highway
               </li>
               <li className="flex items-start gap-2">
                 <Phone className="mt-0.5 h-4 w-4 text-[#F5A623]" /> +254 723346134
               </li>
               <li className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-4 w-4 text-[#F5A623]" /> hello@mqulima.co.ke
+                <Mail className="mt-0.5 h-4 w-4 text-[#F5A623]" /> Mqulima001@gmail.com
               </li>
             </ul>
           </div>

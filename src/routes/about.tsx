@@ -18,7 +18,7 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "Our mission: build the most farmer-friendly digital agriculture ecosystem in Africa, starting with Kenya.",
+          "Our mission: build the most farmer-friendly digital agriculture ecosystem in Kenya.",
       },
     ],
   }),

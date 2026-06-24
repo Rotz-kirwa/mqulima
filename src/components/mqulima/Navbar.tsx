@@ -18,7 +18,6 @@ const nav = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
   { to: "/services", label: "Services" },
-  { to: "/climate", label: "Climate" },
   { to: "/academy", label: "Academy" },
   { to: "/community", label: "Community" },
   { to: "/blog", label: "Blog" },
@@ -31,7 +30,6 @@ const navWithIcons = [
   { to: "/", label: "Home", icon: Home },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/services", label: "Services", icon: Briefcase },
-  { to: "/climate", label: "Climate", icon: CloudSun },
   { to: "/academy", label: "Academy", icon: BookOpen },
   { to: "/community", label: "Community", icon: UsersIcon },
   { to: "/blog", label: "Blog", icon: FileText },
@@ -59,7 +57,7 @@ export function Navbar() {
   const isShopPage = location.pathname.startsWith("/shop");
 
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<"EN" | "SW">("EN");
+
   const { isInstallable, triggerInstall } = usePWA();
   const { user } = useAuth();
   const { cartItems, setCartOpen } = useCart();
@@ -149,52 +147,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop small search bar */}
-        <div className="relative hidden xl:block w-56">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search produce..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              className="w-full rounded-full border border-border bg-secondary/50 px-4 py-1.5 pl-9 text-xs outline-none focus:border-[#2D6A4F] focus:bg-white transition-all text-left"
-            />
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          </div>
-          
-          {/* Suggestions */}
-          <AnimatePresence>
-            {showSuggestions && !isShopPage && suggestions.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                className="absolute left-0 right-0 mt-2 rounded-xl border border-[#E8ECE9] bg-white p-2 shadow-lg z-50 text-left"
-              >
-                {suggestions.map((p) => (
-                  <Link
-                    key={p.id}
-                    to="/shop/$productId"
-                    params={{ productId: String(p.id) }}
-                    onClick={() => setSearchQuery("")}
-                    className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-secondary transition-colors"
-                  >
-                    <img src={p.image} className="w-8 h-8 rounded-md object-cover border border-[#E8ECE9]" alt={p.name} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-[#1A1A1A] truncate">{p.name}</div>
-                      <div className="text-[10px] text-[#2D6A4F] font-semibold">KES {p.price.toLocaleString()}</div>
-                    </div>
-                  </Link>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+
 
         {/* Actions right */}
         <div className="flex items-center gap-2 shrink-0">
@@ -209,13 +162,7 @@ export function Navbar() {
             </button>
           )}
 
-          <button
-            onClick={() => setLang(lang === "EN" ? "SW" : "EN")}
-            className="hidden items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground/80 transition hover:bg-secondary md:flex"
-            aria-label="Switch language"
-          >
-            <Globe className="h-3.5 w-3.5" /> {lang}
-          </button>
+
 
           {/* Account Dropdown Wrapper */}
           <div className="relative">
@@ -404,17 +351,17 @@ export function Navbar() {
                       <button
                         onClick={() => {
                           setHelpDropdownOpen(false);
-                          toast.info("Call Center: 0745 063030");
+                          toast.info("Call Center: 0723346134");
                         }}
                         className="w-full text-left text-xs font-semibold py-1 hover:text-[#2D6A4F]"
                       >
-                        📞 Call Support: 0745 063030
+                        📞 Call Support: 0723 346134
                       </button>
                       <a
-                        href="mailto:support@mqulima.com"
+                        href="mailto:Mqulima001@gmail.com"
                         className="block text-xs font-semibold py-1 hover:text-[#2D6A4F]"
                       >
-                        ✉️ Email: support@mqulima.com
+                        ✉️ Email: Mqulima001@gmail.com
                       </a>
                     </motion.div>
                   )}

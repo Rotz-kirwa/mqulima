@@ -34,7 +34,7 @@ export function AcademyHero({ onBrowseClick, onPathsClick }: AcademyHeroProps) {
 
             {/* Subheading */}
             <p className="mt-4 max-w-xl text-white/80 text-sm md:text-base leading-relaxed font-normal">
-              Real courses. Real results. Built for East African farmers, agripreneurs, and food system builders — in Swahili & English.
+              Real courses. Real results. Built for Kenyan farmers, agripreneurs, and food system builders — in Swahili & English.
             </p>
 
             {/* Buttons */}
@@ -66,7 +66,7 @@ export function AcademyHero({ onBrowseClick, onPathsClick }: AcademyHeroProps) {
                 </div>
                 <div className="border-l border-white/10 pl-4">
                   <div className="text-xl sm:text-2xl font-black text-[#7ed321]">6</div>
-                  <div className="text-[10px] text-white/50 font-bold uppercase tracking-wider mt-0.5">EA countries</div>
+                  <div className="text-[10px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Counties</div>
                 </div>
               </div>
             </div>

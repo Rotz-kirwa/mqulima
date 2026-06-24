@@ -13,7 +13,7 @@ export function AcademyPhotoImmersion() {
             Learning that looks like Kenya
           </h2>
           <p className="mt-2 text-xs md:text-sm text-gray-500 leading-relaxed">
-            All course content features real East African farmers, real landscapes, and real conditions.
+            All course content features real Kenyan farmers, real landscapes, and real conditions.
           </p>
         </div>
 

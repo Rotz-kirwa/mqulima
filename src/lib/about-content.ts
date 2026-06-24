@@ -70,7 +70,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     photoUrl: "/public/about/team-ops.jpg",
     name: "Mercy Kosgei",
     role: "Operations & Logistics",
-    bio: "Makes sure products that are ordered actually arrive. Harder than it sounds in East Africa.",
+    bio: "Makes sure products that are ordered actually arrive. Harder than it sounds in remote areas.",
     linkedin: "https://linkedin.com",
   },
 ];
@@ -98,7 +98,7 @@ export const OPEN_ROLES: OpenRole[] = [
     applyUrl: "mailto:careers@mqulima.com?subject=Application%20for%20UX%20Designer",
   },
   {
-    title: "Partnerships Associate (EA Markets)",
+    title: "Partnerships Associate (Kenyan Markets)",
     department: "Business",
     location: "Nairobi",
     type: "Full-time",
@@ -110,7 +110,7 @@ export const STATS: StatItem[] = [
   {
     value: 2412,
     label: "Farmers on platform",
-    subtext: "Across Kenya, Uganda & Tanzania",
+    subtext: "Across different regions of Kenya",
     prefix: "",
     suffix: "+",
   },
@@ -162,8 +162,8 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
   {
     phase: "Phase 4",
     label: "2027+ — Vision",
-    title: "Pan-African Expansion",
-    body: "Uganda, Tanzania, Rwanda, Ethiopia. One platform for East African agriculture.",
+    title: "National Expansion",
+    body: "Scaling to cover all 47 counties. One platform for Kenyan agriculture.",
     isActive: false,
   },
 ];

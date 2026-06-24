@@ -16,7 +16,7 @@ export function AboutOrigin() {
           </h2>
           <div className="space-y-4 text-xs md:text-sm text-gray-600 leading-relaxed font-normal">
             <p>
-              Across East Africa, millions of smallholder farmers feed our nations, yet they are often the last to benefit from modern value chains. Mqulima was built to change that. By bypassing middlemen and traditional bottlenecks, we connect local growers directly to premium markets, ensuring that a bountiful harvest translates directly into fair, reliable household income.
+              Across Kenya, millions of smallholder farmers feed our nation, yet they are often the last to benefit from modern value chains. Mqulima was built to change that. By bypassing middlemen and traditional bottlenecks, we connect local growers directly to premium markets, ensuring that a bountiful harvest translates directly into fair, reliable household income.
             </p>
             <p>
               We believe that agricultural prosperity begins with knowledge and resources. Through our localized learning modules and expert agronomist networks, farmers are moving from guesswork to science-backed cultivation, optimizing their soil health, managing pests, and adapting to changing climates in real time.
@@ -31,7 +31,7 @@ export function AboutOrigin() {
         <div className="relative rounded-2xl overflow-hidden shadow-[0_4px_32px_rgba(0,0,0,0.08)] bg-[#0c2e17] aspect-[4/3] w-full max-w-[540px]">
           <Image
             src="/about/origin-conversation.jpg"
-            alt="Fresh ripe green avocados piled in a rustic wooden crate at an outdoor market in East Africa"
+            alt="Fresh ripe green avocados piled in a rustic wooden crate at an outdoor market in Kenya"
             fill
             className="absolute inset-0 w-full h-full object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"

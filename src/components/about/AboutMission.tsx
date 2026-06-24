@@ -16,7 +16,7 @@ export function AboutMission() {
     {
       icon: MapPin,
       title: "Built for here, not imported",
-      body: "We didn't copy a Western agri-tech model and translate it. We built Mqulima from the ground up for East African soils, seasons, and realities.",
+      body: "We didn't copy a Western agri-tech model and translate it. We built Mqulima from the ground up for Kenyan soils, seasons, and realities.",
     },
   ];
 
@@ -30,7 +30,7 @@ export function AboutMission() {
             Our mission
           </span>
           <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl font-medium text-white leading-snug">
-            "To give every East African farmer the tools, knowledge, and market access they need to build a profitable farm — and pass it on to the next generation."
+            "To give every Kenyan farmer the tools, knowledge, and market access they need to build a profitable farm — and pass it on to the next generation."
           </h2>
         </div>
 

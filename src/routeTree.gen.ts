@@ -16,7 +16,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
-import { Route as ClimateRouteImport } from './routes/climate'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AboutRouteImport } from './routes/about'
@@ -58,11 +57,6 @@ const CommunityRoute = CommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClimateRoute = ClimateRouteImport.update({
-  id: '/climate',
-  path: '/climate',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -94,7 +88,6 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/blog': typeof BlogRoute
-  '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -109,7 +102,6 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/blog': typeof BlogRoute
-  '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -125,7 +117,6 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/blog': typeof BlogRoute
-  '/climate': typeof ClimateRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -142,7 +133,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/blog'
-    | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -157,7 +147,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/blog'
-    | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -172,7 +161,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/blog'
-    | '/climate'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -188,7 +176,6 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcademyRoute: typeof AcademyRoute
   BlogRoute: typeof BlogRoute
-  ClimateRoute: typeof ClimateRoute
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -249,13 +236,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/climate': {
-      id: '/climate'
-      path: '/climate'
-      fullPath: '/climate'
-      preLoaderRoute: typeof ClimateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/blog': {
       id: '/blog'
       path: '/blog'
@@ -309,7 +289,6 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AcademyRoute: AcademyRoute,
   BlogRoute: BlogRoute,
-  ClimateRoute: ClimateRoute,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,

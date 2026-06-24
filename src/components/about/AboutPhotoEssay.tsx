@@ -27,7 +27,7 @@ export function AboutPhotoEssay() {
     {
       id: "essay-4",
       src: "/about/essay-4.jpg",
-      alt: "Vibrant overhead flat-lay of fresh East African vegetables arranged on a rustic wooden table at a market",
+      alt: "Vibrant overhead flat-lay of fresh Kenyan vegetables arranged on a rustic wooden table at a market",
       caption: "From soil to sale.",
       gridClass: "col-span-1 md:col-start-3 md:row-start-2 h-[140px] md:h-[220px]",
     },

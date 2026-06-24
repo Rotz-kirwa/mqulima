@@ -44,7 +44,7 @@ export function AboutCTA() {
         {/* Footer Credit Note */}
         <div className="mt-6">
           <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider block">
-            Built in Nairobi. Growing across East Africa.
+            Built in Nairobi. Growing across Kenya.
           </span>
         </div>
       </div>

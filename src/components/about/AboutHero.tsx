@@ -62,7 +62,7 @@ export function AboutHero() {
         </span>
 
         <h1 className="mt-6 text-2xl sm:text-3xl md:text-5xl font-medium text-white tracking-tight leading-tight md:leading-[1.15]">
-          We exist for the farmer who wakes up at 5am and still can't find a market for his harvest.
+          Where Smart Farmers Build Profitable Futures.
         </h1>
 
         <p className="mt-4 max-w-[520px] text-sm md:text-base text-white/70 font-light leading-relaxed">

@@ -89,7 +89,7 @@ export function AboutStats() {
           <AnimatedStat
             value={2412}
             label="Farmers on platform"
-            subtext="Across Kenya, Uganda & Tanzania"
+            subtext="Across different regions of Kenya"
             prefix=""
             suffix=""
           />

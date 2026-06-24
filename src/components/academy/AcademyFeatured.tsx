@@ -36,7 +36,7 @@ export function AcademyFeatured({ onEnrollClick }: AcademyFeaturedProps) {
                 Soil & Agronomy
               </span>
               <h3 className="mt-4 text-xl sm:text-2xl font-black text-[#0c2e17] tracking-tight">
-                Modern Soil Health for East African Smallholders
+                Modern Soil Health for Kenyan Smallholders
               </h3>
               <p className="mt-3 text-xs md:text-sm text-gray-600 leading-relaxed">
                 Master soil testing, composting, and fertiliser timing for higher yields without expensive inputs. Learn how to diagnose deficiencies directly in your farm.
