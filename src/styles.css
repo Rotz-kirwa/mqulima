@@ -258,3 +258,56 @@
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Mqulima Flat Button Theme Overrides
+   All buttons must have sharp rectangular/square corners (no rounded corners).
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* 1. Global Reset to Border Radius 0 for all buttons & button-like links */
+button,
+input[type="button"],
+input[type="submit"],
+.btn,
+.button,
+a[class*="rounded-"][class*="px-"][class*="py-"],
+a[class*="rounded-"][class*="p-"][class*="px-"],
+a[class*="bg-[#F5A623]"],
+a[class*="bg-gold"],
+a[class*="bg-[#2D6A4F]"],
+a[class*="bg-[#1A5438]"],
+a[class*="bg-white/10"],
+button[class*="rounded-"],
+a.outline-green,
+a.solid-gold {
+  border-radius: 0px !important;
+}
+
+/* 2. Style alignment with the user's provided layout reference */
+/* Solid gold buttons: flat corners, gold/yellow background, dark green text */
+a[class*="bg-[#F5A623]"],
+a[class*="bg-gold"],
+button[class*="bg-[#F5A623]"],
+button[class*="bg-gold"] {
+  background-color: var(--color-gold) !important;
+  color: #0A1E0C !important;
+  border: none !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: none !important;
+}
+a[class*="bg-[#F5A623]"]:hover,
+a[class*="bg-gold"]:hover,
+button[class*="bg-[#F5A623]"]:hover,
+button[class*="bg-gold"]:hover {
+  background-color: oklch(0.77 0.16 84) !important; /* slightly darker gold on hover */
+  transform: none !important;
+}
+
+/* Outline/ghost buttons: flat corners, green border, transparent bg, green text */
+a[class*="border-[#2D6A4F]"],
+button[class*="border-[#2D6A4F]"],
+button[class*="border-border"] {
+  border-radius: 0px !important;
+  transition: all 0.2s ease-in-out !important;
+}

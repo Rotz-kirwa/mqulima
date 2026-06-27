@@ -12,14 +12,14 @@ import heroMarketplace from "@/assets/hero-marketplace.png";
 import heroPoultry from "@/assets/hero-poultry.png";
 
 const slides = [
-  { image: heroBanner, eyebrow: "Kenya's #1 Agritech Platform", title: "Grow More. Sell Better. Farm Smarter.", subtitle: "Mqulima connects farmers to markets, inputs, expert advice, and logistics — all in one powerful platform built for African agriculture.", cta: "Start Farming Smarter", to: "/services", isFlagship: true },
-  { image: heroPoultry, eyebrow: "Poultry Excellence", title: "Next-Gen Poultry Farm Management", subtitle: "Automated feed solutions, high-grade layers, vaccines, and direct access to poultry professionals.", cta: "Shop Poultry Feed", to: "/shop" },
-  { image: heroVet, eyebrow: "Vet Care On Demand", title: "Expert Vet Care, One Click Away", subtitle: "Certified vets at your farm within 24 hours. From dairy cows to layers — we've got your livestock.", cta: "Book Appointment", to: "/services" },
-  { image: heroLivestock, eyebrow: "Livestock Excellence", title: "High-Yield Livestock Operations", subtitle: "Certified veterinary dispatch, top-grade dairy feeds, and precision health monitoring for maximum production.", cta: "Book Veterinary Care", to: "/services" },
-  { image: heroSoil, eyebrow: "Soil Intelligence", title: "Know Your Soil. Maximize Your Yield.", subtitle: "Lab-grade soil testing with crop-specific recommendations. Stop guessing. Start growing.", cta: "Request Soil Test", to: "/services" },
-  { image: heroMarketplace, eyebrow: "Agrovet Soko", title: "Your Digital Agrovet Store", subtitle: "Browse premium fertilizers, certified seeds, and modern farming equipment with secure delivery.", cta: "Shop Marketplace", to: "/shop" },
-  { image: heroCommunity, eyebrow: "Farmers Winning Together", title: "Join 5,000+ Farmers Already Winning", subtitle: "Real conversations. Real success stories. A nationwide community of Kenyan growers.", cta: "Join Community", to: "/community" },
-  { image: heroDelivery, eyebrow: "Anywhere in Kenya", title: "Order. We Deliver to Your Farm.", subtitle: "Same-day in 20+ counties. M-Pesa or card. Track every order from warehouse to gate.", cta: "Shop Now", to: "/shop" },
+  { image: heroBanner, eyebrow: "Kenya's #1 Agritech Platform", title: "Grow More. Sell Better. Farm Smarter.", subtitle: "Mqulima connects farmers to markets, inputs, expert advice, and logistics — all in one powerful platform built for African agriculture.", cta: "Start Farming Smarter", to: "/services", isFlagship: true, search: undefined },
+  { image: heroPoultry, eyebrow: "Poultry Excellence", title: "Next-Gen Poultry Farm Management", subtitle: "Automated feed solutions, high-grade layers, vaccines, and direct access to poultry professionals.", cta: "Shop Poultry Feed", to: "/shop", search: undefined },
+  { image: heroVet, eyebrow: "Vet Care On Demand", title: "Expert Vet Care, One Click Away", subtitle: "Certified vets at your farm within 24 hours. From dairy cows to layers — we've got your livestock.", cta: "Book Appointment", to: "/services", search: { serviceId: "vet" } },
+  { image: heroLivestock, eyebrow: "Livestock Excellence", title: "High-Yield Livestock Operations", subtitle: "Certified veterinary dispatch, top-grade dairy feeds, and precision health monitoring for maximum production.", cta: "Book Veterinary Care", to: "/services", search: { serviceId: "vet" } },
+  { image: heroSoil, eyebrow: "Soil Intelligence", title: "Know Your Soil. Maximize Your Yield.", subtitle: "Lab-grade soil testing with crop-specific recommendations. Stop guessing. Start growing.", cta: "Request Soil Test", to: "/services", search: { serviceId: "soil" } },
+  { image: heroMarketplace, eyebrow: "Agrovet Soko", title: "Your Digital Agrovet Store", subtitle: "Browse premium fertilizers, certified seeds, and modern farming equipment with secure delivery.", cta: "Shop Marketplace", to: "/shop", search: undefined },
+  { image: heroCommunity, eyebrow: "Farmers Winning Together", title: "Join 5,000+ Farmers Already Winning", subtitle: "Real conversations. Real success stories. A nationwide community of Kenyan growers.", cta: "Join Community", to: "/community", search: undefined },
+  { image: heroDelivery, eyebrow: "Anywhere in Kenya", title: "Order. We Deliver to Your Farm.", subtitle: "Same-day in 20+ counties. M-Pesa or card. Track every order from warehouse to gate.", cta: "Shop Now", to: "/shop", search: undefined },
 ];
 
 export function HeroCarousel() {
@@ -83,6 +83,7 @@ export function HeroCarousel() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   to={s.to}
+                  search={s.search}
                   className="group inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3.5 text-sm font-bold text-gold-foreground shadow-gold transition hover:scale-[1.03] active:scale-100"
                 >
                   {s.cta}

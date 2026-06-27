@@ -12,9 +12,9 @@ import { WifiOff } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { usePWA } from "../hooks/usePWA";
+import { usePWA } from "@/hooks/usePWA";
 import { AuthProvider } from "@/lib/auth";
-import { CartProvider } from "../lib/cart-context";
+import { CartProvider } from "@/lib/cart-context";
 
 function NotFoundComponent() {
   return (
@@ -95,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         httpEquiv: "Content-Security-Policy",
         content:
-          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://i.pinimg.com; connect-src 'self' https://api.open-meteo.com; frame-src https://www.openstreetmap.org;",
+          "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://i.pinimg.com; connect-src 'self' https://api.open-meteo.com ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:*; frame-src https://www.openstreetmap.org;",
       },
     ],
     links: [

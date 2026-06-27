@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ServicesRouteImport } from './routes/services'
-import { Route as PartnershipsRouteImport } from './routes/partnerships'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -30,11 +29,6 @@ const ShopRoute = ShopRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartnershipsRoute = PartnershipsRouteImport.update({
-  id: '/partnerships',
-  path: '/partnerships',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -92,7 +86,6 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -106,7 +99,6 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -121,7 +113,6 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/partnerships': typeof PartnershipsRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRouteWithChildren
   '/shop/$productId': typeof ShopProductIdRoute
@@ -137,7 +128,6 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
-    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -151,7 +141,6 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
-    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -165,7 +154,6 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
-    | '/partnerships'
     | '/services'
     | '/shop'
     | '/shop/$productId'
@@ -180,7 +168,6 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  PartnershipsRoute: typeof PartnershipsRoute
   ServicesRoute: typeof ServicesRoute
   ShopRoute: typeof ShopRouteWithChildren
 }
@@ -199,13 +186,6 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/partnerships': {
-      id: '/partnerships'
-      path: '/partnerships'
-      fullPath: '/partnerships'
-      preLoaderRoute: typeof PartnershipsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -293,7 +273,6 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  PartnershipsRoute: PartnershipsRoute,
   ServicesRoute: ServicesRoute,
   ShopRoute: ShopRouteWithChildren,
 }

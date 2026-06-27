@@ -11,11 +11,11 @@ type CartContextType = {
   cartItems: CartItem[];
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
-  addToCart: (product: ShopProduct, quantity?: number) => void;
+  addToCart: (product: ShopProduct, quantity?: number, sizeName?: string) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  buyNow: (product: ShopProduct) => void;
+  buyNow: (product: ShopProduct, sizeName?: string) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,19 +51,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cartItems, isMounted]);
 
-  const addToCart = (product: ShopProduct, quantity = 1) => {
+  const addToCart = (product: ShopProduct, quantity = 1, sizeName?: string) => {
+    let targetId = product.id;
+    let targetName = product.name;
+    let targetPrice = product.price;
+    let targetUnit = product.unit;
+
+    if (sizeName && product.sizes) {
+      const selected = product.sizes.find(s => s.name === sizeName);
+      if (selected) {
+        targetId = `${product.id}-${sizeName}`;
+        targetName = `${product.name} (${sizeName})`;
+        targetPrice = selected.price;
+        targetUnit = `/${selected.name}`;
+      }
+    }
+
+    const cartProduct: ShopProduct = {
+      ...product,
+      id: targetId,
+      name: targetName,
+      price: targetPrice,
+      unit: targetUnit,
+    };
+
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => item.product.id === cartProduct.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id
+          item.product.id === cartProduct.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { product: cartProduct, quantity }];
     });
-    toast.success(`Added ${product.name} to cart!`);
+    toast.success(`Added ${cartProduct.name} to cart!`);
   };
 
   const removeFromCart = (productId: string) => {
@@ -87,18 +110,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCartItems([]);
   };
 
-  const buyNow = (product: ShopProduct) => {
+  const buyNow = (product: ShopProduct, sizeName?: string) => {
+    let targetId = product.id;
+    let targetName = product.name;
+    let targetPrice = product.price;
+    let targetUnit = product.unit;
+
+    if (sizeName && product.sizes) {
+      const selected = product.sizes.find(s => s.name === sizeName);
+      if (selected) {
+        targetId = `${product.id}-${sizeName}`;
+        targetName = `${product.name} (${sizeName})`;
+        targetPrice = selected.price;
+        targetUnit = `/${selected.name}`;
+      }
+    }
+
+    const cartProduct: ShopProduct = {
+      ...product,
+      id: targetId,
+      name: targetName,
+      price: targetPrice,
+      unit: targetUnit,
+    };
+
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => item.product.id === cartProduct.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.product.id === cartProduct.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product: cartProduct, quantity: 1 }];
     });
     setCartOpen(true);
-    toast.success(`Selected ${product.name} for immediate checkout!`);
+    toast.success(`Selected ${cartProduct.name} for immediate checkout!`);
   };
 
   return (

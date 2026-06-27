@@ -16,6 +16,7 @@ export function ServicesGrid() {
           {services.map((s) => (
             <Link
               to="/services"
+              search={{ serviceId: s.id }}
               key={s.id}
               className="group relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-border bg-card p-7 shadow-card transition hover:-translate-y-1 hover:shadow-elegant"
             >

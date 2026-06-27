@@ -1,86 +1,99 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Smartphone, TrendingUp, Truck } from "lucide-react";
-import heroBanner from "@/assets/hero-banner.png";
+import { motion } from "framer-motion";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import heroCinematic from "@/assets/hero-cinematic.png";
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
+};
 
 export function HomeHero() {
   return (
-    <section className="relative h-[88vh] min-h-[620px] w-full overflow-hidden bg-forest">
-      {/* Background image — farmer positioned right */}
-      <img
-        src={heroBanner}
-        alt="A confident African farmer holding a smartphone in a lush farm — Mqulima agritech platform"
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ objectPosition: "right center" }}
-        width={1920}
-        height={1280}
-        fetchPriority="high"
-      />
+    <section className="relative h-[90svh] min-h-[580px] w-full overflow-hidden bg-[#0A1E0C]">
+      {/* ── Background Image Collage ── */}
+      <div className="absolute inset-0 h-full w-full">
+        <img
+          src={heroCinematic}
+          alt="Premium AgriTech collage: cabbage farming, soil test, cows, greenhouse, tractor"
+          className="h-full w-full object-cover object-center"
+          fetchPriority="high"
+          width={1920}
+          height={1080}
+        />
+        {/* 
+          Multi-directional overlays:
+          - Bottom-to-top dark overlay on mobile/portrait so text remains perfectly readable without blocking top content.
+          - Left-to-right dark overlay on desktop/landscape.
+        */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent lg:hidden" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/75 via-black/35 to-transparent" />
+      </div>
 
-      {/* Left-to-right gradient — keeps text legible while the farmer photo stays vivid */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to right, rgba(10,30,15,0.93) 0%, rgba(10,30,15,0.78) 38%, rgba(10,30,15,0.18) 62%, rgba(10,30,15,0.0) 100%)",
-        }}
-      />
-
-      {/* Content */}
-      <div className="container-px relative z-10 mx-auto flex h-full max-w-7xl items-center">
-        <div className="max-w-xl">
-          {/* Eyebrow */}
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-gold backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            Kenya's #1 Agritech Platform
-          </span>
-
-          {/* Headline */}
-          <h1 className="mt-5 text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            Grow More.{" "}
-            <span className="text-gold">Sell Better.</span>{" "}
-            Farm Smarter.
-          </h1>
-
-          {/* Subheadline */}
-          <p className="mt-5 max-w-lg text-base text-white/85 md:text-lg">
-            Mqulima connects farmers to markets, inputs, expert advice, and
-            logistics — all in one powerful platform built for African
-            agriculture.
-          </p>
-
-          {/* CTAs */}
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              to="/services"
-              className="group inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3.5 text-sm font-bold text-gold-foreground shadow-gold transition hover:scale-[1.03] active:scale-100"
+      {/* ── Main Content Area ── */}
+      <div className="container-px relative z-10 mx-auto flex h-full max-w-7xl items-end pb-20 lg:items-center lg:pb-0">
+        <div className="w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col text-left"
+          >
+            {/* Headline */}
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl"
             >
-              Start Farming Smarter
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              to="/about"
-              className="rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-            >
-              Learn more
-            </Link>
-          </div>
+              Agriculture{" "}
+              <span className="text-[#52B788]">for the</span>
+              <br />
+              future.
+            </motion.h1>
 
-          {/* Trust badges */}
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 backdrop-blur">
-              <TrendingUp className="h-4 w-4 text-gold" />
-              <span className="text-xs font-semibold text-white">5,000+ Active Farmers</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 backdrop-blur">
-              <Smartphone className="h-4 w-4 text-gold" />
-              <span className="text-xs font-semibold text-white">App + Web Platform</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 backdrop-blur">
-              <Truck className="h-4 w-4 text-gold" />
-              <span className="text-xs font-semibold text-white">20+ Counties Covered</span>
-            </div>
-          </div>
+            {/* Sub-headline */}
+            <motion.p
+              variants={itemVariants}
+              className="mt-4 text-base leading-relaxed text-white/85 md:text-lg"
+            >
+              Cutting through the noise, taking you first class.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-8 flex flex-wrap items-center gap-3.5"
+            >
+              <Link
+                to="/shop"
+                className="group inline-flex items-center gap-2 rounded-full bg-[#F5A623] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#F5A623]/20 transition hover:bg-[#e09520] hover:scale-[1.02] active:scale-100"
+              >
+                Walk Around
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                to="/services"
+                className="inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white/95 backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Our Services
+              </Link>
+            </motion.div>
+          </motion.div>
         </div>
+      </div>
+
+      {/* ── Scroll Indicator ── */}
+      <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none">
+        <motion.div
+          animate={{ y: [0, 5, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ChevronDown className="h-5 w-5 text-white/40" />
+        </motion.div>
       </div>
     </section>
   );

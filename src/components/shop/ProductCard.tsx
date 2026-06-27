@@ -57,16 +57,16 @@ export function ProductCard({
       onClick={() => onSelectProduct(product)}
       className={
         isGrid
-          ? "group relative flex flex-col overflow-hidden rounded-[12px] bg-white p-3 border border-[#E8ECE9] shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-1 hover:border-[#2D6A4F] cursor-pointer"
-          : "group flex flex-col gap-4 overflow-hidden rounded-[12px] bg-white p-4 border border-[#E8ECE9] shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:border-[#2D6A4F] cursor-pointer sm:flex-row"
+          ? "group relative flex flex-col overflow-hidden rounded-none bg-[#0A1E0C] p-3 border border-[#1A3A25] transition-all duration-300 hover:border-gold cursor-pointer"
+          : "group flex flex-col gap-4 overflow-hidden rounded-none bg-[#0A1E0C] p-4 border border-[#1A3A25] transition-all duration-300 hover:border-gold cursor-pointer sm:flex-row"
       }
     >
       {/* Product Image Area */}
       <div
         className={
           isGrid
-            ? "relative aspect-square w-full overflow-hidden bg-[#FAFAF8] rounded-[8px]"
-            : "relative aspect-square w-full shrink-0 overflow-hidden bg-[#FAFAF8] rounded-[8px] sm:w-44"
+            ? "relative aspect-square w-full overflow-hidden bg-[#0A1E0C] rounded-none"
+            : "relative aspect-square w-full shrink-0 overflow-hidden bg-[#0A1E0C] rounded-none sm:w-44"
         }
       >
         {!isImageLoaded && <div className="absolute inset-0 animate-shimmer" />}
@@ -88,7 +88,7 @@ export function ProductCard({
               e.stopPropagation();
               onQuickView(product);
             }}
-            className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-extrabold text-[#1A1A1A] shadow-md transition-transform duration-300 hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 rounded-none bg-white px-4 py-2 text-xs font-extrabold text-[#1A1A1A] shadow-md transition-transform duration-300 hover:scale-105 active:scale-95"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>Quick View</span>
@@ -101,19 +101,19 @@ export function ProductCard({
             e.stopPropagation();
             onToggleWishlist(product.id);
           }}
-          className="absolute right-2.5 top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[#1A1A1A] shadow-[0_2px_8px_rgba(0,0,0,0.1)] backdrop-blur transition-all duration-200 hover:scale-110 active:scale-95"
+          className="absolute right-2.5 top-2.5 z-10 grid h-8 w-8 place-items-center rounded-none bg-black/40 text-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] backdrop-blur transition-all duration-200 hover:scale-110 active:scale-95"
           aria-label="Toggle wishlist"
         >
           <Heart
             className={`h-4.5 w-4.5 transition-colors ${
-              isWishlisted ? "fill-red-500 text-red-500" : "text-[#6B7280]"
+              isWishlisted ? "fill-red-500 text-red-500" : "text-white/60"
             }`}
           />
         </button>
 
         {/* Badge Pill Top-Left */}
         {badgeText && (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-[#2D6A4F] px-2.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-none bg-gold px-2.5 py-0.5 text-[9px] font-bold text-gold-foreground uppercase tracking-wider">
             {badgeText}
           </span>
         )}
@@ -121,75 +121,64 @@ export function ProductCard({
 
       {/* Product Metadata & Info */}
       <div className="flex flex-1 flex-col pt-3.5 text-left">
-        {/* Category & Muted County */}
-        <div className="flex items-center justify-between text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider mb-1">
+        {/* Category & Rating */}
+        <div className="flex items-center justify-between text-[10px] font-bold text-gold uppercase tracking-wider mb-1">
           <span>{product.category}</span>
-          <span className="flex items-center gap-0.5">
-            <MapPin className="h-2.5 w-2.5 text-[#2D6A4F]" />
-            {product.county}
+          <span className="flex items-center gap-1 text-gold">
+            <Star className="h-3 w-3 fill-gold text-gold" />
+            {product.rating}
           </span>
         </div>
 
-        {/* Product Title (Bold, Black, max 2 lines) */}
-        <h3 className="font-sans font-bold text-[#1A1A1A] text-sm leading-snug transition-colors duration-200 group-hover:text-[#2D6A4F] line-clamp-2 h-10">
+        {/* Product Title (Bold, White, max 2 lines) */}
+        <h3 className="font-sans font-bold text-white text-sm leading-snug transition-colors duration-200 group-hover:text-gold line-clamp-2 h-10">
           {product.name}
         </h3>
 
         {/* Seller name in muted small text */}
-        <div className="text-[11px] text-[#6B7280] mt-1">
-          Seller: <span className="font-medium text-[#1A1A1A]">{product.brand}</span>
+        <div className="text-[11px] text-white/60 mt-1">
+          Seller: <span className="font-medium text-white">{product.brand}</span>
         </div>
 
-        {/* Star rating + review count */}
-        <div className="mt-2 flex items-center gap-1">
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3 w-3 ${
-                  i < Math.floor(product.rating)
-                    ? "fill-[#F5A623] text-[#F5A623]"
-                    : "text-[#E8ECE9]"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-[10px] font-bold text-[#1A1A1A]">{product.rating}</span>
-          <span className="text-[10px] text-[#6B7280]">({product.reviewsCount})</span>
-        </div>
+        {/* Description */}
+        <p className="mt-2 line-clamp-2 text-xs text-white/60 h-8">{product.description}</p>
 
-        {!isGrid && (
-          <p className="mt-2.5 line-clamp-2 text-xs text-[#6B7280]">{product.description}</p>
-        )}
-
-        {/* Price in bold green + unit */}
+        {/* Price in gold + unit */}
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="font-sans text-base font-extrabold text-[#2D6A4F]">
+          <span className="font-sans text-base font-extrabold text-gold">
             KES {product.price.toLocaleString()}
           </span>
-          <span className="text-[10px] text-[#6B7280]">/{product.unit}</span>
+          <span className="text-[10px] text-white/60">/{product.unit}</span>
           {product.originalPrice && (
-            <span className="font-sans text-xs text-[#6B7280] line-through ml-2">
+            <span className="font-sans text-xs text-white/40 line-through ml-2">
               KES {product.originalPrice.toLocaleString()}
             </span>
           )}
         </div>
 
-        {/* Add to Cart button (outline -> filled green on hover) */}
-        <div className="relative mt-4">
+        {/* Action Buttons (Add to Cart + View side-by-side) */}
+        <div className="relative mt-4 flex gap-2">
           <button
             onClick={handleAddToCartWithParticles}
-            className="flex w-full items-center justify-center gap-1.5 rounded-[8px] border border-[#2D6A4F] bg-white py-2 text-xs font-bold text-[#2D6A4F] transition-all duration-300 hover:bg-[#2D6A4F] hover:text-white uppercase tracking-wider text-center"
+            className="flex-1 bg-[#2D6A4F] hover:bg-[#224f3b] text-white py-2 text-xs font-bold uppercase tracking-wider text-center rounded-none cursor-pointer transition-colors"
           >
-            <ShoppingCart className="h-3.5 w-3.5" />
-            <span>Add to Cart</span>
+            Add to Cart
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickView(product);
+            }}
+            className="flex-1 border border-[#2D6A4F] hover:bg-[#2D6A4F]/10 text-[#52B788] py-2 text-xs font-bold uppercase tracking-wider text-center rounded-none cursor-pointer transition-colors"
+          >
+            View
           </button>
 
           {/* Render particle burst */}
           {particles.map((p) => (
             <span
               key={p.id}
-              className="absolute pointer-events-none w-2 h-2 rounded-full bg-[#2D6A4F] z-50"
+              className="absolute pointer-events-none w-2 h-2 rounded-none bg-[#2D6A4F] z-50"
               style={{
                 left: "50%",
                 top: "50%",
@@ -211,24 +200,24 @@ export function ProductCardSkeleton({ layout = "grid" }: { layout?: "grid" | "li
     <div
       className={
         isGrid
-          ? "relative flex flex-col overflow-hidden rounded-[12px] bg-white p-3 border border-[#E8ECE9] aspect-[3/4]"
-          : "flex flex-col gap-4 overflow-hidden rounded-[12px] bg-white p-4 border border-[#E8ECE9] sm:flex-row"
+          ? "relative flex flex-col overflow-hidden rounded-none bg-[#0A1E0C] p-3 border border-[#1A3A25] aspect-[3/4]"
+          : "flex flex-col gap-4 overflow-hidden rounded-none bg-[#0A1E0C] p-4 border border-[#1A3A25] sm:flex-row"
       }
     >
       {/* Image Skeleton */}
       <div
         className={
           isGrid
-            ? "relative aspect-square w-full animate-shimmer rounded-[8px]"
-            : "relative aspect-square w-full shrink-0 animate-shimmer rounded-[8px] sm:w-44"
+            ? "relative aspect-square w-full animate-pulse bg-white/5 rounded-none"
+            : "relative aspect-square w-full shrink-0 animate-pulse bg-white/5 rounded-none sm:w-44"
         }
       />
       {/* Info Skeleton */}
       <div className="flex flex-1 flex-col pt-3 space-y-3">
-        <div className="h-4 w-3/4 animate-shimmer rounded-[8px]" />
-        <div className="h-3 w-1/2 animate-shimmer rounded-[8px]" />
-        <div className="h-3 w-1/3 animate-shimmer rounded-[8px]" />
-        <div className="h-8 w-full animate-shimmer rounded-[8px] mt-auto" />
+        <div className="h-4 w-3/4 animate-pulse bg-white/5 rounded-none" />
+        <div className="h-3 w-1/2 animate-pulse bg-white/5 rounded-none" />
+        <div className="h-3 w-1/3 animate-pulse bg-white/5 rounded-none" />
+        <div className="h-8 w-full animate-pulse bg-white/5 rounded-none mt-auto" />
       </div>
     </div>
   );

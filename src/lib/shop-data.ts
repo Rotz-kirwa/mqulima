@@ -1,3 +1,10 @@
+export type ProductSizeOption = {
+  name: string;
+  price: number;
+  originalPrice?: number | null;
+  unit: string;
+};
+
 export type ShopProduct = {
   id: string;
   name: string;
@@ -22,6 +29,7 @@ export type ShopProduct = {
   unit: string;
   sellerScore: number;
   condition: "Fresh" | "Certified Organic" | "Bulk Available" | "Pre-Order";
+  sizes?: ProductSizeOption[];
 };
 
 export const shopProducts: ShopProduct[] = [
@@ -49,7 +57,12 @@ export const shopProducts: ShopProduct[] = [
     organic: false,
     verifiedSeller: true,
     sellerScore: 95,
-    condition: "Fresh"
+    condition: "Fresh",
+    sizes: [
+      { name: "250g", price: 400, originalPrice: 500, unit: "250g" },
+      { name: "500g", price: 700, originalPrice: 900, unit: "500g" },
+      { name: "1kg", price: 1200, originalPrice: 1500, unit: "kg" }
+    ]
   },
   {
     id: "k2",
@@ -74,7 +87,11 @@ export const shopProducts: ShopProduct[] = [
     organic: false,
     verifiedSeller: true,
     sellerScore: 95,
-    condition: "Fresh"
+    condition: "Fresh",
+    sizes: [
+      { name: "50g", price: 950, originalPrice: 1100, unit: "50g" },
+      { name: "250g", price: 4200, originalPrice: 4800, unit: "250g" }
+    ]
   },
   {
     id: "k3",
@@ -99,7 +116,12 @@ export const shopProducts: ShopProduct[] = [
     organic: false,
     verifiedSeller: true,
     sellerScore: 95,
-    condition: "Bulk Available"
+    condition: "Bulk Available",
+    sizes: [
+      { name: "500ml", price: 900, originalPrice: 1050, unit: "500ml" },
+      { name: "1L", price: 1500, originalPrice: 1800, unit: "Ltr" },
+      { name: "5L", price: 7000, originalPrice: 8200, unit: "5L" }
+    ]
   },
   {
     id: "k4",
@@ -357,7 +379,12 @@ export const shopProducts: ShopProduct[] = [
     organic: false,
     verifiedSeller: true,
     sellerScore: 95,
-    condition: "Bulk Available"
+    condition: "Bulk Available",
+    sizes: [
+      { name: "10kg", price: 800, originalPrice: 950, unit: "10kg" },
+      { name: "25kg", price: 1750, originalPrice: 1950, unit: "25kg" },
+      { name: "50kg", price: 3200, originalPrice: 3500, unit: "50kg" }
+    ]
   },
   {
     id: "k14",
@@ -434,7 +461,12 @@ export const shopProducts: ShopProduct[] = [
     organic: false,
     verifiedSeller: true,
     sellerScore: 95,
-    condition: "Bulk Available"
+    condition: "Bulk Available",
+    sizes: [
+      { name: "10kg", price: 550, originalPrice: 650, unit: "10kg" },
+      { name: "25kg", price: 1200, originalPrice: 1350, unit: "25kg" },
+      { name: "50kg", price: 2150, originalPrice: 2400, unit: "50kg" }
+    ]
   },
   {
     id: "k17",

@@ -99,11 +99,10 @@ export function Footer() {
             title="Platform"
             links={[
               { to: "/shop", label: "Agrovet Shop" },
+              { to: "/blog", label: "Mqulima News" },
+              { to: "/community", label: "Mqulima Forum" },
               { to: "/services", label: "Services" },
               { to: "/academy", label: "Academy" },
-              { to: "/community", label: "Community" },
-              { to: "/blog", label: "Blog" },
-              { to: "/partnerships", label: "Partnerships" },
             ]}
           />
           <FooterCol

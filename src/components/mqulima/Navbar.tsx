@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { MqulimaLogo } from "./MqulimaLogo";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "../../lib/cart-context";
+import { useCart } from "@/lib/cart-context";
 import { shopProducts, type ShopProduct } from "@/lib/shop-data";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -17,11 +17,10 @@ import { toast } from "sonner";
 const nav = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
+  { to: "/blog", label: "Mqulima News" },
+  { to: "/community", label: "Mqulima Forum" },
   { to: "/services", label: "Services" },
   { to: "/academy", label: "Academy" },
-  { to: "/community", label: "Community" },
-  { to: "/blog", label: "Blog" },
-  { to: "/partnerships", label: "Partnerships" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -29,11 +28,10 @@ const nav = [
 const navWithIcons = [
   { to: "/", label: "Home", icon: Home },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
+  { to: "/blog", label: "Mqulima News", icon: FileText },
+  { to: "/community", label: "Mqulima Forum", icon: UsersIcon },
   { to: "/services", label: "Services", icon: Briefcase },
   { to: "/academy", label: "Academy", icon: BookOpen },
-  { to: "/community", label: "Community", icon: UsersIcon },
-  { to: "/blog", label: "Blog", icon: FileText },
-  { to: "/partnerships", label: "Partnerships", icon: Handshake },
   { to: "/about", label: "About", icon: Info },
   { to: "/contact", label: "Contact", icon: Phone },
 ];

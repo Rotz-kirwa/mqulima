@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { X, MapPin, ShieldCheck, ShoppingCart, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { type ShopProduct } from "@/lib/shop-data";
@@ -9,6 +10,14 @@ interface QuickViewModalProps {
 }
 
 export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModalProps) {
+  const [selectedSizeName, setSelectedSizeName] = useState<string | undefined>(
+    product.sizes && product.sizes.length > 0 ? product.sizes[0].name : undefined
+  );
+
+  const activeSize = product.sizes?.find((s) => s.name === selectedSizeName);
+  const activePrice = activeSize ? activeSize.price : product.price;
+  const activeOriginalPrice = activeSize ? activeSize.originalPrice : product.originalPrice;
+  const activeUnit = activeSize ? activeSize.unit : product.unit;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-md">
       {/* Background click overlay */}
@@ -85,27 +94,57 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
               </div>
             </div>
 
+            {/* Size Selector */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div className="mt-4 border-t border-[#E8ECE9] pt-4">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6B7280]">Select Size / Volume</span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {product.sizes.map((s) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => setSelectedSizeName(s.name)}
+                      className={`px-3 py-1.5 border text-xs font-bold transition rounded-none ${
+                        selectedSizeName === s.name
+                          ? "bg-[#2D6A4F] text-white border-[#2D6A4F]"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Price & Cart Actions */}
             <div className="mt-6 border-t border-[#E8ECE9] pt-4">
               <div className="flex items-baseline gap-1.5">
                 <span className="font-sans text-2xl font-black text-[#2D6A4F]">
-                  KES {product.price.toLocaleString()}
+                  KES {activePrice.toLocaleString()}
                 </span>
-                {product.originalPrice && (
+                {activeOriginalPrice && (
                   <span className="font-sans text-sm text-[#6B7280] line-through">
-                    KES {product.originalPrice.toLocaleString()}
+                    KES {activeOriginalPrice.toLocaleString()}
                   </span>
                 )}
-                <span className="text-xs text-[#6B7280] ml-1">per {product.unit}</span>
+                <span className="text-xs text-[#6B7280] ml-1">per {activeUnit}</span>
               </div>
 
               <button
                 onClick={(e) => {
-                  onAddToCart(product, e);
+                  const sizeSuffix = selectedSizeName ? `-${selectedSizeName}` : '';
+                  onAddToCart({
+                    ...product,
+                    id: selectedSizeName ? `${product.id}${sizeSuffix}` : product.id,
+                    price: activePrice,
+                    originalPrice: activeOriginalPrice,
+                    unit: activeUnit,
+                  }, e);
                   onClose();
                 }}
                 disabled={product.stock <= 0}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-98 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-none bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-98 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <ShoppingCart className="h-4 w-4" /> Add to Cart
               </button>
