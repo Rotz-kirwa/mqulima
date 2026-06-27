@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import {
   ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle,
   Home, ShoppingBag, Briefcase, CloudSun, BookOpen, Users as UsersIcon, Info, Phone,
-  Handshake, FileText
+  Handshake, FileText, Wrench
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const nav = [
   { to: "/shop", label: "Shop" },
   { to: "/blog", label: "Mqulima News" },
   { to: "/community", label: "Mqulima Forum" },
+  { to: "/tools", label: "Mqulima Tools" },
   { to: "/services", label: "Services" },
   { to: "/academy", label: "Academy" },
   { to: "/about", label: "About" },
@@ -30,6 +31,7 @@ const navWithIcons = [
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/blog", label: "Mqulima News", icon: FileText },
   { to: "/community", label: "Mqulima Forum", icon: UsersIcon },
+  { to: "/tools", label: "Mqulima Tools", icon: Wrench },
   { to: "/services", label: "Services", icon: Briefcase },
   { to: "/academy", label: "Academy", icon: BookOpen },
   { to: "/about", label: "About", icon: Info },

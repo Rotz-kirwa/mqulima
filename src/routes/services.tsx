@@ -19,7 +19,9 @@ import {
   Truck, 
   FileText, 
   ShieldAlert, 
-  Coins 
+  Coins,
+  Sprout,
+  Database
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -294,6 +296,33 @@ const serviceCategories: ServiceCategory[] = [
   }
 ];
 
+const CATEGORY_META: Record<string, { eyebrow: string; icon: React.ComponentType<any> }> = {
+  soil: {
+    eyebrow: "KNOW YOUR SOIL. GROW YOUR HARVEST.",
+    icon: Sprout
+  },
+  vet: {
+    eyebrow: "KEEP LIVESTOCK HEALTHY. OPTIMIZE PRODUCTION.",
+    icon: ShieldCheck
+  },
+  feeds: {
+    eyebrow: "FEED SMART. POWER YOUR HARVEST.",
+    icon: Activity
+  },
+  crops: {
+    eyebrow: "GROW EFFICIENTLY. TRANSPORT SECURELY.",
+    icon: Truck
+  },
+  value: {
+    eyebrow: "PROCESS BETTER. BOOST PROFITS.",
+    icon: Coins
+  },
+  other: {
+    eyebrow: "DIGITIZE YOUR FARM. SECURE WATER ACCESS.",
+    icon: Database
+  }
+};
+
 function ServicesPage() {
   const search = Route.useSearch();
   const [activeView, setActiveView] = useState<"explore" | "tracker">("explore");
@@ -560,16 +589,120 @@ function ServicesPage() {
         </section>
 
         {/* Main Content Section */}
-        <section className="py-12">
-          <div className="container-px mx-auto max-w-7xl">
-            
-            {/* VIEW A: Explore Services */}
-            {activeView === "explore" && (
-              <div className="space-y-12">
-                
-                {/* Stepper Wizard popup (if active) */}
-                {selectedSubservice ? (
-                  <div className="max-w-xl mx-auto rounded-2xl border border-[#D4DDD0] bg-white p-6 shadow-md text-left">
+        {activeView === "explore" && !selectedSubservice ? (
+          <section className="bg-[#0B130E] text-white border-t border-[#2D6A4F]/20">
+            <div className="container-px mx-auto max-w-7xl py-16 space-y-24">
+              {serviceCategories.map((cat, index) => {
+                const meta = CATEGORY_META[cat.id] || { eyebrow: "EXPERT FARM SERVICES.", icon: Sprout };
+                const IconComponent = meta.icon;
+                return (
+                  <div key={cat.id} className="grid gap-12 lg:grid-cols-12 lg:items-center border-b border-[#2D6A4F]/10 last:border-b-0 pb-16 last:pb-0">
+                    
+                    {/* Left Column: Image */}
+                    <div className="lg:col-span-5">
+                      <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-[#52B788] to-[#F5A623] opacity-20 blur-lg group-hover:opacity-40 transition duration-500 rounded-none" />
+                        <div className="relative rounded-none border border-[#2D6A4F]/30 bg-[#141E18] p-2 overflow-hidden shadow-2xl">
+                          <img
+                            src={cat.image}
+                            alt={cat.name}
+                            className="w-full object-cover rounded-none aspect-[4/3] scale-98 group-hover:scale-100 transition-transform duration-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Details */}
+                    <div className="lg:col-span-7 space-y-6 text-left">
+                      <div className="flex items-center gap-2 text-[#F5A623] font-bold text-[10px] uppercase tracking-[0.2em]">
+                        <IconComponent className="h-4 w-4 shrink-0 text-[#F5A623]" />
+                        {meta.eyebrow}
+                      </div>
+
+                      <h2 className="text-3xl font-extrabold sm:text-4xl text-white font-serif tracking-tight uppercase leading-tight">
+                        {cat.name}
+                      </h2>
+
+                      <p className="text-xs text-white/70 leading-relaxed max-w-2xl">
+                        {cat.broaderDescription}
+                      </p>
+
+                      {/* Sub-services Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {cat.subservices.map((sub) => (
+                          <div 
+                            key={sub.id} 
+                            className="bg-[#142018]/45 border border-[#2D6A4F]/20 p-4 hover:border-[#52B788]/40 transition flex flex-col justify-between rounded-none"
+                          >
+                            <div>
+                              <h4 className="text-xs font-black text-white uppercase tracking-wider">{sub.name}</h4>
+                              <p className="text-[10px] text-white/50 mt-1 leading-relaxed">{sub.description}</p>
+                            </div>
+                            <div className="text-[10px] text-[#52B788] font-bold mt-4 border-t border-[#2D6A4F]/10 pt-2 font-mono flex items-center justify-between">
+                              <span>{sub.estimatedCost}</span>
+                              <button
+                                onClick={() => {
+                                  setSelectedSubservice(sub);
+                                  setStep(1);
+                                  setSimStep("idle");
+                                  setDoneRef(null);
+                                  setTimeout(() => {
+                                    const el = document.getElementById("services-wizard");
+                                    el?.scrollIntoView({ behavior: "smooth" });
+                                  }, 50);
+                                }}
+                                className="text-[9px] bg-[#52B788]/20 hover:bg-[#52B788] hover:text-[#0B150F] text-[#52B788] px-2.5 py-1 font-sans font-extrabold uppercase transition cursor-pointer"
+                              >
+                                Book
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <button
+                          onClick={() => {
+                            setSelectedSubservice(cat.subservices[0]);
+                            setStep(1);
+                            setSimStep("idle");
+                            setDoneRef(null);
+                            setTimeout(() => {
+                              const el = document.getElementById("services-wizard");
+                              el?.scrollIntoView({ behavior: "smooth" });
+                            }, 50);
+                          }}
+                          className="h-11 px-6 bg-[#F5A623] hover:bg-[#e09520] text-black font-extrabold text-xs uppercase tracking-wider rounded-none transition flex items-center justify-center shadow-md shadow-[#F5A623]/25"
+                        >
+                          Book a Service
+                        </button>
+                        <a
+                          href={`https://wa.me/254700000000?text=Hi%20Mqulima%2C%20I%20would%20like%20to%20consult%20an%20expert%20regarding%20${encodeURIComponent(cat.name)}.`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-11 px-6 border border-[#2D6A4F]/60 text-white/90 hover:bg-white/5 font-extrabold text-xs uppercase tracking-wider rounded-none transition flex items-center justify-center"
+                        >
+                          Talk to an Expert
+                        </a>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : (
+          <section className="py-12">
+            <div className="container-px mx-auto max-w-7xl">
+              
+              {/* VIEW A: Explore Services */}
+              {activeView === "explore" && selectedSubservice && (
+                <div className="space-y-12">
+                  
+                  {/* Stepper Wizard popup (if active) */}
+                  <div id="services-wizard" className="max-w-xl mx-auto rounded-none border border-[#D4DDD0] bg-white p-6 shadow-md text-left text-[#0A1E0C]">
                     {doneRef ? (
                       <div className="grid place-items-center py-10 text-center">
                         <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-800 text-3xl animate-bounce">
@@ -855,104 +988,8 @@ function ServicesPage() {
                       </>
                     )}
                   </div>
-                ) : (
-                  <>
-                    {/* Category Selector Grid with Broader Class Details */}
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 text-left">
-                      {serviceCategories.map((cat) => (
-                        <div 
-                          key={cat.id} 
-                          className={`bg-white border rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between ${
-                            selectedCategoryId === cat.id ? "border-[#1A5438] ring-1 ring-[#1A5438]/10" : "border-[#D4DDD0]"
-                          }`}
-                        >
-                          <div>
-                            <div className="aspect-video w-full bg-slate-50 overflow-hidden relative">
-                              <img
-                                src={cat.image}
-                                alt={cat.name}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-4">
-                                <h3 className="text-base font-extrabold font-['Lora'] text-white">
-                                  {cat.name}
-                                </h3>
-                              </div>
-                            </div>
-                            <div className="p-5">
-                              <p className="text-xs text-[#5D6B5C] leading-relaxed font-semibold">
-                                {cat.broaderDescription}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="p-5 border-t border-gray-100 bg-[#FAF9F5]">
-                            <button
-                              onClick={() => setSelectedCategoryId(cat.id)}
-                              className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                                selectedCategoryId === cat.id 
-                                  ? "bg-[#1A5438] text-white" 
-                                  : "bg-white border border-[#D4DDD0] text-[#1A5438] hover:bg-gray-50"
-                              }`}
-                            >
-                              <span>Explore {cat.subservices.length} Services</span>
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Specific Subservices Catalogue (Visible for the active Category) */}
-                    <div className="border-t border-[#D4DDD0] pt-12 text-left">
-                      <div className="mb-8">
-                        <span className="text-[10px] font-black text-[#1A5438] uppercase tracking-wider block">
-                          Specific Services Catalogue
-                        </span>
-                        <h2 className="text-2xl font-bold font-['Lora'] text-[#1A3A1A] mt-1">
-                          Available under {activeCategory.name}
-                        </h2>
-                      </div>
-
-                      <div className="grid gap-6 md:grid-cols-2">
-                        {activeCategory.subservices.map((sub) => (
-                          <div 
-                            key={sub.id} 
-                            className="bg-white border border-[#D4DDD0] rounded-xl p-5 shadow-xs hover:border-[#1A5438] transition flex flex-col justify-between"
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between gap-3">
-                                <h3 className="text-sm font-extrabold text-[#1A3A1A]">{sub.name}</h3>
-                                <span className="text-[10px] text-[#1A5438] font-bold bg-[#1A5438]/5 px-2 py-0.5 rounded border border-[#1A5438]/10 whitespace-nowrap">
-                                  {sub.estimatedCost}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-[#5D6B5C] leading-relaxed font-semibold">
-                                {sub.description}
-                              </p>
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                setSelectedSubservice(sub);
-                                setStep(1);
-                                setSimStep("idle");
-                                setDoneRef(null);
-                              }}
-                              className="mt-5 w-full bg-[#FAF9F5] border border-[#1A5438] hover:bg-[#1A5438] hover:text-white text-[#1A5438] py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <span>Order Service</span>
-                              <CheckCircle className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-              </div>
-            )}
+                </div>
+              )}
 
             {/* VIEW B: Service Request Tracker */}
             {activeView === "tracker" && (
@@ -1101,6 +1138,7 @@ function ServicesPage() {
 
           </div>
         </section>
+        )}
       </div>
     </AppLayout>
   );

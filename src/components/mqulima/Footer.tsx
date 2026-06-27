@@ -101,6 +101,7 @@ export function Footer() {
               { to: "/shop", label: "Agrovet Shop" },
               { to: "/blog", label: "Mqulima News" },
               { to: "/community", label: "Mqulima Forum" },
+              { to: "/tools", label: "Mqulima Tools" },
               { to: "/services", label: "Services" },
               { to: "/academy", label: "Academy" },
             ]}
