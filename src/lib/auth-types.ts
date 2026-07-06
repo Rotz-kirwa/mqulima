@@ -6,4 +6,5 @@ export type User = {
   farmSize: string;
   crops: string;
   livestock: string;
+  role?: string;
 };

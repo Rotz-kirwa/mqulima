@@ -31,3 +31,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Environment Variables
+.env
+admin/.env
+temp_admin_credentials.txt
+ADMIN_CREDENTIALS.txt

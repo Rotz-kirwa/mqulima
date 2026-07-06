@@ -9,23 +9,23 @@ interface FaqItem {
 const faqs: FaqItem[] = [
   {
     q: "What is Mqulima and how does it work?",
-    a: "Mqulima is a digital marketplace and education platform designed to connect Kenyan farmers with verified agricultural inputs, veterinary services, and certified training courses to improve crop yields and farm profitability.",
+    a: "Mqulima is East Africa's premium digital marketplace and Extension Network. We connect rural farmers with audited chemical/seed inputs, direct transport logistics, and county-specific meteorological planning tools to scale production.",
   },
   {
     q: "How do I create an account on Mqulima?",
-    a: "You can sign up directly on our mobile app or web portal using your phone number. No complex email registrations are required. We authenticate accounts via a quick SMS OTP to keep your farm data secure.",
+    a: "You can register directly on our web application or download the PWA wrapper. Using a mobile number, you will authenticate using an SMS OTP. No legacy email validation sequences are required.",
   },
   {
-    q: "What payment methods are supported on the platform?",
-    a: "We support direct M-Pesa payments (via STK push notifications), mobile bank transfers, and major debit/credit cards. Cash payments are not supported to guarantee transaction safety for both buyers and sellers.",
+    q: "What payment systems are supported?",
+    a: "We support direct Safaricom M-Pesa payments (via automated STK Push prompts), local Bank Transits, and secure credit cards. Offline transactions are restricted to secure the audit trails of sellers.",
   },
   {
-    q: "Is there a fee to use Mqulima's services?",
-    a: "Creating an account and browsing products, services, or free courses is completely free. We only charge standard merchant processing fees on marketplace sales, and course fees for advanced agronomist certification tracks.",
+    q: "Are there onboarding fees for cooperatives?",
+    a: "Onboarding and catalog browsing are completely free. Standard commission percentages apply only on merchant transactions, and premium rates are applied on specific soil extension diagnostic tracks.",
   },
   {
-    q: "How do I get technical support if I face an issue?",
-    a: "Our client success team is available Monday through Friday from 8 AM to 6 PM EAT. You can reach out directly via WhatsApp at +254 723 346 134, call our support line, or email us at Mqulima001@gmail.com.",
+    q: "How do I request help with a shipment or order?",
+    a: "Our dispatch and support lines are active Mon-Fri, 8AM to 6PM EAT. Click the floating WhatsApp button on the bottom-right corner or submit the contact dispatch form on this page.",
   },
 ];
 
@@ -37,24 +37,24 @@ export function FaqAccordion() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-4">
+    <div className="w-full max-w-3xl mx-auto space-y-5">
       {faqs.map((faq, i) => {
         const isOpen = openIndex === i;
         return (
           <div
             key={i}
-            className="border-b border-gray-200 pb-4 text-left"
+            className="border-2 border-[#0A1E0C] bg-white p-5 transition-all duration-300 hover:border-[#2D6A4F] hover:shadow-[6px_6px_0px_#0A1E0C] text-left rounded-none"
           >
             <button
               onClick={() => toggle(i)}
               aria-expanded={isOpen}
-              className="w-full flex items-center justify-between py-4 text-left focus:outline-none group cursor-pointer"
+              className="w-full flex items-center justify-between py-2.5 text-left focus:outline-none group cursor-pointer"
             >
-              <span className="text-base md:text-lg font-bold text-[#1A1A1A] group-hover:text-[#2D6A4F] transition-colors duration-200">
+              <span className="text-lg font-black font-serif text-[#0A1E0C] group-hover:text-[#2D6A4F] transition-colors duration-200 leading-snug">
                 {faq.q}
               </span>
-              <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center text-[#F5A623] text-xl font-mono">
-                {isOpen ? "×" : "+"}
+              <span className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-[#0A1E0C] bg-[#FAF9F5] text-sm font-mono font-black text-[#0A1E0C] transition duration-300 group-hover:border-[#2D6A4F] group-hover:bg-[#2D6A4F] group-hover:text-white rounded-none">
+                {isOpen ? "−" : "+"}
               </span>
             </button>
 
@@ -64,10 +64,10 @@ export function FaqAccordion() {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <p className="text-sm text-gray-600 leading-relaxed pb-4 pr-6">
+                  <p className="text-sm text-gray-605 leading-relaxed pt-4 pb-2 pr-6 font-medium border-t border-gray-150 mt-2">
                     {faq.a}
                   </p>
                 </motion.div>

@@ -10,26 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsRouteImport } from './routes/tools'
-import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ShopProductIdRouteImport } from './routes/shop.$productId'
+import { Route as ShopIndexRouteImport } from './routes/shop/index'
+import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
+import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
+import { Route as ApiMpesaCallbackRouteImport } from './routes/api/mpesa/callback'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesRoute = ServicesRouteImport.update({
@@ -62,6 +61,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcademyRoute = AcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
@@ -77,54 +81,86 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopProductIdRoute = ShopProductIdRouteImport.update({
-  id: '/$productId',
-  path: '/$productId',
-  getParentRoute: () => ShopRoute,
+  id: '/shop/$productId',
+  path: '/shop/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
+  id: '/shop/product/$slug',
+  path: '/shop/product/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMpesaCallbackRoute = ApiMpesaCallbackRouteImport.update({
+  id: '/api/mpesa/callback',
+  path: '/api/mpesa/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/ai': typeof AiRoute
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
-  '/shop': typeof ShopRouteWithChildren
   '/tools': typeof ToolsRoute
   '/shop/$productId': typeof ShopProductIdRoute
+  '/shop/': typeof ShopIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/ai': typeof AiRoute
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
-  '/shop': typeof ShopRouteWithChildren
   '/tools': typeof ToolsRoute
   '/shop/$productId': typeof ShopProductIdRoute
+  '/shop': typeof ShopIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/ai': typeof AiRoute
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
-  '/shop': typeof ShopRouteWithChildren
   '/tools': typeof ToolsRoute
   '/shop/$productId': typeof ShopProductIdRoute
+  '/shop/': typeof ShopIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
+  '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,57 +168,74 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/academy'
+    | '/ai'
     | '/blog'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/login'
     | '/services'
-    | '/shop'
     | '/tools'
     | '/shop/$productId'
+    | '/shop/'
+    | '/api/ai/chat'
+    | '/api/mpesa/callback'
+    | '/shop/product/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/academy'
+    | '/ai'
     | '/blog'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/login'
     | '/services'
-    | '/shop'
     | '/tools'
     | '/shop/$productId'
+    | '/shop'
+    | '/api/ai/chat'
+    | '/api/mpesa/callback'
+    | '/shop/product/$slug'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/academy'
+    | '/ai'
     | '/blog'
     | '/community'
     | '/contact'
     | '/dashboard'
     | '/login'
     | '/services'
-    | '/shop'
     | '/tools'
     | '/shop/$productId'
+    | '/shop/'
+    | '/api/ai/chat'
+    | '/api/mpesa/callback'
+    | '/shop/product/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AcademyRoute: typeof AcademyRoute
+  AiRoute: typeof AiRoute
   BlogRoute: typeof BlogRoute
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ServicesRoute: typeof ServicesRoute
-  ShopRoute: typeof ShopRouteWithChildren
   ToolsRoute: typeof ToolsRoute
+  ShopProductIdRoute: typeof ShopProductIdRoute
+  ShopIndexRoute: typeof ShopIndexRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
+  ApiMpesaCallbackRoute: typeof ApiMpesaCallbackRoute
+  ShopProductSlugRoute: typeof ShopProductSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,13 +245,6 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shop': {
-      id: '/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -243,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/academy': {
       id: '/academy'
       path: '/academy'
@@ -264,38 +317,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop/$productId': {
       id: '/shop/$productId'
-      path: '/$productId'
+      path: '/shop/$productId'
       fullPath: '/shop/$productId'
       preLoaderRoute: typeof ShopProductIdRouteImport
-      parentRoute: typeof ShopRoute
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/product/$slug': {
+      id: '/shop/product/$slug'
+      path: '/shop/product/$slug'
+      fullPath: '/shop/product/$slug'
+      preLoaderRoute: typeof ShopProductSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mpesa/callback': {
+      id: '/api/mpesa/callback'
+      path: '/api/mpesa/callback'
+      fullPath: '/api/mpesa/callback'
+      preLoaderRoute: typeof ApiMpesaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface ShopRouteChildren {
-  ShopProductIdRoute: typeof ShopProductIdRoute
-}
-
-const ShopRouteChildren: ShopRouteChildren = {
-  ShopProductIdRoute: ShopProductIdRoute,
-}
-
-const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcademyRoute: AcademyRoute,
+  AiRoute: AiRoute,
   BlogRoute: BlogRoute,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ServicesRoute: ServicesRoute,
-  ShopRoute: ShopRouteWithChildren,
   ToolsRoute: ToolsRoute,
+  ShopProductIdRoute: ShopProductIdRoute,
+  ShopIndexRoute: ShopIndexRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
+  ApiMpesaCallbackRoute: ApiMpesaCallbackRoute,
+  ShopProductSlugRoute: ShopProductSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

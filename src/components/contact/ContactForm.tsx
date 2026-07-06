@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabaseSim } from "@/lib/api/supabase-sim";
+import { submitContactForm } from "@/lib/api/contact-partnership.server";
 import { Check } from "lucide-react";
 
 export function ContactForm() {
@@ -121,39 +121,52 @@ export function ContactForm() {
     
     const formattedPhone = `${phonePrefix}${phone.startsWith("0") ? phone.slice(1) : phone}`;
 
-    const res = await supabaseSim.insertSubmission({
-      full_name: fullName,
-      email: email,
-      phone: formattedPhone,
-      user_type: userType,
-      subject: subject || "No Subject Provided",
-      message: message,
-      consent: consent,
-    });
+    try {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      const res = await submitContactForm({
+        data: {
+          fullName,
+          email,
+          phone: formattedPhone,
+          userType,
+          subject: subject || "No Subject Provided",
+          message,
+          csrfToken: getCsrfTokenFromCookie(),
+        }
+      });
 
-    setSubmitting(false);
-    if (res.success) {
-      setSuccess(true);
-      // Reset form fields
-      setFullName("");
-      setEmail("");
-      setPhone("");
-      setSubject("");
-      setMessage("");
-      setConsent(false);
-      setTouched({});
-      setErrors({});
+      if (res && res.success) {
+        setSuccess(true);
+        // Reset form fields
+        setFullName("");
+        setEmail("");
+        setPhone("");
+        setSubject("");
+        setMessage("");
+        setConsent(false);
+        setTouched({});
+        setErrors({});
+      } else {
+        setErrors({ submit: "Failed to submit contact request. Please try again." });
+      }
+    } catch (err: any) {
+      setErrors({ submit: err?.message || "An unexpected error occurred." });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-[20px] p-6 md:p-10 shadow-md relative overflow-hidden">
+    <div className="bg-white border-2 border-[#0A1E0C] rounded-none p-8 md:p-12 relative overflow-hidden shadow-[8px_8px_0px_#0A1E0C]">
+      {/* Subtle grid pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: "radial-gradient(#0A1E0C 1.5px, transparent 1.5px)", backgroundSize: "16px 16px" }} />
+      
       <AnimatePresence mode="wait">
         {!success ? (
           <motion.form
             key="contact-form"
             onSubmit={handleSubmit}
-            className="space-y-6 text-left"
+            className="space-y-6 text-left relative z-10"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -162,7 +175,7 @@ export function ContactForm() {
           >
             {/* Full Name */}
             <div>
-              <label htmlFor="fullName" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+              <label htmlFor="fullName" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                 Full Name
               </label>
               <input
@@ -171,15 +184,15 @@ export function ContactForm() {
                 value={fullName}
                 onChange={(e) => handleChange("fullName", e.target.value)}
                 onBlur={(e) => handleBlur("fullName", e.target.value)}
-                placeholder="Enter your name"
-                className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 outline-none transition duration-200 ${
+                placeholder="Enter your full name"
+                className={`w-full rounded-none border-2 bg-white px-4.5 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
                   touched.fullName && errors.fullName
-                    ? "border-red-500 ring-1 ring-red-500/25"
-                    : "border-gray-200 focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]/25"
+                    ? "border-red-550 focus:border-red-500"
+                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
                 }`}
               />
               {touched.fullName && errors.fullName && (
-                <span className="text-[10px] text-red-500 font-semibold mt-1 block">
+                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
                   ⚠️ {errors.fullName}
                 </span>
               )}
@@ -187,7 +200,7 @@ export function ContactForm() {
 
             {/* Email Address */}
             <div>
-              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+              <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                 Email Address
               </label>
               <input
@@ -196,15 +209,15 @@ export function ContactForm() {
                 value={email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 onBlur={(e) => handleBlur("email", e.target.value)}
-                placeholder="you@example.com"
-                className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 outline-none transition duration-200 ${
+                placeholder="you@domain.com"
+                className={`w-full rounded-none border-2 bg-white px-4.5 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
                   touched.email && errors.email
-                    ? "border-red-500 ring-1 ring-red-500/25"
-                    : "border-gray-200 focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]/25"
+                    ? "border-red-550 focus:border-red-500"
+                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
                 }`}
               />
               {touched.email && errors.email && (
-                <span className="text-[10px] text-red-500 font-semibold mt-1 block">
+                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
                   ⚠️ {errors.email}
                 </span>
               )}
@@ -212,7 +225,7 @@ export function ContactForm() {
 
             {/* Phone Number */}
             <div>
-              <label htmlFor="phone" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+              <label htmlFor="phone" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                 Phone Number
               </label>
               <div className="flex gap-2">
@@ -220,7 +233,7 @@ export function ContactForm() {
                   aria-label="Country Code Prefix"
                   value={phonePrefix}
                   onChange={(e) => setPhonePrefix(e.target.value)}
-                  className="rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-[#1A1A1A] outline-none focus:border-[#2D6A4F] cursor-pointer"
+                  className="rounded-none border-2 border-[#0A1E0C] bg-white px-3.5 py-3 text-sm text-[#0A1E0C] outline-none focus:border-[#2D6A4F] cursor-pointer font-bold"
                 >
                   <option value="+254">+254 (KE)</option>
                   <option value="+255">+255 (TZ)</option>
@@ -233,15 +246,15 @@ export function ContactForm() {
                   onChange={(e) => handleChange("phone", e.target.value)}
                   onBlur={(e) => handleBlur("phone", e.target.value)}
                   placeholder="712345678"
-                  className={`flex-1 rounded-xl border bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 outline-none transition duration-200 ${
+                  className={`flex-1 rounded-none border-2 bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
                     touched.phone && errors.phone
-                      ? "border-red-500 ring-1 ring-red-500/25"
-                      : "border-gray-200 focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]/25"
+                      ? "border-red-550 focus:border-red-500"
+                      : "border-[#0A1E0C] focus:border-[#2D6A4F]"
                   }`}
                 />
               </div>
               {touched.phone && errors.phone && (
-                <span className="text-[10px] text-red-500 font-semibold mt-1 block">
+                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
                   ⚠️ {errors.phone}
                 </span>
               )}
@@ -250,14 +263,14 @@ export function ContactForm() {
             {/* I am a... & Subject */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="userType" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                <label htmlFor="userType" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                   I am a...
                 </label>
                 <select
                   id="userType"
                   value={userType}
                   onChange={(e) => handleChange("userType", e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#1A1A1A] outline-none focus:border-[#2D6A4F] cursor-pointer"
+                  className="w-full rounded-none border-2 border-[#0A1E0C] bg-white px-4 py-3 text-sm text-[#0A1E0C] outline-none focus:border-[#2D6A4F] cursor-pointer font-medium"
                 >
                   <option value="Farmer">Farmer</option>
                   <option value="Cooperative">Cooperative</option>
@@ -269,7 +282,7 @@ export function ContactForm() {
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                <label htmlFor="subject" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                   Subject
                 </label>
                 <input
@@ -278,14 +291,14 @@ export function ContactForm() {
                   value={subject}
                   onChange={(e) => handleChange("subject", e.target.value)}
                   placeholder="Inquiry Topic"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 outline-none focus:border-[#2D6A4F] transition duration-200"
+                  className="w-full rounded-none border-2 border-[#0A1E0C] bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none focus:border-[#2D6A4F] transition duration-200"
                 />
               </div>
             </div>
 
             {/* Message */}
             <div>
-              <label htmlFor="message" className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+              <label htmlFor="message" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
                 Message
               </label>
               <textarea
@@ -296,14 +309,14 @@ export function ContactForm() {
                 rows={4}
                 placeholder="How can we help grow your business?"
                 style={{ minHeight: "120px" }}
-                className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 outline-none transition duration-200 resize-none ${
+                className={`w-full rounded-none border-2 bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 resize-none ${
                   touched.message && errors.message
-                    ? "border-red-500 ring-1 ring-red-500/25"
-                    : "border-gray-200 focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]/25"
+                    ? "border-red-550 focus:border-red-500"
+                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
                 }`}
               />
               {touched.message && errors.message && (
-                <span className="text-[10px] text-red-500 font-semibold mt-1 block">
+                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
                   ⚠️ {errors.message}
                 </span>
               )}
@@ -320,19 +333,19 @@ export function ContactForm() {
                   onBlur={() => handleBlur("consent", consent)}
                   className="sr-only"
                 />
-                <div className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border transition duration-200 ${
+                <div className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center border-2 rounded-none transition duration-200 ${
                   consent 
                     ? "border-[#2D6A4F] bg-[#2D6A4F] text-white" 
-                    : "border-gray-200 bg-white group-hover:border-[#2D6A4F]"
+                    : "border-[#0A1E0C] bg-white group-hover:border-[#2D6A4F]"
                 }`}>
                   {consent && <Check className="h-3 w-3 stroke-[3px]" />}
                 </div>
-                <span className="text-xs text-gray-600 leading-tight select-none">
-                  I consent to Mqulima storing my data for contact purposes.
+                <span className="text-xs text-gray-600 leading-tight select-none font-medium">
+                  I consent to Mqulima storing my submitted data for response purposes.
                 </span>
               </label>
               {touched.consent && errors.consent && (
-                <span className="text-[10px] text-red-500 font-semibold mt-1 block">
+                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
                   ⚠️ {errors.consent}
                 </span>
               )}
@@ -342,10 +355,10 @@ export function ContactForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[#F5A623] hover:bg-[#2D6A4F] hover:text-white text-[#0A0F0D] font-bold text-base py-3 px-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out cursor-pointer flex items-center justify-center gap-2 group disabled:opacity-50"
+              className="w-full bg-[#F5A623] hover:bg-[#E0951F] text-[#0A1E0C] border-2 border-[#0A1E0C] font-black text-xs uppercase tracking-widest py-4 px-8 rounded-none transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[4px_4px_0px_#0A1E0C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#0A1E0C] disabled:opacity-50"
             >
               {submitting ? (
-                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#0A1E0C] border-t-transparent" />
               ) : (
                 <>
                   Send Message
@@ -357,23 +370,23 @@ export function ContactForm() {
         ) : (
           <motion.div
             key="success-message"
-            className="py-12 px-4 text-center border border-[#2D6A4F]/20 bg-[#E8F5E9] rounded-xl flex flex-col items-center justify-center text-[#1A6B3C]"
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            className="py-16 px-8 text-center border-2 border-[#0A1E0C] bg-[#E8F5E9] rounded-none flex flex-col items-center justify-center text-[#1A6B3C] relative z-10"
+            initial={{ opacity: 0, scale: 0.98, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", damping: 18 }}
+            transition={{ type: "spring", damping: 20 }}
           >
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-[#1A6B3C]/10 text-[#1A6B3C] text-3xl animate-bounce">
-              ✅
+            <div className="grid h-16 w-16 place-items-center rounded-none border-2 border-[#0A1E0C] bg-white text-[#1A6B3C] text-2xl font-black shadow-[4px_4px_0px_#0A1E0C]">
+              ✓
             </div>
-            <h3 className="mt-6 text-xl font-extrabold text-[#1A6B3C]">
-              Message sent successfully!
+            <h3 className="mt-6 text-2xl font-black font-serif text-[#0A1E0C]">
+              Message Dispatch Successful
             </h3>
-            <p className="mt-2 text-sm text-[#1A6B3C]/80 max-w-sm leading-relaxed">
-              Thank you for reaching out. A representative from the Mqulima team will contact you shortly.
+            <p className="mt-2 text-sm text-gray-600 max-w-sm leading-relaxed font-medium">
+              Your inquiry has been stored. A Mqulima technical officer or coordinator will respond to your channel shortly.
             </p>
             <button
               onClick={() => setSuccess(false)}
-              className="mt-8 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-5 py-2.5 text-xs font-bold text-[#1A1A1A] transition-colors"
+              className="mt-8 rounded-none border-2 border-[#0A1E0C] bg-[#FAF9F5] hover:bg-white px-6 py-3.5 text-xs font-black uppercase tracking-wider text-[#0A1E0C] transition-all cursor-pointer shadow-[4px_4px_0px_#0A1E0C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#0A1E0C]"
             >
               Send Another Inquiry
             </button>

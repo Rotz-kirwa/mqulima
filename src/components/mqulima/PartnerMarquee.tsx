@@ -82,18 +82,6 @@ export function PartnerMarquee() {
 
   return (
     <section className="bg-white border-t border-b border-gray-150/80 py-12 overflow-hidden relative w-full">
-      <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 45s linear infinite;
-        }
-        .marquee-wrapper:hover .animate-marquee {
-          animation-play-state: paused;
-        }
-      `}</style>
       
       <div className="max-w-7xl mx-auto px-6 mb-6 text-center">
         <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#2D6A4F]">

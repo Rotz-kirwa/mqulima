@@ -2,26 +2,27 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import {
   ShoppingCart, Menu, X, Globe, User, Download, Search, HelpCircle,
   Home, ShoppingBag, Briefcase, CloudSun, BookOpen, Users as UsersIcon, Info, Phone,
-  Handshake, FileText, Wrench
+  Handshake, FileText, Wrench, Sparkles
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { MqulimaLogo } from "./MqulimaLogo";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/lib/cart-context";
-import { shopProducts, type ShopProduct } from "@/lib/shop-data";
+import { type ShopProduct } from "@/lib/shop-data";
+import { searchProducts } from "@/lib/api/products.server";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 const nav = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
+  { to: "/academy", label: "Academy" },
   { to: "/blog", label: "Mqulima News" },
   { to: "/community", label: "Mqulima Forum" },
   { to: "/tools", label: "Mqulima Tools" },
   { to: "/services", label: "Services" },
-  { to: "/academy", label: "Academy" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -29,26 +30,32 @@ const nav = [
 const navWithIcons = [
   { to: "/", label: "Home", icon: Home },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
+  { to: "/academy", label: "Academy", icon: BookOpen },
   { to: "/blog", label: "Mqulima News", icon: FileText },
   { to: "/community", label: "Mqulima Forum", icon: UsersIcon },
   { to: "/tools", label: "Mqulima Tools", icon: Wrench },
+  { to: "/ai", label: "🌱 Mqulima AI", icon: Sparkles },
   { to: "/services", label: "Services", icon: Briefcase },
-  { to: "/academy", label: "Academy", icon: BookOpen },
   { to: "/about", label: "About", icon: Info },
   { to: "/contact", label: "Contact", icon: Phone },
 ];
 
-const subNavItems = [
-  { label: "All Products", category: "All", icon: "📦" },
-  { label: "Vegetables & Greens", category: "Vegetables", icon: "🥬" },
-  { label: "Fruits", category: "Fruits", icon: "🍎" },
-  { label: "Grains & Cereals", category: "Grains", icon: "🌾" },
-  { label: "Seeds & Seedlings", category: "Seeds", icon: "🌱" },
-  { label: "Livestock Feeds", category: "Livestock", icon: "🐄" },
-  { label: "Farm Tools & Equipment", category: "Farm Tools", icon: "🚜" },
-  { label: "Organic Products", category: "Organic", icon: "🌿" },
-  { label: "Pesticides & Fertilizers", category: "Pesticides", icon: "🧪" },
-  { label: "Dairy Products", category: "Dairy", icon: "🥛" },
+const subNavItems: Array<{
+  label: string;
+  search: {
+    category?: string;
+  };
+  icon: string;
+}> = [
+  { label: "All Products", search: {}, icon: "📦" },
+  { label: "Seeds & Seedlings", search: { category: "Seeds & Seedlings" }, icon: "🌾" },
+  { label: "Crop Protection", search: { category: "Crop Protection" }, icon: "🛡️" },
+  { label: "Fertilizers", search: { category: "Fertilizers" }, icon: "🍚" },
+  { label: "Plant Growth & Boosters", search: { category: "Plant Growth & Boosters" }, icon: "🌱" },
+  { label: "Harvest & Storage", search: { category: "Harvest & Storage" }, icon: "🧺" },
+  { label: "Animal Farming", search: { category: "Animal Farming" }, icon: "🐄" },
+  { label: "Farm Equipment", search: { category: "Farm Equipment" }, icon: "🚜" },
+  { label: "Water & Sanitation", search: { category: "Water & Sanitation" }, icon: "🚰" }
 ];
 
 export function Navbar() {
@@ -72,17 +79,47 @@ export function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [helpDropdownOpen, setHelpDropdownOpen] = useState(false);
 
+  // Category dropdown state & click outside ref
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setCategoryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Handle live suggestions filtering
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSuggestions([]);
       return;
     }
-    const query = searchQuery.toLowerCase();
-    const filtered = shopProducts
-      .filter((p) => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query))
-      .slice(0, 5);
-    setSuggestions(filtered);
+
+    let active = true;
+    const fetchSuggestions = async () => {
+      try {
+        const results = await searchProducts({ data: searchQuery });
+        if (active) {
+          setSuggestions(results.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to fetch search suggestions", err);
+      }
+    };
+
+    const timer = setTimeout(fetchSuggestions, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -98,14 +135,10 @@ export function Navbar() {
     });
   };
 
-  const handleSubNavClick = (category: string) => {
+  const handleSubNavClick = (searchParams: any) => {
     navigate({
       to: "/shop",
-      search: {
-        category: category !== "All" ? category : undefined,
-        q: undefined,
-        seller: undefined
-      } as any
+      search: searchParams as any
     });
   };
 
@@ -299,8 +332,8 @@ export function Navbar() {
                     {suggestions.map((p) => (
                       <Link
                         key={p.id}
-                        to="/shop/$productId"
-                        params={{ productId: String(p.id) }}
+                        to="/shop/product/$slug"
+                        params={{ slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || p.id }}
                         onClick={() => {
                           setSearchQuery("");
                           setShowSuggestions(false);
@@ -372,32 +405,78 @@ export function Navbar() {
         </div>
       )}
 
-      {/* Sub Navbar Category Ribbon (Only visible on Shop routes, scrollable on all viewports) */}
-      {isShopPage && (
-        <div className="border-y border-gray-200 bg-[#F9FAF9] py-2">
-          <div className="container-px mx-auto max-w-7xl">
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide px-3 text-xs font-semibold">
-              {subNavItems.map((item, idx) => {
-                const isActive = ((location.search as any)?.category || "All") === item.category;
-                return (
+      {/* Sub Navbar Category Dropdown (Only visible on Shop routes) */}
+      {isShopPage && (() => {
+        const activeCategory = (location.search as any)?.category || undefined;
+        const currentCategoryItem = subNavItems.find(item => {
+          if (!item.search.category) {
+            return !activeCategory;
+          }
+          return activeCategory === item.search.category;
+        }) || subNavItems[0];
+
+        return (
+          <div className="border-y border-gray-200 bg-[#F9FAF9] py-2 relative z-30">
+            <div className="container-px mx-auto max-w-7xl">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+                <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-wider shrink-0 select-none">
+                  Browse Categories:
+                </span>
+                <div className="relative inline-block text-left w-full sm:w-auto" ref={categoryDropdownRef}>
                   <button
-                    key={idx}
-                    onClick={() => handleSubNavClick(item.category)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                      isActive
-                        ? "bg-[#2D6A4F] text-white border-[#2D6A4F] shadow-sm scale-102 font-bold"
-                        : "bg-white text-gray-600 border-gray-200 hover:text-[#2D6A4F] hover:border-[#2D6A4F]/30 hover:bg-[#2D6A4F]/5"
-                    }`}
+                    type="button"
+                    onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                    className="flex items-center justify-between gap-3 px-4 py-2 bg-white border border-gray-200 hover:border-[#2D6A4F]/40 hover:text-[#2D6A4F] text-gray-700 text-xs font-bold transition-all duration-200 cursor-pointer w-full sm:min-w-[240px] select-none"
                   >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm shrink-0">{currentCategoryItem.icon}</span>
+                      <span className="whitespace-nowrap shrink-0">{currentCategoryItem.label}</span>
+                    </span>
+                    <svg
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0 ${
+                        categoryDropdownOpen ? "rotate-180 text-[#2D6A4F]" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
-                );
-              })}
+
+                  {/* Dropdown Menu */}
+                  {categoryDropdownOpen && (
+                    <div className="absolute left-0 right-0 sm:right-auto mt-1 sm:w-[260px] bg-white border border-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.15)] z-50 overflow-hidden">
+                      <div className="py-1 max-h-[300px] overflow-y-auto category-scrollbar">
+                        {subNavItems.map((item, idx) => {
+                          const isActive = item.label === currentCategoryItem.label;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                handleSubNavClick(item.search);
+                                setCategoryDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-xs font-bold transition-all duration-150 cursor-pointer ${
+                                isActive
+                                  ? "bg-[#2D6A4F] text-white font-extrabold"
+                                  : "text-gray-700 hover:bg-[#2D6A4F]/5 hover:text-[#2D6A4F]"
+                              }`}
+                            >
+                              <span className="text-sm shrink-0">{item.icon}</span>
+                              <span className="whitespace-nowrap shrink-0">{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </header>
 
       {/* Full-screen Mobile Hamburg Menu Slide-in */}
@@ -456,8 +535,8 @@ export function Navbar() {
                       {suggestions.map((p) => (
                         <Link
                           key={p.id}
-                          to="/shop/$productId"
-                          params={{ productId: String(p.id) }}
+                          to="/shop/product/$slug"
+                          params={{ slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || p.id }}
                           onClick={() => {
                             setSearchQuery("");
                             setOpen(false);

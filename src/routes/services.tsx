@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useMemo, useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { createServiceBooking } from "@/lib/api/services.server";
 import { 
   Check, 
   ArrowRight, 
@@ -9,9 +11,8 @@ import {
   Clock, 
   CheckCircle, 
   Star, 
-  Search, 
   MessageSquare, 
-  AlertTriangle, 
+  AlertTriangle,  
   Sliders, 
   Droplet, 
   Download, 
@@ -132,45 +133,45 @@ const serviceCategories: ServiceCategory[] = [
   },
   {
     id: "feeds",
-    name: "Animal Feeds & Machinery",
-    broaderDescription: "Advanced livestock nutrition formulation, silage shredding/packing, alternative high-protein feeds (Azolla), machinery hire, egg incubation, and expert advisory.",
-    image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=800",
+    name: "Animal Feeds & Livestock Solutions",
+    broaderDescription: "Maximize livestock productivity with science-backed nutrition, modern feeding technologies, silage preservation, hatchery services, and precision farm machinery. Our solutions help dairy, poultry, beef, and mixed farmers reduce production costs, improve animal health, and increase profitability.",
+    image: "https://i.pinimg.com/1200x/f4/77/45/f47745a90185d04f09cba6f954261c63.jpg",
     subservices: [
       {
         id: "feed_formulation",
-        name: "Formulation & formulation advice",
-        description: "Custom ratio calculation sheets mixing maize germ, wheat pollard, and cotton cake to hit target crude protein percentages.",
-        estimatedCost: "KES 1,800 per Ration"
+        name: "Custom Feed Formulation",
+        description: "Develop nutritionally balanced feed rations tailored to your livestock using locally available ingredients. Our experts formulate cost-effective diets that support faster growth, higher milk production, improved feed conversion, and healthier animals.",
+        estimatedCost: "KES 1,800 per Formulation"
       },
       {
         id: "silage_shredding",
-        name: "Silage shredding & packing",
-        description: "High-speed mechanical fodder chopping, molasses mixing, and airtight vacuum tube packing to secure long-term dairy silage.",
+        name: "Silage Production & Preservation",
+        description: "Convert fresh fodder into high-quality silage using professional chopping, mixing, and airtight packing techniques that preserve nutrients, minimize spoilage, and ensure reliable feed throughout the year.",
         estimatedCost: "KES 8,000 per Ton"
       },
       {
         id: "azolla",
-        name: "Azolla cultivation",
-        description: "Setup and seeding of highly nutritious, high-protein organic Azolla pools to cut standard dairy meal feed costs by up to 30%.",
+        name: "Azolla Production Systems",
+        description: "Establish sustainable Azolla cultivation units to produce natural, protein-rich livestock feed that lowers feeding costs while enhancing dairy, poultry, fish, and pig performance.",
         estimatedCost: "KES 4,000 per Pond Setup"
       },
       {
         id: "machinery_buy_rent",
-        name: "Buy/rent machinery",
-        description: "Flexible tractor and shredder leases including operators for on-farm crop residue grinding and silage operations.",
+        name: "Machinery Hire",
+        description: "Access reliable tractors, forage harvesters, silage choppers, shredders, and skilled operators for efficient land preparation, fodder processing, harvesting, and other essential farm operations.",
         estimatedCost: "KES 6,000 per Day"
       },
       {
         id: "incubation",
-        name: "Incubation services",
-        description: "High-yield commercial egg incubation and hatchery management for improved hatch rates and day-old chick supplies.",
+        name: "Egg Incubation Services",
+        description: "Increase hatch success with professionally managed incubation systems that deliver healthy, high-quality day-old chicks through optimized temperature, humidity, and hatchery management.",
         estimatedCost: "KES 20 per Egg"
       },
       {
         id: "ask_expert_feeds",
-        name: "Advisory/Ask an Expert",
-        description: "One-on-one nutrition consultation with animal scientists to increase milk yield and beef conversion rates.",
-        estimatedCost: "KES 1,500 per Consult"
+        name: "Livestock Advisory",
+        description: "Receive personalized guidance from experienced livestock specialists on feeding strategies, disease prevention, breeding management, pasture improvement, and productivity optimization to maximize your farm's performance.",
+        estimatedCost: "KES 1,500 per Consultation"
       }
     ]
   },
@@ -232,14 +233,14 @@ const serviceCategories: ServiceCategory[] = [
   },
   {
     id: "value",
-    name: "Value Addition & Milling",
-    broaderDescription: "Agro-processing consultancy, solar dehydration setups, milling configurations, sorting/grading installations, and commercial brand branding/packaging setups to boost market price margins.",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
+    name: "Value Addition & Agro-Processing",
+    broaderDescription: "Transform raw harvests into premium, market-ready products that command higher prices. We design and implement complete value-addition systems—from cleaning, grading, drying, milling, packaging, and branding to processing workflows that help farmers, cooperatives, and agribusinesses maximize profitability while reducing post-harvest losses.",
+    image: "/services_value_addition.png",
     subservices: [
       {
         id: "ask_expert_value",
-        name: "Ask an expert",
-        description: "On-farm consultations for milling, packing, drying, and value-addition setup to boost farm gate profits by up to 50%.",
+        name: "Talk to a Processing Expert",
+        description: "Receive tailored guidance on selecting the right processing equipment, optimizing production, improving product quality, and creating a premium brand that attracts larger buyers and stronger profit margins.",
         estimatedCost: "KES 3,000 per Consult"
       }
     ]
@@ -248,7 +249,7 @@ const serviceCategories: ServiceCategory[] = [
     id: "other",
     name: "Infrastructure & Smart Farming",
     broaderDescription: "Borehole drilling, advanced solar irrigation networks, livestock shed design, agriculture insurance, finance credit vouchers, climate-smart farming, and digital record keeping.",
-    image: "https://images.unsplash.com/photo-1463123081488-729f555ee3f9?w=800",
+    image: "https://i.pinimg.com/736x/95/bb/1b/95bb1ba4bc02563f8274bdd5a9ff6e77.jpg",
     subservices: [
       {
         id: "borehole",
@@ -306,7 +307,7 @@ const CATEGORY_META: Record<string, { eyebrow: string; icon: React.ComponentType
     icon: ShieldCheck
   },
   feeds: {
-    eyebrow: "FEED SMART. POWER YOUR HARVEST.",
+    eyebrow: "FEED SMART. GROW STRONGER. EARN MORE.",
     icon: Activity
   },
   crops: {
@@ -314,7 +315,7 @@ const CATEGORY_META: Record<string, { eyebrow: string; icon: React.ComponentType
     icon: Truck
   },
   value: {
-    eyebrow: "PROCESS BETTER. BOOST PROFITS.",
+    eyebrow: "TURN HARVESTS INTO HIGH-VALUE PRODUCTS",
     icon: Coins
   },
   other: {
@@ -323,9 +324,136 @@ const CATEGORY_META: Record<string, { eyebrow: string; icon: React.ComponentType
   }
 };
 
+const getCategoryFields = (catId?: string) => {
+  switch (catId) {
+    case "soil":
+      return {
+        scaleLabel: "Field Size to Test (Acres)",
+        scalePlaceholder: "e.g. 2.5",
+        scaleType: "number",
+        activityLabel: "Target Crop Type",
+        activityOptions: ["Cereals (Maize/Wheat)", "Horticulture/Vegetables", "Tubers (Potatoes)", "Cash Crops (Coffee/Tea)", "Fruits/Orchards"],
+        subjectLabel: "Specific Crop Variety (to plant)",
+        subjectPlaceholder: "e.g. H614 Maize, Shangi Potatoes",
+        descriptionLabel: "Field History & Soil Challenge Details",
+        descriptionPlaceholder: "Describe the history of this field: last crop planted, fertilizers previously used, crop discoloration, pest history, or known yield drops..."
+      };
+    case "vet":
+      return {
+        scaleLabel: "Number of Animals to Treat (Head Count)",
+        scalePlaceholder: "e.g. 4",
+        scaleType: "number",
+        activityLabel: "Livestock Category",
+        activityOptions: ["Dairy Cattle", "Beef Cattle", "Poultry (Layers/Broilers)", "Pigs", "Sheep/Goats", "Mixed Livestock"],
+        subjectLabel: "Animal Breed / Age Spec",
+        subjectPlaceholder: "e.g. Friesian cow, 3 months old broilers",
+        descriptionLabel: "Symptoms & Clinical Challenge Details",
+        descriptionPlaceholder: "Describe the animal's physical symptoms in detail: body temperature, feeding rate, milk yield drop, coughing, skin lesions, or calving difficulties..."
+      };
+    case "feeds":
+      return {
+        scaleLabel: "Feed Operation Scale / Target Quantity",
+        scalePlaceholder: "e.g. 50 dairy cows, 3 tons silage, 1 Azolla unit",
+        scaleType: "text",
+        activityLabel: "Feeding Focus",
+        activityOptions: ["Dairy Feeding", "Poultry Feeding", "Silage / Fodder conservation", "Azolla / Alternative feeds", "Mixed feeds"],
+        subjectLabel: "Target Livestock / Machine Model",
+        subjectPlaceholder: "e.g. Dairy cattle herd, silage shredder hired",
+        descriptionLabel: "Feeding Challenge & Formulation Requirements",
+        descriptionPlaceholder: "Describe your feeding challenges, available ingredients (e.g. maize germ, pollard), or target machinery capacity requirement..."
+      };
+    case "crops":
+      return {
+        scaleLabel: "Project Area Size (Acres)",
+        scalePlaceholder: "e.g. 5",
+        scaleType: "number",
+        activityLabel: "Cultivation Setting",
+        activityOptions: ["Open Field farming", "Greenhouse / Protected", "Irrigated farming", "Rainfed cereals", "Logistics & Transport"],
+        subjectLabel: "Crop / System Specification",
+        subjectPlaceholder: "e.g. Greenhouse tomatoes, Gravity Drip irrigation",
+        descriptionLabel: "Cultivation, Logistics, or Irrigation Project Scope",
+        descriptionPlaceholder: "Describe the crop type, greenhouse dimensions, logistics pick-up/drop-off points, or water source (dam, river, borehole) in detail..."
+      };
+    case "value":
+      return {
+        scaleLabel: "Processing Capacity / Volumetric Scale",
+        scalePlaceholder: "e.g. 1000 kg maize daily, 200 liters milk",
+        scaleType: "text",
+        activityLabel: "Value Addition Category",
+        activityOptions: ["Flour / Grain Milling", "Dairy Processing & Pasteurization", "Fruit drying & packaging", "Oil extraction", "General branding & packaging consultancy"],
+        subjectLabel: "Primary Processing Equipment / Raw Material",
+        subjectPlaceholder: "e.g. Posho mill, Milk pasteurizer, Maize grain",
+        descriptionLabel: "Processing Setup & Business Goals",
+        descriptionPlaceholder: "Describe your current raw material volumes, source of supply, packaging specs, hygiene standards, or branding expectations in detail..."
+      };
+    case "other":
+    default:
+      return {
+        scaleLabel: "Project / Infrastructure Scale",
+        scalePlaceholder: "e.g. 150m borehole depth, 3kW solar unit",
+        scaleType: "text",
+        activityLabel: "Infrastructure Project Focus",
+        activityOptions: ["Borehole Drilling & Solar Pumps", "Solar Irrigation Networks", "Livestock sheds / barns construction", "Agricultural Insurance & Credit", "Smart farming apps & record keeping"],
+        subjectLabel: "System Specification / Infrastructure Type",
+        subjectPlaceholder: "e.g. Geological survey & drilling, Solar system",
+        descriptionLabel: "Project Requirements & Technical Specifications",
+        descriptionPlaceholder: "Describe the geological site conditions, power output requirements, insurance package desired, or smart system goals in detail..."
+      };
+  }
+};
+
+const kenyanCounties = [
+  "Baringo",
+  "Bomet",
+  "Bungoma",
+  "Busia",
+  "Elgeyo/Marakwet",
+  "Embu",
+  "Garissa",
+  "Homa Bay",
+  "Isiolo",
+  "Kajiado",
+  "Kakamega",
+  "Kericho",
+  "Kiambu",
+  "Kilifi",
+  "Kirinyaga",
+  "Kisii",
+  "Kisumu",
+  "Kitui",
+  "Kwale",
+  "Laikipia",
+  "Lamu",
+  "Machakos",
+  "Makueni",
+  "Mandera",
+  "Marsabit",
+  "Meru",
+  "Mombasa",
+  "Murang'a",
+  "Nairobi",
+  "Nakuru",
+  "Nandi",
+  "Nyamira",
+  "Nyandarua",
+  "Nyeri",
+  "Samburu",
+  "Siaya",
+  "Taita/Taveta",
+  "Tana River",
+  "Tharaka-Nithi",
+  "Trans Nzoia",
+  "Turkana",
+  "Uasin Gishu",
+  "Vihiga",
+  "Wajir",
+  "West Pokot",
+  "Other"
+];
+
 function ServicesPage() {
+  const { user } = useAuth();
   const search = Route.useSearch();
-  const [activeView, setActiveView] = useState<"explore" | "tracker">("explore");
   const [selectedCategoryId, setSelectedCategoryId] = useState("soil");
   
   // Booking Wizard states
@@ -335,29 +463,61 @@ function ServicesPage() {
   
   // Customer Booking inputs
   const [farmerName, setFarmerName] = useState("");
-  const [farmerId, setFarmerId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [county, setCounty] = useState("Uasin Gishu");
+  const [subCounty, setSubCounty] = useState("");
   const [gpsLocation, setGpsLocation] = useState("");
+  const [farmSize, setFarmSize] = useState("");
+  const [farmActivity, setFarmActivity] = useState<string[]>([]);
+  const [otherActivitySpec, setOtherActivitySpec] = useState("");
+  
+  const [targetSubject, setTargetSubject] = useState("");
+  const [vividDescription, setVividDescription] = useState("");
+  
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
-  const [urgency, setUrgency] = useState("Normal");
-  const [phone, setPhone] = useState("");
   
   // M-Pesa Simulator states
-  const [simStep, setSimStep] = useState<"idle" | "pin" | "loading" | "success">("idle");
+  const [simStep, setSimStep] = useState<"idle" | "loading" | "prompt" | "success" | "failed" | "timeout">("idle");
   const [pinCode, setPinCode] = useState("");
+  const [pollCountdown, setPollCountdown] = useState(120);
+  const pollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Tracker states
-  const [trackerCode, setTrackerCode] = useState("");
-  const [trackedJob, setTrackedJob] = useState<{ id: string; serviceName: string; county: string; date: string; time: string; status: "pending" | "assigned" | "dispatched" | "completed" } | null>(null);
-  const [userBookings, setUserBookings] = useState<any[]>([]);
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+      }
+    };
+  }, []);
+
+
+
+  const currentCategory = serviceCategories.find(cat => 
+    cat.subservices.some(sub => sub.id === selectedSubservice?.id)
+  );
+  
+  const fields = getCategoryFields(currentCategory?.id);
 
   // Sync url search parameters
+  useEffect(() => {
+    if (selectedSubservice) {
+      const cat = serviceCategories.find(c => 
+        c.subservices.some(sub => sub.id === selectedSubservice.id)
+      );
+      if (cat) {
+        const catFields = getCategoryFields(cat.id);
+        setFarmActivity([catFields.activityOptions[0]]);
+        setOtherActivitySpec("");
+      }
+    }
+  }, [selectedSubservice]);
   useEffect(() => {
     if (search.category) {
       const catExists = serviceCategories.some((cat) => cat.id === search.category);
       if (catExists) {
-        setSelectedCategoryId(search.category);
+        // Safe check
       }
     }
     
@@ -413,139 +573,149 @@ function ServicesPage() {
     }
   }, [search.category, search.serviceId]);
 
-  // Load user bookings from local storage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("mqulima_bookings");
-      if (stored) {
-        setUserBookings(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Failed to load bookings from local storage", e);
-    }
-  }, [activeView, doneRef]);
-
   const activeCategory = useMemo(() => {
     return serviceCategories.find((cat) => cat.id === selectedCategoryId) ?? serviceCategories[0];
   }, [selectedCategoryId]);
 
-  const handleKeyPress = (num: string) => {
-    if (pinCode.length < 4) {
-      setPinCode((prev) => prev + num);
+  const startPaymentPolling = (orderId: string, reference: string) => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
     }
+    setPollCountdown(120);
+
+    let secondsRemaining = 120;
+
+    pollTimerRef.current = setInterval(async () => {
+      secondsRemaining -= 3;
+      setPollCountdown(secondsRemaining);
+
+      if (secondsRemaining <= 0) {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        setSimStep("timeout");
+        toast.error("Payment confirmation timed out. Please check your phone or try again.");
+        return;
+      }
+
+      try {
+        const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
+        const statusRes = await getPaymentStatus({ data: { orderId } });
+        if (statusRes.status === "paid") {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+          setSimStep("success");
+          toast.success("Payment Received & Confirmed!");
+
+          setTimeout(() => {
+            toast.success("SMS Confirmation Sent", {
+              description: `Message: Ref ${reference} booked for ${selectedSubservice?.name} is confirmed.`,
+              duration: 8000,
+            });
+          }, 500);
+        } else if (statusRes.status === "failed") {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+          setSimStep("failed");
+          toast.error("M-Pesa payment failed or was cancelled.");
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
   };
 
-  const handlePinBackspace = () => {
-    setPinCode((prev) => prev.slice(0, -1));
-  };
-
-  const handleMpesaSubmit = (e: React.FormEvent) => {
+  const handleMpesaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^(07|01|254)\d{8}$/.test(phone.trim())) {
       toast.error("Please enter a valid Kenyan phone number (e.g. 0712345678)");
       return;
     }
-    setPinCode("");
-    setSimStep("pin");
-  };
-
-  const handleConfirmPin = () => {
-    if (pinCode.length < 4) {
-      toast.error("Please enter your 4-digit M-Pesa PIN");
+    if (!user) {
+      toast.error("Please log in to complete your booking.");
       return;
     }
     setSimStep("loading");
-    
-    setTimeout(() => {
-      setSimStep("success");
-      const ref = generateReference();
-      setDoneRef(ref);
 
-      // Create tracked job mock
-      const newJob = {
-        id: ref,
-        serviceName: selectedSubservice?.name || "Soil Testing Service",
-        county: county,
-        date: bookingDate || new Date().toLocaleDateString(),
-        time: bookingTime || "09:00 AM",
-        status: "pending" as const
-      };
-      setTrackedJob(newJob);
+    try {
+      const amountNumeric = selectedSubservice?.estimatedCost
+        ? Number(selectedSubservice.estimatedCost.replace(/[^0-9]/g, ""))
+        : 1500;
 
-      // Persist in localStorage
-      try {
-        const stored = localStorage.getItem("mqulima_bookings");
-        const list = stored ? JSON.parse(stored) : [];
-        list.push(newJob);
-        localStorage.setItem("mqulima_bookings", JSON.stringify(list));
-      } catch (e) {
-        console.error("Failed to save booking to local storage", e);
-      }
+      // 1. Create booking and get orderId
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      const res = await createServiceBooking({
+        data: {
+          service_type: selectedSubservice?.id || "soil_test",
+          farmer_id: user.id,
+          location: gpsLocation || subCounty || county,
+          farm_size_acres: parseFloat(farmSize) || 1.0,
+          scheduled_date: bookingDate || new Date().toISOString(),
+          notes: vividDescription || `Booked for ${bookingTime || "09:00 AM"}`,
+          amount: amountNumeric,
+          csrfToken: getCsrfTokenFromCookie(),
+        }
+      });
 
-      setTimeout(() => {
-        toast.success("SMS Confirmation Sent", {
-          description: `Message: Ref ${ref} booked for ${selectedSubservice?.name} is confirmed. Pay ${selectedSubservice?.estimatedCost} after service.`,
-          duration: 8000,
+      if (res.success && res.reference && res.orderId) {
+        setDoneRef(res.reference);
+
+        // 2. Initiate STK Push
+        const { initiateStkPush } = await import("@/lib/api/mpesa.server");
+        const pushRes = await initiateStkPush({
+          data: {
+            phone: phone.trim(),
+            amount: amountNumeric,
+            orderId: res.orderId,
+            description: selectedSubservice?.name || "Service Booking"
+          }
         });
-      }, 500);
-    }, 2500);
+
+        if (pushRes.success) {
+          toast.success("M-Pesa STK Push Sent!");
+          setSimStep("prompt");
+
+          // 3. Start Polling Status
+          startPaymentPolling(res.orderId, res.reference);
+        } else {
+          throw new Error("Failed to initiate payment prompt");
+        }
+      } else {
+        throw new Error("Failed to create booking");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setSimStep("idle");
+      toast.error(err.message || "An error occurred during payment setup.");
+    }
   };
 
-  const resetBooking = () => {
-    setSelectedSubservice(null);
-    setDoneRef(null);
-    setStep(1);
-    setFarmerName("");
-    setFarmerId("");
-    setCounty("Uasin Gishu");
-    setGpsLocation("");
-    setBookingDate("");
-    setBookingTime("");
-    setUrgency("Normal");
-    setPhone("");
+  const handlePaymentRetry = () => {
     setSimStep("idle");
     setPinCode("");
   };
 
-  const handleTrackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackerCode.trim()) {
-      toast.error("Please enter a reference code.");
-      return;
+  const resetBooking = () => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
     }
-    const code = trackerCode.trim().toUpperCase();
-    if (code === "MQ-DEMO55") {
-      setTrackedJob({
-        id: "MQ-DEMO55",
-        serviceName: "Soil testing & analysis",
-        county: "Trans Nzoia",
-        date: "2026-06-28",
-        time: "10:00 AM",
-        status: "dispatched"
-      });
-      toast.success("Active booking located!");
-    } else {
-      try {
-        const stored = localStorage.getItem("mqulima_bookings");
-        const list = stored ? JSON.parse(stored) : [];
-        const found = list.find((j: any) => j.id === code);
-        if (found) {
-          setTrackedJob(found);
-          toast.success("Active booking located!");
-          return;
-        }
-      } catch (e) {
-        console.error("Failed to read bookings", e);
-      }
-
-      if (trackedJob && code === trackedJob.id) {
-        toast.success("Active booking located!");
-      } else {
-        toast.error("No active booking found with that reference. Try 'MQ-DEMO55' for simulation.");
-        setTrackedJob(null);
-      }
-    }
+    setSelectedSubservice(null);
+    setDoneRef(null);
+    setStep(1);
+    setFarmerName("");
+    setPhone("");
+    setEmail("");
+    setCounty("Uasin Gishu");
+    setSubCounty("");
+    setGpsLocation("");
+    setFarmSize("");
+    setFarmActivity([]);
+    setOtherActivitySpec("");
+    setTargetSubject("");
+    setVividDescription("");
+    setBookingDate("");
+    setBookingTime("");
+    setSimStep("idle");
+    setPinCode("");
   };
+
+
 
   return (
     <AppLayout>
@@ -564,104 +734,87 @@ function ServicesPage() {
           </div>
         </section>
 
-        {/* Tab Controls */}
-        <section className="border-b border-gray-200 bg-white sticky top-16 z-30 shadow-sm">
-          <div className="container-px mx-auto max-w-7xl text-left">
-            <div className="flex gap-6 py-4 text-xs font-semibold uppercase tracking-wider">
-              <button
-                onClick={() => { setActiveView("explore"); setSelectedSubservice(null); }}
-                className={`pb-1 border-b-2 transition-all cursor-pointer ${
-                  activeView === "explore" ? "border-[#1A5438] text-[#1A5438] font-extrabold" : "border-transparent text-gray-500 hover:text-[#1A1A1A]"
-                }`}
-              >
-                Explore Services
-              </button>
-              <button
-                onClick={() => setActiveView("tracker")}
-                className={`pb-1 border-b-2 transition-all cursor-pointer ${
-                  activeView === "tracker" ? "border-[#1A5438] text-[#1A5438] font-extrabold" : "border-transparent text-gray-500 hover:text-[#1A1A1A]"
-                }`}
-              >
-                Service Request Tracker
-              </button>
-            </div>
-          </div>
-        </section>
+
 
         {/* Main Content Section */}
-        {activeView === "explore" && !selectedSubservice ? (
-          <section className="bg-[#0B130E] text-white border-t border-[#2D6A4F]/20">
+        {!selectedSubservice ? (
+          <section className="bg-white text-[#2C332A] border-t border-gray-200">
             <div className="container-px mx-auto max-w-7xl py-16 space-y-24">
               {serviceCategories.map((cat, index) => {
                 const meta = CATEGORY_META[cat.id] || { eyebrow: "EXPERT FARM SERVICES.", icon: Sprout };
                 const IconComponent = meta.icon;
                 return (
-                  <div key={cat.id} className="grid gap-12 lg:grid-cols-12 lg:items-center border-b border-[#2D6A4F]/10 last:border-b-0 pb-16 last:pb-0">
+                  <div key={cat.id} className="grid gap-x-8 gap-y-6 lg:grid-cols-12 lg:items-start border-b border-gray-200/80 last:border-b-0 pb-16 last:pb-0">
                     
-                    {/* Left Column: Image */}
-                    <div className="lg:col-span-5">
-                      <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-[#52B788] to-[#F5A623] opacity-20 blur-lg group-hover:opacity-40 transition duration-500 rounded-none" />
-                        <div className="relative rounded-none border border-[#2D6A4F]/30 bg-[#141E18] p-2 overflow-hidden shadow-2xl">
-                          <img
-                            src={cat.image}
-                            alt={cat.name}
-                            className="w-full object-cover rounded-none aspect-[4/3] scale-98 group-hover:scale-100 transition-transform duration-500"
-                          />
-                        </div>
+                    {/* A: Title & Eyebrow (Top on mobile, Right column top row on PC) */}
+                    <div className="order-1 lg:order-2 lg:col-span-7 text-left">
+                      {/* Eyebrow */}
+                      <div className="flex items-center gap-2 text-[#F5A623] font-extrabold text-xs sm:text-sm uppercase tracking-[0.2em] mb-2">
+                        <IconComponent className="h-4.5 w-4.5 shrink-0 text-[#F5A623] stroke-[3]" />
+                        <strong>{meta.eyebrow}</strong>
+                      </div>
+
+                      {/* Title */}
+                      <h2 className="text-3xl font-black sm:text-5xl text-[#1A3D2F] font-serif tracking-tight italic leading-tight">
+                        {cat.name}
+                      </h2>
+                    </div>
+
+                    {/* B: Image (Middle on mobile, Left column spanning 2 rows on PC) */}
+                    <div className="order-2 lg:order-1 lg:col-span-5 lg:row-span-2 lg:sticky lg:top-24 w-full">
+                      <div className="w-full relative group aspect-[4/3] lg:aspect-[3/4] overflow-hidden border border-gray-200 shadow-2xl">
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          className="w-full h-full object-cover rounded-none transition-transform duration-500 group-hover:scale-105"
+                        />
                       </div>
                     </div>
 
-                    {/* Right Column: Details */}
-                    <div className="lg:col-span-7 space-y-6 text-left">
-                      <div className="flex items-center gap-2 text-[#F5A623] font-bold text-[10px] uppercase tracking-[0.2em]">
-                        <IconComponent className="h-4 w-4 shrink-0 text-[#F5A623]" />
-                        {meta.eyebrow}
-                      </div>
+                    {/* C: Description, Cards, Buttons (Bottom on mobile, Right column bottom row on PC) */}
+                    <div className="order-3 lg:order-3 lg:col-span-7 space-y-6 text-left flex flex-col justify-between h-full">
+                      <div>
+                        {/* Description */}
+                        <p className="text-sm sm:text-base text-gray-800 font-semibold leading-relaxed max-w-2xl mb-6">
+                          {cat.broaderDescription}
+                        </p>
 
-                      <h2 className="text-3xl font-extrabold sm:text-4xl text-white font-serif tracking-tight uppercase leading-tight">
-                        {cat.name}
-                      </h2>
-
-                      <p className="text-xs text-white/70 leading-relaxed max-w-2xl">
-                        {cat.broaderDescription}
-                      </p>
-
-                      {/* Sub-services Grid */}
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {cat.subservices.map((sub) => (
-                          <div 
-                            key={sub.id} 
-                            className="bg-[#142018]/45 border border-[#2D6A4F]/20 p-4 hover:border-[#52B788]/40 transition flex flex-col justify-between rounded-none"
-                          >
-                            <div>
-                              <h4 className="text-xs font-black text-white uppercase tracking-wider">{sub.name}</h4>
-                              <p className="text-[10px] text-white/50 mt-1 leading-relaxed">{sub.description}</p>
+                        {/* Sub-services Grid - 2 columns */}
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                          {cat.subservices.map((sub) => (
+                            <div 
+                              key={sub.id} 
+                              className="bg-[#2D6A4F]/5 border border-[#2D6A4F]/20 p-5 hover:bg-[#2D6A4F]/10 hover:border-[#2D6A4F]/40 transition duration-300 flex flex-col justify-between rounded-none shadow-sm"
+                            >
+                              <div>
+                                <h4 className="text-sm sm:text-base font-bold text-[#1A3D2F] tracking-wide mb-1.5">{sub.name}</h4>
+                                <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">{sub.description}</p>
+                              </div>
+                              <div className="text-xs sm:text-sm text-[#2D6A4F] font-bold mt-4 border-t border-[#2D6A4F]/15 pt-3 font-mono flex items-center justify-between">
+                                <span className="bg-[#2D6A4F]/10 px-2.5 py-1 rounded-none">{sub.estimatedCost}</span>
+                                <button
+                                  onClick={() => {
+                                    setSelectedSubservice(sub);
+                                    setStep(1);
+                                    setSimStep("idle");
+                                    setDoneRef(null);
+                                    setTimeout(() => {
+                                      const el = document.getElementById("services-wizard");
+                                      el?.scrollIntoView({ behavior: "smooth" });
+                                    }, 50);
+                                  }}
+                                  className="text-[10px] sm:text-xs bg-[#F5A623] hover:bg-[#e09520] text-black px-3.5 py-1.5 font-sans font-black uppercase transition rounded-none shadow-sm cursor-pointer"
+                                >
+                                  Book
+                                </button>
+                              </div>
                             </div>
-                            <div className="text-[10px] text-[#52B788] font-bold mt-4 border-t border-[#2D6A4F]/10 pt-2 font-mono flex items-center justify-between">
-                              <span>{sub.estimatedCost}</span>
-                              <button
-                                onClick={() => {
-                                  setSelectedSubservice(sub);
-                                  setStep(1);
-                                  setSimStep("idle");
-                                  setDoneRef(null);
-                                  setTimeout(() => {
-                                    const el = document.getElementById("services-wizard");
-                                    el?.scrollIntoView({ behavior: "smooth" });
-                                  }, 50);
-                                }}
-                                className="text-[9px] bg-[#52B788]/20 hover:bg-[#52B788] hover:text-[#0B150F] text-[#52B788] px-2.5 py-1 font-sans font-extrabold uppercase transition cursor-pointer"
-                              >
-                                Book
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex flex-wrap gap-3 pt-2">
+                      <div className="flex flex-wrap gap-4 pt-4">
                         <button
                           onClick={() => {
                             setSelectedSubservice(cat.subservices[0]);
@@ -673,15 +826,17 @@ function ServicesPage() {
                               el?.scrollIntoView({ behavior: "smooth" });
                             }, 50);
                           }}
-                          className="h-11 px-6 bg-[#F5A623] hover:bg-[#e09520] text-black font-extrabold text-xs uppercase tracking-wider rounded-none transition flex items-center justify-center shadow-md shadow-[#F5A623]/25"
+                          className="h-12 px-8 bg-[#F5A623] hover:bg-[#e09520] text-black font-black text-sm uppercase tracking-wider rounded-none transition flex items-center justify-center shadow-lg shadow-[#F5A623]/25"
                         >
                           Book a Service
                         </button>
                         <a
-                          href={`https://wa.me/254700000000?text=Hi%20Mqulima%2C%20I%20would%20like%20to%20consult%20an%20expert%20regarding%20${encodeURIComponent(cat.name)}.`}
+                          href={`https://wa.me/254723346134?text=${encodeURIComponent(
+                            `Hi Mqulima, I would like to consult an expert regarding the "${cat.name}" category.\n\nAbout this category: ${cat.broaderDescription}`
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-11 px-6 border border-[#2D6A4F]/60 text-white/90 hover:bg-white/5 font-extrabold text-xs uppercase tracking-wider rounded-none transition flex items-center justify-center"
+                          className="h-12 px-8 border-2 border-[#2D6A4F] text-[#2D6A4F] hover:bg-[#2D6A4F]/10 font-black text-sm uppercase tracking-wider rounded-none transition flex items-center justify-center"
                         >
                           Talk to an Expert
                         </a>
@@ -697,18 +852,17 @@ function ServicesPage() {
           <section className="py-12">
             <div className="container-px mx-auto max-w-7xl">
               
-              {/* VIEW A: Explore Services */}
-              {activeView === "explore" && selectedSubservice && (
+              {selectedSubservice && (
                 <div className="space-y-12">
                   
                   {/* Stepper Wizard popup (if active) */}
-                  <div id="services-wizard" className="max-w-xl mx-auto rounded-none border border-[#D4DDD0] bg-white p-6 shadow-md text-left text-[#0A1E0C]">
+                  <div id="services-wizard" className="max-w-2xl mx-auto rounded-none border border-[#D4DDD0] border-l-4 border-l-[#2D6A4F] bg-white p-6 shadow-md text-left text-[#0A1E0C] md:p-8">
                     {doneRef ? (
                       <div className="grid place-items-center py-10 text-center">
-                        <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-800 text-3xl animate-bounce">
+                        <div className="grid h-16 w-16 place-items-center rounded-none border-2 border-emerald-800 bg-emerald-50 text-emerald-800 text-3xl font-bold animate-bounce">
                           ✓
                         </div>
-                        <h2 className="mt-6 text-2xl font-bold font-['Lora'] text-[#1A3A1A]">
+                        <h2 className="mt-6 text-2xl font-bold font-serif text-[#1A3D2F] italic">
                           Booking Confirmed!
                         </h2>
                         <p className="mt-2 text-xs text-gray-500 font-semibold">
@@ -721,19 +875,9 @@ function ServicesPage() {
                         <div className="flex gap-4 mt-8">
                           <button
                             onClick={resetBooking}
-                            className="rounded-xl bg-[#1A5438] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#113B26] transition cursor-pointer"
+                            className="rounded-none bg-[#1A5438] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#113B26] transition cursor-pointer uppercase tracking-wider"
                           >
                             Book Another Service
-                          </button>
-                          <button
-                            onClick={() => {
-                              setTrackerCode(doneRef);
-                              setActiveView("tracker");
-                              setSelectedSubservice(null);
-                            }}
-                            className="rounded-xl border border-gray-300 px-6 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
-                          >
-                            Track Status
                           </button>
                         </div>
                       </div>
@@ -741,39 +885,37 @@ function ServicesPage() {
                       <>
                         <div className="flex items-center justify-between border-b border-gray-150 pb-4 mb-6">
                           <div>
-                            <h2 className="text-base font-extrabold font-['Lora'] text-[#1A3A1A]">
+                            <h2 className="text-lg font-bold font-serif text-[#1A3D2F] italic">
                               Book {selectedSubservice.name}
                             </h2>
-                            <p className="text-[10px] text-gray-500 font-semibold">Schedule on-farm expert appointment</p>
+                            <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mt-0.5">Schedule on-farm expert appointment</p>
                           </div>
                           <button 
                             onClick={() => setSelectedSubservice(null)}
-                            className="text-xs font-bold text-gray-400 hover:text-gray-600 cursor-pointer"
+                            className="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-[#1A1A1A] border border-gray-200 text-[10px] font-black uppercase tracking-wider cursor-pointer transition rounded-none"
                           >
                             Cancel
                           </button>
                         </div>
 
                         {/* Steps indicator */}
-                        <div className="relative flex items-center justify-between w-full max-w-xs mx-auto mb-8">
-                          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-150 -translate-y-1/2 z-0" />
-                          <div
-                            className="absolute left-0 top-1/2 h-0.5 bg-[#1A5438] -translate-y-1/2 transition-all duration-300 z-0"
-                            style={{ width: `${((step - 1) / 2) * 100}%` }}
-                          />
-                          {[1, 2, 3].map((s) => (
-                            <div key={s} className="relative z-10 flex flex-col items-center">
-                              <div
-                                className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] border-2 transition-all duration-300 ${
-                                  step > s
-                                    ? "bg-[#1A5438] border-[#1A5438] text-white"
-                                    : step === s
-                                      ? "bg-white border-[#1A5438] text-[#1A5438]"
-                                      : "bg-white border-gray-100 text-gray-400"
-                                }`}
-                              >
-                                {step > s ? <Check className="w-3 h-3" /> : s}
-                              </div>
+                        <div className="grid grid-cols-3 gap-2 w-full mb-8 border-b border-gray-150 pb-3 text-center">
+                          {[
+                            { stepNum: 1, label: "01. PROFILE" },
+                            { stepNum: 2, label: "02. CONTEXT" },
+                            { stepNum: 3, label: "03. PAYMENT" }
+                          ].map((s) => (
+                            <div 
+                              key={s.stepNum} 
+                              className={`text-[9px] font-black tracking-widest transition duration-300 pb-1 border-b-2 ${
+                                step === s.stepNum 
+                                  ? "text-[#1A5438] border-b-[#1A5438]" 
+                                  : step > s.stepNum 
+                                    ? "text-[#2D6A4F] border-b-[#2D6A4F]/40" 
+                                    : "text-gray-400 border-b-transparent"
+                              }`}
+                            >
+                              {s.label}
                             </div>
                           ))}
                         </div>
@@ -781,204 +923,370 @@ function ServicesPage() {
                         {/* Step Forms */}
                         {step === 1 && (
                           <div className="space-y-4">
+                            <label className="block">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Your Full Name</span>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Samuel Kiprono"
+                                value={farmerName}
+                                onChange={(e) => setFarmerName(e.target.value)}
+                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
+                              />
+                            </label>
+
                             <div className="grid gap-4 sm:grid-cols-2">
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Your Name</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Phone Number</span>
                                 <input
-                                  type="text"
+                                  type="tel"
                                   required
-                                  placeholder="e.g. Samuel Kiprono"
-                                  value={farmerName}
-                                  onChange={(e) => setFarmerName(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none"
+                                  placeholder="e.g. 0712345678"
+                                  value={phone}
+                                  onChange={(e) => setPhone(e.target.value)}
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
                                 />
                               </label>
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">National ID Number</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Email Address</span>
                                 <input
-                                  type="text"
+                                  type="email"
                                   required
-                                  placeholder="e.g. 34221088"
-                                  value={farmerId}
-                                  onChange={(e) => setFarmerId(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none"
+                                  placeholder="e.g. samuel@example.com"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
                                 />
                               </label>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">County</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">County</span>
                                 <select
                                   value={county}
                                   onChange={(e) => setCounty(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none cursor-pointer font-bold"
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer font-bold focus:border-[#1A5438]"
                                 >
-                                  <option value="Uasin Gishu">Uasin Gishu</option>
-                                  <option value="Nyandarua">Nyandarua</option>
-                                  <option value="Kericho">Kericho</option>
-                                  <option value="Machakos">Machakos</option>
-                                  <option value="Nakuru">Nakuru</option>
+                                  {kenyanCounties.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
                                 </select>
                               </label>
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Farm Landmark / GPS</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Sub-County / Constituency</span>
                                 <input
                                   type="text"
                                   required
-                                  placeholder="e.g. 2km past Junction, near high school"
-                                  value={gpsLocation}
-                                  onChange={(e) => setGpsLocation(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none"
+                                  placeholder="e.g. Kesses, Ainabkoi"
+                                  value={subCounty}
+                                  onChange={(e) => setSubCounty(e.target.value)}
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
                                 />
                               </label>
                             </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <label className="block">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.scaleLabel}</span>
+                                <input
+                                  type={fields.scaleType}
+                                  required
+                                  min={fields.scaleType === "number" ? "0.1" : undefined}
+                                  step={fields.scaleType === "number" ? "0.1" : undefined}
+                                  placeholder={fields.scalePlaceholder}
+                                  value={farmSize}
+                                  onChange={(e) => setFarmSize(e.target.value)}
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
+                                />
+                              </label>
+                              <div className="block sm:col-span-2">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.activityLabel} (Select all that apply)</span>
+                                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {fields.activityOptions.map((opt) => {
+                                    const isChecked = farmActivity.includes(opt);
+                                    return (
+                                      <label key={opt} className={`flex items-start gap-2.5 cursor-pointer p-2.5 border rounded-none transition ${isChecked ? 'bg-[#1A5438]/5 border-[#1A5438]/40' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setFarmActivity([...farmActivity, opt]);
+                                            } else {
+                                              setFarmActivity(farmActivity.filter((item) => item !== opt));
+                                            }
+                                          }}
+                                          className="mt-0.5 h-3.5 w-3.5 rounded-none border-gray-300 text-[#1A5438] focus:ring-[#1A5438]"
+                                        />
+                                        <span className="text-[11px] font-semibold text-gray-700">{opt}</span>
+                                      </label>
+                                    );
+                                  })}
+                                  {/* Always include Other checkbox */}
+                                  {(() => {
+                                    const isOtherChecked = farmActivity.includes("Other");
+                                    return (
+                                      <label className={`flex items-start gap-2.5 cursor-pointer p-2.5 border rounded-none transition ${isOtherChecked ? 'bg-[#1A5438]/5 border-[#1A5438]/40' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isOtherChecked}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setFarmActivity([...farmActivity, "Other"]);
+                                            } else {
+                                              setFarmActivity(farmActivity.filter((item) => item !== "Other"));
+                                              setOtherActivitySpec("");
+                                            }
+                                          }}
+                                          className="mt-0.5 h-3.5 w-3.5 rounded-none border-gray-300 text-[#1A5438] focus:ring-[#1A5438]"
+                                        />
+                                        <span className="text-[11px] font-semibold text-gray-700">Other / Not Listed</span>
+                                      </label>
+                                    );
+                                  })()}
+                                </div>
+
+                                {farmActivity.includes("Other") && (
+                                  <div className="mt-2">
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Please specify your other requirements..."
+                                      value={otherActivitySpec}
+                                      onChange={(e) => setOtherActivitySpec(e.target.value)}
+                                      className="w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2 text-xs outline-none focus:border-[#1A5438]"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <label className="block">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Directions / Farm Landmark</span>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. 2km past Ainabkoi Junction, near St. Jude Secondary School"
+                                value={gpsLocation}
+                                onChange={(e) => setGpsLocation(e.target.value)}
+                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
+                              />
+                            </label>
                           </div>
                         )}
 
                         {step === 2 && (
                           <div className="space-y-4">
+                            <label className="block">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.subjectLabel}</span>
+                              <input
+                                type="text"
+                                required
+                                placeholder={fields.subjectPlaceholder}
+                                value={targetSubject}
+                                onChange={(e) => setTargetSubject(e.target.value)}
+                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
+                              />
+                            </label>
+
+                            <label className="block">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.descriptionLabel}</span>
+                              <textarea
+                                required
+                                rows={4}
+                                placeholder={fields.descriptionPlaceholder}
+                                value={vividDescription}
+                                onChange={(e) => setVividDescription(e.target.value)}
+                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438] resize-none leading-relaxed"
+                              />
+                            </label>
+
                             <div className="grid gap-4 sm:grid-cols-2">
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Appointment Date</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Preferred Appointment Date</span>
                                 <input
                                   type="date"
                                   required
                                   value={bookingDate}
                                   onChange={(e) => setBookingDate(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none cursor-pointer"
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer focus:border-[#1A5438]"
                                 />
                               </label>
                               <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Preferred Time Slot</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Preferred Time Slot</span>
                                 <input
                                   type="time"
                                   required
                                   value={bookingTime}
                                   onChange={(e) => setBookingTime(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none cursor-pointer"
+                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer focus:border-[#1A5438]"
                                 />
                               </label>
                             </div>
-
-                            <label className="block">
-                              <span className="text-[10px] font-black text-gray-400 uppercase">Urgency Status</span>
-                              <select
-                                value={urgency}
-                                onChange={(e) => setUrgency(e.target.value)}
-                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none cursor-pointer font-bold"
-                              >
-                                <option value="Normal">Normal schedule (Within 3 days)</option>
-                                <option value="Medium">Medium urgency (Within 48 hours)</option>
-                                <option value="Urgent">Emergency dispatch (Vets within 12 hours)</option>
-                              </select>
-                            </label>
                           </div>
                         )}
 
                         {step === 3 && (
                           <div className="space-y-4">
-                            <div className="bg-[#FAF9F5] border border-[#D4DDD0] rounded-xl p-4">
-                              <span className="text-[9px] font-black text-[#1A5438] uppercase tracking-wider block mb-2">
-                                Order Summary
+                            <div className="bg-[#FAF9F5] border border-[#D4DDD0] rounded-none p-4 text-xs">
+                              <span className="text-[9px] font-black text-[#1A5438] uppercase tracking-wider block mb-3 border-b pb-1">
+                                Complete Appointment Summary
                               </span>
-                              <div className="space-y-1.5 text-xs text-gray-600 font-semibold">
-                                <div className="flex justify-between">
-                                  <span>Service Ordered:</span>
-                                  <strong className="text-gray-800">{selectedSubservice.name}</strong>
+                              
+                              <div className="grid gap-x-4 gap-y-2.5 sm:grid-cols-2 text-gray-600 font-semibold mb-3">
+                                <div>
+                                  <div className="text-[9px] text-gray-400 uppercase">Customer Profile</div>
+                                  <div className="text-gray-800 font-bold mt-0.5">{farmerName}</div>
+                                  <div className="text-[10px] text-gray-500 font-medium">{phone} • {email}</div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span>County & Landmark:</span>
-                                  <strong className="text-gray-800">{county} County, {gpsLocation}</strong>
+                                <div>
+                                  <div className="text-[9px] text-gray-400 uppercase">Farm/Case Profile</div>
+                                  <div className="text-gray-800 font-bold mt-0.5">{county} County ({subCounty})</div>
+                                  <div className="text-[10px] text-gray-500 font-medium mt-1 space-y-0.5">
+                                    <div><span className="font-bold text-gray-400">{fields.scaleLabel}:</span> <span className="text-gray-700">{farmSize}</span></div>
+                                    <div>
+                                      <span className="font-bold text-gray-400">{fields.activityLabel}:</span>{" "}
+                                      <span className="text-gray-700">
+                                        {farmActivity
+                                          .map((act) => (act === "Other" ? `Other (${otherActivitySpec})` : act))
+                                          .join(", ")}
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span>Appointment Target:</span>
-                                  <strong className="text-gray-800">{bookingDate} at {bookingTime}</strong>
+                                <div className="sm:col-span-2 border-t pt-2 mt-1">
+                                  <div className="text-[9px] text-gray-400 uppercase">Directions / GPS</div>
+                                  <div className="text-gray-700 font-medium mt-0.5">{gpsLocation}</div>
                                 </div>
-                                <div className="h-px bg-gray-200 my-1" />
-                                <div className="flex justify-between text-sm font-black text-[#1A5438]">
-                                  <span>Cost Estimate:</span>
-                                  <span>{selectedSubservice.estimatedCost}</span>
+                                <div className="border-t pt-2 sm:col-span-2">
+                                  <div className="text-[9px] text-gray-400 uppercase">Service Details & Target</div>
+                                  <div className="text-gray-800 font-bold mt-0.5 font-serif italic">{selectedSubservice.name} ({targetSubject})</div>
+                                  <div className="text-[10px] text-gray-500 font-medium">Appointment: {bookingDate} at {bookingTime}</div>
                                 </div>
+                                <div className="sm:col-span-2 bg-white p-2 border border-gray-150">
+                                  <div className="text-[9px] text-[#2D6A4F] uppercase font-black tracking-wide">{fields.descriptionLabel}</div>
+                                  <p className="text-[10px] text-gray-600 italic mt-1 leading-relaxed font-medium">"{vividDescription}"</p>
+                                </div>
+                              </div>
+                              
+                              <div className="border-t border-[#D4DDD0] pt-2 flex justify-between text-sm font-black text-[#1A5438]">
+                                <span>Cost Estimate:</span>
+                                <span>{selectedSubservice.estimatedCost}</span>
                               </div>
                             </div>
 
                             {simStep === "idle" && (
                               <form onSubmit={handleMpesaSubmit} className="space-y-3">
                                 <label className="block">
-                                  <span className="text-[10px] font-black text-[#5D6B5C] uppercase">M-Pesa Number</span>
+                                  <span className="text-[10px] font-black text-[#5D6B5C] uppercase tracking-wider">M-Pesa Number</span>
                                   <input
                                     type="tel"
                                     required
                                     placeholder="e.g. 0712345678"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
-                                    className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs outline-none"
+                                    className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
                                   />
                                 </label>
                                 <button
                                   type="submit"
-                                  className="w-full bg-[#1A5438] hover:bg-[#113B26] text-white py-2.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                                  className="w-full bg-[#1A5438] hover:bg-[#113B26] text-white py-2.5 rounded-none text-xs font-bold uppercase tracking-wider transition cursor-pointer shadow-sm"
                                 >
                                   Proceed to MPesa Authorization
                                 </button>
                               </form>
                             )}
-
-                            {simStep === "pin" && (
-                              <div className="mx-auto max-w-xs border border-gray-800 rounded-2xl bg-[#1A1A1A] p-4 shadow-xl text-white">
-                                <div className="text-center text-[9px] font-semibold text-gray-400 mb-2">M-PESA SIMULATOR</div>
-                                <div className="rounded-xl bg-white p-3 text-center text-[#1A1A1A]">
-                                  <div className="text-[9px] font-bold text-gray-400">PAY MQULIMA</div>
-                                  <div className="text-xs font-black text-[#2D6A4F] mt-0.5">{selectedSubservice.estimatedCost}</div>
-                                  
-                                  <div className="mt-3">
-                                    <div className="text-[9px] text-gray-400 font-bold mb-1">ENTER PIN:</div>
-                                    <div className="flex justify-center gap-1.5">
-                                      {Array.from({ length: 4 }).map((_, idx) => (
-                                        <div key={idx} className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-xs font-bold text-[#1A1A1A]">
-                                          {pinCode[idx] ? "●" : ""}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="mt-3 grid grid-cols-3 gap-1.5">
-                                  {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => (
-                                    <button key={n} type="button" onClick={() => handleKeyPress(n)} className="h-8 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold">{n}</button>
-                                  ))}
-                                  <button type="button" onClick={handlePinBackspace} className="h-8 rounded-full bg-red-600/20 text-red-400 text-[9px] font-bold">Clear</button>
-                                  <button type="button" onClick={() => handleKeyPress("0")} className="h-8 rounded-full bg-white/10 text-xs font-bold">0</button>
-                                  <button type="button" onClick={handleConfirmPin} className="h-8 rounded-full bg-[#1A5438] text-white text-[9px] font-bold">OK</button>
-                                </div>
+                            {simStep === "loading" && (
+                              <div className="text-center py-6">
+                                <div className="w-10 h-10 rounded-none border-4 border-[#1A5438]/20 border-t-[#1A5438] animate-spin mx-auto mb-3" />
+                                <h4 className="text-xs font-bold">Initiating M-Pesa Payment...</h4>
+                                <p className="text-[10px] text-gray-500 mt-1">Please keep this window open</p>
                               </div>
                             )}
 
-                            {simStep === "loading" && (
-                              <div className="text-center py-6">
-                                <div className="w-10 h-10 rounded-full border-4 border-[#1A5438]/20 border-t-[#1A5438] animate-spin mx-auto mb-3" />
-                                <h4 className="text-xs font-bold">Processing payment push...</h4>
+                            {simStep === "prompt" && (
+                              <div className="text-center py-6 bg-white border border-gray-200 p-4">
+                                <div className="w-10 h-10 rounded-none border-4 border-[#1A5438]/20 border-t-[#1A5438] animate-spin mx-auto mb-3" />
+                                <h4 className="text-xs font-bold text-gray-800">Check Your Phone!</h4>
+                                <p className="text-[11px] text-gray-600 mt-1.5">
+                                  We've sent an M-Pesa PIN prompt to <strong>{phone}</strong>.
+                                  Please enter your PIN on your phone to authorize the transaction of {selectedSubservice.estimatedCost}.
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-3 font-semibold uppercase tracking-wider">
+                                  Waiting for confirmation... ({pollCountdown}s)
+                                </p>
+                              </div>
+                            )}
+
+                            {simStep === "failed" && (
+                              <div className="text-center py-6 bg-red-50/50 border border-red-200 p-4">
+                                <div className="text-2xl text-red-600 mb-2">❌</div>
+                                <h4 className="text-xs font-bold text-red-800">Payment Failed</h4>
+                                <p className="text-[11px] text-red-700 mt-1 leading-relaxed">
+                                  The transaction could not be processed. Please verify your phone number and balance, and try again.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={handlePaymentRetry}
+                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
+                                >
+                                  Try Again
+                                </button>
+                              </div>
+                            )}
+
+                            {simStep === "timeout" && (
+                              <div className="text-center py-6 bg-amber-50/50 border border-amber-200 p-4">
+                                <div className="text-2xl text-amber-600 mb-2">⚠️</div>
+                                <h4 className="text-xs font-bold text-amber-800">Request Timed Out</h4>
+                                <p className="text-[11px] text-amber-700 mt-1 leading-relaxed">
+                                  We didn't receive confirmation in time. If you entered your PIN, please check your messages.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={handlePaymentRetry}
+                                  className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
+                                >
+                                  Try Again
+                                </button>
                               </div>
                             )}
                           </div>
                         )}
 
                         {/* Back / Continue triggers */}
-                        {simStep !== "pin" && simStep !== "loading" && (
+                        {simStep === "idle" && (
                           <div className="mt-6 flex items-center justify-between border-t border-gray-150 pt-4">
                             <button
                               disabled={step === 1}
                               onClick={() => setStep(step - 1)}
-                              className="text-xs font-bold text-gray-400 hover:text-[#1A1A1A] disabled:opacity-30 cursor-pointer"
+                              className="text-xs font-bold text-gray-500 hover:text-[#1A1A1A] disabled:opacity-30 cursor-pointer uppercase tracking-wider px-5 py-2 border border-transparent transition"
                             >
                               ← Back
                             </button>
                             {step < 3 ? (
                               <button
-                                disabled={(step === 1 && (!farmerName || !farmerId || !gpsLocation)) || (step === 2 && (!bookingDate || !bookingTime))}
+                                disabled={
+                                  (step === 1 && (
+                                    !farmerName || 
+                                    !phone || 
+                                    !email || 
+                                    !subCounty || 
+                                    !gpsLocation || 
+                                    !farmSize || 
+                                    farmActivity.length === 0 || 
+                                    (farmActivity.includes("Other") && !otherActivitySpec.trim())
+                                  )) || 
+                                  (step === 2 && (
+                                    !targetSubject || 
+                                    !vividDescription || 
+                                    !bookingDate || 
+                                    !bookingTime
+                                  ))
+                                }
                                 onClick={() => setStep(step + 1)}
-                                className="bg-[#1A5438] hover:bg-[#113B26] text-white px-5 py-2 rounded-lg text-xs font-bold disabled:opacity-40 transition cursor-pointer"
+                                className="bg-[#1A5438] hover:bg-[#113B26] text-white px-6 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider disabled:opacity-40 transition cursor-pointer shadow-sm"
                               >
                                 Continue
                               </button>
@@ -991,153 +1299,8 @@ function ServicesPage() {
                 </div>
               )}
 
-            {/* VIEW B: Service Request Tracker */}
-            {activeView === "tracker" && (
-              <div className="max-w-2xl mx-auto rounded-2xl border border-[#D4DDD0] bg-white p-6 shadow-md md:p-8 text-left">
-                <h2 className="text-xl font-bold font-['Lora'] text-[#1A3A1A] mb-2">Track Service Request</h2>
-                <p className="text-xs text-gray-500 mb-6 font-semibold">
-                  Enter your appointment reference number (e.g. `MQ-XXXXXX`) to view dispatch status. You can use the mock code <span className="font-mono font-bold text-[#1A5438]">MQ-DEMO55</span> to test the tracker stages.
-                </p>
-
-                <form onSubmit={handleTrackSubmit} className="flex gap-3 mb-8">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter Reference (e.g. MQ-DEMO55)"
-                    value={trackerCode}
-                    onChange={(e) => setTrackerCode(e.target.value)}
-                    className="flex-1 rounded-xl border border-[#D4DDD0] bg-white px-4 py-2 text-xs outline-none focus:border-[#1A5438] uppercase"
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-[#1A5438] text-white px-6 py-2 text-xs font-bold hover:bg-[#113B26] transition cursor-pointer"
-                  >
-                    Locate Request
-                  </button>
-                </form>
-
-                {trackedJob ? (
-                  <div className="border-t border-gray-150 pt-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTrackedJob(null);
-                          setTrackerCode("");
-                        }}
-                        className="text-xs font-bold text-gray-500 hover:text-[#1A1A1A] cursor-pointer"
-                      >
-                        ← Back to History
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap justify-between items-center bg-[#FAF9F5] p-4 rounded-xl mb-6 text-xs border border-[#D4DDD0]">
-                      <div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase">Service Booked</div>
-                        <div className="font-extrabold text-[#1A3A1A]">{trackedJob.serviceName}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase">Reference Code</div>
-                        <div className="font-mono font-bold text-[#1A5438]">{trackedJob.id}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase">Target Schedule</div>
-                        <div className="font-semibold text-gray-700">{trackedJob.date} at {trackedJob.time}</div>
-                      </div>
-                    </div>
-
-                    {/* Timeline stepper */}
-                    <div className="space-y-6 relative pl-8 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-                      {[
-                        { key: "pending", label: "Booking Request Received", desc: "Our coordination team has received your order and is vetting technicians in your county." },
-                        { key: "assigned", label: "Professional Expert Assigned", desc: "A verified agronomist/vet has been allocated to your schedule. Details sent to your phone." },
-                        { key: "dispatched", label: "Technician Dispatched", desc: "The expert is currently traveling to your GPS/farm location." },
-                        { key: "completed", label: "Job Completed & Certified", desc: "Service delivery was completed successfully. Receipt and recommendations generated." },
-                      ].map((step, idx) => {
-                        const statusOrder = ["pending", "assigned", "dispatched", "completed"];
-                        const currentIdx = statusOrder.indexOf(trackedJob.status);
-                        const stepIdx = statusOrder.indexOf(step.key);
-                        const isDone = stepIdx <= currentIdx;
-                        const isActive = stepIdx === currentIdx;
-
-                        return (
-                          <div key={step.key} className="relative text-left">
-                            <div className={`absolute -left-8 top-0.5 w-7.5 h-7.5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                              isDone ? "bg-[#1A5438] border-[#1A5438] text-white" : "bg-white border-gray-200 text-gray-300"
-                            }`}>
-                              {isDone ? <Check className="w-3.5 h-3.5" /> : (idx + 1)}
-                            </div>
-                            <div className="pl-2">
-                              <h4 className={`text-xs font-extrabold ${isActive ? "text-[#1A5438]" : isDone ? "text-[#1A3A1A]" : "text-gray-400"}`}>
-                                {step.label}
-                              </h4>
-                              <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">{step.desc}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-                      <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                      <p className="text-xs font-semibold">Enter a reference code above to load booking status</p>
-                    </div>
-
-                    {userBookings.length > 0 && (
-                      <div className="space-y-3">
-                        <h3 className="text-xs font-extrabold text-[#5D6B5C] uppercase tracking-wider">
-                          Your Booking History ({userBookings.length})
-                        </h3>
-                        <div className="grid gap-3">
-                          {userBookings.map((job) => (
-                            <div
-                              key={job.id}
-                              className="flex items-center justify-between border border-[#D4DDD0] p-4 rounded-xl hover:border-[#1A5438] transition bg-white"
-                            >
-                              <div className="space-y-1">
-                                <h4 className="text-xs font-bold text-[#1A3A1A]">{job.serviceName}</h4>
-                                <div className="text-[10px] text-gray-500 font-semibold">
-                                  Ref: <span className="font-mono text-[#1A5438] font-bold">{job.id}</span> • {job.date}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                                  job.status === "completed"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : job.status === "dispatched"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : job.status === "assigned"
-                                        ? "bg-purple-100 text-purple-800"
-                                        : "bg-amber-100 text-amber-800"
-                                }`}>
-                                  {job.status}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setTrackerCode(job.id);
-                                    setTrackedJob(job);
-                                    toast.success("Loaded booking details!");
-                                  }}
-                                  className="text-[10px] font-bold text-[#1A5438] hover:underline"
-                                >
-                                  Track →
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-        </section>
+            </div>
+          </section>
         )}
       </div>
     </AppLayout>

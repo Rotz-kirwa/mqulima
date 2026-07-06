@@ -3,6 +3,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { PartnerMarquee } from "./PartnerMarquee";
+import { FloatingAIChat } from "./FloatingAIChat";
 
 const CartDrawer = React.lazy(() =>
   import("../shop/CartDrawer").then((m) => ({ default: m.CartDrawer }))
@@ -21,6 +22,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <PartnerMarquee />
       <Footer />
+      <FloatingAIChat />
       <WhatsAppButton />
       {mounted && (
         <Suspense fallback={null}>

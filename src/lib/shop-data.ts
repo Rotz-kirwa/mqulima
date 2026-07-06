@@ -1,3 +1,162 @@
+export const AGRICULTURE_TAXONOMY: Record<string, string[] | Record<string, string[]>> = {
+  "Seeds & Seedlings": [
+    "Maize", "Beans", "Tomatoes", "Potatoes", "Onions", "Watermelon", "Vegetables", "Fruit Seedlings", "Tree Seedlings", "Sorghum", "Peas"
+  ],
+  "Crop Protection": [
+    "Insecticides", "Fungicides", "Herbicides", "Rodenticides", "Nematicides", "Bactericides"
+  ],
+  "Fertilizers": [
+    "Planting", "Top Dressing", "Foliar", "Organic", "Blended", "Specialized"
+  ],
+  "Plant Growth & Boosters": [
+    "Plant Hormones", "Biostimulants", "Microbial Solutions"
+  ],
+  "Harvest & Storage": [
+    "Post Harvest Products", "Crop Preservation", "Storage Solutions"
+  ],
+  "Animal Farming": {
+    "Animal Feed": ["Dairy", "Poultry", "Pig", "Fish", "Sheep", "Goat", "Beef Feedlot", "Pasture", "Pet"],
+    "Animal Health": ["Dewormers", "Veterinary Medicines", "Vaccines", "Animal Pesticides", "Vitamins"],
+    "Supplements": ["Mineral Salts", "Feed Additives", "Multivitamins"]
+  },
+  "Farm Equipment": [
+    "Hand Tools", "Machinery", "Implements"
+  ],
+  "Water & Sanitation": [
+    "Water Treatment", "Environmental Solutions"
+  ]
+};
+
+export function mapToNewTaxonomy(p: any) {
+  let cat = (p.category || "").trim();
+  let sub = (p.subcategory || "").trim();
+  
+  const nameLower = (p.name || "").toLowerCase();
+  const descLower = (p.description || "").toLowerCase();
+  const catLower = cat.toLowerCase();
+  const subLower = sub.toLowerCase();
+
+  // 1. Seeds & Seedlings
+  if (catLower.includes("seed") || subLower.includes("seed") || nameLower.includes("seed")) {
+    let subcat = "Vegetables";
+    if (nameLower.includes("maize")) subcat = "Maize";
+    else if (nameLower.includes("bean")) subcat = "Beans";
+    else if (nameLower.includes("tomato")) subcat = "Tomatoes";
+    else if (nameLower.includes("potato")) subcat = "Potatoes";
+    else if (nameLower.includes("onion")) subcat = "Onions";
+    else if (nameLower.includes("watermelon")) subcat = "Watermelon";
+    else if (nameLower.includes("sorghum")) subcat = "Sorghum";
+    else if (nameLower.includes("pea")) subcat = "Peas";
+    else if (nameLower.includes("tree")) subcat = "Tree Seedlings";
+    else if (nameLower.includes("fruit")) subcat = "Fruit Seedlings";
+    return { category: "Seeds & Seedlings", subcategory: subcat };
+  }
+
+  // 2. Crop Protection
+  if (catLower.includes("pesticide") || subLower.includes("pesticide") || 
+      subLower.includes("fungicide") || subLower.includes("insecticide") || 
+      subLower.includes("herbicide") || subLower.includes("nematicide") || 
+      subLower.includes("bactericide") || subLower.includes("rodenticide") ||
+      nameLower.includes("fungicide") || nameLower.includes("insecticide") || 
+      nameLower.includes("herbicide") || nameLower.includes("nematicide") ||
+      nameLower.includes("ridomil") || nameLower.includes("actara") || nameLower.includes("roundup")) {
+    let subcat = "Insecticides";
+    if (subLower.includes("fungi") || nameLower.includes("fungi") || nameLower.includes("ridomil")) subcat = "Fungicides";
+    else if (subLower.includes("herbi") || nameLower.includes("herbi") || nameLower.includes("roundup")) subcat = "Herbicides";
+    else if (subLower.includes("nemati") || nameLower.includes("nemati")) subcat = "Nematicides";
+    else if (subLower.includes("bacteri") || nameLower.includes("bacteri")) subcat = "Bactericides";
+    else if (subLower.includes("rodent") || nameLower.includes("rodent")) subcat = "Rodenticides";
+    return { category: "Crop Protection", subcategory: subcat };
+  }
+
+  // 3. Fertilizers
+  if (catLower.includes("fertilizer") || subLower.includes("fertilizer") || nameLower.includes("fertilizer")) {
+    let subcat = "Specialized";
+    if (subLower.includes("planting") || nameLower.includes("planting") || nameLower.includes("dap")) subcat = "Planting";
+    else if (subLower.includes("dressing") || nameLower.includes("dressing") || nameLower.includes("can") || nameLower.includes("urea")) subcat = "Top Dressing";
+    else if (subLower.includes("foliar") || nameLower.includes("foliar")) subcat = "Foliar";
+    else if (subLower.includes("organic") || nameLower.includes("organic") || subLower.includes("manure") || nameLower.includes("manure")) subcat = "Organic";
+    else if (subLower.includes("blend") || nameLower.includes("blend")) subcat = "Blended";
+    return { category: "Fertilizers", subcategory: subcat };
+  }
+
+  // 4. Plant Growth & Boosters
+  if (catLower.includes("growth") || subLower.includes("growth") || 
+      catLower.includes("biostimulant") || subLower.includes("microbe") ||
+      nameLower.includes("hormone") || nameLower.includes("booster")) {
+    let subcat = "Biostimulants";
+    if (nameLower.includes("hormone") || subLower.includes("hormone")) subcat = "Plant Hormones";
+    else if (nameLower.includes("microb") || subLower.includes("microb") || nameLower.includes("trichoderma")) subcat = "Microbial Solutions";
+    return { category: "Plant Growth & Boosters", subcategory: subcat };
+  }
+
+  // 5. Harvest & Storage
+  if (catLower.includes("harvest") || subLower.includes("harvest") || 
+      catLower.includes("storage") || nameLower.includes("bag") || nameLower.includes("preserv")) {
+    let subcat = "Storage Solutions";
+    if (nameLower.includes("preserv") || descLower.includes("preserv")) subcat = "Crop Preservation";
+    else if (catLower.includes("post") || descLower.includes("post-harvest")) subcat = "Post Harvest Products";
+    return { category: "Harvest & Storage", subcategory: subcat };
+  }
+
+  // 6. Animal Farming (Feed, Health, Supplements)
+  if (catLower.includes("animal") || catLower.includes("feed") || subLower.includes("feed") || 
+      catLower.includes("vet") || subLower.includes("vet") || catLower.includes("supplement") || 
+      subLower.includes("supplement") || nameLower.includes("dewormer") || nameLower.includes("dairy") ||
+      nameLower.includes("poultry") || nameLower.includes("pig") || nameLower.includes("fish") ||
+      nameLower.includes("sheep") || nameLower.includes("goat") || nameLower.includes("cow") || nameLower.includes("vet")) {
+    
+    // Determine category layer
+    if (catLower.includes("feed") || subLower.includes("feed") || nameLower.includes("feed") || nameLower.includes("meal")) {
+      let leaf = "Dairy";
+      if (nameLower.includes("poultry") || nameLower.includes("chick") || nameLower.includes("grower") || nameLower.includes("layer")) leaf = "Poultry";
+      else if (nameLower.includes("pig") || nameLower.includes("sow")) leaf = "Pig";
+      else if (nameLower.includes("fish")) leaf = "Fish";
+      else if (nameLower.includes("sheep") || nameLower.includes("goat")) leaf = "Sheep";
+      else if (nameLower.includes("beef") || nameLower.includes("feedlot")) leaf = "Beef Feedlot";
+      else if (nameLower.includes("pasture") || nameLower.includes("grass")) leaf = "Pasture";
+      else if (nameLower.includes("dog") || nameLower.includes("cat") || nameLower.includes("pet")) leaf = "Pet";
+      return { category: "Animal Farming", subcategory: "Animal Feed", leafCategory: leaf };
+    }
+    
+    if (catLower.includes("supplement") || subLower.includes("supplement") || nameLower.includes("salt") || nameLower.includes("block")) {
+      let leaf = "Mineral Salts";
+      if (nameLower.includes("additive")) leaf = "Feed Additives";
+      else if (nameLower.includes("vitamin") || nameLower.includes("booster")) leaf = "Multivitamins";
+      return { category: "Animal Farming", subcategory: "Supplements", leafCategory: leaf };
+    }
+
+    // Health
+    let leaf = "Veterinary Medicines";
+    if (nameLower.includes("dewormer") || subLower.includes("dewormer")) leaf = "Dewormers";
+    else if (nameLower.includes("vaccine")) leaf = "Vaccines";
+    else if (nameLower.includes("pesticide") || nameLower.includes("acaricide") || nameLower.includes("tick")) leaf = "Animal Pesticides";
+    else if (nameLower.includes("vitamin") || nameLower.includes("multivit")) leaf = "Vitamins";
+    return { category: "Animal Farming", subcategory: "Animal Health", leafCategory: leaf };
+  }
+
+  // 7. Farm Equipment
+  if (catLower.includes("tool") || catLower.includes("machinery") || catLower.includes("implement") ||
+      subLower.includes("tool") || subLower.includes("machinery") || subLower.includes("implement") ||
+      nameLower.includes("pump") || nameLower.includes("sprayer") || nameLower.includes("shovel") ||
+      nameLower.includes("hoe") || nameLower.includes("plough") || nameLower.includes("tractor")) {
+    let subcat = "Hand Tools";
+    if (nameLower.includes("pump") || nameLower.includes("sprayer") || nameLower.includes("machin") || nameLower.includes("generator")) subcat = "Machinery";
+    else if (nameLower.includes("plough") || nameLower.includes("harrow") || nameLower.includes("planter")) subcat = "Implements";
+    return { category: "Farm Equipment", subcategory: subcat };
+  }
+
+  // 8. Water & Sanitation
+  if (catLower.includes("water") || catLower.includes("sanitation") || catLower.includes("sewage") ||
+      nameLower.includes("chlorine") || nameLower.includes("bio-digester")) {
+    let subcat = "Environmental Solutions";
+    if (nameLower.includes("water") || nameLower.includes("chlorin") || nameLower.includes("purif")) subcat = "Water Treatment";
+    return { category: "Water & Sanitation", subcategory: subcat };
+  }
+
+  return { category: "Seeds & Seedlings", subcategory: "Vegetables" };
+}
+
 export type ProductSizeOption = {
   name: string;
   price: number;
@@ -8,9 +167,10 @@ export type ProductSizeOption = {
 export type ShopProduct = {
   id: string;
   name: string;
+  slug?: string;
   category: string;
   shopType?: string;      // "Agrovet" | "Specialist Shop" | "For Retailers"
-  field?: string;         // "Crop Production" | "Fertilizers" | "Animal Production" | "Public Health & Sanitation" | "Farm tools, Implements & Machinery"
+  field?: string;         // "Crop Production" | "Fertilizers" | "Animal Production" | "Public Health & Sanitation" | "Farm Tools & Machinery" | "Domestic Animal Pharmacy"
   subcategory?: string;
   price: number;
   originalPrice?: number | null;
@@ -19,10 +179,12 @@ export type ShopProduct = {
   reviews?: number;
   badge?: "Best Seller" | "Organic" | "New" | "Sale" | "Bulk Deal" | "Flash Deal" | "Anniversary deal" | "" | null;
   image: string;
+  imageUrls?: string[];
   brand: string;
   seller?: string;
   stock: number;
   description: string;
+  briefDescription?: string;
   county: string;
   organic: boolean;
   verifiedSeller: boolean;
@@ -32,651 +194,7 @@ export type ShopProduct = {
   sizes?: ProductSizeOption[];
 };
 
-export const shopProducts: ShopProduct[] = [
-  // --- AGROVET -> CROP PRODUCTION -> PESTICIDES ---
-  {
-    id: "k1",
-    name: "Kirgit Ridomil Fungicide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1200,
-    originalPrice: 1500,
-    unit: "/kg",
-    category: "Pesticides",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Fungicides",
-    rating: 4.8,
-    reviewsCount: 45,
-    reviews: 45,
-    badge: "Anniversary deal",
-    image: "https://images.unsplash.com/photo-1563514220-ea97928b4988?w=400",
-    stock: 80,
-    description: "Premium preventive fungicide for control of early and late blight in potatoes, tomatoes, and grapes.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh",
-    sizes: [
-      { name: "250g", price: 400, originalPrice: 500, unit: "250g" },
-      { name: "500g", price: 700, originalPrice: 900, unit: "500g" },
-      { name: "1kg", price: 1200, originalPrice: 1500, unit: "kg" }
-    ]
-  },
-  {
-    id: "k2",
-    name: "Kirgit Actara Insecticide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 950,
-    originalPrice: 1100,
-    unit: "/50g",
-    category: "Pesticides",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Insecticides",
-    rating: 4.7,
-    reviewsCount: 32,
-    reviews: 32,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400",
-    stock: 120,
-    description: "Highly effective systemic insecticide for controlling aphids, whiteflies, and thrips in vegetable crops.",
-    county: "Kirinyaga",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh",
-    sizes: [
-      { name: "50g", price: 950, originalPrice: 1100, unit: "50g" },
-      { name: "250g", price: 4200, originalPrice: 4800, unit: "250g" }
-    ]
-  },
-  {
-    id: "k3",
-    name: "Kirgit Roundup Herbicide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1500,
-    originalPrice: 1800,
-    unit: "/Ltr",
-    category: "Pesticides",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Herbicides",
-    rating: 4.6,
-    reviewsCount: 58,
-    reviews: 58,
-    badge: "Sale",
-    image: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=400",
-    stock: 90,
-    description: "Non-selective systemic herbicide for effective weed control during land preparation.",
-    county: "Nakuru",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Bulk Available",
-    sizes: [
-      { name: "500ml", price: 900, originalPrice: 1050, unit: "500ml" },
-      { name: "1L", price: 1500, originalPrice: 1800, unit: "Ltr" },
-      { name: "5L", price: 7000, originalPrice: 8200, unit: "5L" }
-    ]
-  },
-  {
-    id: "k4",
-    name: "Kirgit Nemacur Nematicide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 2800,
-    originalPrice: 3200,
-    unit: "/kg",
-    category: "Pesticides",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Nematicides",
-    rating: 4.9,
-    reviewsCount: 14,
-    reviews: 14,
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1463171359079-3d9996683be2?w=400",
-    stock: 35,
-    description: "Granular nematicide for the control of root-knot nematodes in tobacco, bananas, and flowers.",
-    county: "Uasin Gishu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k5",
-    name: "Kirgit Storm Rodenticide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 450,
-    originalPrice: null,
-    unit: "/100g",
-    category: "Pesticides",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Rodenticides",
-    rating: 4.5,
-    reviewsCount: 22,
-    reviews: 22,
-    badge: null,
-    image: "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=400",
-    stock: 200,
-    description: "Highly palatable wax block rodenticide bait for controlling rats and mice in fields and stores.",
-    county: "Nairobi",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> CROP PRODUCTION -> FOLIAR FERTILIZER ---
-  {
-    id: "k6",
-    name: "Kirgit Org-Grow Foliar",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1800,
-    originalPrice: 2200,
-    unit: "/Ltr",
-    category: "Foliar Fertilizer",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Organic",
-    rating: 4.9,
-    reviewsCount: 39,
-    reviews: 39,
-    badge: "Organic",
-    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400",
-    stock: 150,
-    description: "100% natural organic liquid foliar fertilizer enriched with humic acids and seaweed extracts.",
-    county: "Murang'a",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Certified Organic"
-  },
-  {
-    id: "k7",
-    name: "Kirgit NPK 20-20-20 Compound Foliar",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1600,
-    originalPrice: 1900,
-    unit: "/kg",
-    category: "Foliar Fertilizer",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Compound foliar",
-    rating: 4.7,
-    reviewsCount: 41,
-    reviews: 41,
-    badge: "Anniversary deal",
-    image: "https://images.unsplash.com/photo-1506543730435-e2c6f45540e2?w=400",
-    stock: 110,
-    description: "Balanced compound foliar fertilizer for vegetative, flowering, and fruiting crop stages.",
-    county: "Nyeri",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> CROP PRODUCTION -> GROWTH CATALYSTS & BIOSTIMULANTS ---
-  {
-    id: "k8",
-    name: "Kirgit Auxin Rooting Catalyst",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 750,
-    originalPrice: null,
-    unit: "/100ml",
-    category: "Growth Catalysts",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Hormones",
-    rating: 4.8,
-    reviewsCount: 19,
-    reviews: 19,
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=400",
-    stock: 75,
-    description: "Hormone growth catalyst for stimulating fast and strong root development in cuttings.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k9",
-    name: "Kirgit Kelp Seaweed Biostimulant",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 2100,
-    originalPrice: 2500,
-    unit: "/Ltr",
-    category: "Biostimulants",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Biostimulants",
-    rating: 4.9,
-    reviewsCount: 26,
-    reviews: 26,
-    badge: "Organic",
-    image: "https://images.unsplash.com/photo-1508962914676-134849a727f0?w=400",
-    stock: 60,
-    description: "Premium biostimulant that triggers natural immunity and heat/drought resistance in plants.",
-    county: "Kirinyaga",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Certified Organic"
-  },
-
-  // --- AGROVET -> CROP PRODUCTION -> SEEDS & SEEDLINGS ---
-  {
-    id: "k10",
-    name: "Kirgit Hybrid Maize H614 Seeds",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 450,
-    originalPrice: 500,
-    unit: "/2kg",
-    category: "Seeds & Seedlings",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Seeds",
-    rating: 4.9,
-    reviewsCount: 132,
-    reviews: 132,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=400",
-    stock: 500,
-    description: "High-yielding hybrid maize seed certified for medium to high altitude regions.",
-    county: "Uasin Gishu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Bulk Available"
-  },
-  {
-    id: "k11",
-    name: "Kirgit Pinot Red Onion Seeds",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 800,
-    originalPrice: 950,
-    unit: "/100g",
-    category: "Seeds & Seedlings",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Seeds",
-    rating: 4.8,
-    reviewsCount: 78,
-    reviews: 78,
-    badge: "Anniversary deal",
-    image: "https://images.unsplash.com/photo-1608797178974-15b35a61d121?w=400",
-    stock: 150,
-    description: "High germination rate red onion seeds producing deep red medium-to-large sized bulbs.",
-    county: "Nakuru",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k12",
-    name: "Kirgit Grafted Hass Avocado Seedling",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 150,
-    originalPrice: null,
-    unit: "/seedling",
-    category: "Seeds & Seedlings",
-    shopType: "Agrovet",
-    field: "Crop Production",
-    subcategory: "Seedlings",
-    rating: 4.9,
-    reviewsCount: 94,
-    reviews: 94,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400",
-    stock: 300,
-    description: "Grafted Hass avocado tree seedling, early maturing and highly disease resistant.",
-    county: "Murang'a",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> FERTILIZERS ---
-  {
-    id: "k13",
-    name: "Kirgit DAP Planting Fertilizer",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 3200,
-    originalPrice: 3500,
-    unit: "/50kg",
-    category: "Planting",
-    shopType: "Agrovet",
-    field: "Fertilizers",
-    subcategory: "Planting",
-    rating: 4.9,
-    reviewsCount: 165,
-    reviews: 165,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=400",
-    stock: 120,
-    description: "High phosphorus planting fertilizer (18:46:0) for robust early root growth in maize, potatoes, and wheat.",
-    county: "Uasin Gishu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Bulk Available",
-    sizes: [
-      { name: "10kg", price: 800, originalPrice: 950, unit: "10kg" },
-      { name: "25kg", price: 1750, originalPrice: 1950, unit: "25kg" },
-      { name: "50kg", price: 3200, originalPrice: 3500, unit: "50kg" }
-    ]
-  },
-  {
-    id: "k14",
-    name: "Kirgit CAN Top Dressing Fertilizer",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 2900,
-    originalPrice: null,
-    unit: "/50kg",
-    category: "Top Dressing",
-    shopType: "Agrovet",
-    field: "Fertilizers",
-    subcategory: "Top Dressing",
-    rating: 4.8,
-    reviewsCount: 110,
-    reviews: 110,
-    badge: "Sale",
-    image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400",
-    stock: 80,
-    description: "Calcium Ammonium Nitrate fertilizer, perfect for top dressing to boost green foliage growth.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Bulk Available"
-  },
-  {
-    id: "k15",
-    name: "Kirgit Sheep Manure Organic Fertilizer",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 400,
-    originalPrice: 450,
-    unit: "/25kg",
-    category: "Organic fertilizer",
-    shopType: "Agrovet",
-    field: "Fertilizers",
-    subcategory: "Manure",
-    rating: 4.7,
-    reviewsCount: 55,
-    reviews: 55,
-    badge: "Organic",
-    image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=400",
-    stock: 400,
-    description: "Decomposed sheep manure organic fertilizer, rich in organic matter to build soil health.",
-    county: "Nakuru",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Certified Organic"
-  },
-
-  // --- AGROVET -> ANIMAL PRODUCTION -> ANIMAL FEEDS ---
-  {
-    id: "k16",
-    name: "Kirgit Dairy Meal High-Yield",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 2150,
-    originalPrice: 2400,
-    unit: "/50kg",
-    category: "Animal Feeds",
-    shopType: "Agrovet",
-    field: "Animal Production",
-    subcategory: "Dairy",
-    rating: 4.8,
-    reviewsCount: 88,
-    reviews: 88,
-    badge: "Anniversary deal",
-    image: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400",
-    stock: 150,
-    description: "Premium dairy meal concentrate formulated to maximize milk yields and maintain herd condition.",
-    county: "Nakuru",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Bulk Available",
-    sizes: [
-      { name: "10kg", price: 550, originalPrice: 650, unit: "10kg" },
-      { name: "25kg", price: 1200, originalPrice: 1350, unit: "25kg" },
-      { name: "50kg", price: 2150, originalPrice: 2400, unit: "50kg" }
-    ]
-  },
-  {
-    id: "k17",
-    name: "Kirgit Tilapia Floating Pellets",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1800,
-    originalPrice: null,
-    unit: "/20kg",
-    category: "Animal Feeds",
-    shopType: "Agrovet",
-    field: "Animal Production",
-    subcategory: "Fish",
-    rating: 4.6,
-    reviewsCount: 15,
-    reviews: 15,
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=400",
-    stock: 60,
-    description: "Floating fish feed pellets with high crude protein content for rapid growth of tilapia fingerlings.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> ANIMAL PRODUCTION -> ANIMAL PESTICIDES & SUPPLS ---
-  {
-    id: "k18",
-    name: "Kirgit Triatix Tick Spray Acaricide",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1200,
-    originalPrice: 1350,
-    unit: "/100ml",
-    category: "Animal pesticides",
-    shopType: "Agrovet",
-    field: "Animal Production",
-    subcategory: "Acaricides",
-    rating: 4.9,
-    reviewsCount: 74,
-    reviews: 74,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=400",
-    stock: 180,
-    description: "Potent acaricide spray for total control of ticks, mites, and lice on cattle and sheep.",
-    county: "Nyeri",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k19",
-    name: "Kirgit Maclik Mineral Salt Lick",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 550,
-    originalPrice: null,
-    unit: "/2kg",
-    category: "Supplements",
-    shopType: "Agrovet",
-    field: "Animal Production",
-    subcategory: "Salts",
-    rating: 4.8,
-    reviewsCount: 62,
-    reviews: 62,
-    badge: null,
-    image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400",
-    stock: 250,
-    description: "Essential mineral salt lick block to satisfy sodium and calcium needs in dairy animals.",
-    county: "Machakos",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> PUBLIC HEALTH & SANITATION ---
-  {
-    id: "k20",
-    name: "Kirgit Pit Latrine Bio-Digester",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 950,
-    originalPrice: 1200,
-    unit: "/pack",
-    category: "Sewage & Excreta",
-    shopType: "Agrovet",
-    field: "Public Health & Sanitation",
-    subcategory: "Sewage & Excreta",
-    rating: 4.8,
-    reviewsCount: 33,
-    reviews: 33,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400",
-    stock: 140,
-    description: "Highly active bacterial blend to digest waste, reduce pit levels, and eliminate bad odors.",
-    county: "Nairobi",
-    organic: true,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-
-  // --- AGROVET -> FARM TOOLS, IMPLEMENTS & MACHINERY ---
-  {
-    id: "k21",
-    name: "Kirgit Heavy Duty Farm Jembe",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 450,
-    originalPrice: null,
-    unit: "/piece",
-    category: "Tools",
-    shopType: "Agrovet",
-    field: "Farm tools, Implements & Machinery",
-    subcategory: "Tools",
-    rating: 4.7,
-    reviewsCount: 89,
-    reviews: 89,
-    badge: "Sale",
-    image: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=400",
-    stock: 100,
-    description: "Forged carbon steel hoe head (Jembe) for rigorous digging and weeding operations.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k22",
-    name: "Kirgit Portable Maize Thresher",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 85000,
-    originalPrice: 95000,
-    unit: "/unit",
-    category: "Machinery",
-    shopType: "Agrovet",
-    field: "Farm tools, Implements & Machinery",
-    subcategory: "Machinery",
-    rating: 4.9,
-    reviewsCount: 9,
-    reviews: 9,
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400",
-    stock: 5,
-    description: "Engine-powered high output mobile maize sheller. Cleanly separates grains with minimal cob breakage.",
-    county: "Nakuru",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Pre-Order"
-  },
-
-  // --- SPECIALIST SHOP -> DOMESTIC ANIMAL PHARMACY ---
-  {
-    id: "k23",
-    name: "Kirgit Veterinary Oxytetracycline OTC 20%",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 1250,
-    originalPrice: 1450,
-    unit: "/100ml",
-    category: "Domestic Animal pharmacy",
-    shopType: "Specialist Shop",
-    field: "Domestic Animal pharmacy",
-    subcategory: "Antimicrobials",
-    rating: 4.9,
-    reviewsCount: 51,
-    reviews: 51,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400",
-    stock: 90,
-    description: "Broad spectrum antibiotic injection for treating bacterial infections in cows, sheep, and goats.",
-    county: "Nakuru",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  },
-  {
-    id: "k24",
-    name: "Kirgit Amprolium Coccidiostats Powder",
-    brand: "Kirgit Agriculture",
-    seller: "Kirgit Agriculture",
-    price: 950,
-    originalPrice: null,
-    unit: "/100g",
-    category: "Domestic Animal pharmacy",
-    shopType: "Specialist Shop",
-    field: "Domestic Animal pharmacy",
-    subcategory: "Coccidiostats",
-    rating: 4.8,
-    reviewsCount: 42,
-    reviews: 42,
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1604186837056-8e7c2867b6f2?w=400",
-    stock: 120,
-    description: "Water soluble coccidiostat powder for the prevention and treatment of coccidiosis in poultry.",
-    county: "Kiambu",
-    organic: false,
-    verifiedSeller: true,
-    sellerScore: 95,
-    condition: "Fresh"
-  }
-];
+export const shopProducts: ShopProduct[] = [];
 
 export const shopCategories = [
   { id: "All", label: "All Products", icon: "📦" },
@@ -712,7 +230,7 @@ export const shopCategories = [
   { id: "Machinery", label: "Farm Machinery", icon: "⚙️" },
   
   // Specialist Shop
-  { id: "Domestic Animal pharmacy", label: "Domestic Animal Pharmacy", icon: "🏥" }
+  { id: "Domestic Animal Pharmacy", label: "Domestic Animal Pharmacy", icon: "🏥" }
 ];
 
 export const shopCounties = [
@@ -729,6 +247,4 @@ export const shopCounties = [
   "Baringo"
 ];
 
-export const trustedSellers = [
-  { name: "Kirgit Agriculture", location: "Nakuru County", rating: 4.9, sales: "5,000+ orders", avatar: "🐂" }
-];
+export const trustedSellers: any[] = [];

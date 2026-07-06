@@ -7,8 +7,10 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { WifiOff } from "lucide-react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { generateCsrfToken } from "@/lib/csrf.server";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,9 +30,9 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90"
           >
-            Go home
+            Go Back Home
           </Link>
         </div>
       </div>
@@ -38,68 +40,47 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+function ErrorComponent({ error }: { error: Error }) {
   const router = useRouter();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong. Try again or head home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <h1 className="text-4xl font-bold text-foreground">Something went wrong</h1>
+        <p className="mt-4 text-sm text-muted-foreground">{error.message}</p>
+        <div className="mt-6 flex justify-center gap-4">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            onClick={() => router.invalidate()}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90"
           >
-            Try again
+            Try Again
           </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          <Link
+            to="/"
+            className="rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition hover:bg-secondary"
           >
-            Go home
-          </a>
+            Go Back Home
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Mqulima — Kenya's #1 Digital Farming Ecosystem" },
+      { title: "Mqulima Hub" },
       {
         name: "description",
-        content:
-          "Shop agrovet supplies, book vet & soil services, get AI crop diagnoses, and join 5,000+ Kenyan farmers winning with Mqulima.",
-      },
-      { name: "theme-color", content: "#2D6A4F" },
-      { property: "og:title", content: "Mqulima — Kenya's #1 Digital Farming Ecosystem" },
-      {
-        property: "og:description",
-        content:
-          "From seed to sale — agrovet shop, expert services, weather intelligence and an AI Crop Doctor built for Kenyan farmers.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      {
-        httpEquiv: "Content-Security-Policy",
-        content:
-          "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://i.pinimg.com; connect-src 'self' https://api.open-meteo.com ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:*; frame-src https://www.openstreetmap.org;",
+        content: "Mqulima is a community-driven digital agriculture ecosystem...",
       },
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", href: "/favicon.ico" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -123,10 +104,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body suppressHydrationWarning>
-        {children}
-        <Scripts />
-      </body>
+      <body suppressHydrationWarning>{children}<Scripts /></body>
     </html>
   );
 }
@@ -134,6 +112,20 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { isOnline } = usePWA();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Generate CSRF token on app initialization
+    const initCsrf = async () => {
+      try {
+        await generateCsrfToken();
+      } catch (err) {
+        console.error("Failed to generate CSRF token:", err);
+      }
+    };
+    initCsrf();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -147,7 +139,7 @@ function RootComponent() {
               </div>
             )}
             <Outlet />
-            <Toaster richColors position="top-right" />
+            {mounted && <Toaster richColors position="top-right" />}
           </div>
         </CartProvider>
       </AuthProvider>

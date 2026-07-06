@@ -1,6 +1,6 @@
 export function WhatsAppButton() {
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center justify-center">
+    <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center justify-center">
       {/* Expanding radar ping wave */}
       <span className="absolute h-14 w-14 animate-ping rounded-full bg-[#25D366]/60 duration-1000" />
 

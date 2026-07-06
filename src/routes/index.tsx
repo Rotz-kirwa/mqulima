@@ -3,9 +3,11 @@ import { AppLayout } from "@/components/mqulima/AppLayout";
 import { HomeHero } from "@/components/mqulima/HomeHero";
 import { motion } from "framer-motion";
 import { ArrowRight, Plus, Users, Globe, ShoppingBag, BookOpen, ChevronLeft, ChevronRight, ShieldAlert, Sparkles, Compass, HelpCircle } from "lucide-react";
-import { products, articles } from "@/lib/mqulima-data";
+import { articles } from "@/lib/mqulima-data";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getFeaturedProducts } from "@/lib/api/products.server";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,7 +24,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const featuredProducts = products.slice(0, 8);
+  const { data: dbFeaturedProducts } = useQuery({
+    queryKey: ["featuredProducts"],
+    queryFn: () => getFeaturedProducts()
+  });
+
+  const featuredProducts = dbFeaturedProducts || [];
   const featuredArticles = articles.slice(0, 3);
 
   // Horizontal scroll ref for the Farm Essentials slideshow/grid

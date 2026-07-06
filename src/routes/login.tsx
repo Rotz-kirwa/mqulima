@@ -18,7 +18,7 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("john@mqulima.co.ke");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ function Login() {
       toast.success("Welcome back!");
       navigate({ to: "/dashboard", replace: true });
     } else {
-      toast.error("Invalid email or password. Try john@mqulima.co.ke / farmer123");
+      toast.error("Invalid email or password.");
     }
   };
 
@@ -47,9 +47,6 @@ function Login() {
         <div className="w-full rounded-3xl border border-border bg-card p-8 shadow-elegant">
           <div className="text-center">
             <h1 className="text-2xl font-extrabold text-forest">Sign in to Mqulima</h1>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Demo account: john@mqulima.co.ke / farmer123
-            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">

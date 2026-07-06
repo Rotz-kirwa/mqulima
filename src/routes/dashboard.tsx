@@ -19,6 +19,8 @@ import { usePWA } from "@/hooks/usePWA";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUserOrders, getUserServiceBookings, getUserNotifications, markNotificationRead } from "@/lib/api/dashboard.server";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -53,6 +55,42 @@ function Dashboard() {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  const queryClient = useQueryClient();
+
+  const { data: orders, isLoading: ordersLoading } = useQuery({
+    queryKey: ["userOrders", user.id],
+    queryFn: () => getUserOrders({ data: { userId: user.id } }),
+    enabled: !!user.id
+  });
+
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ["userBookings", user.id],
+    queryFn: () => getUserServiceBookings({ data: user.id }),
+    enabled: !!user.id
+  });
+
+  const { data: notifications, isLoading: notificationsLoading } = useQuery({
+    queryKey: ["userNotifications", user.id],
+    queryFn: () => getUserNotifications({ data: user.id }),
+    enabled: !!user.id
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return markNotificationRead({
+        data: {
+          notificationId,
+          userId: user.id,
+          csrfToken: getCsrfTokenFromCookie()
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userNotifications", user.id] });
+    }
+  });
 
   const handleToggleChannel = async (key: "sowing" | "market" | "weather", value: boolean) => {
     if (value && notificationPermission !== "granted") {
@@ -210,60 +248,65 @@ function Dashboard() {
           </Card>
 
           <Card title="My Orders" icon={Package} cta="View all" link="/shop">
-            {[
-              {
-                id: "ORD-2841",
-                item: "Mavuno Fertilizer × 3",
-                status: "Out for delivery",
-                color: "bg-gold/20 text-gold-foreground",
-              },
-              {
-                id: "ORD-2796",
-                item: "DK Maize Seed × 2",
-                status: "Delivered",
-                color: "bg-success/15 text-success",
-              },
-              {
-                id: "ORD-2755",
-                item: "Knapsack Sprayer",
-                status: "Delivered",
-                color: "bg-success/15 text-success",
-              },
-            ].map((o) => (
-              <Row key={o.id} title={o.item} sub={o.id} chip={o.status} chipClass={o.color} />
-            ))}
+            {ordersLoading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+              </div>
+            ) : !orders || orders.length === 0 ? (
+              <div className="text-center py-4 text-xs text-muted-foreground">No orders yet</div>
+            ) : (
+              orders.map((o) => {
+                let color = "bg-gold/20 text-gold-foreground";
+                if (o.status === "delivered") color = "bg-success/15 text-success";
+                if (o.status === "cancelled") color = "bg-destructive/15 text-destructive";
+                return (
+                  <Row key={o.id} title={o.item} sub={o.id} chip={o.status} chipClass={color} />
+                );
+              })
+            )}
           </Card>
 
           <Card title="Upcoming Bookings" icon={Calendar} cta="Book a service" link="/services">
-            {[
-              {
-                id: "MQ-A91X",
-                item: "Vet visit — Dairy cow",
-                status: "Tomorrow, 10am",
-                color: "bg-primary/15 text-primary",
-              },
-              {
-                id: "MQ-B23K",
-                item: "Soil testing — 2 acres",
-                status: "Fri 14 Mar",
-                color: "bg-primary/15 text-primary",
-              },
-            ].map((o) => (
-              <Row key={o.id} title={o.item} sub={o.id} chip={o.status} chipClass={o.color} />
-            ))}
+            {bookingsLoading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+              </div>
+            ) : !bookings || bookings.length === 0 ? (
+              <div className="text-center py-4 text-xs text-muted-foreground">No bookings yet</div>
+            ) : (
+              bookings.map((o) => {
+                let color = "bg-primary/15 text-primary";
+                if (o.status === "completed") color = "bg-success/15 text-success";
+                if (o.status === "cancelled") color = "bg-destructive/15 text-destructive";
+                return (
+                  <Row key={o.id} title={o.item} sub={o.id} chip={`${o.status} (${o.scheduledDate})`} chipClass={color} />
+                );
+              })
+            )}
           </Card>
 
           <Card title="Notifications" icon={Bell} cta="Mark all read" link="/dashboard">
-            {[
-              {
-                title: "Rains expected by Wednesday",
-                sub: "Ideal time to plant maize in Uasin Gishu",
-              },
-              { title: "10% off CAN fertilizer", sub: "Limited offer — ends Sunday" },
-              { title: "Your soil report is ready", sub: "Click to view recommendations" },
-            ].map((n, i) => (
-              <Row key={i} title={n.title} sub={n.sub} chip="" chipClass="" />
-            ))}
+            {notificationsLoading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+              </div>
+            ) : !notifications || notifications.length === 0 ? (
+              <div className="text-center py-4 text-xs text-muted-foreground">No notifications</div>
+            ) : (
+              notifications.map((n) => (
+                <Row
+                  key={n.id}
+                  title={n.title}
+                  sub={n.sub}
+                  chip={n.readAt ? "Read" : "Unread"}
+                  chipClass={n.readAt ? "bg-secondary text-muted-foreground" : "bg-gold/20 text-gold-foreground"}
+                  onClick={!n.readAt ? () => markReadMutation.mutate(n.id) : undefined}
+                />
+              ))
+            )}
           </Card>
 
           <Card title="Saved Products" icon={Heart} cta="Browse shop" link="/shop">
@@ -365,14 +408,21 @@ function Row({
   sub,
   chip,
   chipClass,
+  onClick,
 }: {
   title: string;
   sub: string;
   chip: string;
   chipClass: string;
+  onClick?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3">
+    <div
+      onClick={onClick}
+      className={`flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3 ${
+        onClick ? "cursor-pointer hover:bg-secondary/70 transition" : ""
+      }`}
+    >
       <div className="min-w-0">
         <div className="truncate text-sm font-semibold text-foreground">{title}</div>
         <div className="truncate text-xs text-muted-foreground">{sub}</div>

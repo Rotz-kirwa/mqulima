@@ -1,58 +1,51 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AuthContext } from "./auth-context";
 import { type User } from "./auth-types";
-
-const STORAGE_KEY = "mqulima_user";
-
-// Demo accounts. In production this is handled by a real identity provider.
-const DEMO_USERS: Record<string, { password: string; user: User }> = {
-  "john@mqulima.co.ke": {
-    password: "farmer123",
-    user: {
-      id: "u1",
-      name: "John Kipchirchir",
-      email: "john@mqulima.co.ke",
-      county: "Uasin Gishu",
-      farmSize: "4 acres",
-      crops: "Maize, Beans",
-      livestock: "3 dairy cows",
-    },
-  },
-};
+import { loginUser, logoutUser, getCurrentUser } from "./auth-server";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check current session on mount
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    async function checkSession() {
       try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     }
-    setIsLoading(false);
+    checkSession();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const account = DEMO_USERS[email.toLowerCase().trim()];
-    if (!account || account.password !== password) {
+    try {
+      const { getCsrfTokenFromCookie } = await import("./csrf-client");
+      const response = await loginUser({ data: { email, password, csrfToken: getCsrfTokenFromCookie() } });
+      if (response && response.success) {
+        // Fetch full user profile details to ensure consistency
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        return true;
+      }
+      return false;
+    } catch (error) {
       return false;
     }
-    setUser(account.user);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(account.user));
-    }
-    return true;
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
+  const logout = useCallback(async () => {
+    try {
+      const { getCsrfTokenFromCookie } = await import("./csrf-client");
+      await logoutUser({ data: { csrfToken: getCsrfTokenFromCookie() } });
+    } catch (error) {
+      // Ignore
+    } finally {
+      setUser(null);
     }
   }, []);
 

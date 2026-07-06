@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { shopProducts, type ShopProduct } from "./shop-data";
+import { type ShopProduct } from "./shop-data";
 
 export type CartItem = {
   product: ShopProduct;
@@ -15,16 +15,13 @@ type CartContextType = {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  buyNow: (product: ShopProduct, sizeName?: string) => void;
+  buyNow: (product: ShopProduct, quantity?: number, sizeName?: string) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => [
-    { product: shopProducts[0], quantity: 2 }, // Sukuma Wiki
-    { product: shopProducts[3], quantity: 1 }  // Avocado (Hass)
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const [cartOpen, setCartOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -110,7 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCartItems([]);
   };
 
-  const buyNow = (product: ShopProduct, sizeName?: string) => {
+  const buyNow = (product: ShopProduct, quantity = 1, sizeName?: string) => {
     let targetId = product.id;
     let targetName = product.name;
     let targetPrice = product.price;
@@ -138,10 +135,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existing = prev.find((item) => item.product.id === cartProduct.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === cartProduct.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.product.id === cartProduct.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prev, { product: cartProduct, quantity: 1 }];
+      return [...prev, { product: cartProduct, quantity }];
     });
     setCartOpen(true);
     toast.success(`Selected ${cartProduct.name} for immediate checkout!`);
