@@ -3,6 +3,56 @@
 -- Matches COURSES_DATA defined in src/routes/academy.tsx
 -- ============================================================================
 
+-- Seed the 5 courses first to ensure foreign key constraint satisfaction
+INSERT INTO courses (id, title, slug, description, level, price)
+VALUES
+  (
+    '579472e9-af32-4d11-b108-cb5c56e5e385',
+    'Commercial Sukuma Wiki (Collard Greens) Cultivation Masterclass',
+    'sukuma-wiki-production',
+    'Learn how to establish, grow, and scale a highly profitable Sukuma Wiki (collard greens) enterprise. Covers nursery management, drip irrigation layout, organic pest control, and accessing county wholesale markets.',
+    'beginner',
+    0.00
+  ),
+  (
+    '781d5063-2b20-440a-b6cb-0228a9f453fa',
+    'Avocado Farming Masterclass',
+    'avocado-masterclass',
+    'Learn how to establish and manage a highly profitable avocado orchard. Covers site selection, planting, disease management, and harvesting for export markets.',
+    'beginner',
+    0.00
+  ),
+  (
+    'c78cb2cb-b3c9-42a4-96c9-c81308907751',
+    'Dairy Farming Essentials',
+    'dairy-farming-essentials',
+    'Learn the fundamentals of profitable dairy farming. This masterclass covers breed selection, feeding and nutrition, animal health management, and effective milk production and marketing.',
+    'beginner',
+    0.00
+  ),
+  (
+    '8f6c15a4-858b-4814-ae47-9af3d1f87e77',
+    'Poultry Farming Essentials',
+    'poultry-farming-essentials',
+    'Learn the fundamentals of profitable poultry farming. This masterclass covers breed selection, housing, disease prevention, and effective marketing.',
+    'beginner',
+    0.00
+  ),
+  (
+    '6249d040-83bf-4360-aa62-712830792ce2',
+    'AI in Agriculture: Farming Smarter with Artificial Intelligence',
+    'ai-in-agriculture',
+    'Discover how Artificial Intelligence is transforming modern farming. Learn about AI disease detection, precision farming, autonomous tools, and data-driven farm management.',
+    'all_levels',
+    0.00
+  )
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  slug = EXCLUDED.slug,
+  description = EXCLUDED.description,
+  level = EXCLUDED.level,
+  price = EXCLUDED.price;
+
 -- Clean up any existing records to avoid duplicates
 DELETE FROM chapter_lessons;
 DELETE FROM course_chapters;

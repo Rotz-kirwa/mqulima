@@ -47,10 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_chapters_course  ON course_chapters(course_id, so
 CREATE INDEX IF NOT EXISTS idx_lessons_chapter  ON chapter_lessons(chapter_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_courses_sort     ON courses(sort_order, created_at DESC);
 
--- Backfill existing courses: set is_published = true for seeded ones,
--- copy old image_url -> cover_image_url if column existed
+-- Backfill existing courses: set is_published = true for seeded ones
 UPDATE courses
-  SET is_published = true,
-      cover_image_url = COALESCE(cover_image_url, image_url)
-  WHERE deleted_at IS NULL
-    AND cover_image_url IS NULL;
+  SET is_published = true
+  WHERE deleted_at IS NULL;

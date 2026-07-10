@@ -2,16 +2,18 @@ import fs from "fs";
 import path from "path";
 import postgres from "postgres";
 
-// Load .env file manually
-const envPath = path.resolve(process.cwd(), ".env");
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, "utf-8");
-  for (const line of envContent.split("\n")) {
-    const parts = line.split("=");
-    if (parts.length >= 2) {
-      const key = parts[0].trim();
-      const val = parts.slice(1).join("=").trim().replace(/^['"]|['"]$/g, "");
-      process.env[key] = val;
+// Load .env file manually only if DATABASE_URL is not set
+if (!process.env.DATABASE_URL) {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf-8");
+    for (const line of envContent.split("\n")) {
+      const parts = line.split("=");
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join("=").trim().replace(/^['"]|['"]$/g, "");
+        process.env[key] = val;
+      }
     }
   }
 }
