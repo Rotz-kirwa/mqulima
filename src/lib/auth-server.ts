@@ -15,14 +15,17 @@ function getJwtSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
+import { SignUpSchema } from "./auth-shop-shared";
+
 export const loginUser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
-    email: z.string().email(),
+    identifier: z.string().min(1),
     password: z.string().min(1),
-    csrfToken: z.string()
+    csrfToken: z.string(),
+    rememberMe: z.boolean().optional(),
   }))
   .handler(async ({ data }) => {
-    const { email, password, csrfToken } = data;
+    const { identifier, password, csrfToken, rememberMe } = data;
 
     // 1. CSRF Token Validation
     const { validateCsrfToken } = await import("./csrf-verify.server");
@@ -36,29 +39,50 @@ export const loginUser = createServerFn({ method: "POST" })
     const { getDb } = await import("./db.server");
     const sql = getDb();
 
-    // Query profiles table
-    const [dbUser] = await sql`
-      SELECT id, email, password_hash, full_name, role
-      FROM profiles
-      WHERE LOWER(email) = LOWER(${email.trim()}) AND deleted_at IS NULL
-    `;
+    const ident = identifier.trim();
+    let dbUser;
+
+    // Auto-detect email or phone
+    if (ident.includes("@")) {
+      const cleanEmail = ident.toLowerCase();
+      [dbUser] = await sql`
+        SELECT id, email, password_hash, full_name, role
+        FROM profiles
+        WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
+      `;
+    } else {
+      // Standardize phone number by removing spaces
+      const cleanPhone = ident.replace(/\s+/g, "");
+      [dbUser] = await sql`
+        SELECT id, email, password_hash, full_name, role
+        FROM profiles
+        WHERE (phone = ${cleanPhone} OR phone = ${'+254' + cleanPhone} OR phone = ${'0' + cleanPhone}) AND deleted_at IS NULL
+      `;
+    }
 
     if (!dbUser) {
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid email/phone number or password");
     }
 
     // Verify bcrypt hash
     const isValid = await bcrypt.compare(password, dbUser.password_hash);
     if (!isValid) {
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid email/phone number or password");
     }
+
+    // Update last_login_at
+    await sql`
+      UPDATE profiles
+      SET last_login_at = NOW()
+      WHERE id = ${dbUser.id}
+    `;
 
     // Sign JWT
     const secret = getJwtSecret();
     const jwt = await new jose.SignJWT({ sub: dbUser.id, role: dbUser.role, email: dbUser.email })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime("7d")
+      .setExpirationTime(rememberMe ? "30d" : "7d")
       .sign(secret);
 
     // Set cookie
@@ -67,7 +91,7 @@ export const loginUser = createServerFn({ method: "POST" })
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
     });
 
     // 3. Successful Login Audit Log
@@ -88,6 +112,62 @@ export const loginUser = createServerFn({ method: "POST" })
         email: dbUser.email,
         role: dbUser.role,
       }
+    };
+  });
+
+export const registerUser = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    data: SignUpSchema,
+    csrfToken: z.string(),
+  }))
+  .handler(async ({ data }) => {
+    const { data: signUpData, csrfToken } = data;
+
+    // 1. CSRF Token Validation
+    const { validateCsrfToken } = await import("./csrf-verify.server");
+    validateCsrfToken(csrfToken);
+
+    // 2. Rate Limiting Check
+    const { getClientIp, checkLoginRateLimit } = await import("./rate-limit.server");
+    const ip = getClientIp();
+    await checkLoginRateLimit(ip);
+
+    // 3. Perform Sign Up insertion
+    const { performSignUp } = await import("./api/auth-shop.server");
+    const res = await performSignUp(signUpData);
+    if ("error" in res) {
+      throw new Error(JSON.stringify({ error: res.error, field: res.field }));
+    }
+
+    // 4. Successful Registration Audit Log
+    const { writeAuditLog } = await import("./audit.server");
+    await writeAuditLog({
+      actorId: res.userId!,
+      action: "auth.register",
+      entityType: "profile",
+      entityId: res.userId!,
+      diff: { email: signUpData.email, phone: signUpData.phoneNumber }
+    });
+
+    // 5. Auto-Login: Sign JWT and Set Session Cookie
+    const secret = getJwtSecret();
+    const jwt = await new jose.SignJWT({ sub: res.userId!, role: "farmer", email: signUpData.email.trim().toLowerCase() })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d")
+      .sign(secret);
+
+    setCookie(COOKIE_NAME, jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return {
+      success: true,
+      userId: res.userId,
     };
   });
 

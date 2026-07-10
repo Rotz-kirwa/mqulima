@@ -27,7 +27,8 @@ function mapDbProduct(p: any): ShopProduct {
     field: p.field_name || "",
     subcategory: p.subcategory_name || p.subcategory || "",
     rating: Number(p.avg_rating || 0),
-    reviewsCount: Number(p.rating_count || 0)
+    reviewsCount: Number(p.rating_count || 0),
+    isFeatured: !!p.is_featured
   };
 }
 
@@ -175,7 +176,8 @@ const CreateShopOrderSchema = z.object({
     id: z.string(),
     name: z.string(),
     price: z.number(),
-    quantity: z.number()
+    quantity: z.number(),
+    image: z.string().optional()
   })),
   subtotal: z.number(),
   total: z.number(),
@@ -263,6 +265,16 @@ export const createShopOrder = createServerFn({ method: "POST" })
     `;
 
     const orderId = orderRes.id;
+
+    // Insert into order_items table for normalization/reporting
+    for (const item of items) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id);
+      const productId = isUuid ? item.id : null;
+      await sql`
+        INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price)
+        VALUES (${orderId}, ${productId}, ${item.name}, ${item.quantity}, ${item.price})
+      `;
+    }
 
     // 5. Write Audit Log
     const { writeAuditLog } = await import("../audit.server");

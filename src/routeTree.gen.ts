@@ -16,12 +16,16 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop/index'
 import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
+import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
 import { Route as ApiMpesaCallbackRouteImport } from './routes/api/mpesa/callback'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
@@ -61,6 +65,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -91,6 +100,21 @@ const ShopProductIdRoute = ShopProductIdRouteImport.update({
   path: '/shop/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => AuthRoute,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/product/$slug',
   path: '/shop/product/$slug',
@@ -112,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
+  '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
@@ -119,6 +144,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
   '/tools': typeof ToolsRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -130,6 +158,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
+  '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
@@ -137,6 +166,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
   '/tools': typeof ToolsRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop': typeof ShopIndexRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -149,6 +181,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
+  '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
@@ -156,6 +189,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/services': typeof ServicesRoute
   '/tools': typeof ToolsRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -169,6 +205,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/ai'
+    | '/auth'
     | '/blog'
     | '/community'
     | '/contact'
@@ -176,6 +213,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/services'
     | '/tools'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/auth/verify'
     | '/shop/$productId'
     | '/shop/'
     | '/api/ai/chat'
@@ -187,6 +227,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/ai'
+    | '/auth'
     | '/blog'
     | '/community'
     | '/contact'
@@ -194,6 +235,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/services'
     | '/tools'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/auth/verify'
     | '/shop/$productId'
     | '/shop'
     | '/api/ai/chat'
@@ -205,6 +249,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/academy'
     | '/ai'
+    | '/auth'
     | '/blog'
     | '/community'
     | '/contact'
@@ -212,6 +257,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/services'
     | '/tools'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/auth/verify'
     | '/shop/$productId'
     | '/shop/'
     | '/api/ai/chat'
@@ -224,6 +272,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcademyRoute: typeof AcademyRoute
   AiRoute: typeof AiRoute
+  AuthRoute: typeof AuthRouteWithChildren
   BlogRoute: typeof BlogRoute
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
@@ -289,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai': {
       id: '/ai'
       path: '/ai'
@@ -331,6 +387,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/shop/product/$slug': {
       id: '/shop/product/$slug'
       path: '/shop/product/$slug'
@@ -355,11 +432,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignUpRoute: AuthSignUpRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcademyRoute: AcademyRoute,
   AiRoute: AiRoute,
+  AuthRoute: AuthRouteWithChildren,
   BlogRoute: BlogRoute,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,

@@ -12,6 +12,15 @@ import {
   Wifi,
   WifiOff,
   Settings,
+  Star,
+  Search,
+  Plus,
+  Loader2,
+  Edit,
+  Trash2,
+  Filter,
+  Tag,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -21,6 +30,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserOrders, getUserServiceBookings, getUserNotifications, markNotificationRead } from "@/lib/api/dashboard.server";
+import { getProducts } from "@/lib/api/products.server";
+import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCategoriesList } from "@/lib/api/admin-shop.server";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -37,7 +48,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [channels, setChannels] = useState({
     sowing: true,
     market: false,
@@ -52,28 +63,24 @@ function Dashboard() {
     requestNotificationPermission,
   } = usePWA();
 
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading: ordersLoading } = useQuery({
-    queryKey: ["userOrders", user.id],
-    queryFn: () => getUserOrders({ data: { userId: user.id } }),
-    enabled: !!user.id
+    queryKey: ["userOrders", user?.id],
+    queryFn: () => getUserOrders({ data: { userId: user!.id } }),
+    enabled: !!user?.id
   });
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["userBookings", user.id],
-    queryFn: () => getUserServiceBookings({ data: user.id }),
-    enabled: !!user.id
+    queryKey: ["userBookings", user?.id],
+    queryFn: () => getUserServiceBookings({ data: user!.id }),
+    enabled: !!user?.id
   });
 
   const { data: notifications, isLoading: notificationsLoading } = useQuery({
-    queryKey: ["userNotifications", user.id],
-    queryFn: () => getUserNotifications({ data: user.id }),
-    enabled: !!user.id
+    queryKey: ["userNotifications", user?.id],
+    queryFn: () => getUserNotifications({ data: user!.id }),
+    enabled: !!user?.id
   });
 
   const markReadMutation = useMutation({
@@ -82,15 +89,27 @@ function Dashboard() {
       return markNotificationRead({
         data: {
           notificationId,
-          userId: user.id,
+          userId: user!.id,
           csrfToken: getCsrfTokenFromCookie()
         }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userNotifications", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["userNotifications", user?.id] });
     }
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FCFBF4]">
+        <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth/sign-in" />;
+  }
 
   const handleToggleChannel = async (key: "sowing" | "market" | "weather", value: boolean) => {
     if (value && notificationPermission !== "granted") {
@@ -131,6 +150,12 @@ function Dashboard() {
           </div>
         </div>
       </section>
+
+      {(user.role === "admin" || user.role === "super_admin") && (
+        <section className="container-px mx-auto max-w-7xl pt-12">
+          <AdminFeaturedProductsPanel />
+        </section>
+      )}
 
       <section className="container-px mx-auto max-w-7xl py-12">
         <div className="grid gap-6 lg:grid-cols-3">
@@ -433,6 +458,506 @@ function Row({
         >
           {chip}
         </span>
+      )}
+    </div>
+  );
+}
+
+function AdminFeaturedProductsPanel() {
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [isAdding, setIsAdding] = useState(false);
+  
+  // Creation state
+  const [newProductName, setNewProductName] = useState("");
+  const [newProductPrice, setNewProductPrice] = useState("");
+  const [newProductImage, setNewProductImage] = useState("");
+  const [newProductDesc, setNewProductDesc] = useState("");
+  const [newProductCategory, setNewProductCategory] = useState("");
+
+  // Edit state
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editImage, setEditImage] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editIsFeatured, setEditIsFeatured] = useState(false);
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ["adminCategories"],
+    queryFn: () => adminGetCategoriesList()
+  });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["adminProducts"],
+    queryFn: () => getProducts({ data: { limit: 100 } }),
+  });
+
+  const categories = categoriesData || [];
+
+  const toggleFeatureMutation = useMutation({
+    patternName: "Toggle Featured Status",
+    mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminUpdateProduct({
+        data: {
+          id,
+          isFeatured,
+          csrfToken: getCsrfTokenFromCookie(),
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      toast.success("Featured status updated!");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to update status: " + err.message);
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async (updatedFields: any) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminUpdateProduct({
+        data: {
+          ...updatedFields,
+          csrfToken: getCsrfTokenFromCookie()
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      toast.success("Product updated successfully!");
+      setEditingProduct(null);
+    },
+    onError: (err: any) => {
+      toast.error("Failed to update product: " + err.message);
+    }
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminDeleteProduct({
+        data: {
+          id,
+          csrfToken: getCsrfTokenFromCookie()
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      toast.success("Product deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to delete product: " + err.message);
+    }
+  });
+
+  const createFeaturedMutation = useMutation({
+    mutationFn: async () => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminCreateProduct({
+        data: {
+          name: newProductName,
+          price: Number(newProductPrice),
+          image: newProductImage || "/placeholder-product.png",
+          description: newProductDesc,
+          categoryId: newProductCategory || null,
+          organic: false,
+          verifiedSeller: true,
+          seller: "Mqulima Partner",
+          county: "Nakuru",
+          isFeatured: true,
+          csrfToken: getCsrfTokenFromCookie(),
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      toast.success("Successfully created and featured product!");
+      setIsAdding(false);
+      setNewProductName("");
+      setNewProductPrice("");
+      setNewProductImage("");
+      setNewProductDesc("");
+      setNewProductCategory("");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to create product: " + err.message);
+    },
+  });
+
+  const productsList = data?.products || [];
+
+  const uniqueCategories = Array.from(
+    new Set(productsList.map((p) => p.category).filter(Boolean))
+  ) as string[];
+
+  const filteredProducts = productsList.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <div className="rounded-3xl border border-emerald-100 bg-white p-6 sm:p-8 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 pb-6 mb-6">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+            <Star className="h-3.5 w-3.5 fill-emerald-600 text-emerald-600 animate-pulse" /> Admin Portal
+          </span>
+          <h2 className="mt-2 text-2xl font-extrabold text-[#0D2A1C] font-serif">
+            Manage Featured Collection
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Filter by category to add, edit, or remove featured products on the platform.
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            setIsAdding(!isAdding);
+            setEditingProduct(null);
+          }}
+          className="inline-flex items-center gap-2 rounded-xl bg-[#0D2A1C] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#143e2a] transition"
+        >
+          {isAdding ? "Cancel" : <><Plus className="h-4 w-4" /> Add New Product</>}
+        </button>
+      </div>
+
+      {isAdding && (
+        <div className="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-5 mb-8">
+          <h3 className="text-sm font-bold text-[#0D2A1C] mb-4 uppercase tracking-wider">
+            Create & Feature New Product
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Product Name</label>
+              <input
+                type="text"
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                placeholder="e.g. Premium NPK Fertilizer"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Price (KES)</label>
+              <input
+                type="number"
+                value={newProductPrice}
+                onChange={(e) => setNewProductPrice(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                placeholder="e.g. 3200"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Category</label>
+              <select
+                value={newProductCategory}
+                onChange={(e) => setNewProductCategory(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2 md:col-span-3">
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Image URL</label>
+              <input
+                type="text"
+                value={newProductImage}
+                onChange={(e) => setNewProductImage(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                placeholder="Leave blank for default"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Description</label>
+            <textarea
+              value={newProductDesc}
+              onChange={(e) => setNewProductDesc(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+              placeholder="Brief description of the product benefits..."
+            />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => {
+                if (!newProductName || !newProductPrice) {
+                  toast.error("Please provide a name and price");
+                  return;
+                }
+                createFeaturedMutation.mutate();
+              }}
+              disabled={createFeaturedMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D4AF37] hover:bg-[#bfa032] text-[#0D2A1C] px-5 py-2.5 text-xs font-bold transition shadow-sm"
+            >
+              {createFeaturedMutation.isPending ? "Creating..." : "Save and Feature"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editingProduct && (
+        <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+              <Edit className="h-4 w-4 text-amber-700" /> Edit Product: {editingProduct.name}
+            </h3>
+            <button
+              onClick={() => setEditingProduct(null)}
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Product Name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Price (KES)</label>
+              <input
+                type="number"
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Category</label>
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Image URL</label>
+              <input
+                type="text"
+                value={editImage}
+                onChange={(e) => setEditImage(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id="editIsFeatured"
+                checked={editIsFeatured}
+                onChange={(e) => setEditIsFeatured(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+              />
+              <label htmlFor="editIsFeatured" className="text-xs font-bold text-gray-700 uppercase cursor-pointer select-none">
+                Feature this product
+              </label>
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Description</label>
+            <textarea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+          <div className="mt-4 flex justify-end gap-3">
+            <button
+              onClick={() => setEditingProduct(null)}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (!editName || !editPrice) {
+                  toast.error("Please provide a name and price");
+                  return;
+                }
+                updateProductMutation.mutate({
+                  id: editingProduct.id,
+                  name: editName,
+                  price: Number(editPrice),
+                  image: editImage,
+                  description: editDesc,
+                  categoryId: editCategory || null,
+                  isFeatured: editIsFeatured
+                });
+              }}
+              disabled={updateProductMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 text-xs font-bold transition shadow-sm"
+            >
+              {updateProductMutation.isPending ? "Updating..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Category Filter Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-5 border-b border-gray-100 scrollbar-thin">
+        <button
+          onClick={() => setSelectedCategory("All")}
+          className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+            selectedCategory === "All"
+              ? "bg-[#0D2A1C] text-white shadow-sm"
+              : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+          }`}
+        >
+          <Filter className="h-3 w-3" /> All Categories
+        </button>
+        {uniqueCategories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+              selectedCategory === cat
+                ? "bg-[#0D2A1C] text-white shadow-sm"
+                : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+            }`}
+          >
+            <Tag className="h-3 w-3" /> {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Product List with Search */}
+      <div className="relative mb-4">
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+          <Search className="h-4 w-4" />
+        </span>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder={`Search ${selectedCategory === "All" ? "" : selectedCategory + " "}products in database...`}
+          className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-8 text-gray-400 text-sm">No products found matching your criteria.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm text-gray-500">
+            <thead className="bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-600">
+              <tr>
+                <th className="px-6 py-4">Product Info</th>
+                <th className="px-6 py-4">Price</th>
+                <th className="px-6 py-4 text-center">Featured Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredProducts.map((p) => {
+                const isFeatured = !!p.isFeatured;
+                return (
+                  <tr key={p.id} className="hover:bg-gray-50/50 transition">
+                    <td className="px-6 py-4 flex items-center gap-3">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="h-10 w-10 rounded-lg object-cover border border-gray-100"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder-product.png";
+                        }}
+                      />
+                      <div>
+                        <div className="font-bold text-[#0D2A1C]">{p.name}</div>
+                        <div className="text-xs text-gray-400">{p.category || "No Category"}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-[#0D2A1C]">
+                      KES {p.price.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => {
+                          toggleFeatureMutation.mutate({ id: p.id, isFeatured: !isFeatured });
+                        }}
+                        disabled={toggleFeatureMutation.isPending}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${
+                          isFeatured
+                            ? "bg-[#D4AF37]/15 text-[#b08e23]"
+                            : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                        }`}
+                      >
+                        <Star className={`h-3.5 w-3.5 ${isFeatured ? "fill-[#D4AF37] text-[#D4AF37]" : ""}`} />
+                        {isFeatured ? "Featured" : "Not Featured"}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingProduct(p);
+                            setIsAdding(false);
+                            setEditName(p.name);
+                            setEditPrice(String(p.price));
+                            setEditImage(p.image);
+                            setEditDesc(p.description);
+                            const matchingCat = categories.find((c) => c.name === p.category);
+                            setEditCategory(matchingCat ? matchingCat.id : "");
+                            setEditIsFeatured(isFeatured);
+                          }}
+                          className="p-1.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600 transition"
+                          title="Edit Product"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${p.name}?`)) {
+                              deleteProductMutation.mutate(p.id);
+                            }
+                          }}
+                          disabled={deleteProductMutation.isPending}
+                          className="p-1.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

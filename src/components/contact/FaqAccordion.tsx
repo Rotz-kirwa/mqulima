@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 interface FaqItem {
   q: string;
@@ -8,24 +9,24 @@ interface FaqItem {
 
 const faqs: FaqItem[] = [
   {
-    q: "What is Mqulima and how does it work?",
-    a: "Mqulima is East Africa's premium digital marketplace and Extension Network. We connect rural farmers with audited chemical/seed inputs, direct transport logistics, and county-specific meteorological planning tools to scale production.",
+    q: "What should I do if my ordered farm inputs (seeds, fertilizer) are delayed?",
+    a: "If your delivery from the Mqulima Agrovet Shop is delayed, check the live order status on your dashboard. For further assistance, contact our logistics department immediately with your order ID at logistics@mqulima.com or reach out via WhatsApp support.",
   },
   {
-    q: "How do I create an account on Mqulima?",
-    a: "You can register directly on our web application or download the PWA wrapper. Using a mobile number, you will authenticate using an SMS OTP. No legacy email validation sequences are required.",
+    q: "How do I request a visit from a Mqulima agricultural extension officer?",
+    a: "To request an on-farm consultation, go to the 'Expert Services' tab in your account dashboard, select 'Book Officer', describe your current crop/animal health issues, and pick a preferred date. A verified officer in your county will contact you within 24 hours.",
   },
   {
-    q: "What payment systems are supported?",
-    a: "We support direct Safaricom M-Pesa payments (via automated STK Push prompts), local Bank Transits, and secure credit cards. Offline transactions are restricted to secure the audit trails of sellers.",
+    q: "I am experiencing issues with the Mqulima AI Diagnostic tool. How can I get help?",
+    a: "Ensure the photos you upload are high-resolution and taken under clear, natural lighting. If the diagnostic tool fails to process or returns an error, refresh your browser or send the image and screenshot of the error to tech-support@mqulima.com.",
   },
   {
-    q: "Are there onboarding fees for cooperatives?",
-    a: "Onboarding and catalog browsing are completely free. Standard commission percentages apply only on merchant transactions, and premium rates are applied on specific soil extension diagnostic tracks.",
+    q: "Why is my seller listing on the Mqulima Marketplace not visible to buyers?",
+    a: "All marketplace listings undergo strict quality and certification checks by our team to maintain safety. The verification process takes between 12 to 24 hours. You will receive a notification once your listing has been approved and is live.",
   },
   {
-    q: "How do I request help with a shipment or order?",
-    a: "Our dispatch and support lines are active Mon-Fri, 8AM to 6PM EAT. Click the floating WhatsApp button on the bottom-right corner or submit the contact dispatch form on this page.",
+    q: "How can I resolve payment issues or failed transactions during checkout?",
+    a: "If an M-Pesa or bank transaction fails but funds are deducted from your account, please do not resubmit the payment. Send the transaction message reference along with your order ID to billing@mqulima.com, and we will update your order within 30 minutes.",
   },
 ];
 
@@ -37,24 +38,24 @@ export function FaqAccordion() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-5">
+    <div className="w-full max-w-3xl mx-auto space-y-4">
       {faqs.map((faq, i) => {
         const isOpen = openIndex === i;
         return (
           <div
             key={i}
-            className="border-2 border-[#0A1E0C] bg-white p-5 transition-all duration-300 hover:border-[#2D6A4F] hover:shadow-[6px_6px_0px_#0A1E0C] text-left rounded-none"
+            className="bg-white rounded-2xl border border-emerald-100 hover:border-emerald-250 shadow-[0_4px_20px_-4px_rgba(45,106,79,0.06)] hover:shadow-[0_8px_30px_-4px_rgba(45,106,79,0.1)] transition-all duration-300 overflow-hidden text-left"
           >
             <button
               onClick={() => toggle(i)}
               aria-expanded={isOpen}
-              className="w-full flex items-center justify-between py-2.5 text-left focus:outline-none group cursor-pointer"
+              className="w-full flex items-center justify-between p-6 text-left focus:outline-none group cursor-pointer"
             >
-              <span className="text-lg font-black font-serif text-[#0A1E0C] group-hover:text-[#2D6A4F] transition-colors duration-200 leading-snug">
+              <span className="text-base sm:text-lg font-bold text-[#0A1E0C] group-hover:text-emerald-700 transition-colors duration-250 leading-snug">
                 {faq.q}
               </span>
-              <span className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-[#0A1E0C] bg-[#FAF9F5] text-sm font-mono font-black text-[#0A1E0C] transition duration-300 group-hover:border-[#2D6A4F] group-hover:bg-[#2D6A4F] group-hover:text-white rounded-none">
-                {isOpen ? "−" : "+"}
+              <span className={`ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 transition-transform duration-300 ${isOpen ? "rotate-180 bg-emerald-100" : ""}`}>
+                <ChevronDown className="h-4 w-4 stroke-[2.5]" />
               </span>
             </button>
 
@@ -64,12 +65,12 @@ export function FaqAccordion() {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <p className="text-sm text-gray-605 leading-relaxed pt-4 pb-2 pr-6 font-medium border-t border-gray-150 mt-2">
+                  <div className="text-sm sm:text-base text-gray-600 leading-relaxed px-6 pb-6 pt-2 font-medium border-t border-emerald-50/50">
                     {faq.a}
-                  </p>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -28,10 +28,9 @@ export const initiateStkPush = createServerFn({ method: "POST" })
     }
 
     // 2. Fetch OAuth Token via helper
-    const { getMpesaToken, getMpesaEnv } = await import("../mpesa-helpers.server");
-    const mpesaEnv = getMpesaEnv();
+    const { getMpesaToken } = await import("../mpesa-helpers.server");
     const token = await getMpesaToken();
-    const isProduction = (mpesaEnv.MPESA_ENVIRONMENT || process.env.MPESA_ENVIRONMENT) === "production";
+    const isProduction = process.env.MPESA_ENVIRONMENT === "production";
 
     if (token === "mock_access_token") {
       console.log(`[M-PESA-SIMULATION] Simulating STK push for phone ${cleanPhone}, amount ${amount}`);
@@ -75,12 +74,12 @@ export const initiateStkPush = createServerFn({ method: "POST" })
     }
 
     // 3. Setup credentials
-    const shortcode = mpesaEnv.MPESA_SHORTCODE || process.env.MPESA_SHORTCODE || "174379";
-    const passkey = mpesaEnv.MPESA_PASSKEY || process.env.MPESA_PASSKEY || "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
+    const shortcode = process.env.MPESA_SHORTCODE || "174379";
+    const passkey = process.env.MPESA_PASSKEY || "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
 
-    const appUrl = mpesaEnv.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.co.ke";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.co.ke";
     const callbackUrl = `${appUrl.replace(/\/$/, "")}/api/mpesa/callback`;
 
     const payload = {

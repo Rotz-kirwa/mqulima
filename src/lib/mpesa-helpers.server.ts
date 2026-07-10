@@ -1,41 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
-
 // Cache token in memory
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
-
-export function getMpesaEnv(): Record<string, string> {
-  try {
-    const paths = [
-      path.resolve(process.cwd(), ".env"),
-      "/home/user/NYOTA-Clients/mkulima-hub-c7714688/.env"
-    ];
-    let envPath = "";
-    for (const p of paths) {
-      if (fs.existsSync(p)) {
-        envPath = p;
-        break;
-      }
-    }
-    if (!envPath) return {};
-    const envContent = fs.readFileSync(envPath, "utf-8");
-    const env: Record<string, string> = {};
-    for (const line of envContent.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("#") || !trimmed) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx === -1) continue;
-      const key = trimmed.slice(0, idx).trim();
-      const val = trimmed.slice(idx + 1).trim();
-      env[key] = val;
-    }
-    return env;
-  } catch (e) {
-    console.error("[M-PESA] Failed to read .env dynamically:", e);
-    return {};
-  }
-}
 
 export async function getMpesaToken(): Promise<string> {
   const now = Date.now();
@@ -43,10 +8,9 @@ export async function getMpesaToken(): Promise<string> {
     return cachedToken;
   }
 
-  const mpesaEnv = getMpesaEnv();
-  const isProduction = (mpesaEnv.MPESA_ENVIRONMENT || process.env.MPESA_ENVIRONMENT) === "production";
-  const consumerKey = mpesaEnv.MPESA_CONSUMER_KEY || process.env.MPESA_CONSUMER_KEY;
-  const consumerSecret = mpesaEnv.MPESA_CONSUMER_SECRET || process.env.MPESA_CONSUMER_SECRET;
+  const isProduction = process.env.MPESA_ENVIRONMENT === "production";
+  const consumerKey = process.env.MPESA_CONSUMER_KEY;
+  const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
 
   if (!consumerKey || !consumerSecret) {
     if (isProduction) {

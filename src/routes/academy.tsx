@@ -538,7 +538,7 @@ function AcademyPage() {
   const handleEnroll = async () => {
     if (!user) {
       toast.error("Please sign in to enroll and track your progress!");
-      navigate({ to: "/login" });
+      navigate({ to: "/auth/sign-in" });
       return;
     }
     if (!modalCourse) return;

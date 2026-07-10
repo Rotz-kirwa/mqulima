@@ -1,25 +1,30 @@
+import { useState, useEffect } from "react";
+
 export function WhatsAppButton() {
+  const [isShop, setIsShop] = useState(false);
+
+  useEffect(() => {
+    setIsShop(window.location.pathname.startsWith("/shop"));
+  }, []);
+
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center justify-center">
+    <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} md:bottom-6 right-4 md:right-6 z-40 flex items-center justify-center`}>
       {/* Expanding radar ping wave */}
-      <span className="absolute h-14 w-14 animate-ping rounded-full bg-[#25D366]/60 duration-1000" />
+      <span className="absolute h-12 w-12 md:h-14 md:w-14 animate-ping rounded-full bg-[#25D366]/60 duration-1000" />
 
       {/* Glowing static halo */}
-      <span className="absolute h-16 w-16 animate-pulse rounded-full bg-[#25D366]/20" />
+      <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#25D366]/20" />
 
       <a
-        href="https://wa.me/254711222333?text=Hi%20Mqulima%2C%20I%27d%20like%20help%20with..."
+        href="https://wa.me/254723346134?text=Hi%20Mqulima%2C%20I%27d%20like%20help%20with..."
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
-        className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgb(37,211,102,0.5)] transition-transform hover:scale-110 active:scale-95 duration-300"
+        className="relative z-10 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgb(37,211,102,0.5)] transition-transform hover:scale-110 active:scale-95 duration-300"
       >
         <svg
           viewBox="0 0 24 24"
-          width="30"
-          height="30"
-          fill="currentColor"
-          className="shrink-0 text-white"
+          className="h-6 w-6 md:h-7 md:w-7 shrink-0 text-white fill-current"
           aria-hidden="true"
         >
           <path

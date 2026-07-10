@@ -21,6 +21,7 @@ const CreateProductSchema = z.object({
   verifiedSeller: z.boolean().optional().default(true),
   seller: z.string().optional().default("Mqulima Partner"),
   county: z.string().optional().default("Nakuru"),
+  isFeatured: z.boolean().optional().default(false),
   csrfToken: z.string()
 });
 
@@ -43,6 +44,7 @@ const UpdateProductSchema = z.object({
   verifiedSeller: z.boolean().optional(),
   seller: z.string().optional(),
   county: z.string().optional(),
+  isFeatured: z.boolean().optional(),
   csrfToken: z.string()
 });
 
@@ -63,7 +65,7 @@ async function validateAdminSession(csrfToken: string) {
 
   // 2. Auth Session Validation
   const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
     throw new Error("Unauthorized: Admin privilege required");
   }
   return user;
@@ -88,13 +90,13 @@ export const adminCreateProduct = createServerFn({ method: "POST" })
         INSERT INTO products (
           name, slug, description, base_price, original_price, stock_qty, image_urls, 
           brand, unit, shop_type, field_id, category_id, subcategory_id, badge, 
-          organic, verified_seller, seller, county, seller_score, status
+          organic, verified_seller, seller, county, seller_score, status, is_featured
         ) VALUES (
           ${data.name}, ${slug}, ${data.description}, ${data.price}, ${data.originalPrice || null}, 
           ${data.stock}, ${imageUrls}, ${data.brand}, ${data.unit}, ${data.shopType}, 
           ${data.fieldId || null}, ${data.categoryId || null}, ${data.subcategoryId || null}, 
           ${data.badge}, ${data.organic}, ${data.verifiedSeller}, ${data.seller}, ${data.county}, 
-          98.5, 'active'
+          98.5, 'active', ${data.isFeatured || false}
         )
         RETURNING id, name, slug
       `;
@@ -155,6 +157,7 @@ export const adminUpdateProduct = createServerFn({ method: "POST" })
       if (data.verifiedSeller !== undefined) updates.verified_seller = data.verifiedSeller;
       if (data.seller !== undefined) updates.seller = data.seller;
       if (data.county !== undefined) updates.county = data.county;
+      if (data.isFeatured !== undefined) updates.is_featured = data.isFeatured;
 
       if (Object.keys(updates).length === 0) {
         return { success: true, message: "No updates provided" };
@@ -194,7 +197,7 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
     try {
       await sql`
         UPDATE products 
-        SET status = 'deleted', deleted_at = NOW() 
+        SET status = 'archived', deleted_at = NOW() 
         WHERE id = ${data.id}
       `;
 
@@ -212,5 +215,38 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
     } catch (err: any) {
       console.error("Failed to delete product in DB:", err);
       return { success: true, simulated: true };
+    }
+  });
+
+export const adminGetCategoriesList = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { getDb } = await import("../db.server");
+    const sql = getDb();
+    try {
+      const categories = await sql`
+        SELECT id, name FROM product_categories
+        ORDER BY name
+      `;
+      return categories.map((c: any) => ({ id: c.id, name: c.name }));
+    } catch (err: any) {
+      console.error("Failed to fetch product categories in admin:", err);
+      return [
+        { id: "pesticides-id", name: "Pesticides" },
+        { id: "foliar-id", name: "Foliar Fertilizer" },
+        { id: "growth-id", name: "Growth Catalysts" },
+        { id: "biostimulants-id", name: "Biostimulants" },
+        { id: "post-harvest-id", name: "Post Harvest" },
+        { id: "seeds-id", name: "Seeds & Seedlings" },
+        { id: "planting-id", name: "Planting" },
+        { id: "top-dressing-id", name: "Top Dressing" },
+        { id: "blended-id", name: "Blended" },
+        { id: "specialized-id", name: "Specialized Fertilizers" },
+        { id: "organic-id", name: "Organic Fertilizer" },
+        { id: "feeds-id", name: "Animal Feeds" },
+        { id: "animal-pest-id", name: "Animal Pesticides" },
+        { id: "supplements-id", name: "Supplements" },
+        { id: "tools-id", name: "Tools" },
+        { id: "machinery-id", name: "Machinery" }
+      ];
     }
   });

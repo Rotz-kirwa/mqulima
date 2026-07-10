@@ -69,11 +69,12 @@ export function Footer() {
             {/* Newsletter form - rendered after mount to prevent LastPass hydration mismatch */}
             {isMounted ? (
               <form onSubmit={handleSubscribe} className="mt-8 max-w-sm">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#F5A623] mb-2">
+                <label htmlFor="newsletter-email" className="block text-[10px] font-bold uppercase tracking-wider text-[#F5A623] mb-2">
                   Subscribe to our newsletter
                 </label>
                 <div className="flex gap-2">
                   <input
+                    id="newsletter-email"
                     type="email"
                     required
                     placeholder="Enter your email address"

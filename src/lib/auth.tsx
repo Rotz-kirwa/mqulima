@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AuthContext } from "./auth-context";
 import { type User } from "./auth-types";
-import { loginUser, logoutUser, getCurrentUser } from "./auth-server";
+import { loginUser, logoutUser, getCurrentUser, registerUser } from "./auth-server";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -22,20 +22,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession();
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const { getCsrfTokenFromCookie } = await import("./csrf-client");
-      const response = await loginUser({ data: { email, password, csrfToken: getCsrfTokenFromCookie() } });
-      if (response && response.success) {
-        // Fetch full user profile details to ensure consistency
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      return false;
+  const login = useCallback(async (identifier: string, password: string, rememberMe?: boolean) => {
+    const { getCsrfTokenFromCookie } = await import("./csrf-client");
+    const response = await loginUser({ data: { identifier, password, csrfToken: getCsrfTokenFromCookie(), rememberMe } });
+    if (response && response.success) {
+      // Fetch full user profile details to ensure consistency
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      return true;
     }
+    return false;
+  }, []);
+
+  const register = useCallback(async (signUpData: any) => {
+    const { getCsrfTokenFromCookie } = await import("./csrf-client");
+    const response = await registerUser({
+      data: {
+        data: signUpData,
+        csrfToken: getCsrfTokenFromCookie()
+      }
+    });
+    if (response && response.success) {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      return true;
+    }
+    return false;
   }, []);
 
   const logout = useCallback(async () => {
@@ -50,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

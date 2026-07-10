@@ -96,7 +96,7 @@ export function CartDrawer() {
   const shippingCost = useMemo(() => {
     if (shippingOption === "pickup") return 0;
     if (shippingOption === "express") return 450;
-    return subtotal > 5000 ? 0 : 250; // Standard shipping KSh 250, free over 5K
+    return subtotal > 5000 ? 0 : 300; // Standard shipping KSh 300, free over 5K
   }, [shippingOption, subtotal]);
 
   // Discount calculation
@@ -104,8 +104,8 @@ export function CartDrawer() {
     return subtotal * appliedDiscount;
   }, [subtotal, appliedDiscount]);
 
-  const vatAmount = (subtotal - discountAmount) * 0.16;
-  const grandTotal = subtotal - discountAmount + vatAmount + shippingCost;
+  const vatAmount = 0;
+  const grandTotal = subtotal - discountAmount + shippingCost;
 
   // Load registration details from localStorage if present
   useEffect(() => {
@@ -275,7 +275,8 @@ export function CartDrawer() {
         id: item.product.id,
         name: item.product.name,
         price: item.product.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        image: item.product.image || item.product.imageUrls?.[0] || "/placeholder-product.png"
       }));
 
       const res = await createShopOrder({
@@ -350,7 +351,7 @@ export function CartDrawer() {
 *Total Amount:* KSh ${grandTotal.toLocaleString()}${deliveryDetails}
 Please assist in processing my order!`;
 
-    window.open(`https://wa.me/254700000000?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(`https://wa.me/254723346134?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const stepsLabels = ["Cart", "Address", "Delivery", "Payment", "Review"];
@@ -494,34 +495,7 @@ Please assist in processing my order!`;
                           </div>
                         ))}
 
-                        {/* Interactive Coupon Code form */}
-                        <div className="pt-4 border-t border-gray-100">
-                          <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                            <div className="relative flex-1">
-                              <Tag className="absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-400" />
-                              <input
-                                type="text"
-                                placeholder="Coupon code (e.g. MUSEMBI10)"
-                                value={couponCode}
-                                onChange={(e) => setCouponCode(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-200 focus:border-[#2D6A4F] rounded-lg pl-9 pr-2 py-2 text-xs outline-none uppercase"
-                              />
-                            </div>
-                            <button
-                              type="submit"
-                              className="bg-gray-800 hover:bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
-                            >
-                              Apply
-                            </button>
-                          </form>
 
-                          {activeCoupon && (
-                            <div className="mt-2.5 flex items-center justify-between bg-emerald-50 text-[#2D6A4F] px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-100">
-                              <span>Coupon applied: {activeCoupon} (10% discount)</span>
-                              <X size={14} className="cursor-pointer" onClick={handleRemoveCoupon} />
-                            </div>
-                          )}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -639,7 +613,7 @@ Please assist in processing my order!`;
                         <Truck size={20} className="shrink-0 mt-0.5" />
                         <div className="text-xs leading-normal">
                           <strong className="font-extrabold block text-gray-900">Agronomist Standard Delivery</strong>
-                          <span className="text-gray-500 block mt-0.5">KES {subtotal > 5000 ? "FREE" : "250"} &middot; Shipped in 24-48 Hours</span>
+                          <span className="text-gray-500 block mt-0.5">KES {subtotal > 5000 ? "FREE" : "300"} &middot; Shipped in 24-48 Hours</span>
                           <span className="text-[10px] text-[#2D6A4F] font-bold block mt-1">Includes seed certification advice</span>
                         </div>
                       </button>
@@ -912,10 +886,7 @@ Please assist in processing my order!`;
                         <span className="font-mono">- KSh {discountAmount.toLocaleString()}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-gray-500">
-                      <span>VAT (16%):</span>
-                      <span className="font-mono text-gray-800">KSh {vatAmount.toLocaleString()}</span>
-                    </div>
+
                     <div className="flex justify-between text-gray-500">
                       <span>Shipping Fee ({shippingOption}):</span>
                       <span className="font-mono text-gray-800">
@@ -1155,10 +1126,7 @@ Please assist in processing my order!`;
                       <span className="font-mono">- KES {discountAmount.toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-400">
-                    <span>VAT (16%):</span>
-                    <span className="font-mono text-gray-800">KES {vatAmount.toLocaleString()}</span>
-                  </div>
+
                   <div className="flex justify-between text-gray-400">
                     <span>Delivery Fee:</span>
                     <span className="font-mono text-gray-800">KES {shippingCost}</span>

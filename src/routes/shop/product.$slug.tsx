@@ -712,7 +712,7 @@ function ProductDetailPage() {
                   {/* WhatsApp checkout & Invoice */}
                   <div className="grid grid-cols-2 gap-3">
                     <a
-                      href={`https://wa.me/254700000000?text=Hi%2C%20I%20want%20to%20buy%20${quantity}%20units%20of%20${product.name}%20from%20Mqulima%20Hub.`}
+                      href={`https://wa.me/254723346134?text=Hi%2C%20I%20want%20to%20buy%20${quantity}%20units%20of%20${product.name}%20from%20Mqulima%20Hub.`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 h-11 bg-[#25D366] hover:bg-[#20BA56] text-white text-xs font-bold rounded-xl transition cursor-pointer"
@@ -842,11 +842,24 @@ function ProductDetailPage() {
                       <div>
                         <div className="aspect-square bg-stone-50 rounded-lg overflow-hidden flex items-center justify-center p-1 relative mb-3">
                           <img src={p.image} className="h-full w-full object-contain group-hover:scale-102 transition duration-300" />
-                          {hasDiscount && (
-                            <span className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded uppercase">
-                              Sale
-                            </span>
-                          )}
+                          {/* Badges & Discount tags overlay */}
+                          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 items-start">
+                            {hasDiscount && (
+                              <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-none uppercase">
+                                Sale
+                              </span>
+                            )}
+                            {p.organic && (
+                              <span className="bg-emerald-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-none uppercase">
+                                Organic
+                              </span>
+                            )}
+                            {p.badge && (
+                              <span className="bg-stone-900 text-white text-[8px] font-black px-1.5 py-0.5 rounded-none uppercase">
+                                {p.badge}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <span className="text-[9px] text-[#2D6A4F] font-bold uppercase tracking-wider block mb-0.5">{p.brand}</span>
                         <h4 className="text-xs text-stone-800 font-extrabold line-clamp-2 min-h-[32px] group-hover:text-[#2D6A4F] transition-colors">{p.name}</h4>

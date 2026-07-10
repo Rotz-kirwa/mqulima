@@ -2,10 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { HomeHero } from "@/components/mqulima/HomeHero";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, Users, Globe, ShoppingBag, BookOpen, ChevronLeft, ChevronRight, ShieldAlert, Sparkles, Compass, HelpCircle } from "lucide-react";
+import { ArrowRight, Users, Globe, ShoppingBag, BookOpen, ShieldAlert, Sparkles, Compass, HelpCircle } from "lucide-react";
 import { articles } from "@/lib/mqulima-data";
-import { toast } from "sonner";
-import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedProducts } from "@/lib/api/products.server";
 
@@ -32,20 +30,7 @@ function Index() {
   const featuredProducts = dbFeaturedProducts || [];
   const featuredArticles = articles.slice(0, 3);
 
-  // Horizontal scroll ref for the Farm Essentials slideshow/grid
-  const sliderRef = useRef<HTMLDivElement>(null);
 
-  const scrollLeft = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({ left: -320, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({ left: 320, behavior: "smooth" });
-    }
-  };
 
   return (
     <AppLayout>
@@ -67,7 +52,7 @@ function Index() {
           }}
         />
 
-        <div className="container-px mx-auto max-w-6xl relative z-10">
+        <div className="container-px mx-auto max-w-7xl relative z-10">
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 items-start">
             
             {/* Left Header Column */}
@@ -186,83 +171,46 @@ function Index() {
               </p>
             </div>
             
-            {/* Slider control arrows */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={scrollLeft}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#0A1E0C]/10 bg-white shadow-sm transition hover:bg-[#0A1E0C]/5 active:scale-95"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={scrollRight}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#0A1E0C]/10 bg-white shadow-sm transition hover:bg-[#0A1E0C]/5 active:scale-95"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
           </div>
 
-          {/* Product Slideshow/Grid */}
-          <div
-            ref={sliderRef}
-            className="no-scrollbar flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {featuredProducts.map((p) => (
-              <article
-                key={p.id}
-                className="group w-[280px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-[#0A1E0C]/5 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden bg-[#FAF9F5]">
+          {/* Product Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {featuredProducts.map((p) => {
+              const slug = p.slug || p.id;
+              return (
+                <Link
+                  key={p.id}
+                  to="/shop/product/$slug"
+                  params={{ slug }}
+                  className="group relative aspect-square overflow-hidden rounded-2xl border border-[#0A1E0C]/5 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md flex items-center justify-center p-4 animate-fade-in"
+                >
                   <img
                     src={p.image}
                     alt={p.name}
                     loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                   {p.badge && (
-                    <span className="absolute left-3 top-3 rounded-full bg-[#F5A623] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white">
+                    <span className="absolute left-3 top-3 rounded-full bg-[#F5A623] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white z-10">
                       {p.badge}
                     </span>
                   )}
-                </div>
-                <div className="flex flex-1 flex-col p-5">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#3B82F6]">
-                    {p.brand} · {p.category}
+                  {/* Subtle hover overlay with product name */}
+                  <div className="absolute inset-0 bg-[#0A1E0C]/75 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center p-4 text-center">
+                    <p className="text-sm font-bold text-white line-clamp-2 mb-1">
+                      {p.name}
+                    </p>
+                    <span className="text-[10px] font-extrabold uppercase text-[#F5A623] tracking-widest mt-1">
+                      View details
+                    </span>
                   </div>
-                  <h3 className="mt-1 line-clamp-2 text-sm font-bold text-[#0A1E0C] min-h-[40px]">
-                    {p.name}
-                  </h3>
-                  <p className="mt-1 text-xs text-[#0A1E0C]/60 line-clamp-2">
-                    {p.description}
-                  </p>
-                  
-                  <div className="mt-5 flex items-end justify-between pt-3 border-t border-[#0A1E0C]/5">
-                    <div>
-                      <div className="text-base font-extrabold text-[#0A1E0C]">
-                        KES {p.price.toLocaleString()}
-                      </div>
-                      <div className="text-[10px] text-[#0A1E0C]/50">per {p.unit}</div>
-                    </div>
-                    <button
-                      onClick={() => toast.success(`${p.name} added to cart`)}
-                      aria-label="Add to cart"
-                      className="flex items-center gap-1.5 rounded-lg bg-[#F5A623] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#e09520]"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Centered Primary Action */}
-          <div className="mt-12 text-center">
+          {/* Left-aligned Primary Action */}
+          <div className="mt-12 text-left">
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 rounded-full bg-[#F5A623] px-8 py-4 text-sm font-bold text-white transition hover:bg-[#e09520] hover:scale-[1.02] shadow-md shadow-[#F5A623]/25"
@@ -286,7 +234,7 @@ function Index() {
           }}
         />
         
-        <div className="container-px mx-auto max-w-4xl relative z-10 text-center">
+        <div className="container-px mx-auto max-w-4xl relative z-10 text-left">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#F5A623]">
             Brand Story Snapshot
           </span>
@@ -294,7 +242,7 @@ function Index() {
             Our Promise
           </h2>
           
-          <div className="mt-8 space-y-6 text-[#0A1E0C]/80 text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+          <div className="mt-8 space-y-6 text-[#0A1E0C]/80 text-base md:text-lg max-w-3xl mr-auto leading-relaxed">
             <p>
               Agriculture is the future. It’s where freedom resides, yet farmers rely on fragmented information, unreliable suppliers, difficult to access services and unreachable knowledge hubs.
             </p>
@@ -330,7 +278,7 @@ function Index() {
         <div className="container-px mx-auto max-w-7xl">
           
           {/* Header */}
-          <div className="max-w-3xl mx-auto text-center mb-16">
+          <div className="max-w-3xl mr-auto text-left mb-16">
             <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#52B788]">
               Social Proof
             </span>
@@ -383,8 +331,8 @@ function Index() {
               ].map((s, idx) => {
                 const Icon = s.icon;
                 return (
-                  <div key={idx} className="flex flex-col items-center text-center p-4 first:pt-0 md:first:pt-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0A1E0C]/5 mb-3" style={{ color: s.color }}>
+                  <div key={idx} className="flex flex-col items-start text-left p-4 first:pt-0 md:first:pt-4">
+                    <div className="flex h-10 w-10 items-center justify-start rounded-xl bg-[#0A1E0C]/5 mb-3" style={{ color: s.color }}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="text-3xl font-extrabold sm:text-4xl text-[#0A1E0C]">{s.count}</div>
@@ -461,7 +409,7 @@ function Index() {
           </div>
 
           {/* Action Button */}
-          <div className="mt-12 text-center">
+          <div className="mt-12 text-left">
             <Link
               to="/blog"
               className="inline-flex items-center gap-2 rounded-full bg-[#F5A623] px-8 py-4 text-sm font-bold text-white transition hover:bg-[#e09520] hover:scale-[1.02] shadow-md shadow-[#F5A623]/25"
@@ -477,7 +425,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           6. CONVERSION PATH
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#E8F3EF] via-[#FAF9F5] to-[#F3EFE6] py-24 text-[#0A1E0C] text-center border-t border-[#0A1E0C]/5">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#E8F3EF] via-[#FAF9F5] to-[#F3EFE6] py-24 text-[#0A1E0C] text-left border-t border-[#0A1E0C]/5">
         {/* Soft atmospheric gradient glows */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#52B788]/10 blur-[150px]" />
         
@@ -489,11 +437,11 @@ function Index() {
             Join the future of farming
           </h2>
           
-          <p className="mt-6 text-base leading-relaxed text-[#0A1E0C]/75 max-w-2xl mx-auto md:text-lg">
+          <p className="mt-6 text-base leading-relaxed text-[#0A1E0C]/75 max-w-2xl mr-auto md:text-lg">
             Grab a comfortable seat and get access to first class agriculture, five-star services, modern knowledge and premium products. We are not only designed for winners, we power success.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-10 flex flex-wrap items-center justify-start gap-4">
             <Link
               to="/shop"
               className="group inline-flex items-center gap-2.5 rounded-full bg-[#F5A623] px-8 py-4 text-sm font-extrabold text-white shadow-lg shadow-[#F5A623]/25 transition hover:bg-[#e09520] hover:scale-[1.02] active:scale-100"

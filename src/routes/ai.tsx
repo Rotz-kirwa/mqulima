@@ -139,7 +139,7 @@ function MqulimaAIWorkspace() {
             Sign in to access your intelligent farming assistant, county diagnostics, and market records.
           </p>
           <Link
-            to="/login"
+            to="/auth/sign-in"
             className="mt-6 rounded-full bg-[#2D6A4F] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#224f3b] shadow-md"
           >
             Sign In to Start

@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   MapPin,
   AlertCircle,
-  Eye
+  Eye,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { type ShopProduct, AGRICULTURE_TAXONOMY, mapToNewTaxonomy } from "@/lib/shop-data";
@@ -262,6 +263,13 @@ function ShopPage() {
     if (sortBy === "Price Low to High") sorted.sort((a, b) => a.price - b.price);
     else if (sortBy === "Price High to Low") sorted.sort((a, b) => b.price - a.price);
     else if (sortBy === "Highest Rated") sorted.sort((a, b) => b.rating - a.rating);
+    else if (sortBy === "Category") {
+      sorted.sort((a, b) => {
+        const catCompare = (a.category || "").localeCompare(b.category || "");
+        if (catCompare !== 0) return catCompare;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+    }
     else sorted.sort((a, b) => b.reviewsCount - a.reviewsCount); // Popularity fallback
     return sorted;
   }, [filteredProducts, sortBy]);
@@ -424,7 +432,7 @@ function ShopPage() {
 Product Name: ${recommendName.trim()}
 Brand: ${recommendBrand.trim() || "Any brand"}
 Please notify me if it becomes available!`;
-    window.open(`https://wa.me/254700000000?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(`https://wa.me/254723346134?text=${encodeURIComponent(message)}`, "_blank");
     setRecommendName("");
     setRecommendBrand("");
     toast.success("Stock request query opened in WhatsApp!");
@@ -714,6 +722,7 @@ Please notify me if it becomes available!`;
                       className="border border-gray-200 focus:border-[#2D6A4F] rounded-lg px-2.5 py-1.5 text-xs text-gray-800 bg-white outline-none font-bold cursor-pointer"
                     >
                       <option value="Popularity">Popularity</option>
+                      <option value="Category">Category</option>
                       <option value="Price Low to High">Price: Low to High</option>
                       <option value="Price High to Low">Price: High to Low</option>
                       <option value="Highest Rated">Highest Rated</option>
@@ -882,12 +891,24 @@ Please notify me if it becomes available!`;
                             </span>
                           </div>
 
-                          {/* Discount tag */}
-                          {hasDiscount && (
-                            <span className="absolute top-2 left-2 text-[9px] font-extrabold px-2 py-0.5 rounded-none text-white bg-red-500 uppercase tracking-wide">
-                              -{discountPercentage}% Off
-                            </span>
-                          )}
+                          {/* Badges & Discount tags overlay */}
+                          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 items-start">
+                            {hasDiscount && (
+                              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-none text-white bg-red-500 uppercase tracking-wide">
+                                -{discountPercentage}% Off
+                              </span>
+                            )}
+                            {p.organic && (
+                              <span className="bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-none flex items-center gap-1 shadow-sm">
+                                <Sparkles size={10} className="fill-white" /> Organic
+                              </span>
+                            )}
+                            {p.badge && (
+                              <span className="bg-stone-900 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-none shadow-sm">
+                                {p.badge}
+                              </span>
+                            )}
+                          </div>
 
                           {/* Wishlist Button */}
                           <button

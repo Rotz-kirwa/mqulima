@@ -8,17 +8,16 @@ import {
   ArrowRight, 
   Mail, 
   X, 
-  Image, 
-  PlusCircle, 
-  User, 
   Bell, 
   BookOpen, 
   Download, 
   Check, 
-  Printer 
+  Printer,
+  Loader2
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { toast } from "sonner";
+import { getPublishedBlogPosts, incrementBlogViewCount } from "@/lib/api/blog.server";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
@@ -47,7 +46,7 @@ type BlogPost = {
   category: string;
   publishedAt: string;
   readTime: string;
-  views: string;
+  viewCount?: number;
   author: {
     name: string;
     role: string;
@@ -59,106 +58,15 @@ type BlogPost = {
   isFeatured?: boolean;
 };
 
-// Seed authors
-const authors = [
-  { name: "Dr. Samuel Kirwa", role: "Chief Agronomist", avatarInitials: "SK", bio: "Over 15 years advising Rift Valley maize and wheat cooperatives on soil dynamics." },
-  { name: "Jane Otieno", role: "Agri-Tech Director", avatarInitials: "JO", bio: "Spearheading mobile-agronomy and smart IoT irrigation layouts across East Africa." },
-  { name: "James Mwangi", role: "Senior Market Analyst", avatarInitials: "JM", bio: "Ex-ministry expert monitoring regional trade corridors, wholesale seed pricing, and grain demand." },
-  { name: "Faith Achieng", role: "Vet Surgeon & Livestock Lead", avatarInitials: "FA", bio: "Specialist in high-yield zero grazing milk configurations and animal preventive medicine." }
-];
-
-const initialBlogPosts: BlogPost[] = [
-  {
-    id: "f1",
-    title: "Kenya's Maize Prices Hit 3-Year High — What Smallholder Farmers Must Do Now",
-    excerpt: "Wholesale maize prices in Eldoret and Nakuru markets surged 34% this season, driven by erratic rainfall and export demand. Here's what cooperatives should do before the next planting window.",
-    body: `Maize prices across East Africa have entered a volatile super-cycle. Erratically distributed rainfall coupled with skyrocketing import costs for nitrogenous fertilizers has tightened regional grain balances. In response, wholesale prices in key hubs like Eldoret, Nakuru, and Nairobi have surged, posing both a challenge and an opportunity for agricultural cooperatives.
-
-    To capitalize on this, smallholder cultivators must move away from speculation and focus on soil-catalyst inputs to stabilize yield volume. High-grade certified seeds are critical; using recycled seed grain under these weather patterns will lead to severe yield drops.
-
-    Furthermore, collective bargaining groups must negotiate fertilizer subsidies in bulk. By pooling resources, cooperatives can purchase DAP and urea directly from shipping consignments, bypassing predatory brokers.`,
-    category: "Market Prices",
-    publishedAt: "June 25, 2026",
-    readTime: "5 min read",
-    views: "2.4K views",
-    author: authors[2], // James Mwangi
-    coverImage: "/mqulima_news_banner.png",
-    bodyImages: [
-      "https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=800",
-      "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600"
-    ],
-    isFeatured: true
-  },
-  {
-    id: "g1",
-    title: "How Uasin Gishu Cooperatives Increased Yields by 40% Using Mobile Agronomy",
-    excerpt: "Using simple SMS and USSD alert systems, grain growers optimized planting windows and fertilizer inputs to achieve record harvest volumes.",
-    body: `Traditional farming wisdom is no longer sufficient to navigate shifting weather cycles. In Uasin Gishu, a syndicate of 12 smallholder cooperatives partnered with Mqulima's digital agronomist network to deploy a SMS-based alert system.
-
-    The platform monitors localized meteorological data and soil moisture sensors. When conditions are optimal, automated alerts are broadcasted to farmers' mobile phones, advising them on the exact hour to apply top-dressing fertilizer.
-
-    This precise timing prevents nitrogen runoff during sudden downpours, ensuring that root systems absorb maximum soil nutrients. The results have been stellar—yielding a 40% increase in grain weight per hectare.`,
-    category: "Agri-Tech",
-    publishedAt: "June 20, 2026",
-    readTime: "4 min read",
-    views: "1.8K views",
-    author: authors[1], // Jane Otieno
-    coverImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500",
-    bodyImages: ["https://images.unsplash.com/photo-1463171359079-3d9996683be2?w=600"]
-  },
-  {
-    id: "g2",
-    title: "Organic Ginger Export Guidelines for East African Farmers",
-    excerpt: "A complete step-by-step walkthrough on obtaining pesticide-free certification and accessing European specialty herb markets.",
-    body: `Exporting ginger to European markets requires strict compliance with international phytosanitary standards. Buyers demand proof of pesticide-free cultivation, which means farmers must adopt organic composting techniques.
-
-    To start, soil must be enriched with biological organic compost instead of synthetic chemical fertilizers. Crop protection should rely on natural bio-pesticides like neem oil extracts and garlic sprays.
-
-    Documentation is key. Farmers need to keep exhaustive spray registers, field maps, and batch numbers. Mqulima's cooperative logistics handles certification checks, paving the way for seamless international exports.`,
-    category: "Farm Tips",
-    publishedAt: "June 18, 2026",
-    readTime: "6 min read",
-    views: "950 views",
-    author: authors[0], // Dr. Samuel Kirwa
-    coverImage: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500",
-    bodyImages: ["https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=600"]
-  },
-  {
-    id: "g3",
-    title: "Understanding the Subsidized Dairy Feed Policy of 2026",
-    excerpt: "How the government's subsidized interest rate program affects loan applications for smallholder dairy cooperatives.",
-    body: `Dairy farming is capital-intensive. Feeds alone account for up to 70% of operational costs. The new agricultural policy introduces credit subsidies specifically targetting livestock feed millers and cooperative dairies.
-
-    Under this bill, registered dairy groups can access capital at a subsidized rate of 6% per annum. This capital must be spent on raw feed materials (yellow maize, cotton seed cake, wheat pollard) to manufacture high-yield dairy meal in-house.
-
-    By building feed processing bays at cooperative collection points, farmers can purchase quality feeds at up to 25% below commercial agrovet retail pricing.`,
-    category: "Policy & Finance",
-    publishedAt: "June 12, 2026",
-    readTime: "5 min read",
-    views: "1.2K views",
-    author: authors[3], // Faith Achieng
-    coverImage: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=500",
-    bodyImages: ["https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=600"]
-  }
-];
 
 function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [remindToggled, setRemindToggled] = useState(false);
   const [userName, setUserName] = useState("");
-
-  // Create Post Form States
-  const [isSubmitOpen, setIsSubmitOpen] = useState(false);
-  const [formTitle, setFormTitle] = useState("");
-  const [formCategory, setFormCategory] = useState("Farm Tips");
-  const [formExcerpt, setFormExcerpt] = useState("");
-  const [formBody, setFormBody] = useState("");
-  const [formAuthorIndex, setFormAuthorIndex] = useState(0);
-  const [formCoverImage, setFormCoverImage] = useState("");
-  const [formInlineImage, setFormInlineImage] = useState("");
 
   // Newsletter Modal State
   const [newsletterModalOpen, setNewsletterModalOpen] = useState(false);
@@ -166,19 +74,18 @@ function BlogPage() {
   // Active Reading Post Modal State
   const [activeReadingPost, setActiveReadingPost] = useState<BlogPost | null>(null);
 
-  // Load and save posts from/to localStorage
+  // Load posts from the database
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("mqulima_news_posts");
-      if (stored) {
-        setPosts(JSON.parse(stored));
-      } else {
-        setPosts(initialBlogPosts);
-        localStorage.setItem("mqulima_news_posts", JSON.stringify(initialBlogPosts));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    setPostsLoading(true);
+    getPublishedBlogPosts()
+      .then((data) => {
+        setPosts(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load blog posts:", err);
+        toast.error("Could not load news articles.");
+      })
+      .finally(() => setPostsLoading(false));
   }, []);
 
   // Fetch registered user name
@@ -220,42 +127,6 @@ function BlogPage() {
     });
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTitle.trim() || !formBody.trim()) {
-      toast.error("Please fill in the title and the content body.");
-      return;
-    }
-
-    const newPost: BlogPost = {
-      id: String(Date.now()),
-      title: formTitle.trim(),
-      category: formCategory,
-      excerpt: formExcerpt.trim() || formBody.trim().substring(0, 120) + "...",
-      body: formBody.trim(),
-      publishedAt: new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' }),
-      readTime: `${Math.max(2, Math.ceil(formBody.split(" ").length / 150))} min read`,
-      views: "10 views",
-      author: authors[formAuthorIndex],
-      coverImage: formCoverImage.trim() || "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500",
-      bodyImages: formInlineImage.trim() ? [formInlineImage.trim()] : []
-    };
-
-    const updated = [newPost, ...posts];
-    setPosts(updated);
-    localStorage.setItem("mqulima_news_posts", JSON.stringify(updated));
-
-    // Reset Form
-    setFormTitle("");
-    setFormExcerpt("");
-    setFormBody("");
-    setFormCoverImage("");
-    setFormInlineImage("");
-    setIsSubmitOpen(false);
-
-    toast.success("News post published! Registered farmers notified via SMS simulator.");
-  };
-
   const categories = ["All", "Market Prices", "Farm Tips", "Agri-Tech", "Policy & Finance"];
 
   // Filtered Posts
@@ -287,17 +158,23 @@ function BlogPage() {
 
   return (
     <AppLayout>
-      {/* 
-        Lor & Open Sans Styling Overlay
-        Olive Sepia and Emerald theme variables
-      */}
       <div className="bg-gradient-to-br from-[#E8ECE7] via-[#FAF9F5] to-[#E4EAE1] min-h-screen text-[#263225] font-['Open_Sans'] antialiased text-left relative py-8">
         
         {/* Subtle decorative grid lines */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#1A5438_1px,transparent_0)] [background-size:20px_20px]" />
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          
+
+          {/* Loading Skeleton */}
+          {postsLoading && (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <Loader2 className="h-10 w-10 text-[#1A5438] animate-spin" />
+              <p className="text-sm text-[#5D6B5C] font-semibold">Loading latest agricultural news...</p>
+            </div>
+          )}
+
+          {/* Main Content — shown when not loading */}
+          {!postsLoading && (<>
           {/* Header Section */}
           <header className="border-b border-[#D4DDD0] pb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
             <div>
@@ -377,7 +254,10 @@ function BlogPage() {
               {/* Featured Post Hero */}
               {featuredPost && !searchQuery && selectedCategory === "All" && (
                 <div 
-                  onClick={() => setActiveReadingPost(featuredPost)}
+                  onClick={() => {
+                  setActiveReadingPost(featuredPost);
+                  incrementBlogViewCount({ data: { postId: featuredPost.id } }).catch(() => {});
+                }}
                   className="bg-white border border-[#D4DDD0] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group"
                 >
                   <div className="aspect-[21/9] w-full relative overflow-hidden bg-[#E2EADF]">
@@ -435,7 +315,10 @@ function BlogPage() {
                   {gridPosts.map((post) => (
                     <article
                       key={post.id}
-                      onClick={() => setActiveReadingPost(post)}
+                      onClick={() => {
+                    setActiveReadingPost(post);
+                    incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
+                  }}
                       className="bg-white border border-[#D4DDD0] rounded-2xl overflow-hidden hover:border-[#1A5438] hover:shadow-md transition duration-300 flex flex-col justify-between cursor-pointer group"
                     >
                       <div>
@@ -477,130 +360,7 @@ function BlogPage() {
                 </div>
               )}
 
-              {/* SECTION: INTERACTIVE SUBMIT STORY EDITOR */}
-              <section className="bg-white border border-[#D4DDD0] rounded-2xl p-6 sm:p-8">
-                <div className="flex items-center justify-between border-b border-[#E8ECE7] pb-4 mb-6">
-                  <div>
-                    <h3 className="text-base font-extrabold font-['Lora'] text-[#1A3A1A] uppercase tracking-wide">
-                      Submit Agricultural Story
-                    </h3>
-                    <p className="text-[11px] text-[#5D6B5C] mt-1">Submit your farm news, attach inline images, and publish to the live desk feed.</p>
-                  </div>
-                  <button
-                    onClick={() => setIsSubmitOpen(!isSubmitOpen)}
-                    className="bg-[#1A5438] hover:bg-[#113B26] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    <span>{isSubmitOpen ? "Close Editor" : "Open Editor"}</span>
-                  </button>
-                </div>
 
-                {isSubmitOpen && (
-                  <form onSubmit={handleCreatePost} className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Story Title</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Eldoret Dairies launch automated pasteurization plant"
-                          value={formTitle}
-                          onChange={(e) => setFormTitle(e.target.value)}
-                          className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Category</label>
-                        <select
-                          value={formCategory}
-                          onChange={(e) => setFormCategory(e.target.value)}
-                          className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white cursor-pointer font-bold"
-                        >
-                          <option value="Farm Tips">Farm Tips</option>
-                          <option value="Market Prices">Market Prices</option>
-                          <option value="Agri-Tech">Agri-Tech</option>
-                          <option value="Policy & Finance">Policy & Finance</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Author Profile</label>
-                        <select
-                          value={formAuthorIndex}
-                          onChange={(e) => setFormAuthorIndex(Number(e.target.value))}
-                          className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white cursor-pointer font-bold"
-                        >
-                          {authors.map((auth, idx) => (
-                            <option key={auth.name} value={idx}>
-                              {auth.name} ({auth.role})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Cover Image URL (Optional)</label>
-                        <input
-                          type="url"
-                          placeholder="https://images.unsplash.com/photo-..."
-                          value={formCoverImage}
-                          onChange={(e) => setFormCoverImage(e.target.value)}
-                          className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-[#5D6B5C] uppercase block">
-                        Allow Inline Image in Body (Paste Image URL)
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="grid h-9 w-9 place-items-center bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg text-[#5D6B5C] shrink-0">
-                          <Image className="h-4.5 w-4.5" />
-                        </div>
-                        <input
-                          type="url"
-                          placeholder="Paste image address (e.g. https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600)"
-                          value={formInlineImage}
-                          onChange={(e) => setFormInlineImage(e.target.value)}
-                          className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Short Excerpt (Teaser)</label>
-                      <input
-                        type="text"
-                        placeholder="Brief summary sentence that appears in feed..."
-                        value={formExcerpt}
-                        onChange={(e) => setFormExcerpt(e.target.value)}
-                        className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-[#5D6B5C] uppercase">Full Article Body</label>
-                      <textarea
-                        required
-                        rows={6}
-                        placeholder="Type the full article content here. Use paragraphs..."
-                        value={formBody}
-                        onChange={(e) => setFormBody(e.target.value)}
-                        className="w-full bg-[#FAF9F5] border border-[#D4DDD0] rounded-lg px-3.5 py-2 text-xs text-[#1A3A1A] outline-none focus:border-[#1A5438] focus:bg-white resize-none"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="bg-[#1A5438] hover:bg-[#113B26] text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-sm"
-                    >
-                      Publish Article
-                    </button>
-                  </form>
-                )}
-              </section>
 
             </div>
 
@@ -632,26 +392,6 @@ function BlogPage() {
                 </form>
               </div>
 
-              {/* Expert Authors Widget */}
-              <div className="bg-white border border-[#D4DDD0] rounded-2xl p-5 text-left shadow-sm">
-                <h4 className="text-xs font-black text-[#1A3A1A] uppercase tracking-wider border-b border-[#E8ECE7] pb-3 mb-4 flex items-center gap-1.5">
-                  <User className="h-4 w-4 text-[#1A5438]" /> Meet our Authors
-                </h4>
-                <div className="space-y-4">
-                  {authors.map((auth) => (
-                    <div key={auth.name} className="flex gap-3 items-start border-b border-gray-100 last:border-b-0 pb-3 last:pb-0">
-                      <div className="h-8 w-8 rounded-full bg-[#1A5438]/10 text-[#1A5438] font-bold text-xs flex items-center justify-center shrink-0">
-                        {auth.avatarInitials}
-                      </div>
-                      <div>
-                        <strong className="text-xs text-[#1A3A1A] block">{auth.name}</strong>
-                        <span className="text-[9px] text-[#5D6B5C] font-extrabold block">{auth.role}</span>
-                        <p className="text-[10px] text-[#5D6B5C] mt-1 leading-snug">{auth.bio}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* Nairobi Market price widget */}
               <div className="bg-white border border-[#D4DDD0] rounded-2xl p-5 text-left shadow-sm">
@@ -681,6 +421,8 @@ function BlogPage() {
             </div>
 
           </div>
+
+          </>)}
 
         </div>
 

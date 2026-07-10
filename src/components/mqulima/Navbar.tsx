@@ -66,7 +66,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   const { isInstallable, triggerInstall } = usePWA();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { cartItems, setCartOpen } = useCart();
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -198,7 +198,7 @@ export function Navbar() {
 
 
           {/* Account Dropdown Wrapper */}
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
               className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground/80 transition hover:bg-secondary cursor-pointer"
@@ -230,12 +230,13 @@ export function Navbar() {
                             My Dashboard
                           </Link>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setUserDropdownOpen(false);
+                              await logout();
                               toast.success("Successfully logged out");
-                              setTimeout(() => window.location.reload(), 800);
+                              navigate({ to: "/" });
                             }}
-                            className="w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-red-50 text-red-600"
+                            className="w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-red-50 text-red-600 cursor-pointer"
                           >
                             Sign Out
                           </button>
@@ -243,14 +244,14 @@ export function Navbar() {
                   ) : (
                         <>
                           <Link
-                            to="/login"
+                            to="/auth/sign-in"
                             onClick={() => setUserDropdownOpen(false)}
                             className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
                           >
                             Sign In
                           </Link>
                           <Link
-                            to="/login"
+                            to="/auth/sign-up"
                             onClick={() => setUserDropdownOpen(false)}
                             className="block rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-secondary text-[#1A1A1A]"
                           >
@@ -584,17 +585,30 @@ export function Navbar() {
                 {user ? (
                   <>
                     <div className="text-[11px] text-white/50">Logged in as <strong className="text-white">{user.name}</strong></div>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setOpen(false)}
-                      className="block text-center rounded-xl bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-md hover:bg-[#224f3b] transition-colors"
-                    >
-                      My Dashboard
-                    </Link>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setOpen(false)}
+                        className="block text-center rounded-xl bg-[#2D6A4F]/25 py-3 text-xs font-bold text-white shadow-md hover:bg-[#224f3b]/30 transition-colors"
+                      >
+                        My Dashboard
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          setOpen(false);
+                          await logout();
+                          toast.success("Successfully logged out");
+                          navigate({ to: "/" });
+                        }}
+                        className="block text-center rounded-xl bg-red-600 py-3 text-xs font-bold text-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <Link
-                    to="/login"
+                    to="/auth/sign-in"
                     onClick={() => setOpen(false)}
                     className="block text-center rounded-xl bg-[#2D6A4F] py-3 text-xs font-bold text-white shadow-md hover:bg-[#224f3b] transition-colors"
                   >

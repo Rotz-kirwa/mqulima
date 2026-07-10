@@ -34,7 +34,8 @@ function mapDbProduct(p: any): ShopProduct {
     field: p.field_name || "",
     subcategory: p.subcategory_name || p.subcategory || "",
     rating: Number(p.avg_rating || 0),
-    reviewsCount: Number(p.rating_count || 0)
+    reviewsCount: Number(p.rating_count || 0),
+    isFeatured: !!p.is_featured
   };
 }
 

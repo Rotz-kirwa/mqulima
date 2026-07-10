@@ -192,6 +192,7 @@ export type ShopProduct = {
   sellerScore: number;
   condition: "Fresh" | "Certified Organic" | "Bulk Available" | "Pre-Order";
   sizes?: ProductSizeOption[];
+  isFeatured?: boolean;
 };
 
 export const shopProducts: ShopProduct[] = [];

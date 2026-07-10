@@ -1,7 +1,18 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitContactForm } from "@/lib/api/contact-partnership.server";
-import { Check } from "lucide-react";
+import { 
+  Check, 
+  User, 
+  Mail, 
+  Phone, 
+  FileText, 
+  MessageSquare, 
+  Sprout, 
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle
+} from "lucide-react";
 
 export function ContactForm() {
   // Field values
@@ -27,16 +38,16 @@ export function ContactForm() {
     let errorMsg = "";
 
     if (field === "fullName") {
-      if (!value.trim()) errorMsg = "Full Name is required";
+      if (!value.trim()) errorMsg = "Full name is required";
     } else if (field === "email") {
       if (!value.trim()) {
-        errorMsg = "Email Address is required";
+        errorMsg = "Email address is required";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         errorMsg = "Please enter a valid email address";
       }
     } else if (field === "phone") {
       if (!value.trim()) {
-        errorMsg = "Phone Number is required";
+        errorMsg = "Phone number is required";
       } else if (!/^\d{9,10}$/.test(value.trim())) {
         errorMsg = "Please enter a valid 9 or 10 digit number";
       }
@@ -92,7 +103,7 @@ export function ContactForm() {
     const currentErrors: Record<string, string> = {};
     
     if (!fullName.trim()) {
-      currentErrors.fullName = "Full Name is required";
+      currentErrors.fullName = "Full name is required";
       hasErrors = true;
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -157,88 +168,115 @@ export function ContactForm() {
   };
 
   return (
-    <div className="bg-white border-2 border-[#0A1E0C] rounded-none p-8 md:p-12 relative overflow-hidden shadow-[8px_8px_0px_#0A1E0C]">
-      {/* Subtle grid pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: "radial-gradient(#0A1E0C 1.5px, transparent 1.5px)", backgroundSize: "16px 16px" }} />
+    <div className="bg-white rounded-3xl border border-emerald-100 p-8 sm:p-10 shadow-[0_10px_40px_-6px_rgba(45,106,79,0.06)] relative overflow-hidden select-text text-left">
+      {/* Dynamic gradient aura */}
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-50 rounded-full blur-3xl pointer-events-none opacity-60" />
       
       <AnimatePresence mode="wait">
         {!success ? (
           <motion.form
             key="contact-form"
             onSubmit={handleSubmit}
-            className="space-y-6 text-left relative z-10"
-            initial={{ opacity: 0, y: 10 }}
+            className="space-y-6 relative z-10"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.3 }}
             noValidate
           >
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => handleChange("fullName", e.target.value)}
-                onBlur={(e) => handleBlur("fullName", e.target.value)}
-                placeholder="Enter your full name"
-                className={`w-full rounded-none border-2 bg-white px-4.5 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
-                  touched.fullName && errors.fullName
-                    ? "border-red-550 focus:border-red-500"
-                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
-                }`}
-              />
-              {touched.fullName && errors.fullName && (
-                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
-                  ⚠️ {errors.fullName}
-                </span>
-              )}
-            </div>
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 text-red-750 text-sm p-4 rounded-xl flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                <span className="font-semibold">{errors.submit}</span>
+              </div>
+            )}
 
-            {/* Email Address */}
-            <div>
-              <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                onBlur={(e) => handleBlur("email", e.target.value)}
-                placeholder="you@domain.com"
-                className={`w-full rounded-none border-2 bg-white px-4.5 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
-                  touched.email && errors.email
-                    ? "border-red-550 focus:border-red-500"
-                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
-                }`}
-              />
-              {touched.email && errors.email && (
-                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
-                  ⚠️ {errors.email}
-                </span>
-              )}
+            {/* Grid for Name & Email */}
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Full Name */}
+              <div>
+                <label htmlFor="fullName" className="block text-xs font-bold text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                    <User className="h-4.5 w-4.5" />
+                  </span>
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => handleChange("fullName", e.target.value)}
+                    onBlur={(e) => handleBlur("fullName", e.target.value)}
+                    placeholder="Enter your full name"
+                    className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
+                      touched.fullName && errors.fullName
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-emerald-500"
+                    }`}
+                  />
+                </div>
+                {touched.fullName && errors.fullName && (
+                  <span className="text-[11px] text-red-500 font-bold mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.fullName}
+                  </span>
+                )}
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label htmlFor="email" className="block text-xs font-bold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                    <Mail className="h-4.5 w-4.5" />
+                  </span>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    onBlur={(e) => handleBlur("email", e.target.value)}
+                    placeholder="you@domain.com"
+                    className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
+                      touched.email && errors.email
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-emerald-500"
+                    }`}
+                  />
+                </div>
+                {touched.email && errors.email && (
+                  <span className="text-[11px] text-red-500 font-bold mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.email}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Phone Number */}
             <div>
-              <label htmlFor="phone" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
+              <label htmlFor="phone" className="block text-xs font-bold text-gray-700 mb-2">
                 Phone Number
               </label>
               <div className="flex gap-2">
-                <select
-                  aria-label="Country Code Prefix"
-                  value={phonePrefix}
-                  onChange={(e) => setPhonePrefix(e.target.value)}
-                  className="rounded-none border-2 border-[#0A1E0C] bg-white px-3.5 py-3 text-sm text-[#0A1E0C] outline-none focus:border-[#2D6A4F] cursor-pointer font-bold"
-                >
-                  <option value="+254">+254 (KE)</option>
-                  <option value="+255">+255 (TZ)</option>
-                  <option value="+256">+256 (UG)</option>
-                </select>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 pointer-events-none text-gray-400">
+                    <Phone className="h-4.5 w-4.5" />
+                  </span>
+                  <select
+                    id="phonePrefix"
+                    name="phonePrefix"
+                    aria-label="Country Code Prefix"
+                    value={phonePrefix}
+                    onChange={(e) => setPhonePrefix(e.target.value)}
+                    className="rounded-xl border border-gray-200 bg-gray-50/50 pl-10 pr-3 py-3.5 text-sm text-[#0A1E0C] outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-bold transition-all"
+                  >
+                    <option value="+254">+254</option>
+                    <option value="+255">+255</option>
+                    <option value="+256">+256</option>
+                  </select>
+                </div>
                 <input
                   id="phone"
                   type="tel"
@@ -246,78 +284,94 @@ export function ContactForm() {
                   onChange={(e) => handleChange("phone", e.target.value)}
                   onBlur={(e) => handleBlur("phone", e.target.value)}
                   placeholder="712345678"
-                  className={`flex-1 rounded-none border-2 bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 ${
+                  className={`flex-1 rounded-xl border bg-gray-50/50 px-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
                     touched.phone && errors.phone
-                      ? "border-red-550 focus:border-red-500"
-                      : "border-[#0A1E0C] focus:border-[#2D6A4F]"
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-emerald-500"
                   }`}
                 />
               </div>
               {touched.phone && errors.phone && (
-                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
-                  ⚠️ {errors.phone}
+                <span className="text-[11px] text-red-500 font-bold mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.phone}
                 </span>
               )}
             </div>
 
-            {/* I am a... & Subject */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Dropdown Select for I am a... & Subject */}
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <label htmlFor="userType" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
+                <label htmlFor="userType" className="block text-xs font-bold text-gray-700 mb-2">
                   I am a...
                 </label>
-                <select
-                  id="userType"
-                  value={userType}
-                  onChange={(e) => handleChange("userType", e.target.value)}
-                  className="w-full rounded-none border-2 border-[#0A1E0C] bg-white px-4 py-3 text-sm text-[#0A1E0C] outline-none focus:border-[#2D6A4F] cursor-pointer font-medium"
-                >
-                  <option value="Farmer">Farmer</option>
-                  <option value="Cooperative">Cooperative</option>
-                  <option value="Agri-Investor">Agri-Investor</option>
-                  <option value="Supplier">Supplier</option>
-                  <option value="Media">Media</option>
-                  <option value="Other">Other</option>
-                </select>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                    <Sprout className="h-4.5 w-4.5" />
+                  </span>
+                  <select
+                    id="userType"
+                    value={userType}
+                    onChange={(e) => handleChange("userType", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-11 pr-4 py-3.5 text-sm text-[#0A1E0C] outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium transition-all"
+                  >
+                    <option value="Farmer">Farmer</option>
+                    <option value="Buyer">Buyer</option>
+                    <option value="Agribusiness">Agribusiness</option>
+                    <option value="Supplier">Supplier</option>
+                    <option value="Investor">Investor</option>
+                    <option value="Partner">Partner</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
+                <label htmlFor="subject" className="block text-xs font-bold text-gray-700 mb-2">
                   Subject
                 </label>
-                <input
-                  id="subject"
-                  type="text"
-                  value={subject}
-                  onChange={(e) => handleChange("subject", e.target.value)}
-                  placeholder="Inquiry Topic"
-                  className="w-full rounded-none border-2 border-[#0A1E0C] bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none focus:border-[#2D6A4F] transition duration-200"
-                />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                    <FileText className="h-4.5 w-4.5" />
+                  </span>
+                  <input
+                    id="subject"
+                    type="text"
+                    value={subject}
+                    onChange={(e) => handleChange("subject", e.target.value)}
+                    placeholder="Inquiry Topic"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-200"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Message */}
+            {/* Message Area */}
             <div>
-              <label htmlFor="message" className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#2D6A4F] mb-2.5">
+              <label htmlFor="message" className="block text-xs font-bold text-gray-700 mb-2">
                 Message
               </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => handleChange("message", e.target.value)}
-                onBlur={(e) => handleBlur("message", e.target.value)}
-                rows={4}
-                placeholder="How can we help grow your business?"
-                style={{ minHeight: "120px" }}
-                className={`w-full rounded-none border-2 bg-white px-4 py-3 text-sm text-[#0A1E0C] placeholder-gray-400 outline-none transition duration-200 resize-none ${
-                  touched.message && errors.message
-                    ? "border-red-550 focus:border-red-500"
-                    : "border-[#0A1E0C] focus:border-[#2D6A4F]"
-                }`}
-              />
+              <div className="relative">
+                <span className="absolute top-3.5 left-4 pointer-events-none text-gray-400">
+                  <MessageSquare className="h-4.5 w-4.5" />
+                </span>
+                <textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => handleChange("message", e.target.value)}
+                  onBlur={(e) => handleBlur("message", e.target.value)}
+                  rows={4}
+                  placeholder="How can we help grow your business?"
+                  style={{ minHeight: "120px" }}
+                  className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 resize-none ${
+                    touched.message && errors.message
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-emerald-500"
+                  }`}
+                />
+              </div>
               {touched.message && errors.message && (
-                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
-                  ⚠️ {errors.message}
+                <span className="text-[11px] text-red-500 font-bold mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.message}
                 </span>
               )}
             </div>
@@ -333,20 +387,20 @@ export function ContactForm() {
                   onBlur={() => handleBlur("consent", consent)}
                   className="sr-only"
                 />
-                <div className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center border-2 rounded-none transition duration-200 ${
+                <div className={`mt-0.5 grid h-[20px] w-[20px] shrink-0 place-items-center border rounded-lg transition duration-200 ${
                   consent 
-                    ? "border-[#2D6A4F] bg-[#2D6A4F] text-white" 
-                    : "border-[#0A1E0C] bg-white group-hover:border-[#2D6A4F]"
+                    ? "border-emerald-600 bg-emerald-600 text-white" 
+                    : "border-gray-300 bg-white group-hover:border-emerald-600"
                 }`}>
-                  {consent && <Check className="h-3 w-3 stroke-[3px]" />}
+                  {consent && <Check className="h-3.5 w-3.5 stroke-[3px]" />}
                 </div>
-                <span className="text-xs text-gray-600 leading-tight select-none font-medium">
+                <span className="text-xs sm:text-sm text-gray-500 leading-tight select-none font-medium">
                   I consent to Mqulima storing my submitted data for response purposes.
                 </span>
               </label>
               {touched.consent && errors.consent && (
-                <span className="text-[10px] text-red-500 font-bold mt-1.5 block">
-                  ⚠️ {errors.consent}
+                <span className="text-[11px] text-red-500 font-bold mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.consent}
                 </span>
               )}
             </div>
@@ -355,14 +409,16 @@ export function ContactForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[#F5A623] hover:bg-[#E0951F] text-[#0A1E0C] border-2 border-[#0A1E0C] font-black text-xs uppercase tracking-widest py-4 px-8 rounded-none transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[4px_4px_0px_#0A1E0C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#0A1E0C] disabled:opacity-50"
+              className="group w-full relative overflow-hidden bg-gradient-to-r from-emerald-600 to-[#2D6A4F] hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-sm tracking-wider py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-700/10 hover:shadow-xl hover:shadow-emerald-700/25 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
             >
               {submitting ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#0A1E0C] border-t-transparent" />
+                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
-                  Send Message
-                  <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+                  <span className="flex items-center gap-2 relative z-10">
+                    🌱 Send Message
+                  </span>
+                  <ArrowRight className="w-4.5 h-4.5 relative z-10 transition-transform duration-250 group-hover:translate-x-1.5" />
                 </>
               )}
             </button>
@@ -370,23 +426,23 @@ export function ContactForm() {
         ) : (
           <motion.div
             key="success-message"
-            className="py-16 px-8 text-center border-2 border-[#0A1E0C] bg-[#E8F5E9] rounded-none flex flex-col items-center justify-center text-[#1A6B3C] relative z-10"
+            className="py-12 px-6 text-center bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col items-center justify-center text-emerald-850 relative z-10"
             initial={{ opacity: 0, scale: 0.98, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", damping: 20 }}
+            transition={{ type: "spring", damping: 22 }}
           >
-            <div className="grid h-16 w-16 place-items-center rounded-none border-2 border-[#0A1E0C] bg-white text-[#1A6B3C] text-2xl font-black shadow-[4px_4px_0px_#0A1E0C]">
-              ✓
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-white text-xl font-bold shadow-md shadow-emerald-650/20">
+              <Check className="w-6 h-6 stroke-[3px]" />
             </div>
-            <h3 className="mt-6 text-2xl font-black font-serif text-[#0A1E0C]">
-              Message Dispatch Successful
+            <h3 className="mt-5 text-xl font-bold text-[#0A1E0C]">
+              Message Sent Successfully
             </h3>
-            <p className="mt-2 text-sm text-gray-600 max-w-sm leading-relaxed font-medium">
-              Your inquiry has been stored. A Mqulima technical officer or coordinator will respond to your channel shortly.
+            <p className="mt-2 text-sm text-gray-500 max-w-sm leading-relaxed font-medium">
+              Thank you for reaching out! Your inquiry has been stored. A Mqulima coordinator will contact you back within 2 hours.
             </p>
             <button
               onClick={() => setSuccess(false)}
-              className="mt-8 rounded-none border-2 border-[#0A1E0C] bg-[#FAF9F5] hover:bg-white px-6 py-3.5 text-xs font-black uppercase tracking-wider text-[#0A1E0C] transition-all cursor-pointer shadow-[4px_4px_0px_#0A1E0C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#0A1E0C]"
+              className="mt-6 rounded-xl border border-gray-250 bg-white hover:bg-gray-50 px-5 py-3 text-xs font-bold text-[#0A1E0C] shadow-sm hover:shadow transition-all cursor-pointer"
             >
               Send Another Inquiry
             </button>

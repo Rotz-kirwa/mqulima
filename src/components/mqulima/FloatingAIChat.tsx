@@ -12,6 +12,12 @@ type Message = {
 export function FloatingAIChat() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isShop, setIsShop] = useState(false);
+
+  useEffect(() => {
+    setIsShop(window.location.pathname.startsWith("/shop"));
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -141,10 +147,10 @@ export function FloatingAIChat() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Mqulima AI Assistant"
-        className="fixed bottom-36 md:bottom-24 right-6 z-40 flex items-center gap-2.5 rounded-full border border-[#2D6A4F]/30 bg-white px-5 py-3 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+        className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-auto md:right-6 z-40 flex items-center gap-2 rounded-full border border-[#2D6A4F]/30 bg-white px-4 py-2.5 md:px-5 md:py-3 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer`}
       >
-        <Sparkles className="h-5 w-5 text-[#F5A623] animate-pulse" />
-        <span className="text-sm font-bold text-[#2D6A4F] whitespace-nowrap">Mqulima AI</span>
+        <Sparkles className="h-4.5 w-4.5 md:h-5 md:w-5 text-[#F5A623] animate-pulse" />
+        <span className="text-xs md:text-sm font-bold text-[#2D6A4F] whitespace-nowrap">Mqulima AI</span>
       </button>
 
       {/* Floating Chat Overlay */}
@@ -154,7 +160,7 @@ export function FloatingAIChat() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            className="fixed bottom-52 md:bottom-38 right-6 z-50 w-[360px] sm:w-[400px] h-[480px] sm:h-[520px] bg-white border border-[#0A1E0C]/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col rounded-2xl overflow-hidden"
+            className={`fixed ${isShop ? "bottom-[136px]" : "bottom-16"} left-4 right-4 md:bottom-38 md:left-auto md:right-6 z-50 w-[calc(100vw-32px)] sm:w-[360px] md:w-[400px] h-[460px] md:h-[520px] bg-white border border-[#0A1E0C]/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col rounded-2xl overflow-hidden`}
           >
             {/* Header: Magda-style Assistant details */}
             <div className="bg-[#FAF9F5] border-b border-[#0A1E0C]/10 px-5 py-4 flex items-center justify-between">
