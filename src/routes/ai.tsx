@@ -128,27 +128,6 @@ function MqulimaAIWorkspace() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to login if unauthorized
-  if (!user) {
-    return (
-      <AppLayout>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center bg-background px-4 text-center">
-          <Sparkles className="h-12 w-12 text-[#2D6A4F] animate-pulse mb-4" />
-          <h2 className="text-2xl font-bold text-foreground">Welcome to Mqulima AI</h2>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Sign in to access your intelligent farming assistant, county diagnostics, and market records.
-          </p>
-          <Link
-            to="/auth/sign-in"
-            className="mt-6 rounded-full bg-[#2D6A4F] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#224f3b] shadow-md"
-          >
-            Sign In to Start
-          </Link>
-        </div>
-      </AppLayout>
-    );
-  }
-
   // State managers
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -179,9 +158,10 @@ function MqulimaAIWorkspace() {
 
   // 1. Initial Load: Conversations & Weather
   useEffect(() => {
+    if (!user) return;
     loadConversations();
     loadLiveWeather();
-  }, [user.county]);
+  }, [user?.county]);
 
   // 2. Scroll to bottom when messages load/update
   useEffect(() => {
@@ -204,7 +184,7 @@ function MqulimaAIWorkspace() {
 
   // 4. Load weather based on county coords
   const loadLiveWeather = async () => {
-    if (!user.county) {
+    if (!user?.county) {
       setLoadingWeather(false);
       return;
     }
@@ -318,6 +298,27 @@ function MqulimaAIWorkspace() {
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
   }, [prompt]);
+
+  // Redirect to login if unauthorized
+  if (!user) {
+    return (
+      <AppLayout>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center bg-background px-4 text-center">
+          <Sparkles className="h-12 w-12 text-[#2D6A4F] animate-pulse mb-4" />
+          <h2 className="text-2xl font-bold text-foreground">Welcome to Mqulima AI</h2>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            Sign in to access your intelligent farming assistant, county diagnostics, and market records.
+          </p>
+          <Link
+            to="/auth/sign-in"
+            className="mt-6 rounded-full bg-[#2D6A4F] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#224f3b] shadow-md"
+          >
+            Sign In to Start
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
 
   // 9. Toggle Pin
   const handleTogglePin = async (e: React.MouseEvent, id: string) => {
