@@ -5,10 +5,10 @@ import { z } from "zod";
 export const getAdminDashboardData = createServerFn({ method: "GET" })
   .handler(async () => {
     // 0. Auth & Authorization Guard (dynamically imported to prevent leaking to client)
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // 1. Parallel KPI Queries using Promise.all
@@ -127,10 +127,10 @@ export const getAdminOrders = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { page = 1, limit = 50 } = data;
     // 0. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const offset = (page - 1) * limit;
@@ -141,10 +141,13 @@ export const getAdminOrders = createServerFn({ method: "GET" })
         p.full_name as customer,
         o.items,
         o.total,
+        o.subtotal,
         o.payment_status,
         o.status,
         o.checkout_channel as channel,
         o.created_at,
+        o.delivery_address,
+        o.notes,
         COALESCE(
           (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id),
           0
@@ -173,10 +176,14 @@ export const getAdminOrders = createServerFn({ method: "GET" })
         customer: o.customer,
         items: itemsCount,
         total: `KES ${parseFloat(o.total).toLocaleString()}`,
+        subtotal: `KES ${parseFloat(o.subtotal || "0").toLocaleString()}`,
         payment: o.payment_status,
         status: o.status,
         channel: o.channel,
         date: new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        deliveryAddress: o.delivery_address,
+        notes: o.notes,
+        rawItems: itemsList
       };
     });
 
@@ -191,10 +198,10 @@ export const getAdminOrders = createServerFn({ method: "GET" })
 export const getAdminServiceRequests = createServerFn({ method: "GET" })
   .handler(async () => {
     // 0. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
     const requests = await sql`
       SELECT 
@@ -237,10 +244,10 @@ export const getAdminServiceRequests = createServerFn({ method: "GET" })
 export const getAdminProducts = createServerFn({ method: "GET" })
   .handler(async () => {
     // 0. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
     const products = await sql`
       SELECT 
@@ -263,7 +270,8 @@ export const getAdminProducts = createServerFn({ method: "GET" })
         p.status,
         p.unit,
         p.shop_type as "shopType",
-        p.avg_rating as rating
+        p.avg_rating as rating,
+        p.is_featured as "isFeatured"
       FROM products p
       LEFT JOIN shop_categories sc ON p.category_id = sc.id
       LEFT JOIN product_categories pc ON p.category_id = pc.id
@@ -292,7 +300,8 @@ export const getAdminProducts = createServerFn({ method: "GET" })
       status: p.status,
       unit: p.unit || "/unit",
       shopType: p.shopType || "Agrovet",
-      rating: Number(p.rating !== undefined && p.rating !== null ? p.rating : 0)
+      rating: Number(p.rating !== undefined && p.rating !== null ? p.rating : 0),
+      isFeatured: !!p.isFeatured
     }));
   });
 
@@ -316,18 +325,19 @@ export const createAdminProduct = createServerFn({ method: "POST" })
     category: z.string().optional().default("Seeds & Seedlings"),
     subcategory: z.string().optional().default(""),
     rating: z.number().min(0).max(5).optional().default(0),
+    isFeatured: z.boolean().optional().default(false),
     csrfToken: z.string()
   }))
   .handler(async ({ data }) => {
     // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
+    const { validateCsrfToken } = await import("../csrf-verify-functions");
     validateCsrfToken(data.csrfToken);
 
     // 2. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Find category_id — use product_categories because products table has an FK to it
@@ -355,17 +365,17 @@ export const createAdminProduct = createServerFn({ method: "POST" })
       INSERT INTO products (
         name, slug, category_id, subcategory, description, brief_description, base_price, original_price,
         image_urls, stock_qty, brand, seller, county, organic, verified_seller,
-        badge, status, unit, shop_type, avg_rating, rating_count
+        badge, status, unit, shop_type, avg_rating, rating_count, is_featured
       ) VALUES (
         ${data.name}, ${slug}, ${categoryId}, ${data.subcategory}, ${data.description}, ${data.briefDescription}, ${data.price}, ${data.originalPrice || null},
         ${imageList}, ${data.stock}, ${data.brand}, 'Mqulima Partner', null, ${data.organic}, ${data.verifiedSeller},
-        ${data.badge}, 'active', ${data.unit}, ${data.shopType}, ${data.rating}, ${data.rating > 0 ? 1 : 0}
+        ${data.badge}, 'active', ${data.unit}, ${data.shopType}, ${data.rating}, ${data.rating > 0 ? 1 : 0}, ${data.isFeatured}
       )
       RETURNING id, name
     `;
 
     // Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "product.created",
@@ -398,18 +408,19 @@ export const updateAdminProduct = createServerFn({ method: "POST" })
     category: z.string().optional(),
     subcategory: z.string().optional(),
     rating: z.number().min(0).max(5).optional(),
+    isFeatured: z.boolean().optional(),
     csrfToken: z.string()
   }))
   .handler(async ({ data }) => {
     // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
+    const { validateCsrfToken } = await import("../csrf-verify-functions");
     validateCsrfToken(data.csrfToken);
 
     // 2. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Verify product exists
@@ -456,6 +467,7 @@ export const updateAdminProduct = createServerFn({ method: "POST" })
     if (data.unit !== undefined) updateObj.unit = data.unit;
     if (categoryId !== undefined) updateObj.category_id = categoryId;
     if (data.subcategory !== undefined) updateObj.subcategory = data.subcategory;
+    if (data.isFeatured !== undefined) updateObj.is_featured = data.isFeatured;
 
     await sql`
       UPDATE products
@@ -464,7 +476,7 @@ export const updateAdminProduct = createServerFn({ method: "POST" })
     `;
 
     // Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "product.updated",
@@ -484,14 +496,14 @@ export const deleteAdminProduct = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
+    const { validateCsrfToken } = await import("../csrf-verify-functions");
     validateCsrfToken(data.csrfToken);
 
     // 2. Auth & Authorization Guard
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Verify product exists
@@ -506,7 +518,7 @@ export const deleteAdminProduct = createServerFn({ method: "POST" })
     `;
 
     // Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "product.deleted",
@@ -530,17 +542,17 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     const { orderId, status, paymentStatus, csrfToken } = data;
 
     // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
+    const { validateCsrfToken } = await import("../csrf-verify-functions");
     validateCsrfToken(csrfToken);
 
     // 0. Auth & Authorization Guard (requires super_admin or admin role)
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
     if (!["super_admin", "admin"].includes(actor.role)) {
       throw new Error("Unauthorized: Only administrators can update order status");
     }
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // 1. Verify order exists before mutating
@@ -572,7 +584,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     }
 
     // 2. Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "order.status_updated",
@@ -598,17 +610,17 @@ export const updateServiceRequestStatus = createServerFn({ method: "POST" })
     const { requestId, status, csrfToken } = data;
 
     // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
+    const { validateCsrfToken } = await import("../csrf-verify-functions");
     validateCsrfToken(csrfToken);
 
     // 0. Auth & Authorization Guard (requires super_admin or admin role)
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
     if (!["super_admin", "admin"].includes(actor.role)) {
       throw new Error("Unauthorized: Only administrators can update service requests");
     }
 
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // 1. Verify service request exists before mutating
@@ -626,7 +638,7 @@ export const updateServiceRequestStatus = createServerFn({ method: "POST" })
     `;
 
     // 2. Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "service.status_updated",
@@ -645,16 +657,63 @@ export const getMainAppUrl = createServerFn({ method: "GET" })
 
 export const getAdminUsers = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     return sql`
       SELECT id, email, full_name, role, created_at, deleted_at
       FROM profiles
+      WHERE role NOT IN ('farmer', 'retailer')
       ORDER BY created_at DESC
     `;
+  });
+
+export const createAdminUser = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    email: z.string().email(),
+    fullName: z.string().min(1),
+    password: z.string().min(6),
+    role: z.enum(['super_admin', 'admin', 'sales_agent', 'content_editor'])
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+    const bcrypt = await import("bcryptjs");
+
+    const cleanEmail = data.email.trim().toLowerCase();
+
+    // Check conflict
+    const [existing] = await sql`SELECT 1 FROM profiles WHERE LOWER(email) = ${cleanEmail}`;
+    if (existing) {
+      throw new Error("An account with this email already exists.");
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    const id = crypto.randomUUID();
+    const baseUsername = 'mqulima_' + cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
+
+    await sql`
+      INSERT INTO profiles (
+        id, email, password_hash, full_name, username, role, created_at, updated_at
+      ) VALUES (
+        ${id}, ${cleanEmail}, ${passwordHash}, ${data.fullName.trim()}, ${baseUsername}, ${data.role}, NOW(), NOW()
+      )
+    `;
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "admin.create_user",
+      entityType: "profile",
+      entityId: id,
+      diff: { email: cleanEmail, role: data.role }
+    });
+
+    return { success: true };
   });
 
 export const updateUserRole = createServerFn({ method: "POST" })
@@ -663,9 +722,9 @@ export const updateUserRole = createServerFn({ method: "POST" })
     role: z.enum(['super_admin', 'admin', 'sales_agent', 'content_editor', 'farmer', 'retailer'])
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { userId, role } = data;
@@ -679,7 +738,7 @@ export const updateUserRole = createServerFn({ method: "POST" })
       WHERE id = ${userId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "user.role_updated",
@@ -696,12 +755,16 @@ export const deleteUser = createServerFn({ method: "POST" })
     userId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { userId } = data;
+
+    if (userId === actor.id) {
+      throw new Error("Self-deletion is prohibited: You cannot delete your own admin account.");
+    }
 
     await sql`
       UPDATE profiles
@@ -709,7 +772,7 @@ export const deleteUser = createServerFn({ method: "POST" })
       WHERE id = ${userId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "user.deleted",
@@ -723,16 +786,101 @@ export const deleteUser = createServerFn({ method: "POST" })
 
 export const getAdminContent = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     return sql`
-      SELECT id, title, slug, category, status, published_at, created_at
-      FROM blog_posts
-      ORDER BY created_at DESC
+      SELECT
+        bp.id,
+        bp.title,
+        bp.slug,
+        bp.category,
+        bp.status,
+        bp.view_count,
+        bp.excerpt,
+        bp.body,
+        bp.cover_image,
+        bp.published_at,
+        bp.created_at,
+        ba.id AS author_id,
+        p.full_name AS author_name
+      FROM blog_posts bp
+      JOIN blog_authors ba ON ba.id = bp.author_id
+      JOIN profiles p      ON p.id  = ba.profile_id
+      ORDER BY bp.created_at DESC
     `;
+  });
+
+export const getAdminBlogAuthors = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    return sql`
+      SELECT ba.id, p.full_name AS name, ba.bio
+      FROM blog_authors ba
+      JOIN profiles p ON p.id = ba.profile_id
+      WHERE ba.is_active = TRUE
+      ORDER BY p.full_name
+    `;
+  });
+
+export const createAdminBlogPost = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    title: z.string().min(5).max(300),
+    category: z.string().min(1),
+    excerpt: z.string().max(400).optional().default(""),
+    body: z.string().min(10),
+    coverImage: z.string().optional().default(""),
+    authorId: z.string().uuid(),
+    status: z.enum(["draft", "published"]).default("draft"),
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    // Generate slug from title
+    const baseSlug = data.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 80);
+    const slug = `${baseSlug}-${Date.now()}`;
+
+    const publishedAt = data.status === "published" ? sql`NOW()` : null;
+
+    const [created] = await sql`
+      INSERT INTO blog_posts (author_id, title, slug, cover_image, excerpt, body, category, status, published_at)
+      VALUES (
+        ${data.authorId},
+        ${data.title},
+        ${slug},
+        ${data.coverImage || null},
+        ${data.excerpt || null},
+        ${data.body},
+        ${data.category},
+        ${data.status},
+        ${publishedAt}
+      )
+      RETURNING id, title, slug, category, status, published_at, created_at
+    `;
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "blog.created",
+      entityType: "blog_post",
+      entityId: created.id as string,
+      diff: { title: data.title, status: data.status }
+    });
+
+    return { success: true, post: created };
   });
 
 export const toggleContentStatus = createServerFn({ method: "POST" })
@@ -740,9 +888,9 @@ export const toggleContentStatus = createServerFn({ method: "POST" })
     postId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { postId } = data;
@@ -758,7 +906,7 @@ export const toggleContentStatus = createServerFn({ method: "POST" })
       WHERE id = ${postId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "blog.status_updated",
@@ -775,9 +923,9 @@ export const deleteContent = createServerFn({ method: "POST" })
     postId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { postId } = data;
@@ -787,7 +935,7 @@ export const deleteContent = createServerFn({ method: "POST" })
       WHERE id = ${postId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "blog.deleted",
@@ -799,11 +947,64 @@ export const deleteContent = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+export const updateAdminBlogPost = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    postId: z.string().uuid(),
+    title: z.string().min(5).max(300),
+    category: z.string().min(1),
+    excerpt: z.string().max(400).optional().default(""),
+    body: z.string().min(10),
+    coverImage: z.string().optional().default(""),
+    authorId: z.string().uuid(),
+    status: z.enum(["draft", "published"]).default("draft"),
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const { postId, title, category, excerpt, body, coverImage, authorId, status } = data;
+
+    const [existing] = await sql`SELECT id, status, published_at FROM blog_posts WHERE id = ${postId}`;
+    if (!existing) throw new Error("Blog post not found");
+
+    // Only set published_at when transitioning to published for first time
+    const wasDraft = (existing.status as string) !== "published";
+    const nowPublished = status === "published";
+
+    await sql`
+      UPDATE blog_posts
+      SET
+        title        = ${title},
+        category     = ${category},
+        excerpt      = ${excerpt || null},
+        body         = ${body},
+        cover_image  = ${coverImage || null},
+        author_id    = ${authorId},
+        status       = ${status},
+        published_at = ${nowPublished && wasDraft ? sql`NOW()` : nowPublished ? sql`published_at` : sql`NULL`},
+        updated_at   = NOW()
+      WHERE id = ${postId}
+    `;
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "blog.updated",
+      entityType: "blog_post",
+      entityId: postId,
+      diff: { title, status }
+    });
+
+    return { success: true };
+  });
+
 export const getAdminForum = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     return sql`
@@ -819,9 +1020,9 @@ export const deleteForumPost = createServerFn({ method: "POST" })
     postId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { postId } = data;
@@ -831,7 +1032,7 @@ export const deleteForumPost = createServerFn({ method: "POST" })
       WHERE id = ${postId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "forum.post_deleted",
@@ -845,9 +1046,9 @@ export const deleteForumPost = createServerFn({ method: "POST" })
 
 export const getAdminAcademy = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     return sql`
@@ -877,9 +1078,9 @@ export const deleteAcademyCourse = createServerFn({ method: "POST" })
     courseId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { courseId } = data;
@@ -889,7 +1090,7 @@ export const deleteAcademyCourse = createServerFn({ method: "POST" })
       WHERE id = ${courseId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "academy.course_deleted",
@@ -916,9 +1117,9 @@ export const createAcademyCourse = createServerFn({ method: "POST" })
     has_certificate: z.boolean().default(false),
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Auto-generate slug from title
@@ -956,7 +1157,7 @@ export const createAcademyCourse = createServerFn({ method: "POST" })
       RETURNING id
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "academy.course_created",
@@ -984,9 +1185,9 @@ export const updateAcademyCourse = createServerFn({ method: "POST" })
     has_certificate: z.boolean().default(false),
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const { courseId, ...fields } = data;
@@ -1009,7 +1210,7 @@ export const updateAcademyCourse = createServerFn({ method: "POST" })
       WHERE id = ${courseId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "academy.course_updated",
@@ -1023,9 +1224,9 @@ export const updateAcademyCourse = createServerFn({ method: "POST" })
 
 export const getAdminAuditLogs = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     return sql`
@@ -1039,9 +1240,9 @@ export const getAdminAuditLogs = createServerFn({ method: "GET" })
 
 export const getAdminCommodities = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Pull all commodities and their price board entries
@@ -1094,9 +1295,9 @@ export const createAdminCommodity = createServerFn({ method: "POST" })
     source: z.string().optional(),
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     // Insert commodity
@@ -1114,7 +1315,7 @@ export const createAdminCommodity = createServerFn({ method: "POST" })
       `;
     }
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "commodity.created",
@@ -1134,9 +1335,9 @@ export const addCommodityPrice = createServerFn({ method: "POST" })
     source: z.string().optional(),
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const [priceEntry] = await sql`
@@ -1145,7 +1346,7 @@ export const addCommodityPrice = createServerFn({ method: "POST" })
       RETURNING id, commodity_id, region, price, source
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "commodity.price_added",
@@ -1162,9 +1363,9 @@ export const deleteCommodityPrice = createServerFn({ method: "POST" })
     priceId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const [existing] = await sql`
@@ -1177,7 +1378,7 @@ export const deleteCommodityPrice = createServerFn({ method: "POST" })
       WHERE id = ${data.priceId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "commodity.price_deleted",
@@ -1194,9 +1395,9 @@ export const deleteAdminCommodity = createServerFn({ method: "POST" })
     commodityId: z.string().uuid()
   }))
   .handler(async ({ data }) => {
-    const { verifyAdminSession } = await import("../auth-admin-helper.server");
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
-    const { getDb } = await import("../db.server");
+    const { getDb } = await import("../db-functions");
     const sql = getDb();
 
     const [existing] = await sql`
@@ -1209,13 +1410,377 @@ export const deleteAdminCommodity = createServerFn({ method: "POST" })
       WHERE id = ${data.commodityId}
     `;
 
-    const { writeAuditLog } = await import("../audit.server");
+    const { writeAuditLog } = await import("../audit-functions");
     await writeAuditLog({
       actorId: actor.id,
       action: "commodity.deleted",
       entityType: "commodity",
       entityId: data.commodityId,
       diff: { name: existing.name }
+    });
+
+    return { success: true };
+  });
+
+// Customer Management Server Functions
+export const getAdminCustomers = createServerFn({ method: "GET" })
+  .inputValidator(z.object({
+    page: z.number().int().positive().optional().default(1),
+    limit: z.number().int().positive().optional().default(50),
+    search: z.string().optional().default(""),
+    county: z.string().optional().default("All"),
+    farmingType: z.string().optional().default("All"),
+    status: z.string().optional().default("All"),
+    role: z.string().optional().default("All"),
+    sortBy: z.string().optional().default("created_at"),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const { page, limit, search, county, farmingType, status, role, sortBy, sortOrder } = data;
+    const offset = (page - 1) * limit;
+
+    const allowedSortFields = ["full_name", "created_at", "total_orders", "total_spent"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "created_at";
+    const sortDir = sortOrder === "asc" ? "ASC" : "DESC";
+    const sortColumn = sortField === "full_name" ? "p.full_name" :
+                       sortField === "total_orders" ? "COALESCE(count_orders.total_orders, 0)" :
+                       sortField === "total_spent" ? "COALESCE(count_orders.total_spent, 0)" : "p.created_at";
+
+    // Build the dynamic count query
+    const [countRes] = await sql.unsafe(`
+      SELECT COUNT(*) as count
+      FROM profiles p
+      WHERE p.deleted_at IS NULL
+        AND ($1 = '' OR LOWER(p.full_name) LIKE $2 OR LOWER(p.email) LIKE $2 OR p.phone LIKE $2 OR p.id_number LIKE $2)
+        AND ($3 = 'All' OR p.county_region = $3)
+        AND ($4 = 'All' OR p.nature_of_agriculture = $4)
+        AND ($5 = 'All' OR p.status = $5)
+        AND p.role::text IN ('farmer', 'retailer')
+        AND ($6 = 'All' OR p.role::text = $6)
+    `, [
+      search.trim(),
+      `%${search.trim().toLowerCase()}%`,
+      county,
+      farmingType,
+      status,
+      role === 'All' ? 'All' : role || ''
+    ]);
+    const total = parseInt(countRes?.count || "0");
+
+    // Fetch details
+    const customers = await sql.unsafe(`
+      SELECT 
+        p.id,
+        p.full_name,
+        p.email,
+        p.phone,
+        p.whatsapp_number,
+        p.id_number,
+        p.county_region,
+        p.delivery_address,
+        p.nature_of_agriculture,
+        p.role,
+        p.status,
+        p.created_at,
+        p.last_login_at,
+        COALESCE(count_orders.total_orders, 0) as total_orders,
+        COALESCE(count_orders.total_spent, 0) as total_spent
+      FROM profiles p
+      LEFT JOIN LATERAL (
+        SELECT 
+          COUNT(o.id) as total_orders,
+          SUM(o.total) as total_spent
+        FROM orders o
+        WHERE o.user_id = p.id AND o.deleted_at IS NULL
+      ) count_orders ON TRUE
+      WHERE p.deleted_at IS NULL
+        AND ($1 = '' OR LOWER(p.full_name) LIKE $2 OR LOWER(p.email) LIKE $2 OR p.phone LIKE $2 OR p.id_number LIKE $2)
+        AND ($3 = 'All' OR p.county_region = $3)
+        AND ($4 = 'All' OR p.nature_of_agriculture = $4)
+        AND ($5 = 'All' OR p.status = $5)
+        AND p.role::text IN ('farmer', 'retailer')
+        AND ($6 = 'All' OR p.role::text = $6)
+      ORDER BY ${sortColumn} ${sortDir}
+      LIMIT $7 OFFSET $8
+    `, [
+      search.trim(),
+      `%${search.trim().toLowerCase()}%`,
+      county,
+      farmingType,
+      status,
+      role === 'All' ? 'All' : role || '',
+      limit,
+      offset
+    ]);
+
+    return {
+      customers: customers.map(c => ({
+        id: c.id,
+        full_name: c.full_name,
+        email: c.email,
+        phone: c.phone,
+        id_number: c.id_number,
+        county_region: c.county_region,
+        delivery_address: c.delivery_address,
+        nature_of_agriculture: c.nature_of_agriculture,
+        role: c.role,
+        status: c.status,
+        total_orders: parseInt(c.total_orders || "0"),
+        total_spent: parseFloat(c.total_spent || "0"),
+        created_at: c.created_at ? new Date(c.created_at).toISOString() : null,
+        last_login_at: c.last_login_at ? new Date(c.last_login_at).toISOString() : null,
+        whatsapp_number: c.whatsapp_number || c.phone || "",
+      })),
+      total,
+      page,
+      limit
+    };
+  });
+
+export const getAdminCustomerDetails = createServerFn({ method: "GET" })
+  .inputValidator(z.object({
+    customerId: z.string().uuid()
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    // 1. Fetch customer details
+    const [customer] = await sql`
+      SELECT 
+        p.id,
+        p.full_name,
+        p.email,
+        p.phone,
+        p.whatsapp_number,
+        p.id_number,
+        p.county_region,
+        p.delivery_address,
+        p.nature_of_agriculture,
+        p.role,
+        p.status,
+        p.avatar_url,
+        p.created_at,
+        p.last_login_at
+      FROM profiles p
+      WHERE p.id = ${data.customerId} AND p.deleted_at IS NULL
+    `;
+    if (!customer) throw new Error("Customer not found");
+
+    // 2. Fetch order count details
+    const [orderStats] = await sql`
+      SELECT 
+        COUNT(id) as total_orders,
+        COUNT(CASE WHEN status = 'delivered' THEN 1 END) as completed_orders,
+        COUNT(CASE WHEN status NOT IN ('delivered', 'cancelled') THEN 1 END) as current_orders,
+        COALESCE(SUM(total), 0) as total_spent
+      FROM orders
+      WHERE user_id = ${data.customerId} AND deleted_at IS NULL
+    `;
+
+    // 3. Fetch recent orders
+    const recentOrders = await sql`
+      SELECT id, total, status, created_at
+      FROM orders
+      WHERE user_id = ${data.customerId} AND deleted_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT 10
+    `;
+
+    // 4. Fetch favorite products (based on ordered quantity)
+    const favoriteProducts = await sql`
+      SELECT 
+        oi.product_name as name,
+        SUM(oi.quantity) as count
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.user_id = ${data.customerId} AND o.deleted_at IS NULL
+      GROUP BY oi.product_name, oi.product_id
+      ORDER BY count DESC
+      LIMIT 5
+    `;
+
+    return {
+      customer: {
+        ...customer,
+        whatsapp_number: customer.whatsapp_number || customer.phone || "",
+        created_at: customer.created_at ? new Date(customer.created_at).toISOString() : null,
+        last_login_at: customer.last_login_at ? new Date(customer.last_login_at).toISOString() : null,
+      },
+      stats: {
+        totalOrders: parseInt(orderStats?.total_orders || "0"),
+        completedOrders: parseInt(orderStats?.completed_orders || "0"),
+        currentOrders: parseInt(orderStats?.current_orders || "0"),
+        totalSpent: parseFloat(orderStats?.total_spent || "0"),
+      },
+      recentOrders: recentOrders.map(o => ({
+        id: String(o.id).substring(0, 8).toUpperCase(),
+        rawId: o.id,
+        total: parseFloat(o.total),
+        status: o.status,
+        date: new Date(o.created_at).toLocaleDateString(),
+      })),
+      favoriteProducts: favoriteProducts.map(fp => ({
+        name: fp.name,
+        count: parseInt(fp.count || "0")
+      }))
+    };
+  });
+
+export const updateAdminCustomerStatus = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    customerId: z.string().uuid(),
+    status: z.enum(["active", "suspended", "pending"]),
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const [existing] = await sql`SELECT status, full_name FROM profiles WHERE id = ${data.customerId}`;
+    if (!existing) throw new Error("Customer not found");
+
+    await sql`
+      UPDATE profiles
+      SET status = ${data.status}, updated_at = NOW()
+      WHERE id = ${data.customerId}
+    `;
+
+    // Log to audits
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "customer.status_updated",
+      entityType: "profile",
+      entityId: data.customerId,
+      diff: { from: existing.status, to: data.status, customer: existing.full_name }
+    });
+
+    return { success: true };
+  });
+
+export const updateAdminCustomerDetails = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    customerId: z.string().uuid(),
+    fullName: z.string().min(1),
+    phone: z.string().min(1),
+    whatsappNumber: z.string().optional(),
+    email: z.string().email(),
+    idNumber: z.string().min(1),
+    countyRegion: z.string().min(1),
+    deliveryAddress: z.string().min(1),
+    natureOfAgriculture: z.string().min(1),
+    status: z.enum(["active", "suspended", "pending"]),
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const [existing] = await sql`SELECT id FROM profiles WHERE id = ${data.customerId}`;
+    if (!existing) throw new Error("Customer not found");
+
+    // Perform transaction to keep profiles and users in sync
+    await sql.begin(async (sql) => {
+      // 1. Update profiles table
+      await sql`
+        UPDATE profiles
+        SET 
+          full_name = ${data.fullName},
+          phone = ${data.phone},
+          whatsapp_number = ${data.whatsappNumber || null},
+          email = ${data.email},
+          id_number = ${data.idNumber},
+          county_region = ${data.countyRegion},
+          delivery_address = ${data.deliveryAddress},
+          nature_of_agriculture = ${data.natureOfAgriculture},
+          status = ${data.status},
+          updated_at = NOW()
+        WHERE id = ${data.customerId}
+      `;
+
+      // 2. Check if user exists in users table and update it too
+      const [u] = await sql`SELECT id FROM users WHERE id = ${data.customerId}`;
+      if (u) {
+        // Split full name back to first/last name
+        const names = data.fullName.trim().split(/\s+/);
+        const firstName = names[0] || "";
+        const lastName = names.slice(1).join(" ") || "";
+
+        await sql`
+          UPDATE users
+          SET 
+            first_name = ${firstName},
+            last_name = ${lastName},
+            phone_number = ${data.phone},
+            email = ${data.email},
+            national_id = ${data.idNumber},
+            county = ${data.countyRegion},
+            delivery_location = ${data.deliveryAddress},
+            farming_type = ${data.natureOfAgriculture}
+          WHERE id = ${data.customerId}
+        `;
+      }
+    });
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "customer.details_updated",
+      entityType: "profile",
+      entityId: data.customerId,
+      diff: { name: data.fullName }
+    });
+
+    return { success: true };
+  });
+
+export const deleteAdminCustomer = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    customerId: z.string().uuid()
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    if (data.customerId === actor.id) {
+      throw new Error("Self-deletion is prohibited: You cannot delete your own admin account.");
+    }
+
+    const [existing] = await sql`SELECT full_name FROM profiles WHERE id = ${data.customerId}`;
+    if (!existing) throw new Error("Customer not found");
+
+    await sql.begin(async (sql) => {
+      await sql`
+        UPDATE profiles
+        SET deleted_at = NOW()
+        WHERE id = ${data.customerId}
+      `;
+      await sql`
+        UPDATE users
+        SET password_hash = 'DELETED_' || gen_random_uuid()::text
+        WHERE id = ${data.customerId}
+      `;
+    });
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "customer.deleted",
+      entityType: "profile",
+      entityId: data.customerId,
+      diff: { customer: existing.full_name }
     });
 
     return { success: true };
@@ -1235,3 +1800,86 @@ function formatRelativeTime(date: Date): string {
   
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+// Server function: Get contact inquiries
+export const getAdminInquiries = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    await verifyAdminSession();
+
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const inquiries = await sql`
+      SELECT id, name, email, message, created_at
+      FROM contact_submissions
+      ORDER BY created_at DESC
+    `;
+
+    return inquiries.map(inq => {
+      const msg = inq.message || "";
+      let subject = "No Subject";
+      let userType = "Farmer";
+      let phone = "N/A";
+      let cleanMessage = msg;
+
+      const subjectMatch = msg.match(/^Subject:\s*(.*)$/m);
+      const userTypeMatch = msg.match(/^User Type:\s*(.*)$/m);
+      const phoneMatch = msg.match(/^Phone:\s*(.*)$/m);
+      const messageBodyMatch = msg.split(/\n\nMessage:\n/);
+
+      if (subjectMatch) subject = subjectMatch[1].trim();
+      if (userTypeMatch) userType = userTypeMatch[1].trim();
+      if (phoneMatch) phone = phoneMatch[1].trim();
+      if (messageBodyMatch.length > 1) {
+        cleanMessage = messageBodyMatch.slice(1).join("\n\n").trim();
+      }
+
+      return {
+        id: inq.id,
+        name: inq.name,
+        email: inq.email,
+        phone,
+        userType,
+        subject,
+        message: cleanMessage,
+        rawMessage: msg,
+        createdAt: inq.created_at,
+        time: formatRelativeTime(new Date(inq.created_at)),
+        date: new Date(inq.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      };
+    });
+  });
+
+// Server function: Delete contact inquiry
+export const deleteAdminInquiry = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    id: z.string()
+  }))
+  .handler(async ({ data }) => {
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    const actor = await verifyAdminSession();
+
+    const { getDb } = await import("../db-functions");
+    const sql = getDb();
+
+    const [existing] = await sql`SELECT id, name FROM contact_submissions WHERE id = ${data.id}`;
+    if (!existing) throw new Error("Inquiry not found");
+
+    await sql`
+      DELETE FROM contact_submissions
+      WHERE id = ${data.id}
+    `;
+
+    const { writeAuditLog } = await import("../audit-functions");
+    await writeAuditLog({
+      actorId: actor.id,
+      action: "inquiry.deleted",
+      entityType: "contact_submission",
+      entityId: data.id,
+      diff: { name: existing.name }
+    });
+
+    return { success: true };
+  });
+
