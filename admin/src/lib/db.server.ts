@@ -13,10 +13,12 @@ export function getDb() {
           "DATABASE_URL=postgresql://mqulima:password@localhost:5433/mqulima_dev"
       );
     }
+    const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
     sql = postgres(connectionString, {
       max: 10,
       idle_timeout: 20,
       connect_timeout: 10,
+      ssl: isLocal ? false : "require",
     });
   }
   return sql;
