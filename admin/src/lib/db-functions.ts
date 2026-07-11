@@ -24,4 +24,14 @@ export function getDb() {
   return sql;
 }
 
+export function getDbDebugInfo() {
+  const connectionString = process.env.DATABASE_URL || "";
+  const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
+  return {
+    hasConnectionString: !!connectionString,
+    isLocal,
+    maskedUrl: connectionString.replace(/:[^:@]+@/, ":****@")
+  };
+}
+
 export type Sql = ReturnType<typeof postgres>;
