@@ -3,7 +3,7 @@ import { setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import * as jose from "jose";
-import { getDb, getDbDebugInfo } from "./db-functions";
+import { getDb } from "./db-functions";
 import { verifyAdminSession } from "./auth-admin-helper-functions";
 
 const COOKIE_NAME = "mq_session";
@@ -82,10 +82,9 @@ export const loginAdmin = createServerFn({ method: "POST" })
       };
     } catch (error: any) {
       console.error("[SERVER] loginAdmin error:", error);
-      const dbInfo = getDbDebugInfo();
       return {
         success: false,
-        error: `${error.message || "An unexpected server-side error occurred"} (DB Info: url=${dbInfo.maskedUrl}, isLocal=${dbInfo.isLocal})`
+        error: error.message || "An unexpected server-side error occurred"
       };
     }
   });
