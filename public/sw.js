@@ -1,4 +1,4 @@
-const CACHE_NAME = "mqulima-cache-v1";
+const CACHE_NAME = "mqulima-cache-v2";
 const ASSETS_TO_CACHE = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 // Install Event
