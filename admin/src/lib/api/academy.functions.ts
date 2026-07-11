@@ -28,7 +28,6 @@ export const getAcademyCourses = createServerFn({ method: "POST" })
         c.title,
         c.description,
         c.cover_image_url,
-        c.image_url,
         c.intro_video_url,
         c.intro_video_type,
         c.category,
@@ -41,7 +40,6 @@ export const getAcademyCourses = createServerFn({ method: "POST" })
         c.instructor_title,
         c.rating,
         c.student_count,
-        c.duration,
         c.has_certificate,
         c.youtube_id,
         c.created_at,
@@ -91,13 +89,13 @@ export const createAcademyCourseV2 = createServerFn({ method: "POST" })
 
     const [course] = await sql`
       INSERT INTO courses (
-        title, slug, description, cover_image_url, image_url, intro_video_url, intro_video_type,
+        title, slug, description, cover_image_url, intro_video_url, intro_video_type,
         category, level, price, duration_minutes, is_published,
         instructor_name, instructor_title, has_certificate, youtube_id,
         rating, student_count, sort_order
       ) VALUES (
         ${data.title}, ${slug}, ${data.description},
-        ${data.cover_image_url || null}, ${data.cover_image_url || null}, ${data.intro_video_url || null},
+        ${data.cover_image_url || null}, ${data.intro_video_url || null},
         ${data.intro_video_type || null}, ${data.category}, ${data.level},
         ${data.price}, ${data.duration_minutes}, ${data.is_published},
         ${data.instructor_name}, ${data.instructor_title},
@@ -131,7 +129,6 @@ export const updateAcademyCourseV2 = createServerFn({ method: "POST" })
         title            = COALESCE(${fields.title ?? null}, title),
         description      = COALESCE(${fields.description ?? null}, description),
         cover_image_url  = COALESCE(${fields.cover_image_url ?? null}, cover_image_url),
-        image_url        = COALESCE(${fields.cover_image_url ?? null}, image_url),
         intro_video_url  = COALESCE(${fields.intro_video_url ?? null}, intro_video_url),
         intro_video_type = COALESCE(${fields.intro_video_type ?? null}, intro_video_type),
         category         = COALESCE(${fields.category ?? null}, category),

@@ -1059,16 +1059,18 @@ export const getAdminAcademy = createServerFn({ method: "GET" })
         c.category,
         c.level,
         c.price,
-        c.image_url,
+        c.cover_image_url,
         c.instructor_name,
         c.instructor_title,
         c.rating,
         c.student_count,
-        c.duration,
+        c.duration_minutes,
         c.has_certificate,
         c.youtube_id,
+        c.is_published,
         c.created_at
       FROM courses c
+      WHERE c.deleted_at IS NULL
       ORDER BY c.created_at DESC
     `;
   });
@@ -1136,8 +1138,8 @@ export const createAcademyCourse = createServerFn({ method: "POST" })
     const [course] = await sql`
       INSERT INTO courses (
         title, slug, description, category, level, price,
-        instructor_name, instructor_title, image_url, youtube_id,
-        duration, has_certificate, rating, student_count
+        instructor_name, instructor_title, cover_image_url, youtube_id,
+        duration_minutes, has_certificate, rating, student_count
       ) VALUES (
         ${data.title},
         ${slug},
@@ -1149,7 +1151,7 @@ export const createAcademyCourse = createServerFn({ method: "POST" })
         ${data.instructor_title || ""},
         ${data.image_url || null},
         ${data.youtube_id || null},
-        ${data.duration || null},
+        0,
         ${data.has_certificate},
         4.5,
         0
@@ -1202,9 +1204,8 @@ export const updateAcademyCourse = createServerFn({ method: "POST" })
         price            = ${fields.price},
         instructor_name  = ${fields.instructor_name},
         instructor_title = ${fields.instructor_title || ""},
-        image_url        = ${fields.image_url || null},
+        cover_image_url  = ${fields.image_url || null},
         youtube_id       = ${fields.youtube_id || null},
-        duration         = ${fields.duration || null},
         has_certificate  = ${fields.has_certificate},
         updated_at       = NOW()
       WHERE id = ${courseId}
