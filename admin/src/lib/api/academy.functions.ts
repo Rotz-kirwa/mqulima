@@ -43,6 +43,7 @@ export const getAcademyCourses = createServerFn({ method: "POST" })
         c.has_certificate,
         c.youtube_id,
         c.created_at,
+        c.content,
         COUNT(DISTINCT cc.id)::int   AS chapter_count,
         COUNT(DISTINCT cl.id)::int   AS lesson_count
       FROM courses c
@@ -69,6 +70,7 @@ const CourseSchema = z.object({
   instructor_title: z.string().default(""),
   has_certificate:  z.boolean().default(false),
   youtube_id:       z.string().default(""),
+  content:          z.string().default(""),
 });
 
 function extractYouTubeId(url: string): string | null {
@@ -92,7 +94,7 @@ export const createAcademyCourseV2 = createServerFn({ method: "POST" })
         title, slug, description, cover_image_url, intro_video_url, intro_video_type,
         category, level, price, duration_minutes, is_published,
         instructor_name, instructor_title, has_certificate, youtube_id,
-        rating, student_count, sort_order
+        rating, student_count, sort_order, content
       ) VALUES (
         ${data.title}, ${slug}, ${data.description},
         ${data.cover_image_url || null}, ${data.intro_video_url || null},
@@ -101,7 +103,8 @@ export const createAcademyCourseV2 = createServerFn({ method: "POST" })
         ${data.instructor_name}, ${data.instructor_title},
         ${data.has_certificate}, ${derivedYtId || data.youtube_id || null},
         4.5, 0,
-        (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM courses WHERE deleted_at IS NULL)
+        (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM courses WHERE deleted_at IS NULL),
+        ${data.content}
       )
       RETURNING *
     `;
@@ -140,6 +143,7 @@ export const updateAcademyCourseV2 = createServerFn({ method: "POST" })
         instructor_title = COALESCE(${fields.instructor_title ?? null}, instructor_title),
         has_certificate  = COALESCE(${fields.has_certificate ?? null}, has_certificate),
         youtube_id       = COALESCE(${derivedYtId !== undefined ? derivedYtId : (fields.youtube_id ?? null)}, youtube_id),
+        content          = COALESCE(${fields.content ?? null}, content),
         updated_at       = NOW()
       WHERE id = ${courseId} AND deleted_at IS NULL
     `;

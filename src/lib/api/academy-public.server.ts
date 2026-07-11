@@ -44,7 +44,7 @@ export const getCourseDetail = createServerFn({ method: "POST" })
         id, title, description, cover_image_url, intro_video_url, intro_video_type,
         level, price::float as price, duration_minutes, category, is_published,
         instructor_name, instructor_title, rating::float as rating, 
-        student_count, has_certificate, youtube_id
+        student_count, has_certificate, youtube_id, content
       FROM courses
       WHERE id = ${courseId} AND is_published = true AND deleted_at IS NULL
     `;
@@ -232,4 +232,40 @@ export const toggleLessonCompletion = createServerFn({ method: "POST" })
     `;
 
     return { success: true, progress_pct, completedLessons, totalLessons };
+  });
+
+export const toggleCourseCompletion = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    courseId: z.string().uuid(),
+    completed: z.boolean()
+  }))
+  .handler(async ({ data }) => {
+    const { getCurrentUser } = await import("../auth-server");
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const sql = await db();
+
+    // 1. Verify user is enrolled
+    const [enrollment] = await sql`
+      SELECT id FROM course_enrollments
+      WHERE course_id = ${data.courseId} AND user_id = ${user.id}
+    `;
+    if (!enrollment) {
+      throw new Error("User not enrolled in this course");
+    }
+
+    const progress_pct = data.completed ? 100 : 0;
+    const completed_at = data.completed ? new Date() : null;
+
+    // Update course_enrollments
+    await sql`
+      UPDATE course_enrollments
+      SET progress_pct = ${progress_pct}, completed_at = ${completed_at}
+      WHERE course_id = ${data.courseId} AND user_id = ${user.id}
+    `;
+
+    return { success: true, progress_pct };
   });

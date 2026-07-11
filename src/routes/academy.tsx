@@ -7,7 +7,7 @@ import {
   getCourseDetail, 
   getAcademyStats,
   enrollInCourse,
-  toggleLessonCompletion
+  toggleCourseCompletion
 } from "@/lib/api/academy-public.server";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -454,6 +454,17 @@ function AcademyPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const resources = useMemo(() => {
+    const list: { name: string; url: string }[] = [];
+    if (!modalCourse?.content) return list;
+    const regex = /\[Download Resource:\s*(.*?)\]\((.*?)\)/g;
+    let match;
+    while ((match = regex.exec(modalCourse.content)) !== null) {
+      list.push({ name: match[1], url: match[2] });
+    }
+    return list;
+  }, [modalCourse?.content]);
+
   const refreshCourseDetails = async (courseId: string) => {
     try {
       const data = await getCourseDetail({ data: courseId }) as any;
@@ -499,30 +510,12 @@ function AcademyPage() {
     async function loadDetails() {
       try {
         setModalLoading(true);
-        const data = await refreshCourseDetails(selectedCourseId as string);
+                const data = await refreshCourseDetails(selectedCourseId as string);
         if (data) {
-          // Default to showing course intro video if available, else first lesson
-          const firstChapter = data.chapters?.[0];
-          const firstLesson = firstChapter?.lessons?.[0];
-          if (firstLesson) {
-            setCurrentLesson(firstLesson);
-          } else {
-            setCurrentLesson(null);
-          }
-
           if (data.intro_video_url || data.youtube_id) {
             setViewMode("intro");
-          } else if (firstLesson) {
-            const isLocked = !data.is_enrolled && !firstLesson.is_free_preview;
-            setViewMode(isLocked ? "locked" : (firstLesson.content_type === "video" ? "video" : "text"));
           } else {
-            setViewMode("intro");
-          }
-          // Expand first chapter by default
-          if (data.chapters && data.chapters.length > 0) {
-            setExpandedChapters({ [(data.chapters[0] as any).id]: true });
-          } else {
-            setExpandedChapters({});
+            setViewMode("content");
           }
           setDescriptionExpanded(false);
         }
@@ -562,7 +555,7 @@ function AcademyPage() {
 
   const handleDownloadFieldGuide = () => {
     if (!modalCourse) return;
-    toast.success("Generating colorful field guide & syllabus...");
+    toast.success("Generating colorful field guide...");
 
     // Create a new PDF document, Portrait orientation
     const doc = new jsPDF({
@@ -637,7 +630,7 @@ function AcademyPage() {
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      doc.text("MQULIMA ACADEMY  |  OFFICIAL COURSE SYLLABUS & FIELD GUIDE", 50, 24);
+      doc.text("MQULIMA ACADEMY  |  OFFICIAL COURSE FIELD GUIDE", 50, 24);
 
       // Divider line at top
       doc.setDrawColor(230, 230, 230);
@@ -692,137 +685,53 @@ function AcademyPage() {
     doc.text(`${modalCourse.instructor_name || "Samuel Kiprono"} — ${modalCourse.instructor_title || "Lead Horticulturist & Agronomy Extension Officer"}`, 65, y + 28);
     y += 65;
 
-    // Detailed Syllabus Header
+    // Content Section
     checkSpace(30);
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(45, 106, 79);
-    doc.text("DETAILED COURSE SYLLABUS & LESSON NOTES", 50, y);
+    doc.text("COURSE MATERIAL & STUDY GUIDE", 50, y);
     y += 6;
     doc.line(50, y, 220, y);
     y += 20;
 
-    // Iterate Chapters
-    const chapters = modalCourse.chapters || [];
-    if (chapters.length === 0) {
-      doc.setFont("Helvetica", "italic");
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text("No chapters or lessons listed in this syllabus.", 50, y);
-    } else {
-      chapters.forEach((ch: any, chIdx: number) => {
-        // Draw Chapter Card/Section Header
-        checkSpace(60);
-        doc.setFillColor(232, 245, 233); // Light green background
-        doc.rect(50, y, 495, 30, "F");
-        doc.setDrawColor(45, 106, 79);
-        doc.setLineWidth(1.5);
-        doc.line(50, y, 50, y + 30); // Draw left green accent line
-        
-        doc.setFont("Helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(9, 31, 20);
-        doc.text(`CHAPTER ${chIdx + 1}: ${ch.title.toUpperCase()}`, 60, y + 18);
-        y += 38;
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85); // Slate
+    const contentText = modalCourse.content || "No course materials are provided for this course yet.";
+    const wrappedContent = doc.splitTextToSize(contentText, 495);
+    wrappedContent.forEach((line: string) => {
+      checkSpace(12);
+      doc.text(line, 50, y);
+      y += 11;
+    });
 
-        // Draw Chapter Description if exists
-        if (ch.description) {
-          checkSpace(30);
-          doc.setFont("Helvetica", "italic");
-          doc.setFontSize(9);
-          doc.setTextColor(100, 100, 100);
-          const wrappedChDesc = doc.splitTextToSize(ch.description, 480);
-          doc.text(wrappedChDesc, 60, y);
-          y += wrappedChDesc.length * 12 + 10;
-        }
-
-        // Draw Lessons
-        const lessons = ch.lessons || [];
-        if (lessons.length === 0) {
-          checkSpace(20);
-          doc.setFont("Helvetica", "italic");
-          doc.setFontSize(9);
-          doc.setTextColor(150, 150, 150);
-          doc.text("No lessons listed under this chapter.", 60, y);
-          y += 15;
-        } else {
-          lessons.forEach((les: any, lesIdx: number) => {
-            checkSpace(35);
-            // Lesson prefix bullet / type
-            const isText = les.content_type === "text";
-            const prefix = isText ? "[READING]" : "[VIDEO]";
-            
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(9.5);
-            doc.setTextColor(45, 106, 79);
-            doc.text(`${prefix}`, 60, y);
-
-            doc.setFont("Helvetica", "bold");
-            doc.setTextColor(17, 24, 39);
-            const lesTitleText = `${chIdx + 1}.${lesIdx + 1} — ${les.title}`;
-            doc.text(lesTitleText, 120, y);
-
-            if (les.video_duration_seconds) {
-              const durMins = Math.floor(les.video_duration_seconds / 60);
-              doc.setFont("Helvetica", "normal");
-              doc.setFontSize(8.5);
-              doc.setTextColor(120, 120, 120);
-              doc.text(`(${durMins} mins video)`, 545, y, { align: "right" });
-            }
-            y += 14;
-
-            // Draw Lesson Notes/Content if present
-            const content = les.text_content;
-            if (content) {
-              checkSpace(40);
-              doc.setFont("Helvetica", "normal");
-              doc.setFontSize(8.5);
-              doc.setTextColor(75, 85, 99); // Medium slate
-              
-              const wrappedNotes = doc.splitTextToSize(content, 465);
-              wrappedNotes.forEach((line: string) => {
-                checkSpace(12);
-                doc.text(line, 80, y);
-                y += 11;
-              });
-              y += 8;
-            }
-            
-            y += 6; // Spacing after lesson
-          });
-        }
-        y += 12; // Spacing after chapter
-      });
-    }
-
-    const filename = `${modalCourse.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}_syllabus.pdf`;
+    const filename = `${modalCourse.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}_field_guide.pdf`;
     doc.save(filename);
   };
 
-  const handleToggleCompletion = async (e: React.MouseEvent, lessonId: string) => {
+  const handleToggleCourseCompletion = async (e: React.MouseEvent, completed: boolean) => {
     e.stopPropagation();
     if (!modalCourse) return;
 
-    const isCompleted = modalCourse.completed_lessons?.includes(lessonId);
     try {
-      const res = await toggleLessonCompletion({
+      const res = await toggleCourseCompletion({
         data: {
           courseId: modalCourse.id,
-          lessonId,
-          completed: !isCompleted,
+          completed,
         }
       });
       if (res && res.success) {
         await refreshCourseDetails(modalCourse.id);
         toast.success(
-          !isCompleted 
-            ? "Lesson marked as completed!" 
-            : "Lesson marked as incomplete."
+          completed 
+            ? "Course marked as completed! 🎉" 
+            : "Course marked as incomplete."
         );
       }
     } catch (err) {
-      console.error("Error toggling lesson completion:", err);
-      toast.error("Failed to update lesson completion status.");
+      console.error("Error toggling course completion:", err);
+      toast.error("Failed to update course completion status.");
     }
   };
 
@@ -1387,7 +1296,7 @@ function AcademyPage() {
           {selectedCourseId && modalCourse && (
             isStudySessionActive ? (
               /* IMMERSIVE FULL-VIEW CLASSROOM WORKSPACE */
-              <div className="fixed top-16 left-0 right-0 bottom-0 z-30 bg-black flex flex-col select-none h-[calc(100vh-64px)] overflow-hidden">
+              <div className="fixed top-16 left-0 right-0 bottom-0 z-30 bg-[#06150D] flex flex-col select-none h-[calc(100vh-64px)] overflow-hidden">
                 {/* Header Bar */}
                 <div className="bg-[#091F14] text-white px-6 py-3.5 flex items-center justify-between border-b border-[#FAF9F5]/10 shrink-0 z-20 shadow-md">
                   {/* Left: Back Button */}
@@ -1407,331 +1316,234 @@ function AcademyPage() {
                     </div>
                   </div>
 
-                  {/* Center: Current Lesson Title */}
+                  {/* Center: Current Tab Name */}
                   <div className="text-center flex-1 mx-4 min-w-0">
                     <h4 className="text-xs md:text-sm font-bold text-white truncate uppercase tracking-wide">
-                      {currentLesson?.title || "Classroom Preview"}
+                      {viewMode === "intro" ? "Course Intro Video" : "Course Content Study"}
                     </h4>
                   </div>
 
-                  {/* Right: Toggle Syllabus Drawer Button */}
+                  {/* Right: Toggle Information Panel */}
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                       className="flex items-center gap-2 text-xs font-black text-white hover:text-[#F5A623] transition-colors cursor-pointer bg-transparent border-0 uppercase tracking-widest font-mono"
                     >
                       <IconMenu className="h-4 w-4" />
-                      <span className="hidden sm:inline">{isSidebarOpen ? "Hide Syllabus" : "Show Syllabus"}</span>
+                      <span className="hidden sm:inline">{isSidebarOpen ? "Hide Info" : "Show Info"}</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Main Body: Video and Collapsible Syllabus */}
-                <div className="flex-1 flex overflow-hidden w-full relative bg-black">
-                  {/* Left Pane: Immersive Video / Content Viewer */}
-                  <div className="flex-1 h-full bg-black relative flex items-center justify-center overflow-hidden">
-                    {viewMode === "locked" ? (
-                      <div className="w-full h-full bg-[#06150D] flex flex-col items-center justify-center p-6 text-center select-none">
-                        <div className="w-12 h-12 rounded-full bg-white/5 text-[#F5A623] flex items-center justify-center mb-3 border border-[#F5A623]/20">
-                          <IconLock className="h-5 w-5" />
+                {/* Main Body */}
+                <div className="flex-1 flex overflow-hidden w-full relative bg-[#06150D]">
+                  {/* Left Pane: Content / Video Viewer */}
+                  <div className="flex-1 h-full overflow-y-auto p-6 md:p-12 text-left custom-scrollbar bg-[#06150D]">
+                    {viewMode === "intro" ? (
+                      /* Intro Video View */
+                      <div className="max-w-3xl mx-auto w-full space-y-6">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-[#F5A623]/10 text-[#F5A623] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#F5A623]/30 uppercase font-bold">
+                            INTRO TRAILER
+                          </span>
                         </div>
-                        <h4 className="text-sm font-semibold text-white mb-1.5 uppercase font-sans tracking-wide">
-                          {currentLesson?.title || "Lesson Locked"}
-                        </h4>
-                        <p className="text-xs text-slate-400 max-w-xs mb-4 leading-relaxed font-sans">
-                          This lesson is part of the full course curriculum. Enroll to unlock all course materials and track your learning progress.
-                        </p>
-                        <button
-                          onClick={handleEnroll}
-                          className="bg-[#2D6A4F] text-[#F5A623] hover:bg-[#1a5c3a] font-bold text-xs px-5 py-2.5 rounded-none border border-[#FAF9F5]/25 cursor-pointer uppercase tracking-wider transition-colors"
-                        >
-                          Enroll in Course for Free
-                        </button>
-                      </div>
-                    ) : viewMode === "video" && currentLesson?.video_url ? (
-                      extractYoutubeId(currentLesson.video_url) ? (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${extractYoutubeId(currentLesson.video_url)}?autoplay=1`}
-                          title={currentLesson.title}
-                          className="w-full h-full border-0 absolute inset-0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : extractVimeoId(currentLesson.video_url) ? (
-                        <iframe
-                          src={`https://player.vimeo.com/video/${extractVimeoId(currentLesson.video_url)}?autoplay=1`}
-                          title={currentLesson.title}
-                          className="w-full h-full border-0 absolute inset-0"
-                          allow="autoplay; fullscreen; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <video
-                          src={currentLesson.video_url}
-                          controls
-                          autoPlay
-                          className="w-full h-full object-contain absolute inset-0"
-                        />
-                      )
-                    ) : viewMode === "text" && currentLesson?.text_content ? (
-                      /* Clean Dark-Themed Reading Workspace */
-                      <div className="w-full h-full bg-[#06150D] p-8 md:p-12 overflow-y-auto text-left custom-scrollbar flex flex-col justify-between">
-                        <div className="max-w-3xl mx-auto w-full space-y-6">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-[#F5A623]/10 text-[#F5A623] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#F5A623]/30 uppercase font-bold">
-                              READING NOTES
-                            </span>
-                          </div>
-                          <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
-                            {currentLesson.title}
-                          </h2>
-                          <div className="text-sm text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap font-sans font-light">
-                            {currentLesson.text_content}
-                          </div>
-                        </div>
-                        {currentLesson.pdf_url && (
-                          <div className="max-w-3xl mx-auto w-full mt-10 pt-6 border-t border-[#FAF9F5]/10">
-                            <a
-                              href={currentLesson.pdf_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 bg-[#FAF9F5]/5 hover:bg-[#FAF9F5]/10 text-white text-xs font-semibold px-5 py-2.5 rounded-none border border-[#FAF9F5]/25 transition-colors"
-                            >
-                              <IconPdf className="h-4 w-4 text-[#F5A623]" />
-                              <span>Open PDF Study Guide</span>
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      /* Intro View: Play Course Intro Video or show Cover Image */
-                      (modalCourse.intro_video_url || modalCourse.youtube_id) ? (
-                        (() => {
-                          const videoUrl = modalCourse.intro_video_url || (modalCourse.youtube_id ? `https://youtube.com/watch?v=${modalCourse.youtube_id}` : "");
-                          if (extractYoutubeId(videoUrl)) {
-                            return (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}?autoplay=1`}
-                                title="Course Trailer"
-                                className="w-full h-full border-0 absolute inset-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            );
-                          } else if (extractVimeoId(videoUrl)) {
-                            return (
-                              <iframe
-                                src={`https://player.vimeo.com/video/${extractVimeoId(videoUrl)}?autoplay=1`}
-                                title="Course Trailer"
-                                className="w-full h-full border-0 absolute inset-0"
-                                allow="autoplay; fullscreen; picture-in-picture"
-                                allowFullScreen
-                              />
-                            );
-                          } else {
-                            return (
-                              <video
-                                src={videoUrl}
-                                controls
-                                autoPlay
-                                className="w-full h-full object-contain absolute inset-0"
-                              />
-                            );
-                          }
-                        })()
-                      ) : (
-                        /* Cover Preview Cover Image */
-                        <div className="w-full h-full relative bg-[#06150D]">
-                          {modalCourse.cover_image_url ? (
-                            <img
-                              src={modalCourse.cover_image_url}
-                              alt={modalCourse.title}
-                              className="w-full h-full object-cover opacity-30"
-                            />
+                        <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
+                          {modalCourse.title}
+                        </h2>
+                        
+                        <div className="w-full aspect-video bg-[#091F14] relative border border-[#FAF9F5]/10 overflow-hidden rounded-none shadow-md">
+                          {(modalCourse.intro_video_url || modalCourse.youtube_id) ? (
+                            (() => {
+                              const videoUrl = modalCourse.intro_video_url || (modalCourse.youtube_id ? `https://youtube.com/watch?v=${modalCourse.youtube_id}` : "");
+                              if (extractYoutubeId(videoUrl)) {
+                                return (
+                                  <iframe
+                                    src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}?autoplay=1`}
+                                    title="Course Trailer"
+                                    className="w-full h-full border-0 absolute inset-0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                );
+                              } else if (extractVimeoId(videoUrl)) {
+                                return (
+                                  <iframe
+                                    src={`https://player.vimeo.com/video/${extractVimeoId(videoUrl)}?autoplay=1`}
+                                    title="Course Trailer"
+                                    className="w-full h-full border-0 absolute inset-0"
+                                    allow="autoplay; fullscreen; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                );
+                              } else {
+                                return (
+                                  <video
+                                    src={videoUrl}
+                                    controls
+                                    autoPlay
+                                    className="w-full h-full object-contain absolute inset-0"
+                                  />
+                                );
+                              }
+                            })()
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <IconPlant className="h-16 w-16 text-[#2D6A4F]/30" />
+                            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#091F14]">
+                              {modalCourse.cover_image_url ? (
+                                <img
+                                  src={modalCourse.cover_image_url}
+                                  alt={modalCourse.title}
+                                  className="w-full h-full object-cover opacity-30"
+                                />
+                              ) : (
+                                <IconPlant className="h-16 w-16 text-[#2D6A4F]/30" />
+                              )}
+                              <p className="absolute text-xs text-slate-400 font-mono tracking-wider">NO INTRO VIDEO AVAILABLE</p>
                             </div>
                           )}
-                          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-t from-black via-black/40 to-transparent">
-                            <button
-                              onClick={() => {
-                                const firstChapter = modalCourse.chapters?.[0];
-                                const firstVideo = firstChapter?.lessons?.find((l: any) => l.content_type === "video");
-                                const fallbackLesson = firstChapter?.lessons?.[0];
-                                
-                                if (firstVideo) {
-                                  setCurrentLesson(firstVideo);
-                                  setViewMode("video");
-                                } else if (fallbackLesson) {
-                                  setCurrentLesson(fallbackLesson);
-                                  setViewMode(fallbackLesson.content_type === "text" ? "text" : "intro");
-                                }
-                              }}
-                              className="w-14 h-14 rounded-none bg-[#2D6A4F] text-[#F5A623] hover:scale-105 transition-transform flex items-center justify-center shadow-lg border border-[#F5A623]/25 cursor-pointer"
-                            >
-                              <IconPlay className="h-5 w-5 fill-current ml-0.5" />
-                            </button>
-                            <span className="text-[10px] text-slate-400 mt-3 font-mono tracking-widest select-none">
-                              PREVIEW COURSE LESSONS
-                            </span>
-                          </div>
                         </div>
-                      )
+
+                        <div className="text-sm text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap font-sans font-light pt-4 border-t border-[#FAF9F5]/10">
+                          <p>{modalCourse.description}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Full Course Content View with MarkdownRenderer */
+                      <div className="max-w-3xl mx-auto w-full space-y-6">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-[#2D6A4F]/20 text-[#52B788] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#2D6A4F]/40 uppercase font-bold">
+                            STUDY GUIDE
+                          </span>
+                        </div>
+                        <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
+                          {modalCourse.title}
+                        </h2>
+                        
+                        <div className="border-t border-[#FAF9F5]/10 pt-4">
+                          <MarkdownRenderer content={modalCourse.content || "No course materials are provided for this course yet."} />
+                        </div>
+                      </div>
                     )}
                   </div>
 
-                  {/* Right Pane: Collapsible Syllabus Sidebar */}
+                  {/* Right Pane: collapsible sidebar/drawer */}
                   {isSidebarOpen && (
-                    <div className="w-80 h-full bg-[#06150D] border-l border-[#FAF9F5]/10 flex flex-col shrink-0 z-10">
-                      {/* Sidebar Student Progress */}
-                      {modalCourse.is_enrolled && (
-                        <div className="p-4 border-b border-[#FAF9F5]/10 bg-[#091F14] text-left">
-                          <div className="flex justify-between items-center text-[9px] text-slate-400 mb-1.5 font-mono">
-                            <span>YOUR PROGRESS</span>
-                            <span className="text-[#F5A623] font-bold">{modalCourse.progress_pct}%</span>
+                    <div className="w-[320px] h-full bg-[#091F14] border-l border-[#FAF9F5]/10 flex flex-col justify-between p-5 md:p-6 shrink-0 overflow-y-auto custom-scrollbar">
+                      <div className="space-y-6 text-left">
+                        {/* Course Header */}
+                        <div>
+                          <span className="text-[9px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase mb-1">COURSE PROGRESS</span>
+                          <div className="flex justify-between items-center text-xs text-slate-300 mb-1.5 font-mono">
+                            <span>Status</span>
+                            <span>{modalCourse.progress_pct === 100 ? "Completed" : "In Progress"}</span>
                           </div>
-                          <div className="w-full h-1.5 bg-black border border-[#FAF9F5]/10 rounded-none overflow-hidden">
+                          <div className="w-full h-1.5 bg-black border border-[#FAF9F5]/10 rounded-none overflow-hidden mb-4">
                             <div 
                               className="h-full bg-[#F5A623] transition-all duration-300"
-                              style={{ width: `${modalCourse.progress_pct}%` }}
+                              style={{ width: `${modalCourse.progress_pct || 0}%` }}
                             />
                           </div>
-                        </div>
-                      )}
 
-                      {/* Syllabus Flat List */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-2.5 text-left custom-scrollbar">
-                        {/* Course Intro Video Item if available */}
-                        {(modalCourse.intro_video_url || modalCourse.youtube_id) && (
-                          <div
-                            onClick={() => {
-                              setViewMode("intro");
-                              setCurrentLesson(null);
-                            }}
-                            className={`w-full p-3 flex items-start gap-3 transition cursor-pointer border ${
-                              viewMode === "intro"
-                                ? "bg-[#2D6A4F]/10 border-[#F5A623] text-white"
-                                : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/5 hover:border-[#FAF9F5]/10"
+                          {/* Complete Course Action */}
+                          {modalCourse.progress_pct === 100 ? (
+                            <div className="space-y-2.5">
+                              <button
+                                onClick={(e) => handleToggleCourseCompletion(e, false)}
+                                className="w-full bg-transparent hover:bg-white/5 text-slate-300 hover:text-white font-bold text-xs py-3 rounded-none border border-white/20 transition-colors cursor-pointer text-center uppercase tracking-wider font-sans"
+                              >
+                                Mark as Incomplete
+                              </button>
+                              
+                              {modalCourse.has_certificate && (
+                                <button
+                                  onClick={generateCertificate}
+                                  className="w-full bg-gradient-to-r from-[#F5A623] to-[#d97706] text-black font-bold text-xs py-3.5 rounded-none hover:from-[#f6b445] hover:to-[#ea580c] transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg animate-pulse uppercase tracking-wider font-sans"
+                                >
+                                  <IconCertificate className="h-4.5 w-4.5" />
+                                  <span>Claim Certificate</span>
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => handleToggleCourseCompletion(e, true)}
+                              className="w-full bg-[#52B788] text-[#091F14] font-bold text-xs py-3.5 rounded-none border border-[#52B788] hover:bg-[#40916c] hover:border-[#40916c] transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider shadow-lg font-sans"
+                            >
+                              <span>Complete Course 🎉</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Navigation Tabs */}
+                        <div className="border-t border-[#FAF9F5]/10 pt-5 space-y-2">
+                          <span className="text-[9px] text-slate-400 block font-mono tracking-widest uppercase">Workspace Tabs</span>
+                          
+                          <button
+                            onClick={() => setViewMode("content")}
+                            className={`w-full p-3 flex items-center gap-3 transition cursor-pointer border text-left rounded-none ${
+                              viewMode === "content"
+                                ? "bg-[#2D6A4F]/20 border-[#F5A623] text-white"
+                                : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/10 hover:border-[#FAF9F5]/10"
                             }`}
                           >
-                            <div className="border border-[#F5A623]/30 px-1.5 py-0.5 text-[10px] sm:text-xs text-[#F5A623] font-mono font-bold shrink-0">
-                              INTRO
-                            </div>
-                            <div className="flex-1 min-w-0 text-left">
-                              <span className={`text-xs sm:text-sm font-medium block leading-tight ${viewMode === "intro" ? "text-[#F5A623]" : "text-white"}`}>
-                                Course Introduction & Overview
+                            <span className="text-xs font-semibold block uppercase font-sans">
+                              📖 Study Guide
+                            </span>
+                          </button>
+
+                          {(modalCourse.intro_video_url || modalCourse.youtube_id) && (
+                            <button
+                              onClick={() => setViewMode("intro")}
+                              className={`w-full p-3 flex items-center gap-3 transition cursor-pointer border text-left rounded-none ${
+                                viewMode === "intro"
+                                  ? "bg-[#2D6A4F]/20 border-[#F5A623] text-white"
+                                  : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/10 hover:border-[#FAF9F5]/10"
+                              }`}
+                            >
+                              <span className="text-xs font-semibold block uppercase font-sans">
+                                🎥 Intro Trailer Video
                               </span>
-                              <span className="text-[10px] sm:text-xs text-slate-400 font-mono mt-1 block">
-                                VIDEO TRAILER
-                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Resource Downloads */}
+                        {resources.length > 0 && (
+                          <div className="border-t border-[#FAF9F5]/10 pt-5 space-y-3">
+                            <span className="text-[9px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase">RESOURCE DOWNLOADS</span>
+                            <div className="space-y-2">
+                              {resources.map((res, index) => (
+                                <a
+                                  key={index}
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold p-2.5 rounded-none border border-white/10 hover:border-[#FAF9F5]/25 transition-all text-left group"
+                                >
+                                  <IconPdf className="h-4 w-4 text-[#F5A623] shrink-0" />
+                                  <span className="truncate group-hover:text-[#F5A623] transition-colors">{res.name}</span>
+                                </a>
+                              ))}
                             </div>
                           </div>
                         )}
+                      </div>
 
-                        {(() => {
-                          const allLessons = modalCourse.chapters?.flatMap((ch: any) => ch.lessons || []) || [];
-                          if (allLessons.length === 0) {
-                            if (!modalCourse.intro_video_url && !modalCourse.youtube_id) {
-                              return (
-                                <div className="text-xs text-slate-500 font-mono py-2">
-                                  Syllabus structure is currently empty.
-                                </div>
-                              );
-                            }
-                            return null;
-                          }
-                          return allLessons.map((les: any, idx: number) => {
-                            const isText = les.content_type === "text";
-                            const isExpanded = !!expandedLessons[les.id];
-                            const isActive = !isText && viewMode !== "intro" && currentLesson?.id === les.id;
-                            const isLocked = !modalCourse.is_enrolled && !les.is_free_preview;
-                            const isCompleted = modalCourse.completed_lessons?.includes(les.id);
-                            return (
-                              <div key={les.id} className="w-full flex flex-col">
-                                <div
-                                  onClick={() => {
-                                    if (isText) {
-                                      setExpandedLessons(prev => ({
-                                        ...prev,
-                                        [les.id]: !prev[les.id]
-                                      }));
-                                    } else {
-                                      handleLessonSelect(les);
-                                    }
-                                  }}
-                                  className={`w-full p-3 flex items-start gap-3 transition cursor-pointer border ${
-                                    isActive
-                                      ? "bg-[#2D6A4F]/10 border-[#F5A623] text-white"
-                                      : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/5 hover:border-[#FAF9F5]/10"
-                                  }`}
-                                >
-                                  {/* Checkbox / Number */}
-                                  {modalCourse.is_enrolled ? (
-                                    <button
-                                      onClick={(e) => handleToggleCompletion(e, les.id)}
-                                      className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-colors cursor-pointer rounded-none bg-transparent ${
-                                        isCompleted
-                                          ? "bg-[#2D6A4F] border-[#2D6A4F] text-[#F5A623]"
-                                          : "border-slate-500 text-transparent hover:border-slate-400"
-                                      }`}
-                                      title={isCompleted ? "Mark incomplete" : "Mark complete"}
-                                    >
-                                      <IconCheck className="h-2.5 w-2.5" />
-                                    </button>
-                                  ) : (
-                                    <div className="border border-[#F5A623]/30 px-1.5 py-0.5 text-[10px] sm:text-xs text-[#F5A623] font-mono font-bold shrink-0">
-                                      #{String(idx + 1).padStart(2, '0')}
-                                    </div>
-                                  )}
-
-                                  {/* Content */}
-                                  <div className="flex-1 min-w-0 text-left">
-                                    <div className="flex items-center gap-1.5 justify-between">
-                                      <div className="flex items-center gap-1.5 min-w-0">
-                                        {isLocked && <IconLock className="h-2.5 w-2.5 text-slate-500 shrink-0" />}
-                                        <span className={`text-xs sm:text-sm font-medium block leading-tight truncate ${isActive ? "text-[#F5A623]" : "text-white"}`}>
-                                          {les.title}
-                                        </span>
-                                      </div>
-                                      {isText && (
-                                        <span className="text-[11px] sm:text-xs text-[#F5A623] font-mono shrink-0">
-                                          {isExpanded ? "▲ COLLAPSE" : "▼ EXPAND"}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="text-[10px] sm:text-xs text-slate-400 font-mono mt-1 block">
-                                      {les.video_duration_seconds ? `${Math.floor(les.video_duration_seconds / 60)} MINS` : "TEXT READING"}
-                                    </span>
-                                  </div>
-                                </div>
-                                {isText && isExpanded && (
-                                  <div className="w-full bg-[#06150D] border-x border-b border-[#FAF9F5]/10 p-4 text-left space-y-3">
-                                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-                                      {les.text_content || "No summary notes provided for this chapter."}
-                                    </p>
-                                    {les.pdf_url && (
-                                      <div className="pt-2 border-t border-[#FAF9F5]/5">
-                                        <a
-                                          href={les.pdf_url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1.5 bg-[#FAF9F5]/5 hover:bg-[#FAF9F5]/10 text-white text-xs font-semibold px-3 py-1.5 rounded-none border border-[#FAF9F5]/20 transition-colors"
-                                        >
-                                          <IconPdf className="h-3 w-3 text-[#F5A623]" />
-                                          <span>Open PDF Study Guide</span>
-                                        </a>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          });
-                        })()}
+                      {/* Instructor Footer */}
+                      <div className="border-t border-[#FAF9F5]/10 pt-4 mt-6 text-left flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-none bg-[#2D6A4F] border border-[#2D6A4F]/40 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                          {modalCourse.instructor_name ? modalCourse.instructor_name.split(" ").map((n: string) => n[0]).join("") : "SK"}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[8px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase">INSTRUCTOR</span>
+                          <span className="text-xs font-semibold text-white block truncate leading-tight">
+                            {modalCourse.instructor_name || "Samuel Kiprono"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
+
+                  {/* DELETED SYLLABUS DUMMY */}
                 </div>
               </div>
             ) : (
@@ -1942,129 +1754,70 @@ function AcademyPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: Course Syllabus & Actions (45%) */}
+                  {/* RIGHT COLUMN: Course Specifications & Actions (45%) */}
                   <div className="w-full md:w-[45%] flex flex-col justify-between p-6 md:p-8 bg-[#091F14] space-y-6">
                     <div className="flex flex-col flex-1 min-h-0 bg-[#091F14]">
-                      {/* Syllabus Header */}
+                      {/* Specs Header */}
                       <div className="flex items-center justify-between pb-4 border-b border-[#FAF9F5]/10">
                         <h3 className="text-[#F5A623] text-xs font-black uppercase tracking-widest text-left">
-                          COURSE SYLLABUS
+                          COURSE SPECIFICATIONS
                         </h3>
                       </div>
 
-                      {/* Syllabus Lessons List */}
-                      <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 max-h-[400px] md:max-h-[calc(100vh-280px)] custom-scrollbar text-left bg-[#091F14]">
-                        {/* Course Intro Video Item if available */}
-                        {(modalCourse.intro_video_url || modalCourse.youtube_id) && (
-                          <div
-                            onClick={() => {
-                              setViewMode("intro");
-                              setCurrentLesson(null);
-                            }}
-                            className={`w-full p-3 flex items-start gap-3 transition cursor-pointer border ${
-                              viewMode === "intro"
-                                ? "bg-[#2D6A4F]/10 border-[#F5A623] text-white"
-                                : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/5 hover:border-[#FAF9F5]/10"
-                            }`}
-                          >
-                            <div className="border border-[#F5A623]/30 px-1.5 py-0.5 text-[10px] sm:text-xs text-[#F5A623] font-mono font-bold shrink-0">
-                              INTRO
-                            </div>
-                            <div className="flex-1 min-w-0 text-left">
-                              <span className={`text-xs sm:text-sm font-medium block leading-tight ${viewMode === "intro" ? "text-[#F5A623]" : "text-white"}`}>
-                                Course Introduction & Overview
-                              </span>
-                              <span className="text-[10px] sm:text-xs text-slate-400 font-mono mt-1 block">
-                                VIDEO TRAILER
-                              </span>
-                            </div>
+                      {/* Course Specifications Details Grid */}
+                      <div className="flex-1 overflow-y-auto py-6 space-y-5 text-left bg-[#091F14] custom-scrollbar">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
+                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">CATEGORY</span>
+                            <span className="text-xs font-semibold text-white font-sans uppercase truncate block">
+                              {modalCourse.category || "HORTICULTURE"}
+                            </span>
                           </div>
-                        )}
 
-                        {(() => {
-                          const allLessons = modalCourse.chapters?.flatMap((ch: any) => ch.lessons || []) || [];
-                          if (allLessons.length === 0) {
-                            if (!modalCourse.intro_video_url && !modalCourse.youtube_id) {
-                              return (
-                                <div className="text-xs text-slate-500 font-mono py-2">
-                                  Syllabus structure is currently empty.
-                                </div>
-                              );
-                            }
-                            return null;
-                          }
-                          return allLessons.map((les: any, idx: number) => {
-                            const isText = les.content_type === "text";
-                            const isExpanded = !!expandedLessons[les.id];
-                            const isActive = !isText && viewMode !== "intro" && currentLesson?.id === les.id;
-                            const isLocked = !modalCourse.is_enrolled && !les.is_free_preview;
-                            return (
-                              <div key={les.id} className="w-full flex flex-col">
-                                <div
-                                  onClick={() => {
-                                    if (isText) {
-                                      setExpandedLessons(prev => ({
-                                        ...prev,
-                                        [les.id]: !prev[les.id]
-                                      }));
-                                    } else {
-                                      handleLessonSelect(les);
-                                    }
-                                  }}
-                                  className={`w-full p-3 flex items-start gap-3 transition cursor-pointer border ${
-                                    isActive
-                                      ? "bg-[#2D6A4F]/10 border-[#F5A623] text-white"
-                                      : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/5 hover:border-[#FAF9F5]/10"
-                                  }`}
-                                >
-                                  {/* Number block */}
-                                  <div className="border border-[#F5A623]/30 px-1.5 py-0.5 text-[10px] sm:text-xs text-[#F5A623] font-mono font-bold shrink-0">
-                                    #{String(idx + 1).padStart(2, '0')}
-                                  </div>
-                                  {/* Content */}
-                                  <div className="flex-1 min-w-0 text-left">
-                                    <div className="flex items-center gap-1.5 justify-between">
-                                      <div className="flex items-center gap-1.5 min-w-0">
-                                        {isLocked && <IconLock className="h-2.5 w-2.5 text-slate-500 shrink-0" />}
-                                        <span className={`text-xs sm:text-sm font-medium block leading-tight truncate ${isActive ? "text-[#F5A623]" : "text-white"}`}>
-                                          {les.title}
-                                        </span>
-                                      </div>
-                                      {isText && (
-                                        <span className="text-[11px] sm:text-xs text-[#F5A623] font-mono shrink-0">
-                                          {isExpanded ? "▲ COLLAPSE" : "▼ EXPAND"}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="text-[10px] sm:text-xs text-slate-400 font-mono mt-1 block">
-                                      {les.video_duration_seconds ? `${Math.floor(les.video_duration_seconds / 60)} MINS` : "TEXT READING"}
-                                    </span>
-                                  </div>
-                                </div>
-                                {isText && isExpanded && (
-                                  <div className="w-full bg-[#06150D] border-x border-b border-[#FAF9F5]/10 p-4 text-left space-y-3">
-                                    <p className="text-sm sm:text-base text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-                                      {les.text_content || "No summary notes provided for this chapter."}
-                                    </p>
-                                    {les.pdf_url && (
-                                      <div className="pt-2 border-t border-[#FAF9F5]/5">
-                                        <a
-                                          href={les.pdf_url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1.5 bg-[#FAF9F5]/5 hover:bg-[#FAF9F5]/10 text-white text-xs font-semibold px-3 py-1.5 rounded-none border border-[#FAF9F5]/20 transition-colors"
-                                        >
-                                          <IconPdf className="h-3 w-3 text-[#F5A623]" />
-                                          <span>Open PDF Study Guide</span>
-                                        </a>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          });
-                        })()}
+                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
+                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">ESTIMATED TIME</span>
+                            <span className="text-xs font-semibold text-white font-sans block">
+                              {modalCourse.duration_minutes ? `${modalCourse.duration_minutes} Minutes` : "60 Minutes"}
+                            </span>
+                          </div>
+
+                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
+                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">INSTRUCTION MODE</span>
+                            <span className="text-xs font-semibold text-white font-sans uppercase block">
+                              Self-Paced Guide
+                            </span>
+                          </div>
+
+                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
+                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">CERTIFICATE</span>
+                            <span className="text-xs font-semibold text-white font-sans uppercase block">
+                              {modalCourse.has_certificate ? "Available" : "Not Included"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Included Assets */}
+                        <div className="bg-[#06150D] p-4 border border-[#FAF9F5]/5 space-y-2">
+                          <h4 className="text-[10px] text-[#F5A623] font-mono font-bold uppercase tracking-wider">
+                            Included Learning Assets
+                          </h4>
+                          <ul className="text-xs text-slate-300 space-y-2 list-none">
+                            <li className="flex items-center gap-2">
+                              <span className="text-[#52B788] font-bold">✔</span> Comprehensive Digital Study Guide
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="text-[#52B788] font-bold">✔</span> High-Quality Video Trailer Preview
+                            </li>
+                            {resources.length > 0 && (
+                              <li className="flex items-center gap-2">
+                                <span className="text-[#52B788] font-bold">✔</span> {resources.length} Downloadable Resource File{resources.length > 1 ? "s" : ""}
+                              </li>
+                            )}
+                            <li className="flex items-center gap-2">
+                              <span className="text-[#52B788] font-bold">✔</span> Lifetime Access to Updates
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
 
