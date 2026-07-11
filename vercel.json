@@ -27,6 +27,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://mqulima.onrender.com/api/:path*"
+    },
+    {
+      "source": "/_server/:path*",
+      "destination": "https://mqulima.onrender.com/_server/:path*"
+    },
+    {
       "source": "/admin/:path*",
       "destination": "https://admin.mqulima.co.ke/:path*"
     }
