@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { usePWA } from "@/hooks/usePWA";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-context";
+import { PWAInstallBanner } from "@/components/mqulima/PWAInstallBanner";
 
 function NotFoundComponent() {
   return (
@@ -78,6 +79,10 @@ export const Route = createRootRouteWithContext<{
         name: "description",
         content: "Mqulima is a community-driven digital agriculture ecosystem...",
       },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Mqulima" },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -140,6 +145,7 @@ function RootComponent() {
             )}
             <Outlet />
             {mounted && <Toaster richColors position="top-right" />}
+            {mounted && <PWAInstallBanner />}
           </div>
         </CartProvider>
       </AuthProvider>
