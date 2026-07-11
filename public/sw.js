@@ -45,6 +45,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Bypass API endpoints, server functions, authentication pages, and admin panels
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_server/") ||
+    url.pathname.startsWith("/auth/") ||
+    url.pathname.startsWith("/admin/")
+  ) {
+    return;
+  }
+
   // Network-First for HTML navigation/page requests (so they get fresh content when online, fallback to cache when offline)
   if (event.request.mode === "navigate") {
     event.respondWith(
