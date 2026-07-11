@@ -31,7 +31,11 @@ const parsedDbUrl = dbUrl.includes("Mq@Hub#Dev2026!")
 
 async function run() {
   console.log("Connecting to PostgreSQL...");
-  const sql = postgres(parsedDbUrl, { max: 1 });
+  const isLocal = parsedDbUrl.includes("localhost") || parsedDbUrl.includes("127.0.0.1") || parsedDbUrl.includes("::1");
+  const sql = postgres(parsedDbUrl, { 
+    max: 1,
+    ssl: isLocal ? false : "require"
+  });
 
   try {
     // Ensure migrations tracking table exists

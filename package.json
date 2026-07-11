@@ -13,6 +13,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "db:migrate": "npx tsx db/scripts/run-migrations.ts",
+    "db:seed": "npx tsx db/scripts/run-seeds.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

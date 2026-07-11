@@ -3,6 +3,19 @@
 -- Run: PSPASSWORD=mqulima_dev_2026 psql -h localhost -p 5433 -U mqulima -d mqulima_dev -f db/seeds.sql
 -- ============================================================================
 
+-- Clean up existing demo data to prevent duplicate key errors and redundancy, preserving user accounts
+DELETE FROM show_likes;
+DELETE FROM show_comments;
+DELETE FROM show_posts;
+DELETE FROM commodity_price_board;
+DELETE FROM commodity_listings;
+DELETE FROM payments;
+DELETE FROM orders;
+DELETE FROM service_requests;
+DELETE FROM services;
+DELETE FROM products;
+DELETE FROM profiles WHERE email LIKE '%@mqulima.co.ke';
+
 -- 1. Profiles (Farmers, Retailers, Sales Agents)
 -- All usernames MUST start with mqulima_
 INSERT INTO profiles (email, password_hash, full_name, username, role, county_region, farming_interests, crops, livestock, years_farming, reputation_score, followers_count, phone, is_retailer, retailer_discount_pct)
