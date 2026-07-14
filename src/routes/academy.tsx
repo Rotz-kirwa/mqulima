@@ -1,1968 +1,317 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  getPublishedCourses, 
-  getCourseDetail, 
-  getAcademyStats,
-  enrollInCourse,
-  toggleCourseCompletion
-} from "@/lib/api/academy-public.server";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import { jsPDF } from "jspdf";
-
-// Custom SVG Icons matching Tabler Icons
-function IconPlant({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 9a10 10 0 1 0 20 0" />
-      <path d="M12 19a10 10 0 0 1 10 -10" />
-      <path d="M2 9a10 10 0 0 1 10 10" />
-      <path d="M12 4a9.7 9.7 0 0 1 2.99 7.5" />
-      <path d="M9.01 11.5a9.7 9.7 0 0 1 2.99 -7.5" />
-    </svg>
-  );
-}
-
-function IconPlay({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="6 3 20 12 6 21 6 3" />
-    </svg>
-  );
-}
-
-function IconSearch({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function IconChartBar({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 20V10" />
-      <path d="M12 20V4" />
-      <path d="M6 20v-6" />
-    </svg>
-  );
-}
-
-function IconClock({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function IconBook({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5v-15z" />
-    </svg>
-  );
-}
-
-function IconUsers({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function IconChevronLeft({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  );
-}
-
-function IconMenu({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  );
-}
-
-function IconChevronRight({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
-
-function IconFileText({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
-
-function IconPdf({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-    </svg>
-  );
-}
-
-function IconX({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function IconCertificate({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 15l-2 5l2 -3l2 3z" />
-      <path d="M13 10a3 3 0 1 0 -6 0a3 3 0 0 0 6 0z" />
-      <path d="M10 13l-1.5 5.5l1.5 -3.5l1.5 3.5z" />
-      <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 0 0 -6 0z" />
-    </svg>
-  );
-}
-
-function IconTrendingUp({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-      <polyline points="17 6 23 6 23 12" />
-    </svg>
-  );
-}
-
-function IconLock({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function IconCheck({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function renderCourseCover(course: any) {
-  if (course.cover_image_url) {
-    return (
-      <img
-        src={course.cover_image_url}
-        alt={course.title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-      />
-    );
-  }
-
-  // Fallback beautiful gradients and custom styled titles matching GeeksForGeeks style
-  let gradientClass = "from-[#0d1b2a] via-[#1b263b] to-[#415a77]"; // default dark tech
-  let tagText = "AGRICULTURE";
-  let mainTitle = course.title || "Academy Course";
-  let graphicElement = (
-    <div className="absolute right-4 bottom-4 opacity-15">
-      <IconPlant className="w-24 h-24 stroke-[1]" />
-    </div>
-  );
-
-  const slug = course.slug || "";
-  if (slug === "sukuma-wiki-production" || slug.includes("sukuma")) {
-    gradientClass = "from-[#1b4332] via-[#2d6a4f] to-[#52b788]"; // premium green gradient
-    tagText = "CROP CULTIVATION";
-    mainTitle = "Sukuma Wiki";
-    graphicElement = (
-      <div className="absolute right-4 bottom-2 opacity-15">
-        <IconPlant className="w-24 h-24 stroke-[1] text-white" />
-      </div>
-    );
-  } else if (slug === "avocado-masterclass" || slug.includes("avocado")) {
-    gradientClass = "from-[#1e4620] via-[#4d7c0f] to-[#a3e635]"; // lime/avocado green gradient
-    tagText = "ORCHARD MANAGEMENT";
-    mainTitle = "Avocado Farming";
-    graphicElement = (
-      <div className="absolute right-6 bottom-4 opacity-15 w-20 h-20 border-4 border-white/60 rounded-full flex items-center justify-center">
-        <div className="w-8 h-8 bg-white/60 rounded-full" />
-      </div>
-    );
-  } else if (slug === "dairy-farming-essentials" || slug.includes("dairy")) {
-    gradientClass = "from-[#0f172a] via-[#1e293b] to-[#3b82f6]"; // slate to milk blue gradient
-    tagText = "LIVESTOCK PRODUCTION";
-    mainTitle = "Dairy Farming";
-    graphicElement = (
-      <div className="absolute right-4 bottom-4 opacity-15 font-serif font-black text-6xl text-white">
-        COW
-      </div>
-    );
-  } else if (slug === "poultry-farming-essentials" || slug.includes("poultry")) {
-    gradientClass = "from-[#7f1d1d] via-[#b91c1c] to-[#f59e0b]"; // crimson to egg gold gradient
-    tagText = "POULTRY MANAGEMENT";
-    mainTitle = "Poultry Farming";
-    graphicElement = (
-      <div className="absolute right-4 bottom-4 opacity-15 font-mono font-bold text-5xl text-white">
-        EGG
-      </div>
-    );
-  } else if (slug === "ai-in-agriculture" || slug.includes("ai")) {
-    gradientClass = "from-[#1e1b4b] via-[#312e81] to-[#06b6d4]"; // tech deep indigo/cyan gradient
-    tagText = "AGRI-TECHNOLOGY";
-    mainTitle = "AI in Agriculture";
-    graphicElement = (
-      <div className="absolute right-6 bottom-6 opacity-20">
-        <svg className="w-20 h-20 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M9 3v18" />
-          <path d="M15 3v18" />
-          <path d="M3 9h18" />
-          <path d="M3 15h18" />
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`w-full h-full bg-gradient-to-br ${gradientClass} relative p-6 flex flex-col justify-between overflow-hidden select-none`}>
-      <div className="absolute inset-0 opacity-[0.07]" 
-        style={{
-          backgroundImage: "radial-gradient(white 1px, transparent 1px)",
-          backgroundSize: "16px 16px"
-        }}
-      />
-      {graphicElement}
-      <div className="flex justify-between items-start z-10">
-        <span className="text-[9px] font-extrabold uppercase tracking-widest bg-white/10 text-white/95 px-2 py-0.5 rounded-[3px] backdrop-blur-[2px]">
-          {tagText}
-        </span>
-      </div>
-      <div className="z-10 mt-auto">
-        <h4 className="text-white font-serif font-black text-xl leading-tight tracking-wide drop-shadow-sm">
-          {mainTitle === "AI in Agriculture" ? (
-            <span className="italic font-extrabold text-cyan-200">AI in Agriculture</span>
-          ) : (
-            mainTitle
-          )}
-        </h4>
-        <p className="text-white/60 text-[10px] uppercase font-semibold tracking-wider mt-1">
-          Masterclass
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function extractYoutubeId(url?: string): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-
-function extractVimeoId(url?: string): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:vimeo\.com\/|video\/)(\d+)/);
-  return m ? m[1] : null;
-}
-
-function renderCourseTitle(title: string, colorConfig: { text: string; hoverText: string }) {
-  if (title.includes(": ")) {
-    const [part1, part2] = title.split(": ");
-    const isAi = title.includes("AI in Agriculture");
-    const part1Color = isAi ? "text-[#2563EB]" : "text-slate-800";
-    const part2Color = isAi ? "text-[#D97706]" : colorConfig.text;
-    return (
-      <>
-        <span className={`${part1Color} font-bold`}>{part1}: </span>
-        <span className={`font-serif italic font-medium ${part2Color}`}>{part2}</span>
-      </>
-    );
-  }
-
-  if (title.includes("Masterclass")) {
-    const part1 = title.replace("Masterclass", "").trim();
-    return (
-      <>
-        <span className="text-slate-800 font-semibold">{part1} </span>
-        <span className={`font-serif italic font-medium ${colorConfig.text}`}>Masterclass</span>
-      </>
-    );
-  }
-
-  if (title.includes("Essentials")) {
-    const part1 = title.replace("Essentials", "").trim();
-    return (
-      <>
-        <span className="text-slate-800 font-semibold">{part1} </span>
-        <span className={`font-serif italic font-medium ${colorConfig.text}`}>Essentials</span>
-      </>
-    );
-  }
-
-  return <span className="text-slate-800 font-semibold">{title}</span>;
-}
-
-function renderModalCourseTitle(title: string, isDarkBg = false) {
-  if (title.includes(": ")) {
-    const [part1, part2] = title.split(": ");
-    const part1Color = isDarkBg ? "text-cyan-400" : "text-[#2D6A4F]";
-    const part2Color = isDarkBg ? "text-amber-300" : "text-[#B45309]";
-    return (
-      <>
-        <span className={`${part1Color} font-bold`}>{part1}: </span>
-        <span className={`font-sans italic font-light ${part2Color} block mt-1`}>{part2}</span>
-      </>
-    );
-  }
-
-  if (title.includes("Masterclass")) {
-    const part1 = title.replace("Masterclass", "").trim();
-    return (
-      <>
-        <span className={`${isDarkBg ? "text-white" : "text-[#112E22]"} font-semibold`}>{part1} </span>
-        <span className={`font-serif italic font-light ${isDarkBg ? "text-cyan-300" : "text-[#2D6A4F]"}`}>Masterclass</span>
-      </>
-    );
-  }
-
-  if (title.includes("Essentials")) {
-    const part1 = title.replace("Essentials", "").trim();
-    return (
-      <>
-        <span className={`${isDarkBg ? "text-white" : "text-[#112E22]"} font-semibold`}>{part1} </span>
-        <span className={`font-serif italic font-light ${isDarkBg ? "text-cyan-300" : "text-[#2D6A4F]"}`}>Essentials</span>
-      </>
-    );
-  }
-
-  return <span className={`${isDarkBg ? "text-white" : "text-[#112E22]"} font-semibold`}>{title}</span>;
-}
-
-function renderMajorPoints(slug: string) {
-  const pointsMap: Record<string, { bold: string; normal: string; underline: string }[]> = {
-    "sukuma-wiki-production": [
-      { bold: "Nursery Beds:", normal: " Master nursery bed preparation to ", underline: "ensure a 95%+ seed germination rate." },
-      { bold: "Drip Irrigation:", normal: " Implement precise ", underline: "drip irrigation scheduling" },
-      { bold: "Companion Planting:", normal: " Utilize organic companion planting to ", underline: "control pests naturally without chemical sprays." }
-    ],
-    "avocado-masterclass": [
-      { bold: "Soil Preparation:", normal: " Identify the optimal soil pH and drainage ", underline: "before transplanting young seedlings." },
-      { bold: "Grafting Techniques:", normal: " Perform correct grafting and pruning to ", underline: "double crop density and yields." },
-      { bold: "Export Compliance:", normal: " Adhere strictly to global phytosanitary standards to ", underline: "access international premium markets." }
-    ],
-    "dairy-farming-essentials": [
-      { bold: "Nutrition Rationing:", normal: " Formulate balanced feed rations to ", underline: "maximize daily milk production per cow." },
-      { bold: "Hygiene Protocol:", normal: " Enforce strict milking parlor hygiene to ", underline: "maintain zero mastitis infections." },
-      { bold: "Farming Records:", normal: " Structure record-keeping to ", underline: "track breeding cycles and feed-to-milk conversion." }
-    ],
-    "poultry-farming-essentials": [
-      { bold: "Coop Ventilation:", normal: " Design cross-ventilated housing to ", underline: "prevent respiratory diseases in chickens." },
-      { bold: "Vaccine Schedule:", normal: " Administer critical vaccines timely to ", underline: "ensure a 98%+ flock survival rate." },
-      { bold: "Feed Management:", normal: " Optimize feed-to-egg ratio to ", underline: "lower production expenses by 15%." }
-    ],
-    "ai-in-agriculture": [
-      { bold: "Computer Vision:", normal: " Deploy offline mobile models to ", underline: "detect crop diseases in under 5 seconds." },
-      { bold: "Precision Data:", normal: " Leverage IoT sensor telemetry to ", underline: "predict soil moisture and automate watering." },
-      { bold: "Satellite Telemetry:", normal: " Utilize multispectral satellite imagery to ", underline: "monitor crop health index across large fields." }
-    ]
-  };
-
-  const points = pointsMap[slug] || [
-    { bold: "Practical Skills:", normal: " Focus on actionable agricultural steps to ", underline: "enhance seasonal farm yields." },
-    { bold: "Business Strategy:", normal: " Implement crop scheduling and market research to ", underline: "maximize wholesale market prices." }
-  ];
-
-  return (
-    <ul className="space-y-3.5 mt-4">
-      {points.map((pt, i) => (
-        <li key={i} className="flex items-start gap-2.5 text-slate-700 text-sm leading-relaxed">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2D6A4F] mt-2 shrink-0" />
-          <span>
-            <strong className="font-serif italic text-[#112E22]">{pt.bold}</strong>
-            {pt.normal}
-            <span className="underline decoration-[#F5A623] decoration-2 underline-offset-4 font-semibold text-[#112E22]">{pt.underline}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { ArrowLeft, Mail, CheckCircle2, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/academy")({
   head: () => ({
     meta: [
-      { title: "Mqulima Hub — Academy" },
+      { title: "Mqulima Academy · Coming Soon" },
       {
         name: "description",
-        content: "Master climate-smart agronomy, optimize crop yields, and build a sustainable agricultural enterprise with practical, expert-led courses designed for modern farmers' success.",
+        content: "The premium agricultural learning platform by Mqulima. Under active development. Sign up for early access notifications.",
       },
     ],
   }),
-  component: AcademyPage,
+  component: AcademyComingSoonPage,
 });
 
-function AcademyPage() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [stats, setStats] = useState({ course_count: 0, chapter_count: 0, enrollment_count: 0 });
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All Courses");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  
-  // Modal state
-  const [modalCourse, setModalCourse] = useState<any>(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [currentLesson, setCurrentLesson] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<"intro" | "video" | "text" | "locked">("intro");
-  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [isStudySessionActive, setIsStudySessionActive] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedLessons, setExpandedLessons] = useState<Record<string, boolean>>({});
+// Symmetrical Camp Graphics Component (Mountain, Sun, Tent, Campfire, Log)
+const CampIllustration = ({ reverse = false }: { reverse?: boolean }) => {
+  return (
+    <div className={`relative w-44 h-48 select-none shrink-0 ${reverse ? "scale-x-[-1]" : ""}`}>
+      {/* Golden Sun */}
+      <div className="absolute top-10 left-12 w-14 h-14 bg-gradient-to-b from-[#fcd34d] to-[#f97316] rounded-full shadow-[0_0_20px_rgba(253,211,77,0.3)]" />
+      
+      {/* Mountains */}
+      <svg viewBox="0 0 100 80" className="absolute bottom-6 left-0 w-36 h-28 text-[#374151] drop-shadow-lg">
+        {/* Mountain Base */}
+        <polygon points="10,80 50,20 90,80" fill="#3E4F41" />
+        {/* Snow Cap */}
+        <polygon points="50,20 40,35 45,35 50,42 55,35 60,35" fill="#E2E8F0" />
+      </svg>
 
-  const { user } = useAuth();
-  const navigate = useNavigate();
+      {/* Pine Trees */}
+      <svg viewBox="0 0 40 60" className="absolute bottom-6 left-24 w-12 h-20 text-[#091F14]">
+        <polygon points="20,0 40,30 30,30 40,45 25,45 25,60 15,60 15,45 0,45 10,30 0,30" fill="currentColor" />
+      </svg>
+      <svg viewBox="0 0 40 60" className="absolute bottom-6 left-4 w-10 h-16 text-[#091F14]/80">
+        <polygon points="20,0 40,30 30,30 40,45 25,45 25,60 15,60 15,45 0,45 10,30 0,30" fill="currentColor" />
+      </svg>
 
-  const resources = useMemo(() => {
-    const list: { name: string; url: string }[] = [];
-    if (!modalCourse?.content) return list;
-    const regex = /\[Download Resource:\s*(.*?)\]\((.*?)\)/g;
-    let match;
-    while ((match = regex.exec(modalCourse.content)) !== null) {
-      list.push({ name: match[1], url: match[2] });
-    }
-    return list;
-  }, [modalCourse?.content]);
+      {/* Cozy Orange Tent */}
+      <div className="absolute bottom-6 left-10 z-10">
+        <svg viewBox="0 0 60 50" className="w-16 h-auto drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+          {/* Main Tent Body */}
+          <polygon points="30,5 5,45 55,45" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+          {/* Inside Flap Door */}
+          <polygon points="30,5 20,45 40,45" fill="#78350f" />
+          {/* Front Flaps */}
+          <polygon points="30,5 20,45 26,45" fill="#d97706" />
+          <polygon points="30,5 34,45 40,45" fill="#d97706" />
+        </svg>
+      </div>
 
-  const refreshCourseDetails = async (courseId: string) => {
-    try {
-      const data = await getCourseDetail({ data: courseId }) as any;
-      setModalCourse(data);
-      return data;
-    } catch (err) {
-      console.error("Error refreshing course details:", err);
-    }
-  };
+      {/* Flickering Campfire */}
+      <div className="absolute bottom-6 left-26 z-20 flex flex-col items-center">
+        <div className="relative w-6 h-8">
+          {/* Firewood Logs */}
+          <div className="absolute bottom-0 w-6 h-1.5 bg-amber-950 rounded-sm transform rotate-12" />
+          <div className="absolute bottom-0 w-6 h-1.5 bg-amber-950 rounded-sm transform -rotate-12" />
+          
+          {/* Flame Shapes */}
+          <motion.div 
+            animate={{ scaleY: [1, 1.3, 0.9, 1.1, 1], y: [0, -2, 1, -1, 0] }}
+            transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-1 left-1.5 w-3 h-5 bg-[#f97316] rounded-full origin-bottom"
+          />
+          <motion.div 
+            animate={{ scale: [0.9, 1.1, 0.9] }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-1.5 left-2 w-2 h-4 bg-[#fcd34d] rounded-full origin-bottom"
+          />
+        </div>
+      </div>
 
-  // Load basic courses & stats
+      {/* Log Sit */}
+      <div className="absolute bottom-6 left-5 z-20 w-8 h-3.5 bg-[#451a03] rounded-full transform rotate-12 shadow-sm" />
+    </div>
+  );
+};
+
+function AcademyComingSoonPage() {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // Load waitlist state
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const coursesData = await getPublishedCourses();
-        const statsData = await getAcademyStats();
-        setCourses(coursesData);
-        setStats(statsData as any);
-      } catch (err) {
-        console.error("Error loading academy data:", err);
-      } finally {
-        setLoading(false);
-      }
+    const isSubscribed = localStorage.getItem("mqulima_academy_subscribed") === "true";
+    if (isSubscribed) {
+      setSubscribed(true);
     }
-    loadData();
   }, []);
 
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const handleSubscribeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
 
-  // Load modal details when a course is selected
-  useEffect(() => {
-    if (!selectedCourseId) {
-      setModalCourse(null);
-      return;
-    }
-    async function loadDetails() {
-      try {
-        setModalLoading(true);
-                const data = await refreshCourseDetails(selectedCourseId as string);
-        if (data) {
-          if (data.intro_video_url || data.youtube_id) {
-            setViewMode("intro");
-          } else {
-            setViewMode("content");
-          }
-          setDescriptionExpanded(false);
-        }
-      } catch (err) {
-        console.error("Error loading course details:", err);
-      } finally {
-        setModalLoading(false);
-      }
-    }
-    loadDetails();
-  }, [selectedCourseId]);
-
-  const handleEnroll = async () => {
-    if (!user) {
-      toast.error("Please sign in to enroll and track your progress!");
-      navigate({ to: "/auth/sign-in" });
-      return;
-    }
-    if (!modalCourse) return;
-
-    try {
-      const res = await enrollInCourse({ data: { courseId: modalCourse.id } });
-      if (res && res.success) {
-        toast.success(`Successfully enrolled in ${modalCourse.title}!`);
-        await refreshCourseDetails(modalCourse.id);
-        
-        // Refresh global stats so enrollment count increments
-        const statsData = await getAcademyStats();
-        setStats(statsData as any);
-        setIsStudySessionActive(true);
-      }
-    } catch (err) {
-      console.error("Error enrolling in course:", err);
-      toast.error("Failed to enroll in course. Please try again.");
-    }
-  };
-
-  const handleDownloadFieldGuide = () => {
-    if (!modalCourse) return;
-    toast.success("Generating colorful field guide...");
-
-    // Create a new PDF document, Portrait orientation
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "px",
-      format: "a4", // standard A4 is 595 x 842
-    });
-
-    let y = 165;
-    let pageNum = 1;
-
-    const drawCoverBanner = (doc: any, title: string, category: string, level: string, duration: number) => {
-      // Forest Green Background Block
-      doc.setFillColor(9, 31, 20); // Dark Green
-      doc.rect(0, 0, 595, 140, "F");
-
-      // Gold accent bar at Y=140
-      doc.setFillColor(245, 166, 35);
-      doc.rect(0, 140, 595, 5, "F");
-
-      // Category label
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(245, 166, 35); // Gold
-      doc.text(category.toUpperCase() || "ACADEMY CLASSROOM", 50, 35);
-
-      // Course Title
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(18);
-      doc.setTextColor(255, 255, 255); // White
-      const wrappedTitle = doc.splitTextToSize(title.toUpperCase(), 495);
-      doc.text(wrappedTitle, 50, 55);
-
-      // Course Stats (Level, Duration)
-      doc.setFont("Helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(200, 200, 200); // Light gray
-      doc.text(`LEVEL: ${level.toUpperCase()}  |  TOTAL DURATION: ${duration} MINS  |  OFFICIAL FIELD GUIDE`, 50, 115);
-    };
-
-    // Draw page decorations & cover banner for first page
-    drawCoverBanner(doc, modalCourse.title, modalCourse.category || "General Agriculture", modalCourse.level || "Beginner", modalCourse.duration_minutes || 0);
-    
-    // Bottom border band/footer on page 1
-    doc.setDrawColor(230, 230, 230);
-    doc.setLineWidth(0.5);
-    doc.line(50, 805, 545, 805);
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    doc.text("© Mkulima Hub Platform. All rights reserved.", 50, 818);
-    doc.text(`Page 1`, 545, 818, { align: "right" });
-
-    // Helper to check space and add page if needed
-    const checkSpace = (needed: number) => {
-      if (y + needed > 780) {
-        doc.addPage();
-        pageNum++;
-        y = 50; // top margin for new pages
-        drawPageDecorations(doc, pageNum);
-      }
-    };
-
-    const drawPageDecorations = (doc: any, pNum: number) => {
-      // Top border bands
-      doc.setFillColor(45, 106, 79); // Forest Green
-      doc.rect(0, 0, 595, 8, "F");
-      doc.setFillColor(245, 166, 35); // Gold
-      doc.rect(0, 8, 595, 4, "F");
-
-      // Top header text
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text("MQULIMA ACADEMY  |  OFFICIAL COURSE FIELD GUIDE", 50, 24);
-
-      // Divider line at top
-      doc.setDrawColor(230, 230, 230);
-      doc.setLineWidth(0.5);
-      doc.line(50, 28, 545, 28);
-
-      // Footer line
-      doc.line(50, 805, 545, 805);
-
-      // Footer text
-      doc.setFont("Helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text("© Mkulima Hub Platform. All rights reserved.", 50, 818);
-      doc.text(`Page ${pNum}`, 545, 818, { align: "right" });
-    };
-
-    // Course Overview Section
-    checkSpace(80);
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(45, 106, 79); // Forest Green
-    doc.text("COURSE OVERVIEW", 50, y);
-    y += 6;
-    doc.setDrawColor(45, 106, 79);
-    doc.setLineWidth(1.5);
-    doc.line(50, y, 120, y); // Small green underline
-    y += 18;
-
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(51, 65, 85); // Slate
-    const wrappedDesc = doc.splitTextToSize(modalCourse.description || "No overview provided for this course.", 495);
-    doc.text(wrappedDesc, 50, y);
-    y += wrappedDesc.length * 13 + 15;
-
-    // Instructor Section
-    checkSpace(65);
-    doc.setFillColor(244, 248, 245); // Very light green background
-    doc.rect(50, y, 495, 45, "F");
-    doc.setDrawColor(45, 106, 79);
-    doc.setLineWidth(1);
-    doc.rect(50, y, 495, 45, "S");
-    
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(45, 106, 79);
-    doc.text("COURSE INSTRUCTOR", 65, y + 15);
-    
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(17, 24, 39);
-    doc.text(`${modalCourse.instructor_name || "Samuel Kiprono"} — ${modalCourse.instructor_title || "Lead Horticulturist & Agronomy Extension Officer"}`, 65, y + 28);
-    y += 65;
-
-    // Content Section
-    checkSpace(30);
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(45, 106, 79);
-    doc.text("COURSE MATERIAL & STUDY GUIDE", 50, y);
-    y += 6;
-    doc.line(50, y, 220, y);
-    y += 20;
-
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(51, 65, 85); // Slate
-    const contentText = modalCourse.content || "No course materials are provided for this course yet.";
-    const wrappedContent = doc.splitTextToSize(contentText, 495);
-    wrappedContent.forEach((line: string) => {
-      checkSpace(12);
-      doc.text(line, 50, y);
-      y += 11;
-    });
-
-    const filename = `${modalCourse.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}_field_guide.pdf`;
-    doc.save(filename);
-  };
-
-  const handleToggleCourseCompletion = async (e: React.MouseEvent, completed: boolean) => {
-    e.stopPropagation();
-    if (!modalCourse) return;
-
-    try {
-      const res = await toggleCourseCompletion({
-        data: {
-          courseId: modalCourse.id,
-          completed,
-        }
-      });
-      if (res && res.success) {
-        await refreshCourseDetails(modalCourse.id);
-        toast.success(
-          completed 
-            ? "Course marked as completed! 🎉" 
-            : "Course marked as incomplete."
-        );
-      }
-    } catch (err) {
-      console.error("Error toggling course completion:", err);
-      toast.error("Failed to update course completion status.");
-    }
-  };
-
-  const generateCertificate = () => {
-    if (!modalCourse || !user) return;
-    
-    // Create new PDF document, landscape orientation
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "px",
-      format: [842, 595],
-    });
-
-    // Outer border (Forest Green)
-    doc.setDrawColor(45, 106, 79);
-    doc.setLineWidth(16);
-    doc.rect(8, 8, 842 - 16, 595 - 16);
-
-    // Inner thin border (Gold)
-    doc.setDrawColor(245, 166, 35);
-    doc.setLineWidth(2);
-    doc.rect(20, 20, 842 - 40, 595 - 40);
-
-    // Corner decorative lines
-    doc.setDrawColor(45, 106, 79);
-    doc.rect(24, 24, 40, 40);
-    doc.rect(842 - 64, 24, 40, 40);
-    doc.rect(24, 595 - 64, 40, 40);
-    doc.rect(842 - 64, 595 - 64, 40, 40);
-
-    // Title & Header
-    doc.setFont("Helvetica", "bold");
-    doc.setTextColor(45, 106, 79);
-    doc.setFontSize(28);
-    doc.text("MQULIMA ACADEMY", 842 / 2, 80, { align: "center" });
-
-    // Subtitle
-    doc.setFont("Helvetica", "normal");
-    doc.setTextColor(245, 166, 35);
-    doc.setFontSize(14);
-    doc.text("CERTIFICATE OF COMPLETION", 842 / 2, 110, { align: "center" });
-
-    // Decorative horizontal separator line
-    doc.setDrawColor(245, 166, 35);
-    doc.setLineWidth(1);
-    doc.line(842 / 2 - 120, 125, 842 / 2 + 120, 125);
-
-    // Presentation text
-    doc.setFont("Helvetica", "italic");
-    doc.setTextColor(51, 65, 85);
-    doc.setFontSize(14);
-    doc.text("This is proudly presented to", 842 / 2, 170, { align: "center" });
-
-    // User Full Name
-    doc.setFont("Helvetica", "bold");
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(36);
-    doc.text(user.name.toUpperCase(), 842 / 2, 230, { align: "center" });
-
-    // Completion sentence
-    doc.setFont("Helvetica", "normal");
-    doc.setTextColor(75, 85, 99);
-    doc.setFontSize(13);
-    doc.text(
-      `for successfully completing the course of study and practical modules in`,
-      842 / 2,
-      280,
-      { align: "center" }
-    );
-
-    // Course Title
-    doc.setFont("Helvetica", "bold");
-    doc.setTextColor(45, 106, 79);
-    doc.setFontSize(22);
-    const titleLines = doc.splitTextToSize(modalCourse.title, 600);
-    doc.text(titleLines, 842 / 2, 320, { align: "center" });
-
-    // Additional info
-    doc.setFont("Helvetica", "italic");
-    doc.setTextColor(107, 114, 128);
-    doc.setFontSize(11);
-    doc.text(
-      "A comprehensive syllabus covering sustainable farming practices, regional land management, and yield optimization.",
-      842 / 2,
-      380,
-      { align: "center" }
-    );
-
-    // Footer signature / verification sections
-    doc.setDrawColor(209, 213, 219);
-    doc.setLineWidth(1);
-    doc.line(160, 480, 320, 480);
-    doc.line(842 - 320, 480, 842 - 160, 480);
-
-    doc.setFont("Helvetica", "bold");
-    doc.setTextColor(51, 65, 85);
-    doc.setFontSize(11);
-    doc.text("Samuel Kiprono", 240, 498, { align: "center" });
-    doc.text("Director of Academy", 240, 513, { align: "center" });
-
-    doc.text("Mqulima Hub Registrar", 842 - 240, 498, { align: "center" });
-    doc.text("Authorized Verification", 842 - 240, 513, { align: "center" });
-
-    // Decorative seal graphic
-    doc.setFillColor(245, 166, 35);
-    doc.setDrawColor(245, 166, 35);
-    doc.circle(842 / 2, 490, 24, "F");
-
-    doc.setFont("Helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.text("VERIFIED", 842 / 2, 493, { align: "center" });
-
-    // Save/Download PDF
-    const filename = `${modalCourse.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}_certificate.pdf`;
-    doc.save(filename);
-    toast.success("Certificate downloaded successfully!");
-  };
-
-  // Derived categories from database courses
-  const categories = useMemo(() => {
-    const cats = new Set(courses.map(c => c.category).filter(Boolean));
-    return ["All Courses", ...Array.from(cats)];
-  }, [courses]);
-
-  // Filtered courses
-  const filteredCourses = useMemo(() => {
-    return courses.filter(c => {
-      const matchesCategory = selectedCategory === "All Courses" || c.category === selectedCategory;
-      const matchesSearch = !debouncedSearch || 
-        c.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        (c.description && c.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
-      return matchesCategory && matchesSearch;
-    });
-  }, [courses, selectedCategory, debouncedSearch]);
-
-  const toggleChapter = (chapterId: string) => {
-    setExpandedChapters(prev => ({
-      ...prev,
-      [chapterId]: !prev[chapterId]
-    }));
-  };
-
-  const handleLessonSelect = (lesson: any) => {
-    if (!modalCourse) return;
-    const isLocked = !modalCourse.is_enrolled && !lesson.is_free_preview;
-
-    if (isLocked) {
-      setViewMode("locked");
-      setCurrentLesson(lesson);
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
 
-    if (lesson.content_type === "pdf") {
-      if (lesson.pdf_url) {
-        window.open(lesson.pdf_url, "_blank");
-      }
-      return;
-    }
-    setCurrentLesson(lesson);
-    if (lesson.content_type === "text") {
-      setViewMode("text");
-    } else {
-      setViewMode("video");
-    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSubscribed(true);
+      localStorage.setItem("mqulima_academy_subscribed", "true");
+    }, 1000);
+  };
+
+  const handleReset = () => {
+    setSubscribed(false);
+    setEmail("");
+    localStorage.removeItem("mqulima_academy_subscribed");
   };
 
   return (
     <AppLayout>
-      <div className="bg-[#112E22] text-white font-sans selection:bg-[#2D6A4F] selection:text-[#F5A623] overflow-x-hidden">
-        {/* Style block for local animations/scrollbar */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: #112E22;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #2D6A4F;
-            border-radius: 2px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #F5A623;
-          }
-          .no-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-          .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          .animate-shimmer {
-            background: linear-gradient(90deg, #15392a 25%, #204c3a 50%, #15392a 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-          }
-        `}} />
+      <div className="relative min-h-[95vh] w-full bg-gradient-to-b from-[#113B24] via-[#0E331E] to-[#0A2616] text-white overflow-hidden py-16 flex flex-col justify-between items-center">
+        
+        {/* Subtle Canvas Grain Overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent pointer-events-none z-0" />
 
-        <section className="relative pt-10 sm:pt-12 pb-4 sm:pb-4 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none -z-10" style={{
-            backgroundImage: "radial-gradient(ellipse 70% 80% at 65% 50%, rgba(45,106,79,0.15) 0%, transparent 70%)"
-          }} />
-
-          {/* LEFT SIDE */}
-          <div className="w-full md:w-[60%] text-left flex flex-col items-start z-10">
-            <div className="flex items-center gap-3 mb-2.5">
-              <span className="w-6 h-[2px] bg-[#2D6A4F]" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5A623] font-mono">
-                MQULIMA ACADEMY
-              </span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-2xl md:text-[34px] font-serif leading-[1.1] text-left select-none tracking-tight font-normal mb-2.5 sm:mb-3">
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
-                className="inline sm:block text-white"
-              >
-                Grow Smarter.{" "}
-              </motion.span>
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.4 }}
-                className="inline sm:block text-[#F5A623]"
-              >
-                Farm Better.{" "}
-              </motion.span>
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
-                className="inline sm:block text-white"
-              >
-                Lead the Land.
-              </motion.span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p className="text-[#9CA3AF] text-xs md:text-[14px] leading-relaxed max-w-[480px] mb-3.5 sm:mb-4">
-              Master climate-smart agronomy, optimize crop yields, and build a sustainable agricultural enterprise with practical, expert-led courses designed for modern farmers' success.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-row gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => {
-                  const target = document.getElementById("courses");
-                  target?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="flex-1 sm:flex-initial text-center bg-[#2D6A4F] text-[#F5A623] border border-transparent font-semibold text-xs px-4 sm:px-4.5 py-2 sm:py-2 rounded-[2px] transition hover:bg-[#1a5c3a] cursor-pointer shadow-md"
-              >
-                Browse Courses ↓
-              </button>
-              <button
-                onClick={() => {
-                  const target = document.getElementById("how-it-works");
-                  target?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="flex-1 sm:flex-initial text-center bg-transparent border border-white/20 text-white font-semibold text-xs px-4 sm:px-4.5 py-2 sm:py-2 rounded-[2px] transition hover:bg-white/5 cursor-pointer"
-              >
-                How It Works
-              </button>
-            </div>
-
-            {/* Stats Row */}
-            <div className="mt-4 sm:mt-5 flex items-center gap-6 md:gap-8 border-t border-white/10 pt-3 sm:pt-4 w-full">
-              <div className="flex flex-col">
-                <span className="text-lg md:text-xl font-semibold text-[#F5A623]">{stats.course_count || 0}</span>
-                <span className="text-[10px] text-[#9CA3AF] font-mono mt-0.5">Courses</span>
-              </div>
-              <div className="w-[1px] h-6 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="text-lg md:text-xl font-semibold text-[#F5A623]">{stats.chapter_count || 0}</span>
-                <span className="text-[10px] text-[#9CA3AF] font-mono mt-0.5">Chapters</span>
-              </div>
-              <div className="w-[1px] h-6 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="text-lg md:text-xl font-semibold text-[#F5A623]">{stats.enrollment_count || 0}</span>
-                <span className="text-[10px] text-[#9CA3AF] font-mono mt-0.5">Farmers Enrolled</span>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT SIDE (40% desktop, hidden mobile) */}
-          <div className="hidden md:flex w-[40%] justify-center items-center z-10">
-            <div className="relative w-[220px] h-[220px] flex items-center justify-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-                className="absolute w-[180px] h-[180px] rounded-full border border-[#2D6A4F]/30"
-              >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#F5A623] opacity-80 rounded-none" />
-                <div className="absolute bottom-[28px] right-[28px] w-1.5 h-1.5 bg-[#F5A623] opacity-80 rounded-none" />
-                <div className="absolute bottom-[28px] left-[28px] w-1.5 h-1.5 bg-[#F5A623] opacity-80 rounded-none" />
-              </motion.div>
-              <div className="absolute w-[110px] h-[110px] rounded-full border border-[#2D6A4F]/10 transform rotate-[45deg]" />
-              <div className="flex flex-col items-center">
-                <IconPlant className="h-6 w-6 text-[#2D6A4F]" />
-                <span className="text-[10px] font-mono text-[#6B7280] mt-2">Est. 2024</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* Course Catalog & Details & How It Works: Premium Light Theme */}
-      <div className="bg-[#FAFAF8] text-slate-800 font-sans selection:bg-[#2D6A4F] selection:text-white min-h-screen overflow-x-hidden pb-20">
-        {/* SECTION 2 — CATEGORY FILTER BAR */}
-        <div className="relative md:sticky md:top-16 z-20 bg-[#FAFAF8]/95 backdrop-blur-md border-b border-slate-200/80">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-            {/* Pills Container */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 py-1 pr-4">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`relative shrink-0 text-xs px-4 py-2 font-semibold rounded-full transition cursor-pointer border ${
-                    selectedCategory === cat 
-                      ? "bg-[#2D6A4F] text-white border-transparent"
-                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#2D6A4F]"
-                  }`}
-                >
-                  <span className="relative z-10">
-                    {cat === "AI in Agriculture" ? (
-                      <span className={`font-serif italic ${selectedCategory === cat ? "text-cyan-200" : "text-cyan-600 hover:text-cyan-800"}`}>
-                        AI in Agriculture
-                      </span>
-                    ) : (
-                      cat
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Desktop Search */}
-            <div className="hidden md:flex items-center relative w-[220px]">
-              <IconSearch className="absolute left-3.5 text-slate-400 shrink-0 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-xs pl-10 pr-4 py-2 rounded-full focus:outline-none focus:border-[#2D6A4F] placeholder-slate-400 focus:ring-1 focus:ring-[#2D6A4F]/20"
-              />
-            </div>
-
-            {/* Mobile Search Trigger */}
-            <div className="flex md:hidden items-center">
-              <button
-                onClick={() => setMobileSearchOpen(prev => !prev)}
-                className="p-2 border border-slate-200 rounded-full bg-white text-slate-600 hover:text-[#2D6A4F] cursor-pointer"
-              >
-                <IconSearch className="h-4.5 w-4.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Collapsible Mobile Search Input */}
-          <AnimatePresence>
-            {mobileSearchOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="md:hidden border-t border-slate-200 px-6 py-3 bg-[#FAFAF8]"
-              >
-                <div className="relative">
-                  <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-                  <input
-                    type="text"
-                    placeholder="Search courses..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-white border border-slate-200 text-slate-900 text-sm pl-10 pr-4 py-2.5 rounded-full focus:outline-none focus:border-[#2D6A4F] placeholder-slate-400 focus:ring-1 focus:ring-[#2D6A4F]/20"
-                    autoFocus
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Dynamic Stars */}
+        <div className="absolute inset-0 z-0 opacity-30">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full"
+              style={{
+                top: `${Math.random() * 60}%`,
+                left: `${Math.random() * 100}%`,
+              }}
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{
+                duration: 2 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
         </div>
 
-        {/* SECTION 3 — COURSE GRID */}
-        <section id="courses" className="max-w-7xl mx-auto px-6 py-12 md:py-20">
-          {/* GeeksForGeeks style Header Row */}
-          <div className="flex items-center justify-between mb-8 pb-2">
-            <h2 className="text-2xl md:text-3xl font-semibold text-slate-800 tracking-tight">Courses</h2>
-            <button 
-              onClick={() => {
-                setSelectedCategory("All Courses");
-                setSearchQuery("");
-              }}
-              className="border border-slate-700 rounded-full px-5 py-1.5 text-xs text-slate-700 font-semibold hover:bg-slate-50 transition cursor-pointer"
-            >
-              View All
-            </button>
+        {/* Content Container */}
+        <div className="max-w-6xl w-full px-4 md:px-8 relative z-10 flex flex-col items-center justify-center my-auto">
+          
+          {/* Main Camping / coming soon layout */}
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-8 md:gap-4 mb-8">
+            
+            {/* Left Symmetrical Camp Graphic */}
+            <div className="hidden sm:block">
+              <CampIllustration />
+            </div>
+
+            {/* Middle Big Title Section */}
+            <div className="flex flex-col items-center text-center px-2">
+              
+              {/* Giant 3D Sticker-Style Title */}
+              <div className="flex items-center justify-center select-none font-black text-4xl xs:text-5xl sm:text-7xl md:text-8xl tracking-tight leading-none mb-6">
+                
+                {/* COMING */}
+                <span
+                  className="bg-gradient-to-b from-[#A3E537] via-[#6BC72B] to-[#2B6A14] bg-clip-text text-transparent transform -rotate-3 inline-block pr-0.5"
+                  style={{
+                    textShadow: `
+                      -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff,
+                      3px 3px 0px #020a05
+                    `,
+                  }}
+                >
+                  COMING
+                </span>
+
+                {/* SOON */}
+                <span
+                  className="bg-gradient-to-b from-[#F7C619] via-[#E86E18] to-[#9C3506] bg-clip-text text-transparent transform rotate-3 inline-block px-0.5"
+                  style={{
+                    textShadow: `
+                      -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff,
+                      3px 3px 0px #020a05
+                    `,
+                  }}
+                >
+                  SOON
+                </span>
+
+                {/* !! */}
+                <span
+                  className="text-white transform rotate-6 inline-block ml-0.5 font-sans"
+                  style={{
+                    textShadow: `
+                      -2px -2px 0 #020a05, 2px -2px 0 #020a05, -2px 2px 0 #020a05, 2px 2px 0 #020a05
+                    `,
+                  }}
+                >
+                  !!
+                </span>
+              </div>
+
+              {/* Yellow Subtitle Banner */}
+              <div
+                className="text-sm sm:text-xl md:text-2xl font-black uppercase tracking-wider text-[#FCD34D] transform -rotate-1 font-mono mb-6"
+                style={{
+                  textShadow: "1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000",
+                }}
+              >
+                KNOWLEDGE ROOTED HERE
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-300 max-w-md font-medium leading-relaxed mb-6">
+                Our immersive agricultural academy is currently under construction. Get ready to explore state-of-the-art agronomy courses.
+              </p>
+
+            </div>
+
+            {/* Right Symmetrical Camp Graphic */}
+            <div className="hidden sm:block">
+              <CampIllustration reverse={true} />
+            </div>
+
           </div>
 
-          {loading ? (
-            /* Shimmer Loaders (Light themed) */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col h-[380px] shadow-xs">
-                  <div className="aspect-video w-full bg-slate-100 animate-pulse" />
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="h-3 w-1/4 bg-slate-100 rounded-sm animate-pulse mb-4" />
-                      <div className="h-5 w-3/4 bg-slate-100 rounded-sm animate-pulse mb-3" />
-                      <div className="h-5 w-1/2 bg-slate-100 rounded-sm animate-pulse" />
-                    </div>
-                    <div className="h-10 w-full bg-slate-100 rounded-sm animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredCourses.length === 0 ? (
-            /* Empty State */
-            <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
-              <IconSearch className="h-12 w-12 text-[#2D6A4F] mb-4 opacity-40" />
-              <h3 className="text-lg md:text-xl font-semibold text-slate-800 mb-2">No courses match your search</h3>
-              <p className="text-sm text-slate-500 mb-6">
-                Try a different keyword or browse all categories.
-              </p>
-              <button
-                onClick={() => {
-                  setSelectedCategory("All Courses");
-                  setSearchQuery("");
-                }}
-                className="bg-transparent border border-[#2D6A4F] text-[#2D6A4F] text-xs md:text-sm px-5 py-2.5 rounded-full transition hover:bg-[#2D6A4F]/5 font-semibold cursor-pointer"
-              >
-                Clear filters
-              </button>
-            </div>
-          ) : (
-            /* Grid */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredCourses.map((c, idx) => {
-                const totalHours = c.duration_minutes ? Math.ceil(c.duration_minutes / 60) : 0;
-                
-                // Map course slug to realistic high-interest count
-                let interestCount = "88k+";
-                if (c.slug === "sukuma-wiki-production" || c.slug?.includes("sukuma")) interestCount = "88k+";
-                else if (c.slug === "avocado-masterclass" || c.slug?.includes("avocado")) interestCount = "180k+";
-                else if (c.slug === "dairy-farming-essentials" || c.slug?.includes("dairy")) interestCount = "427k+";
-                else if (c.slug === "poultry-farming-essentials" || c.slug?.includes("poultry")) interestCount = "450k+";
-                else if (c.slug === "ai-in-agriculture" || c.slug?.includes("ai")) interestCount = "328k+";
-
-                // Live indicator logic
-                const isLive = c.slug?.includes("sukuma") || c.slug?.includes("avocado") || c.slug?.includes("dairy") || c.slug?.includes("poultry");
-
-                // Map standard levels
-                let levelLabel = "Beginner to Advanced";
-                if (c.level === "intermediate") levelLabel = "Intermediate and Advanced";
-                else if (c.level === "advanced") levelLabel = "Advanced";
-
-                // Strictly alternate between Yellow/Amber and Forest Green
-                const btnColors = [
-                  { 
-                    text: "text-[#CA8A04]", 
-                    bg: "group-hover:bg-[#CA8A04]", 
-                    hoverText: "group-hover:text-[#CA8A04]",
-                    shadow: "group-hover:shadow-[3px_3px_0px_0px_#112E22]" 
-                  }, // Yellow/Amber
-                  { 
-                    text: "text-[#2D6A4F]", 
-                    bg: "group-hover:bg-[#2D6A4F]", 
-                    hoverText: "group-hover:text-[#2D6A4F]",
-                    shadow: "group-hover:shadow-[3px_3px_0px_0px_#112E22]" 
-                  }, // Green
-                ];
-                const colorConfig = btnColors[idx % btnColors.length];
-
-                return (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="bg-white border border-slate-100 rounded-none overflow-hidden flex flex-col group justify-between shadow-xs hover:shadow-lg transition-all duration-300"
-                  >
-                    <div>
-                      {/* Thumbnail aspect-video */}
-                      <div className="aspect-[4/3] relative overflow-hidden bg-slate-50 border-b border-slate-100">
-                        {renderCourseCover(c)}
-
-                        {/* Top Left Live/Self-Paced Badge */}
-                        {isLive ? (
-                          <div className="absolute bottom-3 left-3 bg-[#DC2626] text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-[4px] flex items-center gap-1 shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            <span>LIVE COURSE</span>
-                          </div>
+          {/* Waitlist Box */}
+          <div className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl shadow-xl text-left">
+            <AnimatePresence mode="wait">
+              {!subscribed ? (
+                <form onSubmit={handleSubscribeSubmit} className="space-y-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Notify Me At Launch
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative w-full">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="email"
+                          name="academy_email"
+                          autoComplete="off"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          placeholder="farmer@mqulima.co.ke"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          disabled={loading}
+                          className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#6BC72B] focus:ring-1 focus:ring-[#6BC72B] text-xs transition"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#2B6A14] hover:bg-[#1B4E0E] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shrink-0 flex items-center justify-center min-w-[120px]"
+                      >
+                        {loading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <div className="absolute bottom-3 left-3 bg-slate-900/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-[4px] backdrop-blur-[2px]">
-                            SELF PACED
-                          </div>
+                          "Join Waitlist"
                         )}
-
-                        {/* Top Right Rating Badge */}
-                        <div className="absolute top-3 right-3 bg-[#0A0D0E]/60 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-[2px]">
-                          <span className="text-[#F5A623]">★</span>
-                          <span>{((c.rating && c.rating > 0) ? c.rating : 4.5).toFixed(1)}</span>
-                        </div>
-                      </div>
-
-                      {/* Card Body */}
-                      <div className="p-5 text-left">
-                        <span className={`text-[10px] font-bold tracking-[0.12em] uppercase block mb-1.5 font-sans`}>
-                          {c.category === "AI in Agriculture" ? (
-                            <span className="font-serif italic text-cyan-600 tracking-normal lowercase first-letter:uppercase">AI in Agriculture</span>
-                          ) : (
-                            <span className={colorConfig.text}>{c.category || "CROP PRODUCTION"}</span>
-                          )}
-                        </span>
-                        <h3 className={`text-slate-800 ${colorConfig.hoverText} font-semibold text-[17px] leading-snug line-clamp-2 h-[44px] transition-colors duration-200`}>
-                          {renderCourseTitle(c.title, colorConfig)}
-                        </h3>
-
-                        {/* Level Display */}
-                        <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-4">
-                          <IconChartBar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span>{levelLabel}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Footer */}
-                    <div className="px-5 pb-5 text-left flex flex-col">
-                      {/* Subtle Separator */}
-                      <div className="border-t border-slate-100/90 w-full my-4" />
-                      
-                      <div className="flex items-center justify-end">
-                        <button
-                          onClick={() => setSelectedCourseId(c.id)}
-                          className="text-xs bg-[#F5A623] text-[#112E22] font-bold px-4 py-2 rounded-none flex items-center gap-1.5 cursor-pointer border border-[#112E22] shadow-[2px_2px_0px_0px_#112E22] hover:bg-[#E59518] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#112E22] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#112E22] transition-all duration-150"
-                        >
-                          <span>Explore now</span>
-                          <span>→</span>
-                        </button>
-                      </div>
-                    </div>
-</motion.div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* SECTION 4 — COURSE DETAIL FULLSCREEN WORKSPACE & DETAILED PREVIEW MODAL */}
-        <AnimatePresence>
-          {selectedCourseId && modalCourse && (
-            isStudySessionActive ? (
-              /* IMMERSIVE FULL-VIEW CLASSROOM WORKSPACE */
-              <div className="fixed top-16 left-0 right-0 bottom-0 z-30 bg-[#06150D] flex flex-col select-none h-[calc(100vh-64px)] overflow-hidden">
-                {/* Header Bar */}
-                <div className="bg-[#091F14] text-white px-6 py-3.5 flex items-center justify-between border-b border-[#FAF9F5]/10 shrink-0 z-20 shadow-md">
-                  {/* Left: Back Button */}
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setIsStudySessionActive(false)}
-                      className="flex items-center gap-2 text-xs font-black text-[#F5A623] hover:text-[#E59518] transition-colors cursor-pointer bg-transparent border-0 uppercase tracking-widest font-mono"
-                    >
-                      <IconChevronLeft className="h-4 w-4 stroke-[3]" />
-                      <span>BACK TO DETAILS</span>
-                    </button>
-                    <div className="h-4 w-[1px] bg-[#FAF9F5]/15 hidden md:block"></div>
-                    <div className="hidden md:block text-left">
-                      <span className="text-[9px] text-[#52B788] font-mono tracking-widest uppercase block font-bold">
-                        {modalCourse.title}
-                      </span>
+                      </button>
                     </div>
                   </div>
-
-                  {/* Center: Current Tab Name */}
-                  <div className="text-center flex-1 mx-4 min-w-0">
-                    <h4 className="text-xs md:text-sm font-bold text-white truncate uppercase tracking-wide">
-                      {viewMode === "intro" ? "Course Intro Video" : "Course Content Study"}
-                    </h4>
-                  </div>
-
-                  {/* Right: Toggle Information Panel */}
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                      className="flex items-center gap-2 text-xs font-black text-white hover:text-[#F5A623] transition-colors cursor-pointer bg-transparent border-0 uppercase tracking-widest font-mono"
-                    >
-                      <IconMenu className="h-4 w-4" />
-                      <span className="hidden sm:inline">{isSidebarOpen ? "Hide Info" : "Show Info"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Main Body */}
-                <div className="flex-1 flex overflow-hidden w-full relative bg-[#06150D]">
-                  {/* Left Pane: Content / Video Viewer */}
-                  <div className="flex-1 h-full overflow-y-auto p-6 md:p-12 text-left custom-scrollbar bg-[#06150D]">
-                    {viewMode === "intro" ? (
-                      /* Intro Video View */
-                      <div className="max-w-3xl mx-auto w-full space-y-6">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#F5A623]/10 text-[#F5A623] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#F5A623]/30 uppercase font-bold">
-                            INTRO TRAILER
-                          </span>
-                        </div>
-                        <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
-                          {modalCourse.title}
-                        </h2>
-                        
-                        <div className="w-full aspect-video bg-[#091F14] relative border border-[#FAF9F5]/10 overflow-hidden rounded-none shadow-md">
-                          {(modalCourse.intro_video_url || modalCourse.youtube_id) ? (
-                            (() => {
-                              const videoUrl = modalCourse.intro_video_url || (modalCourse.youtube_id ? `https://youtube.com/watch?v=${modalCourse.youtube_id}` : "");
-                              if (extractYoutubeId(videoUrl)) {
-                                return (
-                                  <iframe
-                                    src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}?autoplay=1`}
-                                    title="Course Trailer"
-                                    className="w-full h-full border-0 absolute inset-0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                  />
-                                );
-                              } else if (extractVimeoId(videoUrl)) {
-                                return (
-                                  <iframe
-                                    src={`https://player.vimeo.com/video/${extractVimeoId(videoUrl)}?autoplay=1`}
-                                    title="Course Trailer"
-                                    className="w-full h-full border-0 absolute inset-0"
-                                    allow="autoplay; fullscreen; picture-in-picture"
-                                    allowFullScreen
-                                  />
-                                );
-                              } else {
-                                return (
-                                  <video
-                                    src={videoUrl}
-                                    controls
-                                    autoPlay
-                                    className="w-full h-full object-contain absolute inset-0"
-                                  />
-                                );
-                              }
-                            })()
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#091F14]">
-                              {modalCourse.cover_image_url ? (
-                                <img
-                                  src={modalCourse.cover_image_url}
-                                  alt={modalCourse.title}
-                                  className="w-full h-full object-cover opacity-30"
-                                />
-                              ) : (
-                                <IconPlant className="h-16 w-16 text-[#2D6A4F]/30" />
-                              )}
-                              <p className="absolute text-xs text-slate-400 font-mono tracking-wider">NO INTRO VIDEO AVAILABLE</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="text-sm text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap font-sans font-light pt-4 border-t border-[#FAF9F5]/10">
-                          <p>{modalCourse.description}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Full Course Content View with MarkdownRenderer */
-                      <div className="max-w-3xl mx-auto w-full space-y-6">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#2D6A4F]/20 text-[#52B788] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#2D6A4F]/40 uppercase font-bold">
-                            STUDY GUIDE
-                          </span>
-                        </div>
-                        <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
-                          {modalCourse.title}
-                        </h2>
-                        
-                        <div className="border-t border-[#FAF9F5]/10 pt-4">
-                          <MarkdownRenderer content={modalCourse.content || "No course materials are provided for this course yet."} />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Pane: collapsible sidebar/drawer */}
-                  {isSidebarOpen && (
-                    <div className="w-[320px] h-full bg-[#091F14] border-l border-[#FAF9F5]/10 flex flex-col justify-between p-5 md:p-6 shrink-0 overflow-y-auto custom-scrollbar">
-                      <div className="space-y-6 text-left">
-                        {/* Course Header */}
-                        <div>
-                          <span className="text-[9px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase mb-1">COURSE PROGRESS</span>
-                          <div className="flex justify-between items-center text-xs text-slate-300 mb-1.5 font-mono">
-                            <span>Status</span>
-                            <span>{modalCourse.progress_pct === 100 ? "Completed" : "In Progress"}</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-black border border-[#FAF9F5]/10 rounded-none overflow-hidden mb-4">
-                            <div 
-                              className="h-full bg-[#F5A623] transition-all duration-300"
-                              style={{ width: `${modalCourse.progress_pct || 0}%` }}
-                            />
-                          </div>
-
-                          {/* Complete Course Action */}
-                          {modalCourse.progress_pct === 100 ? (
-                            <div className="space-y-2.5">
-                              <button
-                                onClick={(e) => handleToggleCourseCompletion(e, false)}
-                                className="w-full bg-transparent hover:bg-white/5 text-slate-300 hover:text-white font-bold text-xs py-3 rounded-none border border-white/20 transition-colors cursor-pointer text-center uppercase tracking-wider font-sans"
-                              >
-                                Mark as Incomplete
-                              </button>
-                              
-                              {modalCourse.has_certificate && (
-                                <button
-                                  onClick={generateCertificate}
-                                  className="w-full bg-gradient-to-r from-[#F5A623] to-[#d97706] text-black font-bold text-xs py-3.5 rounded-none hover:from-[#f6b445] hover:to-[#ea580c] transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg animate-pulse uppercase tracking-wider font-sans"
-                                >
-                                  <IconCertificate className="h-4.5 w-4.5" />
-                                  <span>Claim Certificate</span>
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              onClick={(e) => handleToggleCourseCompletion(e, true)}
-                              className="w-full bg-[#52B788] text-[#091F14] font-bold text-xs py-3.5 rounded-none border border-[#52B788] hover:bg-[#40916c] hover:border-[#40916c] transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider shadow-lg font-sans"
-                            >
-                              <span>Complete Course 🎉</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Navigation Tabs */}
-                        <div className="border-t border-[#FAF9F5]/10 pt-5 space-y-2">
-                          <span className="text-[9px] text-slate-400 block font-mono tracking-widest uppercase">Workspace Tabs</span>
-                          
-                          <button
-                            onClick={() => setViewMode("content")}
-                            className={`w-full p-3 flex items-center gap-3 transition cursor-pointer border text-left rounded-none ${
-                              viewMode === "content"
-                                ? "bg-[#2D6A4F]/20 border-[#F5A623] text-white"
-                                : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/10 hover:border-[#FAF9F5]/10"
-                            }`}
-                          >
-                            <span className="text-xs font-semibold block uppercase font-sans">
-                              📖 Study Guide
-                            </span>
-                          </button>
-
-                          {(modalCourse.intro_video_url || modalCourse.youtube_id) && (
-                            <button
-                              onClick={() => setViewMode("intro")}
-                              className={`w-full p-3 flex items-center gap-3 transition cursor-pointer border text-left rounded-none ${
-                                viewMode === "intro"
-                                  ? "bg-[#2D6A4F]/20 border-[#F5A623] text-white"
-                                  : "bg-[#091F14] border-[#FAF9F5]/5 text-slate-300 hover:bg-[#2D6A4F]/10 hover:border-[#FAF9F5]/10"
-                              }`}
-                            >
-                              <span className="text-xs font-semibold block uppercase font-sans">
-                                🎥 Intro Trailer Video
-                              </span>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Resource Downloads */}
-                        {resources.length > 0 && (
-                          <div className="border-t border-[#FAF9F5]/10 pt-5 space-y-3">
-                            <span className="text-[9px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase">RESOURCE DOWNLOADS</span>
-                            <div className="space-y-2">
-                              {resources.map((res, index) => (
-                                <a
-                                  key={index}
-                                  href={res.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold p-2.5 rounded-none border border-white/10 hover:border-[#FAF9F5]/25 transition-all text-left group"
-                                >
-                                  <IconPdf className="h-4 w-4 text-[#F5A623] shrink-0" />
-                                  <span className="truncate group-hover:text-[#F5A623] transition-colors">{res.name}</span>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Instructor Footer */}
-                      <div className="border-t border-[#FAF9F5]/10 pt-4 mt-6 text-left flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-none bg-[#2D6A4F] border border-[#2D6A4F]/40 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                          {modalCourse.instructor_name ? modalCourse.instructor_name.split(" ").map((n: string) => n[0]).join("") : "SK"}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-[8px] text-[#F5A623] block font-mono font-bold tracking-wider uppercase">INSTRUCTOR</span>
-                          <span className="text-xs font-semibold text-white block truncate leading-tight">
-                            {modalCourse.instructor_name || "Samuel Kiprono"}
-                          </span>
-                        </div>
-                      </div>
+                  {errorMsg && (
+                    <div className="flex items-center gap-1.5 text-red-400 text-xs font-medium">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>{errorMsg}</span>
                     </div>
                   )}
-
-                  {/* DELETED SYLLABUS DUMMY */}
+                </form>
+              ) : (
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-12 h-12 bg-[#2B6A14]/20 border border-[#6BC72B]/30 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-6 h-6 text-[#6BC72B]" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-1">
+                    You're registered!
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-sm mb-4">
+                    We will send beta-access details directly to your inbox.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white transition"
+                  >
+                    Change Email
+                  </button>
                 </div>
-              </div>
-            ) : (
-              /* DETAILED PREVIEW MODAL MATCHING USER SCREENSHOT EXACTLY */
-              <div className="fixed top-16 left-0 right-0 bottom-0 z-50 bg-[#091F14] overflow-hidden">
-                {/* Close Button (X) */}
-                <button
-                  onClick={() => setSelectedCourseId(null)}
-                  className="fixed top-[80px] right-6 z-60 border-2 border-[#F5A623] hover:bg-[#F5A623] hover:text-[#091F14] text-[#F5A623] p-1.5 transition-colors cursor-pointer rounded-none bg-[#091F14] flex items-center justify-center shrink-0 w-8 h-8 shadow-md"
-                  title="Close Preview"
-                >
-                  <IconX className="h-5 w-5 stroke-[2.5]" />
-                </button>
-
-                {/* Modal Content */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full h-full overflow-y-auto bg-[#091F14] flex flex-col md:flex-row text-white"
-                >
-                  {/* LEFT COLUMN: Video Player & Curriculum (55%) */}
-                  <div className="w-full md:w-[55%] flex flex-col p-6 md:p-8 justify-between space-y-6 bg-[#091F14] border-b md:border-b-0 md:border-r border-[#FAF9F5]/10">
-                    {/* Header Tags & Title */}
-                    <div className="space-y-4 text-left">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1 bg-[#F5A623]/10 border border-[#F5A623]/30 px-2 py-0.5 text-[9px] font-black uppercase text-[#F5A623] tracking-wide rounded-none font-mono">
-                          ★ PREMIUM CLASSROOM
-                        </span>
-                        <span className="inline-flex items-center bg-[#2D6A4F]/20 border border-[#2D6A4F]/40 px-2 py-0.5 text-[9px] font-black uppercase text-[#52B788] tracking-wide rounded-none font-mono">
-                          {modalCourse.category || "CROP PRODUCTION"}
-                        </span>
-                      </div>
-
-                      <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans">
-                        {modalCourse.title}
-                      </h2>
-
-                      <p className="text-xs text-slate-300 leading-relaxed font-light font-sans">
-                        {modalCourse.description || "Learn how to establish, grow, and scale a highly profitable agricultural enterprise with regional agronomists."}
-                      </p>
-                    </div>
-
-                    {/* Video Area */}
-                    <div className="w-full aspect-video bg-[#06150D] relative border border-[#FAF9F5]/10 overflow-hidden rounded-none shadow-md">
-                      {viewMode === "locked" ? (
-                        <div className="w-full h-full bg-[#06150D] flex flex-col items-center justify-center p-6 text-center select-none">
-                          <div className="w-12 h-12 rounded-full bg-[#1F2937]/50 text-[#F5A623] flex items-center justify-center mb-3 border border-[#F5A623]/20">
-                            <IconLock className="h-5 w-5" />
-                          </div>
-                          <h4 className="text-sm font-semibold text-white mb-1.5">
-                            {currentLesson?.title || "Lesson Locked"}
-                          </h4>
-                          <p className="text-xs text-[#9CA3AF] max-w-xs mb-4 leading-relaxed font-sans">
-                            This lesson is part of the full course curriculum. Enroll to unlock all course materials and track your learning progress.
-                          </p>
-                          <button
-                            onClick={handleEnroll}
-                            className="bg-[#2D6A4F] text-[#F5A623] hover:bg-[#1a5c3a] font-bold text-xs px-5 py-2.5 rounded-none border border-[#FAF9F5]/25 cursor-pointer uppercase tracking-wider transition-colors"
-                          >
-                            Enroll in Course for Free
-                          </button>
-                        </div>
-                      ) : viewMode === "video" && currentLesson?.video_url ? (
-                        extractYoutubeId(currentLesson.video_url) ? (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${extractYoutubeId(currentLesson.video_url)}?autoplay=0`}
-                            title={currentLesson.title}
-                            className="w-full h-full border-0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        ) : extractVimeoId(currentLesson.video_url) ? (
-                          <iframe
-                            src={`https://player.vimeo.com/video/${extractVimeoId(currentLesson.video_url)}?autoplay=0`}
-                            title={currentLesson.title}
-                            className="w-full h-full border-0"
-                            allow="autoplay; fullscreen; picture-in-picture"
-                            allowFullScreen
-                          />
-                        ) : (
-                          <video
-                            src={currentLesson.video_url}
-                            controls
-                            className="w-full h-full object-contain"
-                          />
-                        )
-                      ) : viewMode === "text" && currentLesson?.text_content ? (
-                        /* Text Content view inside video frame */
-                        <div className="w-full h-full bg-[#06150D] p-6 overflow-y-auto text-left custom-scrollbar">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="bg-[#F5A623]/10 text-[#F5A623] text-[9px] font-mono px-2 py-0.5 rounded-none border border-[#F5A623]/30 uppercase font-bold">
-                              READING NOTES
-                            </span>
-                          </div>
-                          <h4 className="text-sm font-semibold text-white mb-4">
-                            {currentLesson.title}
-                          </h4>
-                          <div className="text-xs text-slate-300 leading-relaxed space-y-3 whitespace-pre-wrap font-sans">
-                            {currentLesson.text_content}
-                          </div>
-                          {currentLesson.pdf_url && (
-                            <div className="mt-6 pt-4 border-t border-[#FAF9F5]/10">
-                              <a
-                                href={currentLesson.pdf_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-2 bg-[#FAF9F5]/5 hover:bg-[#FAF9F5]/10 text-white text-xs font-semibold px-4 py-2 rounded-none border border-[#FAF9F5]/25 transition-colors"
-                              >
-                                <IconPdf className="h-4 w-4 text-[#F5A623]" />
-                                <span>Open PDF Study Guide</span>
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        /* Intro View: Play Course Intro Video or show Cover Image */
-                        (modalCourse.intro_video_url || modalCourse.youtube_id) ? (
-                          (() => {
-                            const videoUrl = modalCourse.intro_video_url || (modalCourse.youtube_id ? `https://youtube.com/watch?v=${modalCourse.youtube_id}` : "");
-                            if (extractYoutubeId(videoUrl)) {
-                              return (
-                                <iframe
-                                  src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}?autoplay=0`}
-                                  title="Course Trailer"
-                                  className="w-full h-full border-0 absolute inset-0"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              );
-                            } else if (extractVimeoId(videoUrl)) {
-                              return (
-                                <iframe
-                                  src={`https://player.vimeo.com/video/${extractVimeoId(videoUrl)}?autoplay=0`}
-                                  title="Course Trailer"
-                                  className="w-full h-full border-0 absolute inset-0"
-                                  allow="autoplay; fullscreen; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              );
-                            } else {
-                              return (
-                                <video
-                                  src={videoUrl}
-                                  controls
-                                  className="w-full h-full object-contain absolute inset-0"
-                                />
-                              );
-                            }
-                          })()
-                        ) : (
-                          /* Intro Cover Image with Play Button if no intro video url */
-                          <div className="w-full h-full relative bg-[#06150D]">
-                            {modalCourse.cover_image_url ? (
-                              <img
-                                src={modalCourse.cover_image_url}
-                                alt={modalCourse.title}
-                                className="w-full h-full object-cover opacity-35"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <IconPlant className="h-16 w-16 text-[#2D6A4F]/30" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-t from-black via-black/40 to-transparent">
-                              <button
-                                onClick={() => {
-                                  const firstChapter = modalCourse.chapters?.[0];
-                                  const firstVideo = firstChapter?.lessons?.find((l: any) => l.content_type === "video");
-                                  const fallbackLesson = firstChapter?.lessons?.[0];
-                                  
-                                  if (firstVideo) {
-                                    setCurrentLesson(firstVideo);
-                                    setViewMode("video");
-                                  } else if (fallbackLesson) {
-                                    setCurrentLesson(fallbackLesson);
-                                    setViewMode(fallbackLesson.content_type === "text" ? "text" : "intro");
-                                  }
-                                }}
-                                className="w-14 h-14 rounded-none bg-[#2D6A4F] text-[#F5A623] hover:scale-105 transition-transform flex items-center justify-center shadow-lg border border-[#F5A623]/25 cursor-pointer"
-                              >
-                                <IconPlay className="h-5 w-5 fill-current ml-0.5" />
-                              </button>
-                              <span className="text-[10px] text-slate-400 mt-3 font-mono tracking-widest select-none">
-                                PREVIEW COURSE LESSONS
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-
-                    {/* Instructor section */}
-                    <div className="flex items-center gap-3 border-t border-[#FAF9F5]/10 pt-4 text-left">
-                      <div className="w-9 h-9 rounded-none bg-[#2D6A4F] border border-[#2D6A4F]/40 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                        {modalCourse.instructor_name ? modalCourse.instructor_name.split(" ").map((n: string) => n[0]).join("") : "SK"}
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-[#F5A623] block font-mono font-bold tracking-wider">COURSE INSTRUCTOR</span>
-                        <span className="text-xs font-semibold text-white block leading-tight">
-                          {modalCourse.instructor_name || "Samuel Kiprono"}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block truncate max-w-[320px] mt-0.5">
-                          {modalCourse.instructor_title || "Lead Horticulturist & Agronomy Extension Officer"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT COLUMN: Course Specifications & Actions (45%) */}
-                  <div className="w-full md:w-[45%] flex flex-col justify-between p-6 md:p-8 bg-[#091F14] space-y-6">
-                    <div className="flex flex-col flex-1 min-h-0 bg-[#091F14]">
-                      {/* Specs Header */}
-                      <div className="flex items-center justify-between pb-4 border-b border-[#FAF9F5]/10">
-                        <h3 className="text-[#F5A623] text-xs font-black uppercase tracking-widest text-left">
-                          COURSE SPECIFICATIONS
-                        </h3>
-                      </div>
-
-                      {/* Course Specifications Details Grid */}
-                      <div className="flex-1 overflow-y-auto py-6 space-y-5 text-left bg-[#091F14] custom-scrollbar">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
-                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">CATEGORY</span>
-                            <span className="text-xs font-semibold text-white font-sans uppercase truncate block">
-                              {modalCourse.category || "HORTICULTURE"}
-                            </span>
-                          </div>
-
-                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
-                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">ESTIMATED TIME</span>
-                            <span className="text-xs font-semibold text-white font-sans block">
-                              {modalCourse.duration_minutes ? `${modalCourse.duration_minutes} Minutes` : "60 Minutes"}
-                            </span>
-                          </div>
-
-                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
-                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">INSTRUCTION MODE</span>
-                            <span className="text-xs font-semibold text-white font-sans uppercase block">
-                              Self-Paced Guide
-                            </span>
-                          </div>
-
-                          <div className="bg-[#06150D] p-3 border border-[#FAF9F5]/5 text-left">
-                            <span className="text-[9px] text-[#52B788] block font-mono uppercase font-bold tracking-wider mb-1">CERTIFICATE</span>
-                            <span className="text-xs font-semibold text-white font-sans uppercase block">
-                              {modalCourse.has_certificate ? "Available" : "Not Included"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Included Assets */}
-                        <div className="bg-[#06150D] p-4 border border-[#FAF9F5]/5 space-y-2">
-                          <h4 className="text-[10px] text-[#F5A623] font-mono font-bold uppercase tracking-wider">
-                            Included Learning Assets
-                          </h4>
-                          <ul className="text-xs text-slate-300 space-y-2 list-none">
-                            <li className="flex items-center gap-2">
-                              <span className="text-[#52B788] font-bold">✔</span> Comprehensive Digital Study Guide
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <span className="text-[#52B788] font-bold">✔</span> High-Quality Video Trailer Preview
-                            </li>
-                            {resources.length > 0 && (
-                              <li className="flex items-center gap-2">
-                                <span className="text-[#52B788] font-bold">✔</span> {resources.length} Downloadable Resource File{resources.length > 1 ? "s" : ""}
-                              </li>
-                            )}
-                            <li className="flex items-center gap-2">
-                              <span className="text-[#52B788] font-bold">✔</span> Lifetime Access to Updates
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CTA / Buttons area */}
-                    <div className="border-t border-[#FAF9F5]/10 pt-5 space-y-3">
-                      {modalCourse.is_enrolled ? (
-                        <div className="space-y-3 text-left bg-[#091F14]">
-                          <div>
-                            <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1.5 font-mono">
-                              <span>YOUR PROGRESS</span>
-                              <span>{modalCourse.progress_pct}%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-[#091F14] border border-[#FAF9F5]/10 rounded-none overflow-hidden">
-                              <div 
-                                className="h-full bg-[#F5A623] transition-all duration-300"
-                                style={{ width: `${modalCourse.progress_pct}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-2.5">
-                            <button
-                              onClick={() => setIsStudySessionActive(true)}
-                              className="w-full bg-[#F5A623] text-black font-bold text-xs py-3.5 rounded-none border border-[#F5A623] hover:bg-[#E59518] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider shadow-lg"
-                            >
-                              <span>Enter Study Workspace</span>
-                              <span>→</span>
-                            </button>
-
-                            {modalCourse.progress_pct === 100 && (
-                              <button
-                                onClick={generateCertificate}
-                                className="w-full bg-gradient-to-r from-[#F5A623] to-[#d97706] text-black font-bold text-xs py-3.5 rounded-none hover:from-[#f6b445] hover:to-[#ea580c] transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg animate-pulse uppercase tracking-wider"
-                              >
-                                <IconCertificate className="h-4.5 w-4.5" />
-                                <span>Claim Completion Certificate</span>
-                              </button>
-                            )}
-
-                            <button
-                              onClick={handleDownloadFieldGuide}
-                              className="w-full bg-transparent text-white font-bold text-xs py-3.5 rounded-none border border-[#FAF9F5]/20 hover:bg-white/5 transition-colors cursor-pointer text-center uppercase tracking-wider"
-                            >
-                              Download Field Guide
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-2.5">
-                          <button
-                            onClick={handleEnroll}
-                            className="w-full bg-[#F5A623] text-black font-bold text-xs py-3.5 rounded-none border border-[#F5A623] hover:bg-[#E59518] transition-colors cursor-pointer text-center uppercase tracking-wider"
-                          >
-                            Start Classroom Study
-                          </button>
-                          <button
-                            onClick={handleDownloadFieldGuide}
-                            className="w-full bg-transparent text-white font-bold text-xs py-3.5 rounded-none border border-[#FAF9F5]/20 hover:bg-white/5 transition-colors cursor-pointer text-center uppercase tracking-wider"
-                          >
-                            Download Field Guide
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            )
-          )}
-        </AnimatePresence>
-
-        {/* SECTION 5 — HOW IT WORKS */}
-        <section id="how-it-works" className="bg-[#F4F8F5] py-8 md:py-12 px-4 sm:px-6 border-t border-slate-200/50">
-          <div className="max-w-[1000px] mx-auto text-center">
-            <h2 className="text-xl md:text-2xl font-serif text-slate-800 font-normal mb-1.5">How Mqulima Academy Works</h2>
-            <p className="text-xs sm:text-sm text-slate-500 mb-6 md:mb-8">
-              Three steps to transform how you farm
-            </p>
-
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 z-10">
-              {/* Connector line for desktop */}
-              <div className="hidden md:block absolute top-[40%] left-0 right-0 h-[1px] border-t border-dashed border-[#2D6A4F]/20 -z-10" />
-
-              {/* Step 1 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#E6F3ED] to-[#F1F8F5] border border-[#2D6A4F]/20 p-4 sm:p-5 text-left rounded-none shadow-xs relative"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[38px] sm:text-[42px] font-serif font-semibold text-[#2D6A4F]/30 leading-none">01</span>
-                  <div className="w-8 h-8 rounded-none bg-white border border-[#2D6A4F]/20 flex items-center justify-center text-[#2D6A4F]">
-                    <IconBook className="h-4.5 w-4.5" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-[#1B4332] mb-1.5">Choose a Course</h3>
-                <p className="text-[12px] sm:text-[13px] text-[#2D6A4F]/80 leading-relaxed font-medium">
-                  Browse specialized crop, livestock, and technology curriculums verified by regional agronomists.
-                </p>
-              </motion.div>
-
-              {/* Step 2 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#FEF5E7] to-[#FFFBF5] border border-[#F5A623]/25 p-4 sm:p-5 text-left rounded-none shadow-xs relative"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[38px] sm:text-[42px] font-serif font-semibold text-[#F5A623]/40 leading-none">02</span>
-                  <div className="w-8 h-8 rounded-none bg-white border border-[#F5A623]/20 flex items-center justify-center text-[#CA8A04]">
-                    <IconPlay className="h-4 w-4 fill-current ml-0.5" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-[#854D0E] mb-1.5">Watch & Learn</h3>
-                <p className="text-[12px] sm:text-[13px] text-[#854D0E]/80 leading-relaxed font-medium">
-                  Consume step-by-step videos and reading notes. Preview lessons for free anytime.
-                </p>
-              </motion.div>
-
-              {/* Step 3 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#E3F2FD] to-[#F1F8FE] border border-[#0284C7]/20 p-4 sm:p-5 text-left rounded-none shadow-xs relative"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[38px] sm:text-[42px] font-serif font-semibold text-[#0284C7]/30 leading-none">03</span>
-                  <div className="w-8 h-8 rounded-none bg-white border border-[#0284C7]/20 flex items-center justify-center text-[#0284C7]">
-                    <IconCertificate className="h-4.5 w-4.5" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-[#075985] mb-1.5">Apply on Your Farm</h3>
-                <p className="text-[12px] sm:text-[13px] text-[#0369A1]/85 leading-relaxed font-medium">
-                  Put practical agricultural advice into action to improve yields, optimize animal health, and boost margins.
-                </p>
-              </motion.div>
-            </div>
+              )}
+            </AnimatePresence>
           </div>
-        </section>
+
+          {/* Go Back Link */}
+          <div className="mt-8">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to Home
+            </Link>
+          </div>
+
+        </div>
+
+        {/* Bottom Jagged Paper Edge Wave */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 w-full overflow-hidden leading-none translate-y-[2px]">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px] text-white fill-current">
+            <path d="M0,0 L50,15 L100,5 L150,20 L200,10 L250,25 L300,12 L350,28 L400,14 L450,30 L500,15 L550,25 L600,8 L650,22 L700,12 L750,28 L800,10 L850,25 L900,14 L950,30 L1000,15 L1050,22 L1100,8 L1150,20 L1200,5 L1200,120 L0,120 Z" />
+          </svg>
+        </div>
+
       </div>
     </AppLayout>
   );
