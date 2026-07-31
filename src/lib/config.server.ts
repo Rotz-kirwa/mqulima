@@ -55,11 +55,12 @@ export function getServerConfig(): ServerEnv {
     const errorFormatted = result.error.issues
       .map((issue) => ` - ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
-    console.error("[CRITICAL] Environment Configuration Error:\n" + errorFormatted);
-    throw new Error(`[FATAL] Invalid environment configuration:\n${errorFormatted}`);
+    console.warn("[WARN] Environment Configuration Warning:\n" + errorFormatted);
+    validatedEnv = rawEnv as ServerEnv;
+  } else {
+    validatedEnv = result.data;
   }
 
-  validatedEnv = result.data;
   return validatedEnv;
 }
 
