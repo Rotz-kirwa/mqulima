@@ -475,8 +475,8 @@ INSERT INTO orders (user_id, items, subtotal, total, status, payment_method, pay
 VALUES
   (
     (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1),
-    '[{"id":"p1","name":"Mavuno Planting Fertilizer","price":3450,"quantity":2,"unit":"50kg bag"}]'::jsonb,
-    6900.00,
+    '[{"id":"premium-npk-20-20-20-fertilizer","name":"Premium NPK 20:20:20 Fertilizer","price":3200,"quantity":2,"unit":"50kg bag"}]'::jsonb,
+    6400.00,
     7200.00,
     'processing',
     'mpesa',
@@ -488,7 +488,7 @@ VALUES
   ),
   (
     (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1),
-    '[{"id":"p2","name":"DK 8031 Hybrid Maize Seed","price":680,"quantity":5,"unit":"2kg pack"},{"id":"p5","name":"Knapsack Sprayer 16L","price":4500,"quantity":1,"unit":"1 unit"}]'::jsonb,
+    '[{"id":"lambda-cyhalothrin-10ec-insecticide","name":"Lambda-Cyhalothrin 10EC Insecticide","price":1450,"quantity":3,"unit":"1L bottle"},{"id":"20l-heavy-duty-knapsack-sprayer","name":"20L Heavy Duty Knapsack Sprayer","price":4800,"quantity":1,"unit":"1 unit"}]'::jsonb,
     7900.00,
     8300.00,
     'pending',
@@ -501,8 +501,8 @@ VALUES
   ),
   (
     (SELECT id FROM profiles WHERE username = 'mqulima_mutiso' LIMIT 1),
-    '[{"id":"p4","name":"Maclick Super Dewormer","price":980,"quantity":3,"unit":"500ml"}]'::jsonb,
-    2940.00,
+    '[{"id":"duduthrin-broad-spectrum-insecticide","name":"Duduthrin Broad-Spectrum Insecticide","price":1200,"quantity":2,"unit":"500ml"}]'::jsonb,
+    2400.00,
     3140.00,
     'shipped',
     'mpesa',
@@ -514,8 +514,8 @@ VALUES
   ),
   (
     (SELECT id FROM profiles WHERE username = 'mqulima_kipchirchir' LIMIT 1),
-    '[{"id":"p1","name":"Mavuno Planting Fertilizer","price":3450,"quantity":10,"unit":"50kg bag"}]'::jsonb,
-    34500.00,
+    '[{"id":"premium-npk-20-20-20-fertilizer","name":"Premium NPK 20:20:20 Fertilizer","price":3200,"quantity":10,"unit":"50kg bag"}]'::jsonb,
+    32000.00,
     35000.00,
     'delivered',
     'bank_transfer',
