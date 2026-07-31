@@ -135,97 +135,10 @@ By building feed processing bays at cooperative collection points, farmers can p
 END $$;
 
 
--- 1. Profiles (Farmers, Retailers, Sales Agents)
--- All usernames MUST start with mqulima_
-INSERT INTO profiles (email, password_hash, full_name, username, role, county_region, farming_interests, crops, livestock, years_farming, reputation_score, followers_count, phone, is_retailer, retailer_discount_pct)
-VALUES
-  (
-    'john.kipchirchir@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'John Kipchirchir',
-    'mqulima_kipchirchir',
-    'farmer',
-    'Uasin Gishu',
-    '{"Maize", "Dairy", "Soil Care"}',
-    '{"Maize", "Wheat"}',
-    '{"Dairy Cows"}',
-    12,
-    142,
-    48,
-    '+254711223344',
-    FALSE,
-    0
-  ),
-  (
-    'mary.wanjiku@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'Mary Wanjiku',
-    'mqulima_wanjiku',
-    'farmer',
-    'Nyandarua',
-    '{"Horticulture", "Organic Farming", "Value Addition"}',
-    '{"Tomatoes", "Potatoes", "Cabbage"}',
-    '{"Poultry"}',
-    8,
-    95,
-    32,
-    '+254722334455',
-    FALSE,
-    0
-  ),
-  (
-    'david.kiprono@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'David Kiprono',
-    'mqulima_kiprono',
-    'farmer',
-    'Kericho',
-    '{"Tea", "Silage Production"}',
-    '{"Tea"}',
-    '{"Dairy Cows", "Goats"}',
-    15,
-    210,
-    89,
-    '+254733445566',
-    FALSE,
-    0
-  ),
-  (
-    'grace.mutiso@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'Grace Mutiso',
-    'mqulima_mutiso',
-    'farmer',
-    'Machakos',
-    '{"Poultry", "Drought Resistant Crops", "Irrigation"}',
-    '{"Sorghum", "Millet", "Green Grams"}',
-    '{"Poultry", "Beekeeping"}',
-    6,
-    78,
-    19,
-    '+254744556677',
-    FALSE,
-    0
-  ),
-  (
-    'peter.mwangi@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'Peter Mwangi Agrovet',
-    'mqulima_mwangi_retailer',
-    'retailer',
-    'Nakuru',
-    '{"Agrochemicals", "Seeds", "Equipment"}',
-    '{}',
-    '{}',
-    20,
-    350,
-    215,
-    '+254755667788',
-    TRUE,
-    10.00
-  );
+-- 1. Profiles (Preserve super admin accounts only)
+-- (No mock profiles inserted)
 
--- 2. Products (Featured Collection)
+-- 2. Products (Featured Collection Catalog)
 INSERT INTO products (name, slug, description, base_price, original_price, stock_qty, is_featured, avg_rating, rating_count, status, brand, seller, county, unit, badge, organic, verified_seller, seller_score, condition, shop_type, field, subcategory, image_urls)
 VALUES
   (
@@ -434,126 +347,8 @@ VALUES
     800.00
   );
 
--- Service Requests
-INSERT INTO service_requests (user_id, service_id, status, notes, scheduled_date, location)
-VALUES
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kipchirchir' LIMIT 1),
-    (SELECT id FROM services WHERE slug = 'soil-ph-npk-analysis' LIMIT 1),
-    'requested',
-    'Soil test for 5 acres of maize land ahead of the next planting cycle.',
-    NOW() + INTERVAL '3 days',
-    'Eldoret, near Annex'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_mutiso' LIMIT 1),
-    (SELECT id FROM services WHERE slug = 'emergency-vet-visit' LIMIT 1),
-    'assigned',
-    'One of the dairy cows has a swollen udder and milk drop.',
-    NOW() + INTERVAL '1 day',
-    'Machakos Town'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1),
-    (SELECT id FROM services WHERE slug = 'silage-shredding' LIMIT 1),
-    'in_progress',
-    'Need to shred 10 tonnes of maize stalks for silage.',
-    NOW(),
-    'Kericho, Litein area'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1),
-    (SELECT id FROM services WHERE slug = 'soil-ph-npk-analysis' LIMIT 1),
-    'completed',
-    'Soil test completed. Report sent to customer.',
-    NOW() - INTERVAL '2 days',
-    'Ol Kalou, Nyandarua'
-  );
-
--- 4. Orders & Payments
-INSERT INTO orders (user_id, items, subtotal, total, status, payment_method, payment_status, delivery_address, checkout_channel, sales_agent_id, notes)
-VALUES
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1),
-    '[{"id":"premium-npk-20-20-20-fertilizer","name":"Premium NPK 20:20:20 Fertilizer","price":3200,"quantity":2,"unit":"50kg bag"}]'::jsonb,
-    6400.00,
-    7200.00,
-    'processing',
-    'mpesa',
-    'paid',
-    'Ol Kalou Town, Nyandarua',
-    'website',
-    NULL,
-    'Deliver via Wells Fargo'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1),
-    '[{"id":"lambda-cyhalothrin-10ec-insecticide","name":"Lambda-Cyhalothrin 10EC Insecticide","price":1450,"quantity":3,"unit":"1L bottle"},{"id":"20l-heavy-duty-knapsack-sprayer","name":"20L Heavy Duty Knapsack Sprayer","price":4800,"quantity":1,"unit":"1 unit"}]'::jsonb,
-    7900.00,
-    8300.00,
-    'pending',
-    'mpesa',
-    'pending',
-    'Kericho Town, Coop Bank Lane',
-    'whatsapp',
-    NULL,
-    'Order placed via WhatsApp conversation'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_mutiso' LIMIT 1),
-    '[{"id":"duduthrin-broad-spectrum-insecticide","name":"Duduthrin Broad-Spectrum Insecticide","price":1200,"quantity":2,"unit":"500ml"}]'::jsonb,
-    2400.00,
-    3140.00,
-    'shipped',
-    'mpesa',
-    'paid',
-    'Machakos Town, Behind KCB',
-    'website',
-    NULL,
-    'Send via Speedaf Courier'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kipchirchir' LIMIT 1),
-    '[{"id":"premium-npk-20-20-20-fertilizer","name":"Premium NPK 20:20:20 Fertilizer","price":3200,"quantity":10,"unit":"50kg bag"}]'::jsonb,
-    32000.00,
-    35000.00,
-    'delivered',
-    'bank_transfer',
-    'paid',
-    'Eldoret CBD, Store #4',
-    'website',
-    NULL,
-    'Bulk order'
-  );
-
--- Payments
-INSERT INTO payments (order_id, provider, provider_ref, amount, status, raw_payload)
-VALUES
-  (
-    (SELECT id FROM orders WHERE total = 7200.00 LIMIT 1),
-    'mpesa',
-    'RGF89DFK3S',
-    7200.00,
-    'paid',
-    '{"transaction_id": "RGF89DFK3S", "merchant_request_id": "12345", "checkout_request_id": "54321", "result_code": 0}'::jsonb
-  ),
-  (
-    (SELECT id FROM orders WHERE total = 3140.00 LIMIT 1),
-    'mpesa',
-    'RHG45FDK3W',
-    3140.00,
-    'paid',
-    '{"transaction_id": "RHG45FDK3W", "merchant_request_id": "12346", "checkout_request_id": "54322", "result_code": 0}'::jsonb
-  ),
-  (
-    (SELECT id FROM orders WHERE total = 35000.00 LIMIT 1),
-    'bank_transfer',
-    'REF-BANK-998822',
-    35000.00,
-    'paid',
-    '{"transaction_id": "REF-BANK-998822", "bank_name": "KCB", "status": "approved"}'::jsonb
-  );
-
+-- 3. Service Requests & Orders
+-- (Clean production database: No mock transactional activity)
 
 -- Seed Commodity price board entries
 INSERT INTO commodity_price_board (commodity_id, region, price, source)
@@ -562,7 +357,6 @@ VALUES
   ((SELECT id FROM commodities WHERE name = 'Dry Maize' LIMIT 1), 'Nairobi', 3850.00, 'Nairobi Markets'),
   ((SELECT id FROM commodities WHERE name = 'Shangi Potatoes' LIMIT 1), 'Nakuru', 2300.00, 'Wakulima Market Nakuru'),
   ((SELECT id FROM commodities WHERE name = 'Raw Milk' LIMIT 1), 'Nyandarua', 44.00, 'Brookside Nyandarua Coop');
-
 
 -- Done!
 
