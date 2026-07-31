@@ -215,18 +215,10 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 
 export const adminGetCategoriesList = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { getCurrentUser } = await import("../auth-server");
-    const user = await getCurrentUser();
+    const { getCurrentAdminUser } = await import("../auth-server");
+    const user = (await getCurrentUser()) || (await getCurrentAdminUser());
     if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
-      // Check admin session helper as fallback
-      const { verifyAdminSession } = await import("../../../admin/src/lib/auth-admin-helper.server").catch(() => ({ verifyAdminSession: null as any }));
-      if (verifyAdminSession) {
-        await verifyAdminSession().catch(() => {
-          throw new Error("Unauthorized: Admin privilege required");
-        });
-      } else {
-        throw new Error("Unauthorized: Admin privilege required");
-      }
+      throw new Error("Unauthorized: Admin privilege required");
     }
 
     const { getDb } = await import("../db.server");

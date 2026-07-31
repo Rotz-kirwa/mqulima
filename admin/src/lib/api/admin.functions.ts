@@ -1399,8 +1399,8 @@ export const triggerAdminKamisSync = createServerFn({ method: "POST" })
     const { verifyAdminSession } = await import("../auth-admin-helper-functions");
     const actor = await verifyAdminSession();
     
-    // Dynamically import client market sync logic
-    const { executeKamisSync } = await import("../../../../src/lib/api/market-sync.server");
+    // Dynamically import local market sync logic
+    const { executeKamisSync } = await import("./market-sync.server");
     const res = await executeKamisSync();
 
     const { writeAuditLog } = await import("../audit-functions");

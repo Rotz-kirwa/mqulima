@@ -1,17 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-
-async function getDbInstance() {
-  const { getDb } = await import("../db.server");
-  return getDb();
-}
+import { getDb } from "../db-functions";
 
 /**
- * Production-Ready KAMIS (Kenya Agricultural Market Information System) Auto-Sync Engine.
- * Fully automated — no manual admin entry needed.
+ * Production-Ready KAMIS (Kenya Agricultural Market Information System) Auto-Sync Engine for Admin.
  * Populates and auto-updates live market price boards across major Kenyan trading hubs.
  */
 export async function executeKamisSync() {
-  const sql = await getDbInstance();
+  const sql = getDb();
 
   // 1. Fetch all registered commodities
   const commodities = await sql`SELECT id, name, unit FROM commodities`;
@@ -124,7 +119,6 @@ export async function executeKamisSync() {
     `;
 
     if (existingPrices.length > 0) {
-      // Apply micro daily fluctuations (-1.5% to +1.5%) to simulate real KAMIS market price shifts
       for (const entry of existingPrices) {
         const delta = (Math.random() * 0.03 - 0.015);
         const currentPrice = parseFloat(entry.price);
@@ -140,10 +134,8 @@ export async function executeKamisSync() {
         updatedCount++;
       }
     } else {
-      // Find matching benchmark config or generate realistic default
       let benchmark = kamisBenchmarks[cNameLower];
       if (!benchmark) {
-        // Fallback matching substring
         const foundKey = Object.keys(kamisBenchmarks).find(k => cNameLower.includes(k) || k.includes(cNameLower));
         if (foundKey) {
           benchmark = kamisBenchmarks[foundKey];
@@ -178,11 +170,7 @@ export async function executeKamisSync() {
 
 export const syncKamisMarketPrices = createServerFn({ method: "POST" })
   .handler(async () => {
-    const { getCurrentUser, getCurrentAdminUser } = await import("../auth-server");
-    const user = (await getCurrentUser()) || (await getCurrentAdminUser());
-    if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
-      throw new Error("Unauthorized: Admin privilege required to trigger market price sync");
-    }
+    const { verifyAdminSession } = await import("../auth-admin-helper-functions");
+    await verifyAdminSession();
     return await executeKamisSync();
   });
-
