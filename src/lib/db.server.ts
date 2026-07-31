@@ -7,6 +7,24 @@ import { getServerConfig } from "./config.server";
 // Connection string from validated DATABASE_URL environment configuration.
 
 let sql: ReturnType<typeof postgres> | null = null;
+let schemaPatched = false;
+
+async function autoPatchSchema(sqlInstance: ReturnType<typeof postgres>) {
+  if (schemaPatched) return;
+  schemaPatched = true;
+  try {
+    await sqlInstance`
+      ALTER TABLE profiles 
+        ADD COLUMN IF NOT EXISTS bio TEXT,
+        ADD COLUMN IF NOT EXISTS website TEXT,
+        ADD COLUMN IF NOT EXISTS cover_image TEXT,
+        ADD COLUMN IF NOT EXISTS farming_activities TEXT,
+        ADD COLUMN IF NOT EXISTS farming_photos TEXT[] DEFAULT '{}';
+    `;
+  } catch (err) {
+    console.warn("[WARN] Auto-patch schema notice:", err);
+  }
+}
 
 export function getDb() {
   if (!sql) {
@@ -25,6 +43,8 @@ export function getDb() {
       ssl: isLocal ? false : { rejectUnauthorized: false },
       onnotice: () => {},
     });
+
+    autoPatchSchema(sql).catch(() => {});
   }
   return sql;
 }
