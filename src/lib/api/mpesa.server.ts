@@ -79,8 +79,11 @@ export const initiateStkPush = createServerFn({ method: "POST" })
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
 
+    const { getMpesaWebhookSecret } = await import("../mpesa-helpers.server");
+    const webhookSecret = getMpesaWebhookSecret();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.co.ke";
-    const callbackUrl = `${appUrl.replace(/\/$/, "")}/api/mpesa/callback`;
+    const callbackUrl = `${appUrl.replace(/\/$/, "")}/api/mpesa/callback?token=${webhookSecret}`;
+
 
     const payload = {
       BusinessShortCode: shortcode,

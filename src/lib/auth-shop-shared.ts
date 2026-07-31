@@ -10,28 +10,13 @@ export const SignUpSchema = z.object({
   county: z.string().min(1, "County is required"),
   deliveryLocation: z.string().min(1, "Delivery location is required"),
   landmark: z.string().optional(),
-  farmingType: z.enum([
-    "Crop Farming",
-    "Livestock Farming",
-    "Mixed Farming",
-    "Dairy Farming",
-    "Poultry Farming",
-    "Horticulture",
-    "Aquaculture (Fish Farming)",
-    "Apiculture (Bee Keeping)",
-    "Greenhouse Farming",
-    "Fruit Farming",
-    "Coffee Farming",
-    "Tea Farming",
-    "Sugarcane Farming",
-    "Other"
-  ], { errorMap: () => ({ message: "Nature of Farming is required" }) }),
+  farmingType: z.string().min(1, "Nature of Farming is required"),
   specifyFarmingType: z.string().optional(),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter"),
-  confirmPassword: z.string(),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   terms: z.boolean().refine(val => val === true, "You must accept the terms & conditions")
 }).superRefine((data, ctx) => {
   if (data.password !== data.confirmPassword) {

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
-import { Sparkles, X, Send } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { X, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { AIIcon } from "./AIIcon";
 
 type Message = {
   role: "user" | "model";
@@ -11,12 +12,9 @@ type Message = {
 
 export function FloatingAIChat() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isShop = location.pathname.startsWith("/shop");
   const [isOpen, setIsOpen] = useState(false);
-  const [isShop, setIsShop] = useState(false);
-
-  useEffect(() => {
-    setIsShop(window.location.pathname.startsWith("/shop"));
-  }, []);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -143,15 +141,19 @@ export function FloatingAIChat() {
 
   return (
     <>
-      {/* Floating Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Mqulima AI Assistant"
-        className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-auto md:right-6 z-40 flex items-center gap-2 rounded-full border border-[#2D6A4F]/30 bg-white px-4 py-2.5 md:px-5 md:py-3 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer`}
-      >
-        <Sparkles className="h-4.5 w-4.5 md:h-5 md:w-5 text-[#F5A623] animate-pulse" />
-        <span className="text-xs md:text-sm font-bold text-[#2D6A4F] whitespace-nowrap">Mqulima AI</span>
-      </button>
+      {/* Floating Toggle Icon Button */}
+      <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-auto md:right-6 z-40 flex items-center justify-center`}>
+        {/* Subtle glowing halo wave */}
+        <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#F5A623]/25 blur-sm" />
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Mqulima AI Assistant"
+          className="relative z-10 flex items-center justify-center p-1 transition-transform hover:scale-115 active:scale-90 duration-300 cursor-pointer drop-shadow-[0_10px_25px_rgba(245,166,35,0.5)]"
+        >
+          <AIIcon className="h-12 w-12 md:h-14 md:w-14" animated={true} />
+        </button>
+      </div>
 
       {/* Floating Chat Overlay */}
       <AnimatePresence>
@@ -162,15 +164,17 @@ export function FloatingAIChat() {
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
             className={`fixed ${isShop ? "bottom-[136px]" : "bottom-16"} left-4 right-4 md:bottom-38 md:left-auto md:right-6 z-50 w-[calc(100vw-32px)] sm:w-[360px] md:w-[400px] h-[460px] md:h-[520px] bg-white border border-[#0A1E0C]/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col rounded-2xl overflow-hidden`}
           >
-            {/* Header: Magda-style Assistant details */}
+            {/* Header: Assistant details */}
             <div className="bg-[#FAF9F5] border-b border-[#0A1E0C]/10 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {/* Brand Initial Avatar */}
-                <div className="h-10 w-10 bg-[#C83F1B] rounded-full flex items-center justify-center text-white font-black text-lg shadow-sm">
-                  M
+                <div className="h-10 w-10 flex items-center justify-center shrink-0">
+                  <AIIcon className="h-9 w-9" animated={true} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#0A1E0C] leading-none">Mqulima Assistant</h3>
+                  <h3 className="text-sm font-extrabold text-[#0A1E0C] leading-none flex items-center gap-1.5">
+                    Mqulima Assistant
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#10B981]/15 text-[#10B981] uppercase tracking-wider">AI</span>
+                  </h3>
                   <span className="text-[11px] font-bold text-[#2D6A4F] mt-1 block">Najibu Kiswahili & English</span>
                 </div>
               </div>

@@ -10,7 +10,7 @@ interface FaqItem {
 const faqs: FaqItem[] = [
   {
     q: "What should I do if my ordered farm inputs (seeds, fertilizer) are delayed?",
-    a: "If your delivery from the Mqulima Agrovet Shop is delayed, check the live order status on your dashboard. For further assistance, contact our logistics department immediately with your order ID at logistics@mqulima.com or reach out via WhatsApp support.",
+    a: "If your delivery from the Mqulima Agrovet Shop is delayed, check the live order status on your dashboard. For further assistance, contact our logistics department immediately with your order ID at Mqulima001@gmail.com or reach out via WhatsApp support.",
   },
   {
     q: "How do I request a visit from a Mqulima agricultural extension officer?",
@@ -18,7 +18,7 @@ const faqs: FaqItem[] = [
   },
   {
     q: "I am experiencing issues with the Mqulima AI Diagnostic tool. How can I get help?",
-    a: "Ensure the photos you upload are high-resolution and taken under clear, natural lighting. If the diagnostic tool fails to process or returns an error, refresh your browser or send the image and screenshot of the error to tech-support@mqulima.com.",
+    a: "Ensure the photos you upload are high-resolution and taken under clear, natural lighting. If the diagnostic tool fails to process or returns an error, refresh your browser or send the image and screenshot of the error to Mqulima001@gmail.com.",
   },
   {
     q: "Why is my seller listing on the Mqulima Marketplace not visible to buyers?",
@@ -26,7 +26,7 @@ const faqs: FaqItem[] = [
   },
   {
     q: "How can I resolve payment issues or failed transactions during checkout?",
-    a: "If an M-Pesa or bank transaction fails but funds are deducted from your account, please do not resubmit the payment. Send the transaction message reference along with your order ID to billing@mqulima.com, and we will update your order within 30 minutes.",
+    a: "If an M-Pesa or bank transaction fails but funds are deducted from your account, please do not resubmit the payment. Send the transaction message reference along with your order ID to Mqulima001@gmail.com, and we will update your order within 30 minutes.",
   },
 ];
 

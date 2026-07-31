@@ -328,7 +328,7 @@ function BlogPage() {
                             alt={post.title}
                             className="w-full h-full object-cover group-hover:scale-[1.02] transition"
                             onError={(e) => {
-                              e.currentTarget.src = "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500";
+                              e.currentTarget.src = "/mqulima_news_banner.png";
                             }}
                           />
                           <span className="absolute top-3 left-3 bg-white/90 text-[#1A3A1A] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider border border-[#D4DDD0]">
@@ -494,7 +494,7 @@ function BlogPage() {
               {/* Newsletter footer */}
               <div className="border-t border-[#D4DDD0] pt-4 text-center text-[9px] text-[#5D6B5C]">
                 <strong>Mqulima Ecosystem Ltd</strong> — P.O Box 100-20100, Nakuru, Kenya <br />
-                For agro-support contact sales@mqulima.com or use the WhatsApp hotline.
+                For agro-support contact Mqulima001@gmail.com or use the WhatsApp hotline.
               </div>
 
             </div>
@@ -590,7 +590,7 @@ function BlogPage() {
                           alt="Inline article visual"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600";
+                            e.currentTarget.src = "/mqulima_news_banner.png";
                           }}
                         />
                       </div>

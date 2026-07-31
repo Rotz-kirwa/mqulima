@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
+import { Sprout, Users, Map, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   component: AuthLayout,
@@ -6,100 +7,90 @@ export const Route = createFileRoute("/auth")({
 
 function AuthLayout() {
   return (
-    <div className="flex min-h-screen w-full font-['Inter',sans-serif] bg-[#DCF2D0] selection:bg-[#2D6A4F]/20 selection:text-[#2D6A4F]">
+    <div className="min-h-screen w-full flex font-sans bg-[#F8FAF6] text-gray-800 select-none overflow-x-hidden">
       {/* Split Screen Grid */}
       <div className="grid w-full grid-cols-1 lg:grid-cols-12 min-h-screen">
+        
+        {/* LEFT PANEL: EDITORIAL FARM HERO & BRANDING (DESKTOP/TABLET) */}
+        <section className="relative lg:col-span-5 flex flex-col justify-between overflow-hidden bg-[#042619] p-8 lg:p-12 min-h-[360px] lg:min-h-screen shadow-xl z-10 border-r border-[#0B6A47]/30">
+          {/* Background Image */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-60 scale-105 transition-transform duration-1000"
+            style={{ backgroundImage: "url('/images/mkulima_hero_farm.png')" }}
+          />
 
-        {/* Left: Illustration Panel (Visible on all, stacks on mobile) */}
-        <section className="relative lg:col-span-5 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#52B788] p-8 lg:p-12 min-h-[340px] lg:min-h-screen shadow-xl z-10">
-          {/* Subtle nature grid overlay */}
-          <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="leaf-grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                  <circle cx="15" cy="15" r="1" fill="#fff" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#leaf-grid)" />
-            </svg>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#031E14] via-[#042619]/80 to-[#042619]/50" />
+
+          {/* TOP BRAND LOGO */}
+          <div className="relative z-10 flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="h-11 w-11 rounded-2xl bg-[#10B981] flex items-center justify-center shadow-lg shadow-[#10B981]/30 transition-transform duration-300 group-hover:scale-105">
+                <Sprout className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <span className="text-2xl font-black tracking-tight text-white font-mono uppercase">MQULIMA<span className="text-[#10B981]">HUB</span></span>
+                <span className="text-[10px] font-bold tracking-widest text-[#99D98C] uppercase block">Kenya's Farm Network</span>
+              </div>
+            </Link>
           </div>
 
-          {/* Organic floating decorative circles */}
-          <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-white/5 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-20 -right-10 w-64 h-64 rounded-full bg-[#D8F3DC]/10 blur-3xl pointer-events-none" />
-
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full my-auto">
-            {/* Logo */}
-            <Link to="/" className="inline-flex items-center gap-3 mb-6 lg:mb-8 group">
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-md shadow-[#1B4332]/20 transition-transform duration-300 group-hover:scale-105">
-                <img src="/favicon.svg" alt="Mkulima Logo" className="h-6 w-6" />
-              </div>
-              <span className="text-2xl font-extrabold text-white tracking-tight font-sans">
-                Mkulima<span className="text-[#F5A623]">.</span>
-              </span>
-            </Link>
-
-            {/* Hero Illustration */}
-            <div className="w-full max-w-[200px] sm:max-w-[240px] lg:max-w-sm mb-6 lg:mb-8 transition-transform duration-500 hover:scale-[1.02]">
-              <img
-                src="/images/auth_illustration.png"
-                alt="Kenyan farm marketplace illustration showing farmers, fresh produce, and rolling green hills"
-                className="w-full h-auto rounded-2xl border border-white/10 shadow-2xl bg-white/5 p-1 backdrop-blur-sm"
-              />
+          {/* CENTER HERO CONTENT */}
+          <div className="relative z-10 my-auto space-y-6 max-w-md text-left pt-8 pb-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-semibold">
+              <span className="text-[#10B981]">●</span> Direct Agricultural Marketplace & Community
             </div>
 
-            {/* Brand Copy */}
-            <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight mb-2">
-              Fresh from the Farm,
-              <br />
-              <span className="text-[#F5A623] bg-gradient-to-r from-[#F5A623] to-[#FFC107] bg-clip-text text-transparent">Direct to You.</span>
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-md">
+              Fresh from the Farm, <br />
+              <span className="text-[#99D98C] italic">Direct to You.</span>
             </h1>
-            <p className="text-xs lg:text-sm text-white/80 leading-relaxed max-w-xs font-medium">
-              Kenya's trusted marketplace connecting farmers with buyers. Quality produce, fair prices, verified sellers.
+
+            <p className="text-xs lg:text-sm text-gray-200 leading-relaxed font-medium">
+              Connect directly with verified farmers, access daily wholesale commodity market prices, and order fresh produce across all 47 counties of Kenya.
             </p>
 
-            {/* Trust Badges */}
-            <div className="flex items-center gap-6 mt-6 lg:mt-8">
-              <div className="flex flex-col items-center">
-                <span className="text-xl lg:text-2xl font-extrabold text-white">2K+</span>
-                <span className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Farmers</span>
+            {/* KEY STATS ROW */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
+                <div className="flex items-center gap-1.5 text-[#99D98C] mb-0.5">
+                  <Users className="h-4 w-4" />
+                  <span className="font-extrabold text-base text-white">2K+</span>
+                </div>
+                <span className="text-[10px] text-gray-300 font-medium">Farmers Joined</span>
               </div>
-              <div className="w-px h-6 bg-white/20" />
-              <div className="flex flex-col items-center">
-                <span className="text-xl lg:text-2xl font-extrabold text-white">47</span>
-                <span className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Counties</span>
+
+              <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
+                <div className="flex items-center gap-1.5 text-[#99D98C] mb-0.5">
+                  <Map className="h-4 w-4" />
+                  <span className="font-extrabold text-base text-white">47</span>
+                </div>
+                <span className="text-[10px] text-gray-300 font-medium">Counties Covered</span>
               </div>
-              <div className="w-px h-6 bg-white/20" />
-              <div className="flex flex-col items-center">
-                <span className="text-xl lg:text-2xl font-extrabold text-white">100%</span>
-                <span className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Verified</span>
+
+              <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
+                <div className="flex items-center gap-1.5 text-[#99D98C] mb-0.5">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="font-extrabold text-base text-white">100%</span>
+                </div>
+                <span className="text-[10px] text-gray-300 font-medium">Verified Traders</span>
               </div>
             </div>
           </div>
 
-          {/* Bottom Footer (Desktop) */}
-          <div className="hidden lg:block absolute bottom-6 text-center w-full">
-            <span className="text-[10px] text-white/40 font-semibold tracking-wide">
-              © {new Date().getFullYear()} Mkulima Hub · All Rights Reserved
-            </span>
+          {/* FOOTER COPYRIGHT */}
+          <div className="relative z-10 text-[11px] text-gray-400 font-medium">
+            © {new Date().getFullYear()} Mqulima Hub. All Rights Reserved. Empowering Kenyan Agriculture.
           </div>
         </section>
 
-        {/* Right: Form Panel */}
-        <main className="lg:col-span-7 flex flex-col items-center justify-center py-10 lg:py-16 px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto bg-[#DCF2D0]">
-          {/* Form Card styled like the template */}
-          <div className="w-full max-w-md bg-[#0B6A47] rounded-[32px] overflow-hidden shadow-2xl transition-all duration-300">
+        {/* RIGHT PANEL: OUTLET CONTENT CONTAINER (SIGN IN / SIGN UP) */}
+        <main className="lg:col-span-7 flex flex-col justify-center items-center py-8 lg:py-12 px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto bg-[#F8FAF6] min-h-screen">
+          <div className="w-full max-w-2xl mx-auto">
             <Outlet />
           </div>
-
-          {/* Bottom Footer (Mobile) */}
-          <p className="mt-8 text-[10px] text-gray-500 text-center lg:hidden font-semibold">
-            © {new Date().getFullYear()} Mkulima Hub · All Rights Reserved
-          </p>
         </main>
       </div>
     </div>
   );
 }
-

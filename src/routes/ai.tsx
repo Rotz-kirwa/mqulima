@@ -17,6 +17,7 @@ import {
   Menu, RotateCw
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { AIIcon } from "@/components/mqulima/AIIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
@@ -701,7 +702,7 @@ function MqulimaAIWorkspace() {
             {/* Close button & Title */}
             <div className="flex items-center justify-between p-4 border-b border-[#1B3627]">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#4CAF50]" />
+                <AIIcon className="h-5 w-5" animated={true} />
                 <span className="font-bold text-sm tracking-wide">Chat History</span>
               </div>
               <button 
@@ -1046,8 +1047,8 @@ function MqulimaAIWorkspace() {
               // Suggestions / Empty State Panel
               // --------------------------------------------------------------
               <div className="mx-auto max-w-2xl py-8 md:py-16 text-center">
-                <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#2D6A4F]/10 border border-[#2D6A4F]/20 text-[#4CAF50] mb-6">
-                  <Sparkles className="h-7 w-7 animate-pulse" />
+                <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF5B8D]/20 to-[#3B34D1]/20 border border-[#FF5B8D]/30 mb-6 shadow-lg">
+                  <AIIcon className="h-9 w-9" animated={true} />
                 </div>
                 <h1 className="text-2xl font-extrabold text-white leading-tight">
                   Intelligent Agricultural Advisor
@@ -1108,8 +1109,8 @@ function MqulimaAIWorkspace() {
                     >
                       {/* Avatar for bot */}
                       {!isUser && (
-                        <div className="h-8 w-8 rounded-full bg-[#1B3627] border border-[#2D6A4F]/40 grid place-items-center text-[#4CAF50] shrink-0 font-bold font-mono">
-                          🌱
+                        <div className="h-8 w-8 rounded-full bg-[#10144D] border border-[#B485FF]/40 grid place-items-center shrink-0 shadow-sm">
+                          <AIIcon className="h-5 w-5" animated={false} />
                         </div>
                       )}
 

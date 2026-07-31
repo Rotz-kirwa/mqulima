@@ -164,10 +164,14 @@ function ShopPage() {
 
   // Sync Search Query & Taxonomy from URL
   useEffect(() => {
-    setSearchText(searchParams.q || "");
-    setSelectedCategory(searchParams.category || "All");
-    setSelectedSubcategory(searchParams.subcategory || "All");
-    setCurrentPage(1);
+    const newQ = searchParams.q || "";
+    const newCat = searchParams.category || "All";
+    const newSub = searchParams.subcategory || "All";
+
+    setSearchText((prev) => (prev !== newQ ? newQ : prev));
+    setSelectedCategory((prev) => (prev !== newCat ? newCat : prev));
+    setSelectedSubcategory((prev) => (prev !== newSub ? newSub : prev));
+    setCurrentPage((prev) => (prev !== 1 ? 1 : prev));
   }, [searchParams.q, searchParams.category, searchParams.subcategory]);
 
   // Close autocomplete on click outside

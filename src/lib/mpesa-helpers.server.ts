@@ -68,7 +68,34 @@ export async function getMpesaToken(): Promise<string> {
   }
 }
 
-export async function handleMpesaCallback(payload: any) {
+export function getMpesaWebhookSecret(): string {
+  if (process.env.MPESA_WEBHOOK_SECRET) {
+    return process.env.MPESA_WEBHOOK_SECRET;
+  }
+  // Fallback: generate deterministic secret from JWT_SECRET or default fallback
+  const base = process.env.JWT_SECRET || process.env.MPESA_PASSKEY || "mqulima-mpesa-secret-key-2026";
+  const crypto = require("crypto");
+  return crypto.createHash("sha256").update(base).digest("hex").slice(0, 32);
+}
+
+export async function handleMpesaCallback(payload: any, request?: Request) {
+  // Security Token Verification
+  if (request) {
+    const url = new URL(request.url);
+    const tokenQuery = url.searchParams.get("token");
+    const tokenHeader = request.headers.get("x-mpesa-secret");
+    const expectedSecret = getMpesaWebhookSecret();
+
+    // Enforce token check in production, or if token query parameter is passed
+    const isProduction = process.env.MPESA_ENVIRONMENT === "production";
+    if (isProduction || tokenQuery || tokenHeader) {
+      if (tokenQuery !== expectedSecret && tokenHeader !== expectedSecret) {
+        console.error("[M-PESA] Webhook security token mismatch. Rejected unauthorized callback.");
+        throw new Error("Unauthorized M-Pesa callback: security token validation failed");
+      }
+    }
+  }
+
   const stkCallback = payload?.Body?.stkCallback;
   if (!stkCallback) {
     throw new Error("Invalid M-Pesa callback body");
@@ -92,61 +119,65 @@ export async function handleMpesaCallback(payload: any) {
 
   const { writeAuditLog } = await import("./audit.server");
 
-  if (ResultCode === 0) {
-    const items = stkCallback.CallbackMetadata?.Item || [];
-    const receiptNumber = items.find((item: any) => item.Name === "MpesaReceiptNumber")?.Value;
+  // Atomic database transaction for payment state reconciliation
+  await sql.begin(async (tx: any) => {
+    if (ResultCode === 0) {
+      const items = stkCallback.CallbackMetadata?.Item || [];
+      const receiptNumber = items.find((item: any) => item.Name === "MpesaReceiptNumber")?.Value;
 
-    // Update payment to 'paid' (enum constraint)
-    await sql`
-      UPDATE payments
-      SET status = 'paid', provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${sql.json(payload)}
-      WHERE id = ${payment.id}
-    `;
+      // Update payment to 'paid' (enum constraint)
+      await tx`
+        UPDATE payments
+        SET status = 'paid', provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${tx.json(payload)}
+        WHERE id = ${payment.id}
+      `;
 
-    // Update orders table status to 'paid'
-    await sql`
-      UPDATE orders
-      SET payment_status = 'paid'
-      WHERE id = ${payment.order_id}
-    `;
+      // Update orders table status to 'paid'
+      await tx`
+        UPDATE orders
+        SET payment_status = 'paid'
+        WHERE id = ${payment.order_id}
+      `;
 
-    // Write audit log
-    await writeAuditLog({
-      action: "payment.confirmed",
-      actorId: null,
-      entityType: "payment",
-      entityId: payment.id,
-      diff: {
-        orderId: payment.order_id,
-        checkoutRequestId: CheckoutRequestID,
-        receiptNumber,
-        amount: payment.amount
-      }
-    });
+      // Write audit log
+      await writeAuditLog({
+        action: "payment.confirmed",
+        actorId: null,
+        entityType: "payment",
+        entityId: payment.id,
+        diff: {
+          orderId: payment.order_id,
+          checkoutRequestId: CheckoutRequestID,
+          receiptNumber,
+          amount: payment.amount
+        }
+      });
 
-    console.log(`[M-PESA] Successfully completed payment for order: ${payment.order_id}`);
-  } else {
-    // Update payment to 'failed'
-    await sql`
-      UPDATE payments
-      SET status = 'failed', raw_payload = ${sql.json(payload)}
-      WHERE id = ${payment.id}
-    `;
+      console.log(`[M-PESA] Successfully completed payment for order: ${payment.order_id}`);
+    } else {
+      // Update payment to 'failed'
+      await tx`
+        UPDATE payments
+        SET status = 'failed', raw_payload = ${tx.json(payload)}
+        WHERE id = ${payment.id}
+      `;
 
-    // Write audit log
-    await writeAuditLog({
-      action: "payment.failed",
-      actorId: null,
-      entityType: "payment",
-      entityId: payment.id,
-      diff: {
-        orderId: payment.order_id,
-        checkoutRequestId: CheckoutRequestID,
-        code: ResultCode,
-        description: ResultDesc
-      }
-    });
+      // Write audit log
+      await writeAuditLog({
+        action: "payment.failed",
+        actorId: null,
+        entityType: "payment",
+        entityId: payment.id,
+        diff: {
+          orderId: payment.order_id,
+          checkoutRequestId: CheckoutRequestID,
+          code: ResultCode,
+          description: ResultDesc
+        }
+      });
 
-    console.warn(`[M-PESA] Payment failed for checkout ID: ${CheckoutRequestID}. Code: ${ResultCode}, Desc: ${ResultDesc}`);
-  }
+      console.warn(`[M-PESA] Payment failed for checkout ID: ${CheckoutRequestID}. Code: ${ResultCode}, Desc: ${ResultDesc}`);
+    }
+  });
 }
+

@@ -64,6 +64,10 @@ export const loginUser = createServerFn({ method: "POST" })
       throw new Error("Invalid email/phone number or password");
     }
 
+    if (dbUser.role === "admin" || dbUser.role === "super_admin") {
+      throw new Error("Admin logins are restricted on this platform. This portal is for users and farmers only.");
+    }
+
     // Verify bcrypt hash
     const isValid = await bcrypt.compare(password, dbUser.password_hash);
     if (!isValid) {
@@ -173,28 +177,47 @@ export const registerUser = createServerFn({ method: "POST" })
 
 export const logoutUser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
-    csrfToken: z.string()
-  }))
-  .handler(async ({ data }) => {
-    const { csrfToken } = data;
-    
-    // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("./csrf-verify.server");
-    validateCsrfToken(csrfToken);
-
+    csrfToken: z.string().optional()
+  }).optional())
+  .handler(async () => {
+    // Unconditionally purge session and csrf cookies
     setCookie(COOKIE_NAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
       maxAge: 0,
+      expires: new Date(0),
     });
+
+    setCookie("mq_csrf", "", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+
     return { success: true };
   });
 
 export const getCurrentUser = createServerFn({ method: "GET" })
   .handler(async () => {
-    const token = getCookie(COOKIE_NAME);
+    let token = getCookie(COOKIE_NAME);
+    if (!token) {
+      try {
+        const { getRequestHeaders } = await import("@tanstack/react-start/server");
+        const headers = getRequestHeaders();
+        const authHeader = headers.get("authorization");
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          token = authHeader.slice(7).trim();
+        }
+      } catch (e) {
+        // Safe fallback outside request context
+      }
+    }
+
     if (!token) {
       return null;
     }
@@ -228,6 +251,117 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       };
 
       return user;
+    } catch (e) {
+      return null;
+    }
+  });
+
+export const loginAdminUser = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    email: z.string().min(1),
+    password: z.string().min(1),
+    rememberMe: z.boolean().optional(),
+  }))
+  .handler(async ({ data }) => {
+    const { email, password, rememberMe } = data;
+    if (!email || !password) {
+      throw new Error("Admin email and password are required");
+    }
+
+    const { getDb } = await import("./db.server");
+    const sql = getDb();
+    const cleanEmail = email.trim().toLowerCase();
+
+    const [dbUser] = await sql`
+      SELECT id, email, password_hash, full_name, role
+      FROM profiles
+      WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
+    `;
+
+    if (!dbUser || (dbUser.role !== "admin" && dbUser.role !== "super_admin")) {
+      throw new Error("Invalid administrator credentials or insufficient privileges");
+    }
+
+    const isValid = await bcrypt.compare(password, dbUser.password_hash);
+    if (!isValid) {
+      throw new Error("Invalid administrator credentials");
+    }
+
+    // Update last_login_at
+    await sql`
+      UPDATE profiles
+      SET last_login_at = NOW()
+      WHERE id = ${dbUser.id}
+    `;
+
+    // Sign JWT
+    const secret = getJwtSecret();
+    const jwt = await new jose.SignJWT({ sub: dbUser.id, role: dbUser.role, email: dbUser.email })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(rememberMe ? "30d" : "7d")
+      .sign(secret);
+
+    // Set cookie
+    setCookie(COOKIE_NAME, jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
+    });
+
+    return {
+      success: true,
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.full_name,
+        role: dbUser.role,
+      }
+    };
+  });
+
+export const getCurrentAdminUser = createServerFn({ method: "GET" })
+  .handler(async () => {
+    let token = getCookie(COOKIE_NAME);
+    if (!token) {
+      try {
+        const { getRequestHeaders } = await import("@tanstack/react-start/server");
+        const headers = getRequestHeaders();
+        const authHeader = headers.get("authorization");
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          token = authHeader.slice(7).trim();
+        }
+      } catch (e) {
+        // Safe fallback outside request context
+      }
+    }
+    if (!token) return null;
+
+    try {
+      const secret = getJwtSecret();
+      const { payload } = await jose.jwtVerify(token, secret);
+      const userId = (payload.sub || payload.id) as string;
+
+      const { getDb } = await import("./db.server");
+      const sql = getDb();
+      const [dbUser] = await sql`
+        SELECT id, email, full_name, role
+        FROM profiles
+        WHERE id = ${userId} AND deleted_at IS NULL
+      `;
+
+      if (!dbUser || (dbUser.role !== "admin" && dbUser.role !== "super_admin")) {
+        return null;
+      }
+
+      return {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.full_name,
+        role: dbUser.role,
+      };
     } catch (e) {
       return null;
     }

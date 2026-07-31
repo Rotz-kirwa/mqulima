@@ -1,21 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { 
-  Target, 
-  Handshake, 
-  Globe, 
-  Award, 
-  Users, 
-  ArrowRight, 
-  ShieldCheck, 
-  Zap, 
-  Sparkles, 
   Sprout, 
+  ArrowRight, 
+  Check, 
+  Users, 
+  Target, 
+  ShieldCheck, 
+  Award, 
   TrendingUp, 
   BookOpen, 
   Network, 
   Lightbulb, 
-  HeartHandshake 
+  HeartHandshake, 
+  MapPin, 
+  Clock, 
+  Sparkles, 
+  ChevronRight, 
+  Globe, 
+  Building2, 
+  CheckCircle2, 
+  ArrowUpRight 
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -23,15 +28,22 @@ import { useState } from "react";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About Us | Mkulima" },
+      { title: "About Us | Mqulima Hub" },
       {
         name: "description",
-        content: "Discover Mkulima — Africa's premier digital farming ecosystem delivering agricultural solutions first class.",
+        content: "Discover Mqulima Hub — Africa's premier digital farming ecosystem delivering agricultural solutions first class.",
       },
     ],
   }),
   component: AboutPage,
 });
+
+const ABOUT_HERO_STATS = [
+  { icon: Users, value: "50,000+", label: "Farmers Empowered" },
+  { icon: MapPin, value: "47", label: "Counties Reached" },
+  { icon: Building2, value: "1,200+", label: "Agribusinesses Connected" },
+  { icon: TrendingUp, value: "$5M+", label: "Trade Facilitated" },
+];
 
 function AboutPage() {
   const [activeTimeline, setActiveTimeline] = useState(0);
@@ -44,331 +56,354 @@ function AboutPage() {
     {
       period: "The Beginning",
       title: "Rooted in Purpose",
-      subtitle: "Visions to solve the fundamental challenges facing smallholders.",
-      description: "We started in Eldoret with a simple question: How can technology eliminate information asymmetry and secure fair value for farmers? Our journey began with soil health research and direct cataloging of verified seed supplies.",
-      metric: "Est. 2024"
+      subtitle: "Eliminating information asymmetry for Kenyan smallholders.",
+      description: "Founded in Eldoret with a clear mission: How can modern software engineering eliminate middleman arbitrage and secure fair value for farmers? We started with soil diagnostic research and direct supplier verification.",
+      metric: "Est. 2024",
+      badge: "Inception"
     },
     {
       period: "The Transformation",
       title: "Cultivating the Ecosystem",
-      subtitle: "Unifying the agricultural community on a singular digital plane.",
-      description: "By integrating AI diagnostic tools, logistics dispatch networks, and a direct digital marketplace, we connected remote cooperatives directly with national wholesale buyers, eliminating middleman arbitrage.",
-      metric: "50k+ Empowered"
+      subtitle: "Unifying agriculture on a singular digital plane.",
+      description: "By integrating AI diagnostic tools, logistics dispatch networks, and a direct digital marketplace, Mqulima connected remote farming cooperatives directly with national wholesale buyers and agrovet suppliers.",
+      metric: "50k+ Empowered",
+      badge: "Expansion"
     },
     {
       period: "The Future",
       title: "Sustainable Prosperity",
-      subtitle: "Sustaining a resilient and intelligent farming economy.",
-      description: "Our vision expands beyond boundaries, introducing predictive yield models, carbon-credit initiatives, and cross-border cold-chain logistics to position African agriculture at the forefront of global trade.",
-      metric: "Carbon Neutral 2030"
+      subtitle: "Building an intelligent, resilient farming economy.",
+      description: "Our roadmap expands across East Africa, introducing predictive yield intelligence, carbon-credit soil audits, and solar cold-chain logistics to place African agriculture at the global forefront.",
+      metric: "Pan-African 2030",
+      badge: "Vision 2030"
     }
   ];
 
   const whyChooseUs = [
     {
       title: "Digital Farming Excellence",
-      description: "Modern analytics and diagnostic tools designed to put real-time precision in the hands of today's progressive farmer.",
+      description: "Modern analytics, soil diagnostics, and AI models designed to put real-time precision in the hands of today's progressive farmer.",
       icon: Sprout,
-      bgClass: "bg-gradient-to-br from-[#123B27] to-[#0A1E13]",
-      borderClass: "border-[#1D5E3E]/45",
-      textClass: "text-white",
-      descClass: "text-emerald-100/70",
-      iconBg: "bg-emerald-500/10 text-emerald-300",
-      glowBg: "bg-emerald-400/5",
+      checklist: [
+        "Real-time Crop Diagnostics",
+        "Automated Soil Health Audits",
+        "Predictive Market Analytics"
+      ],
+      image: "https://i.pinimg.com/736x/d3/8a/07/d38a0721bac4f6b2a4ee73d79c557f08.jpg"
     },
     {
-      title: "Market Connection",
-      description: "Empowering growers to bypass brokers and access direct, premium wholesale purchasing networks globally.",
+      title: "Direct Market Access",
+      description: "Empowering growers to bypass brokers and access direct, premium wholesale purchasing networks globally with zero arbitrage.",
       icon: TrendingUp,
-      bgClass: "bg-gradient-to-br from-[#8C6D1F] to-[#4F3E12]",
-      borderClass: "border-[#A6832B]/45",
-      textClass: "text-white",
-      descClass: "text-amber-100/70",
-      iconBg: "bg-amber-500/10 text-[#F3CD5F]",
-      glowBg: "bg-amber-400/5",
+      checklist: [
+        "Bypass Middlemen & Brokers",
+        "Transparent Produce Pricing",
+        "Direct Buyer Connections"
+      ],
+      image: "https://i.pinimg.com/1200x/3b/e6/a6/3be6a688e5395fd04bee73b103690b3b.jpg"
     },
     {
       title: "Trusted Agricultural Network",
-      description: "A secure, verified ecosystem connecting vetted farmers, suppliers, logistics handlers, and agronomists.",
+      description: "A secure, verified ecosystem connecting vetted farmers, agrovet suppliers, logistics handlers, and certified agronomists.",
       icon: Network,
-      bgClass: "bg-gradient-to-br from-[#162E5C] to-[#0E1B36]",
-      borderClass: "border-[#22488F]/45",
-      textClass: "text-white",
-      descClass: "text-blue-100/70",
-      iconBg: "bg-blue-500/10 text-blue-300",
-      glowBg: "bg-blue-400/5",
+      checklist: [
+        "100% Vetted Suppliers",
+        "Verified Service Providers",
+        "Nationwide Logistics Dispatch"
+      ],
+      image: "https://i.pinimg.com/736x/95/bb/1b/95bb1ba4bc02563f8274bdd5a9ff6e77.jpg"
     },
     {
       title: "Knowledge Empowerment",
-      description: "Providing scientific soil reviews, crop calendar automation, and structured digital training through Mkulima Academy.",
+      description: "Providing scientific crop calendar automation, practical farming guides, and structured learning through Mqulima Academy.",
       icon: BookOpen,
-      bgClass: "bg-gradient-to-br from-[#401C4A] to-[#25102B]",
-      borderClass: "border-[#622E70]/45",
-      textClass: "text-white",
-      descClass: "text-purple-100/70",
-      iconBg: "bg-purple-500/10 text-purple-300",
-      glowBg: "bg-purple-400/5",
+      checklist: [
+        "Agronomist-Reviewed Guides",
+        "Structured Video Courses",
+        "County Advisory Bulletins"
+      ],
+      image: "https://i.pinimg.com/1200x/91/9b/90/919b90e49bc35c6863ca1b8ccdf49bbe.jpg"
     },
     {
       title: "Innovation First",
-      description: "Developing robust offline USSD solutions, automated AI diagnostic models, and dynamic marketplace bidding tools.",
+      description: "Developing offline USSD fallback channels, automated Mqulima AI diagnostics, and dynamic agricultural bidding tools.",
       icon: Lightbulb,
-      bgClass: "bg-gradient-to-br from-[#065057] to-[#043337]",
-      borderClass: "border-[#0B7D87]/45",
-      textClass: "text-white",
-      descClass: "text-cyan-100/70",
-      iconBg: "bg-cyan-500/10 text-cyan-300",
-      glowBg: "bg-cyan-400/5",
+      checklist: [
+        "Mqulima AI Assistant",
+        "Smart USSD Connectivity",
+        "Automated Order Tracking"
+      ],
+      image: "https://i.pinimg.com/1200x/88/aa/65/88aa65f6e8435f9addf612deae8ac0d2.jpg"
     },
     {
       title: "Sustainable Growth",
-      description: "Fostering long-term ecological balance through soil regeneration audits, water efficiency tools, and ethical trade models.",
+      description: "Fostering long-term ecological balance through soil restoration audits, water efficiency tools, and climate-smart models.",
       icon: HeartHandshake,
-      bgClass: "bg-gradient-to-br from-[#73351C] to-[#451F10]",
-      borderClass: "border-[#A34E2B]/45",
-      textClass: "text-white",
-      descClass: "text-orange-100/70",
-      iconBg: "bg-orange-500/10 text-orange-300",
-      glowBg: "bg-orange-400/5",
+      checklist: [
+        "Soil Health Conservation",
+        "Solar Water Pumping",
+        "Climate Smart Practices"
+      ],
+      image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=80"
     },
   ];
 
   const values = [
     {
-      number: "I",
+      number: "01",
       name: "Excellence",
-      description: "We believe agriculture deserves first-class solutions. Average is not an option; we bring premium execution to the soil.",
+      description: "We believe agriculture deserves first-class technology. Average is not an option; we bring premium execution to every farm.",
     },
     {
-      number: "II",
+      number: "02",
       name: "Integrity",
       description: "Building unshakeable trust through absolute supply verification, transparent billing, and zero-counterfeit input guarantees.",
     },
     {
-      number: "III",
+      number: "03",
       name: "Innovation",
-      description: "Constantly redefining the boundaries of agricultural productivity by applying modern software engineering to seasonal challenges.",
+      description: "Redefining the boundaries of agricultural productivity by applying modern software engineering to seasonal challenges.",
     },
     {
-      number: "IV",
+      number: "04",
       name: "Community",
       description: "Co-authoring success stories. We grow in lockstep with the agricultural cooperatives, agronomists, and buyers we serve.",
     },
     {
-      number: "V",
+      number: "05",
       name: "Sustainability",
-      description: "Securing the future. Our digital diagnostic models are tuned to ensure soil longevity and resource responsibility for generations.",
+      description: "Securing the future. Our digital diagnostic models ensure soil longevity and resource responsibility for generations.",
     },
   ];
 
   return (
     <AppLayout>
-      <div className="bg-[#FAF9F6] min-h-screen font-sans selection:bg-[#D4AF37] selection:text-[#0D2A1C] text-[#0D2A1C] text-left relative overflow-hidden">
+      <div className="bg-[#FAFBF9] text-[#0F291E] min-h-screen font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-[#85CC14] selection:text-[#0B2117] text-left">
         
-        {/* ================= SECTION 1: LUXURY HERO SECTION ================= */}
-        <section className="relative pt-24 pb-12 px-6 sm:px-12 overflow-hidden bg-[#0A1E0C]">
-          
-          {/* Atmospheric background overlays and gradients */}
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#112E22] to-[#0A1E0C]">
-            {/* Ambient gold glow spotlights */}
-            <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
-            <div className="absolute bottom-[-100px] right-[-50px] w-[350px] h-[350px] bg-[#D4AF37]/5 rounded-full blur-[90px] pointer-events-none" />
-            {/* Animated gold particles layer */}
-            <div className="absolute inset-0 opacity-[0.03]" 
-              style={{ 
-                backgroundImage: "radial-gradient(#D4AF37 2px, transparent 2px)", 
-                backgroundSize: "32px 32px" 
-              }} 
+        {/* =========================================================================
+            SECTION 1: HERO BANNER (Matched to Services Page UI/UX)
+           ========================================================================= */}
+        <section className="relative overflow-hidden bg-[#0F291E] text-white">
+          {/* Panoramic Background Image Overlay */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
+              alt="Lush green modern agricultural landscape"
+              className="w-full h-full object-cover object-center opacity-35 mix-blend-luminosity scale-105"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B2117] via-[#0F291E]/90 to-[#123828]/80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117] via-transparent to-transparent" />
           </div>
 
-          <div className="max-w-7xl mx-auto w-full relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center text-left">
-            
-            {/* Left text column */}
-            <div className="lg:col-span-7 space-y-8">
-              <span className="inline-flex items-center gap-2 border border-[#D4AF37]/45 bg-[#D4AF37]/10 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-[#F3CD5F] shadow-md backdrop-blur-md">
-                <Sparkles className="h-3.5 w-3.5 text-[#F3CD5F] animate-pulse" />
-                Mkulima — Taking You First Class
-              </span>
+          <div className="relative z-10 container-px mx-auto max-w-7xl pt-10 pb-12 md:pt-14 md:pb-16">
+            <div className="max-w-3xl text-left">
               
-              <div className="space-y-4">
-                <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold font-serif leading-[1.05] tracking-tight text-white">
-                  Taking Agriculture <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F3CD5F] via-[#D4AF37] to-amber-200 italic font-serif">Beyond Boundaries</span>
-                </h1>
-                
-                <p className="text-gray-300 text-base sm:text-lg lg:text-xl leading-relaxed max-w-2xl font-medium">
-                  Mkulima is redefining farming by connecting farmers, businesses, buyers, and agricultural innovators through technology, knowledge, and opportunity.
-                </p>
+              {/* Top Pill Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white/90 border border-white/15 mb-4">
+                <Sparkles className="h-3.5 w-3.5 text-[#85CC14] animate-pulse" />
+                <span>MQULIMA ECOSYSTEM — TAKING YOU FIRST CLASS</span>
               </div>
 
-              {/* Luxurious CTA buttons */}
-              <div className="flex flex-wrap gap-4 pt-2">
-                <button 
-                  onClick={() => scrollToSection("our-story")}
-                  className="group inline-flex items-center gap-2 bg-[#D4AF37] hover:bg-[#C59B27] text-[#0D2A1C] font-extrabold text-xs sm:text-sm uppercase tracking-wider py-4.5 px-8 rounded-xl shadow-lg shadow-[#D4AF37]/10 hover:shadow-xl hover:shadow-[#D4AF37]/25 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                >
-                  Discover Our Journey
-                  <ArrowRight className="w-4 h-4 transition-transform duration-250 group-hover:translate-x-1" />
-                </button>
-                <Link 
-                  to="/auth/sign-up"
-                  className="inline-flex items-center justify-center bg-transparent border border-white/25 hover:border-[#D4AF37] text-white hover:text-[#F3CD5F] font-bold text-xs sm:text-sm uppercase tracking-wider py-4.5 px-8 rounded-xl backdrop-blur-sm transition duration-300 cursor-pointer"
-                >
-                  Join The Future Of Farming
-                </Link>
-              </div>
-            </div>
+              {/* Main Headline */}
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] tracking-tight font-['Outfit',sans-serif]">
+                Taking Agriculture{" "}
+                <span className="text-[#D4E157] underline decoration-[#D4E157]/30 underline-offset-8">
+                  Beyond Boundaries
+                </span>
+              </h1>
 
-            {/* Right graphic column with luxury glass-effect frame */}
-            <div className="lg:col-span-5 relative group">
-              <div className="absolute inset-0 bg-[#D4AF37]/20 rounded-3xl blur-2xl pointer-events-none" />
-              
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-3.5 backdrop-blur-md shadow-2xl relative">
-                {/* Thin gold corner highlights */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#D4AF37] rounded-tl-xl" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#D4AF37] rounded-br-xl" />
-                
-                <div className="aspect-[4/3] sm:aspect-square bg-emerald-950/20 relative overflow-hidden rounded-2xl">
-                  <img 
-                    src="https://i.pinimg.com/736x/95/bb/1b/95bb1ba4bc02563f8274bdd5a9ff6e77.jpg" 
-                    alt="African farmer planting crops" 
-                    className="w-full h-full object-cover filter brightness-90 contrast-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0D2A1C]/80 via-transparent to-transparent" />
-                  
-                  <div className="absolute bottom-4 left-4 right-4 bg-[#0D2A1C]/90 text-white p-4 rounded-xl border border-white/10 shadow-lg backdrop-blur-sm flex justify-between items-center">
-                    <div className="text-left">
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#D4AF37]">Active Innovation</p>
-                      <p className="text-xs font-serif font-bold text-white">First-Class Agritech</p>
-                    </div>
-                    <span className="text-[10px] bg-emerald-500/25 border border-emerald-400/20 text-emerald-300 px-2.5 py-1 rounded-full font-black">
-                      LIVE
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* ================= SECTION 2: OUR STORY SECTION (WHERE TRADITION MEETS INNOVATION) ================= */}
-        <section id="our-story" className="py-24 px-6 sm:px-12 relative bg-[#FAF9F6]">
-          {/* Subtle leaves pattern glow */}
-          <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none" />
-
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-start relative z-10">
-            
-            {/* Story text (left column) */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <span className="w-5 h-[2px] bg-emerald-600"></span> Our Heritage
-              </span>
-              
-              <h2 className="text-3xl sm:text-4xl font-bold font-serif text-[#0D2A1C] leading-tight tracking-tight">
-                Where Tradition <br />Meets Innovation
-              </h2>
-              
-              <p className="text-gray-650 text-base leading-relaxed font-medium">
-                Mkulima was created with a vision to transform agriculture into a modern, profitable, and connected ecosystem. We believe every farmer deserves access to opportunities, information, markets, and technology that can unlock their full potential.
+              {/* Subheading */}
+              <p className="mt-4 text-sm sm:text-base md:text-lg text-white/85 leading-relaxed font-normal max-w-2xl">
+                Mqulima Hub is Africa’s 360° digital farming ecosystem — connecting smallholders, agribusinesses, buyers, and extension agronomists through technology, verified inputs, and direct market access.
               </p>
 
-              <div className="pt-6 border-t border-[#D4AF37]/20 flex items-center gap-6">
-                <div>
-                  <h4 className="text-3xl font-serif font-black text-[#D4AF37]">2024</h4>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Foundation Rooted</p>
-                </div>
-                <div className="h-10 w-[1px] bg-gray-200" />
-                <div>
-                  <h4 className="text-3xl font-serif font-black text-[#D4AF37]">47</h4>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Counties Reached</p>
-                </div>
+              {/* Action Buttons Row */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => scrollToSection("our-story")}
+                  className="px-6 py-3 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] text-[#0B2117] font-extrabold text-xs sm:text-sm hover:brightness-110 shadow-md shadow-[#85CC14]/20 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>Discover Our Journey</span>
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
+                </button>
+
+                <Link
+                  to="/auth/sign-up"
+                  className="px-6 py-3 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white font-bold text-xs sm:text-sm hover:bg-white/25 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>Join Mqulima Today</span>
+                  <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
+                </Link>
               </div>
-            </div>
 
-            {/* Timeline component (right column) */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="relative pl-6 border-l-2 border-[#D4AF37]/35 space-y-8">
-                {timelineData.map((item, idx) => (
-                  <div 
-                    key={idx}
-                    onMouseEnter={() => setActiveTimeline(idx)}
-                    className="relative group transition-all duration-300 cursor-pointer"
-                  >
-                    {/* Circle bullet with status trigger */}
-                    <div className={`absolute -left-[32px] top-1.5 h-4.5 w-4.5 rounded-full border-2 bg-white flex items-center justify-center transition-all ${
-                      activeTimeline === idx ? "border-[#D4AF37] ring-4 ring-[#D4AF37]/15" : "border-gray-300"
-                    }`}>
-                      <div className={`h-2.5 w-2.5 rounded-full transition ${activeTimeline === idx ? "bg-[#D4AF37]" : "bg-transparent"}`} />
-                    </div>
-
-                    <div className={`bg-white rounded-3xl border p-6.5 text-left transition-all duration-300 ${
-                      activeTimeline === idx 
-                        ? "border-[#D4AF37] shadow-[0_12px_40px_-8px_rgba(212,175,55,0.12)] -translate-y-1" 
-                        : "border-emerald-100/60 shadow-[0_6px_20px_-6px_rgba(45,106,79,0.03)]"
-                    }`}>
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">{item.period}</span>
-                        <span className="text-[9px] font-bold px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-100/50">{item.metric}</span>
-                      </div>
-                      <h3 className="text-lg font-serif font-bold text-[#0D2A1C] mb-1">{item.title}</h3>
-                      <h4 className="text-xs font-semibold text-emerald-700/80 mb-3">{item.subtitle}</h4>
-                      <p className="text-gray-500 text-xs sm:text-sm leading-relaxed font-medium">{item.description}</p>
-                    </div>
+              {/* Trust Badges Checkmark Row */}
+              <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center gap-6 text-xs font-semibold text-white/90">
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <span>100% Verified Quality Inputs</span>
+                </div>
 
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span>47 Kenyan Counties</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span>Direct Farm Gate Trading</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Stats Bar Ribbon at Bottom of Hero (Marquee Style) */}
+          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
+            <div className="flex w-max items-center gap-10 sm:gap-16 animate-marquee">
+              {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
+                <div key={idx} className="flex items-center gap-3 shrink-0">
+                  <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                    <stat.icon className="h-5 w-5 stroke-[2]" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                      {stat.value}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* ================= SECTION 3: MISSION & VISION CARDS (GOLD & FOREST CONTRAST) ================= */}
-        <section className="py-20 px-6 sm:px-12 bg-white relative">
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+        {/* =========================================================================
+            SECTION 2: OUR HERITAGE & TIMELINE (MATCHED TO SERVICES CARDS)
+           ========================================================================= */}
+        <section id="our-story" className="py-16 md:py-24 bg-[#FAFBF9]">
+          <div className="container-px mx-auto max-w-7xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
               
-              {/* Mission Card (Deep Forest Green, luxury contrast) */}
-              <div className="bg-[#0D2A1C] text-white rounded-3xl p-10 sm:p-14 relative overflow-hidden shadow-2xl flex flex-col justify-between group">
-                <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
-                  style={{ backgroundImage: "radial-gradient(white 2px, transparent 2px)", backgroundSize: "20px 20px" }} 
-                />
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/5 rounded-full blur-[70px] pointer-events-none" />
+              {/* Left Story Column */}
+              <div className="lg:col-span-5 space-y-6 text-left">
+                <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D]">
+                  OUR HERITAGE
+                </span>
                 
-                {/* Horizontal gold accent line */}
-                <div className="w-12 h-1 bg-[#D4AF37] mb-8 group-hover:w-20 transition-all duration-300" />
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+                  Where Tradition <br />
+                  <span className="text-[#6EA810]">Meets Innovation</span>
+                </h2>
                 
-                <div className="space-y-6 text-left">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Strategic Core</span>
-                  <h3 className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight leading-tight">Our Mission</h3>
-                  <p className="text-gray-300 text-base sm:text-lg leading-relaxed font-medium">
-                    To empower farmers and agricultural businesses with innovative digital solutions, reliable information, and access to opportunities that drive sustainable growth and prosperity.
-                  </p>
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
+                  Mqulima was created with a vision to transform African agriculture into a modern, profitable, and connected ecosystem. We believe every farmer deserves access to opportunities, verified information, transparent markets, and technology that unlocks their full potential.
+                </p>
+
+                <div className="pt-6 border-t border-slate-200/80 flex items-center gap-8">
+                  <div>
+                    <h4 className="text-3xl font-black text-[#0F291E] font-['Outfit',sans-serif]">2024</h4>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">Foundation Rooted</p>
+                  </div>
+                  <div className="h-10 w-[1px] bg-slate-200" />
+                  <div>
+                    <h4 className="text-3xl font-black text-[#6EA810] font-['Outfit',sans-serif]">47</h4>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">Counties Reached</p>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Link
+                    to="/services"
+                    className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[#0F291E] hover:bg-[#16382B] text-white font-bold text-xs sm:text-sm transition duration-200 shadow-sm"
+                  >
+                    <span>Explore Our Ecosystem</span>
+                    <ArrowRight className="h-4 w-4 text-[#85CC14] stroke-[2.5]" />
+                  </Link>
                 </div>
               </div>
 
-              {/* Vision Card (Luxury Warm Light Gold, stunning visuals overlay) */}
-              <div className="bg-[#FAF9F5] border border-[#D4AF37]/30 rounded-3xl p-10 sm:p-14 relative overflow-hidden shadow-xl flex flex-col justify-between group">
-                {/* Gold abstract overlay */}
-                <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-transparent" />
-                <div className="absolute bottom-0 right-0 w-60 h-60 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+              {/* Right Timeline Cards Column */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-6">
+                  {timelineData.map((item, idx) => (
+                    <div 
+                      key={idx}
+                      onMouseEnter={() => setActiveTimeline(idx)}
+                      className={`bg-white rounded-[28px] border p-6 sm:p-8 text-left transition-all duration-300 shadow-sm ${
+                        activeTimeline === idx 
+                          ? "border-[#85CC14] ring-2 ring-[#85CC14]/20 shadow-lg -translate-y-1" 
+                          : "border-slate-200/90 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-black uppercase tracking-widest text-[#35610D]">{item.period}</span>
+                        <span className="text-xs font-bold px-3 py-1 bg-[#E5F5D0] text-[#35610D] rounded-full">
+                          {item.metric}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-[#0F291E] font-['Outfit',sans-serif] mb-1">{item.title}</h3>
+                      <h4 className="text-xs font-semibold text-[#16A34A] mb-3">{item.subtitle}</h4>
+                      <p className="text-slate-600 text-xs sm:text-sm leading-relaxed font-normal">{item.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+
+        {/* =========================================================================
+            SECTION 3: MISSION & VISION CARDS (MATCHED TO ECOSYSTEM HIGH-CONTRAST)
+           ========================================================================= */}
+        <section className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-b border-slate-100">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Mission Card (Deep Forest Green) */}
+              <div className="bg-[#0F291E] text-white rounded-[32px] p-8 sm:p-12 relative overflow-hidden shadow-xl flex flex-col justify-between group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#85CC14]/10 rounded-full blur-3xl pointer-events-none" />
                 
-                {/* Horizontal deep forest green accent line */}
-                <div className="w-12 h-1 bg-emerald-700 mb-8 group-hover:w-20 transition-all duration-300" />
+                <div className="w-12 h-1 bg-[#85CC14] mb-8 group-hover:w-24 transition-all duration-300 rounded-full" />
                 
-                <div className="space-y-6 text-left relative z-10">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Future Landscape</span>
-                  <h3 className="text-3xl sm:text-4xl font-serif font-bold text-[#0D2A1C] tracking-tight leading-tight">Our Vision</h3>
-                  <p className="text-gray-650 text-base sm:text-lg leading-relaxed font-medium">
-                    To become Africa's most trusted agricultural ecosystem, where every farmer has the tools, knowledge, and connections needed to succeed.
+                <div className="space-y-4 text-left relative z-10">
+                  <span className="text-xs font-black uppercase tracking-widest text-[#85CC14]">STRATEGIC CORE</span>
+                  <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight font-['Outfit',sans-serif]">Our Mission</h3>
+                  <p className="text-white/80 text-sm sm:text-base leading-relaxed font-normal">
+                    To empower farmers and agricultural businesses with innovative digital tools, reliable scientific information, and access to direct markets that drive sustainable yield growth and rural prosperity.
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 pt-4">
+                    <span className="bg-white/10 border border-white/15 px-3 py-1 rounded-full text-xs font-bold text-white">Direct Trade</span>
+                    <span className="bg-white/10 border border-white/15 px-3 py-1 rounded-full text-xs font-bold text-white">AI Diagnostics</span>
+                    <span className="bg-white/10 border border-white/15 px-3 py-1 rounded-full text-xs font-bold text-[#85CC14]">Verified Inputs</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vision Card (Warm Light Green Accent) */}
+              <div className="bg-[#EDF7E2] border border-[#D8EBC4] rounded-[32px] p-8 sm:p-12 relative overflow-hidden shadow-lg flex flex-col justify-between group">
+                <div className="w-12 h-1 bg-[#35610D] mb-8 group-hover:w-24 transition-all duration-300 rounded-full" />
+                
+                <div className="space-y-4 text-left relative z-10">
+                  <span className="text-xs font-black uppercase tracking-widest text-[#35610D]">FUTURE LANDSCAPE</span>
+                  <h3 className="text-3xl sm:text-4xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">Our Vision</h3>
+                  <p className="text-slate-700 text-sm sm:text-base leading-relaxed font-normal">
+                    To become Africa's most trusted 360° agricultural ecosystem — where every smallholder, trader, and specialist operates with transparent information, seamless logistics, and continuous prosperity.
                   </p>
                   
-                  {/* Futuristic micro-bullets tags */}
-                  <div className="flex flex-wrap gap-2.5 pt-4">
-                    <span className="bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-800">Smart Farming</span>
-                    <span className="bg-white border border-[#D4AF37]/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#C59B27]">Digital Agriculture</span>
-                    <span className="bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-800">Global Connections</span>
+                  <div className="flex flex-wrap gap-2 pt-4">
+                    <span className="bg-white border border-[#D8EBC4] px-3 py-1 rounded-full text-xs font-bold text-[#35610D]">Smart Farming</span>
+                    <span className="bg-[#85CC14] text-[#0B2117] px-3 py-1 rounded-full text-xs font-bold">Pan-African Reach</span>
+                    <span className="bg-white border border-[#D8EBC4] px-3 py-1 rounded-full text-xs font-bold text-[#35610D]">Climate Resilience</span>
                   </div>
                 </div>
               </div>
@@ -377,38 +412,86 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* ================= SECTION 4: WHY CHOOSE MKULIMA SECTION (6 PILLARS) ================= */}
-        <section className="py-24 px-6 sm:px-12 bg-[#FAF9F6] border-t border-b border-gray-100">
-          <div className="max-w-7xl mx-auto text-center space-y-16">
+
+        {/* =========================================================================
+            SECTION 4: 6 PILLARS (WHY CHOOSE MQULIMA? MATCHED TO SERVICES CARDS GRID)
+           ========================================================================= */}
+        <section className="py-16 md:py-24 bg-[#FAFBF9]">
+          <div className="container-px mx-auto max-w-7xl">
             
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <span className="inline-flex items-center gap-2 border border-emerald-200 bg-emerald-50/50 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-700">
-                Strategic Advantages
+            {/* Section Header */}
+            <div className="text-left max-w-3xl mb-12">
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+                STRATEGIC PILLARS
               </span>
-              <h2 className="text-3xl sm:text-4xl font-bold font-serif text-[#0D2A1C] tracking-tight">
-                Why Choose Mkulima?
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+                Why Choose <span className="text-[#6EA810]">Mqulima Hub?</span>
               </h2>
+              <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+                We combine software engineering, direct agronomy support, and transparent logistics to deliver a first-class agricultural platform built for modern farmers.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {whyChooseUs.map((item, idx) => {
-                const IconComponent = item.icon;
+            {/* 6 Pillars Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {whyChooseUs.map((pillar, idx) => {
+                const IconComp = pillar.icon;
                 return (
-                  <div 
+                  <div
                     key={idx}
-                    className={`${item.bgClass} ${item.borderClass} border rounded-3xl p-8 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)] hover:-translate-y-1 transition-all duration-300 flex flex-col group relative overflow-hidden text-left`}
+                    className="bg-white rounded-[28px] border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between text-left group"
                   >
-                    {/* Glowing blob inside card on hover */}
-                    <div className={`absolute top-0 right-0 w-32 h-32 ${item.glowBg} rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none`} />
-                    
-                    <div className={`w-12 h-12 rounded-2xl ${item.iconBg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                      <IconComponent className="w-5.5 h-5.5" strokeWidth={2} />
+                    <div>
+                      {/* Card Header Image */}
+                      <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                        <img
+                          src={pillar.image}
+                          alt={pillar.title}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-[#0B2117]/30 to-transparent" />
+
+                        {/* Top Left Icon Badge */}
+                        <div className="absolute top-4 left-4 p-2.5 rounded-full bg-[#16A34A] text-white shadow-md flex items-center justify-center">
+                          <IconComp className="h-5 w-5 stroke-[2]" />
+                        </div>
+
+                        {/* Bottom Title Overlay */}
+                        <div className="absolute bottom-4 left-5 right-5">
+                          <h3 className="text-xl font-bold text-white tracking-tight leading-tight font-['Outfit',sans-serif]">
+                            {pillar.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Card Content Body */}
+                      <div className="p-6">
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-6 min-h-[44px]">
+                          {pillar.description}
+                        </p>
+
+                        <ul className="space-y-2.5">
+                          {pillar.checklist.map((item, cIdx) => (
+                            <li key={cIdx} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-700">
+                              <Check className="h-4 w-4 text-[#16A34A] stroke-[3] shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    
-                    <h3 className={`${item.textClass} font-bold text-lg mb-2 font-serif`}>{item.title}</h3>
-                    <p className={`${item.descClass} text-xs sm:text-sm leading-relaxed font-medium`}>
-                      {item.description}
-                    </p>
+
+                    {/* Card Footer Button */}
+                    <div className="p-6 pt-0">
+                      <Link
+                        to="/services"
+                        className="w-full py-2.5 px-4 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-between shadow-sm cursor-pointer"
+                      >
+                        <span>Explore Standard</span>
+                        <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
+                      </Link>
+                    </div>
                   </div>
                 );
               })}
@@ -417,32 +500,35 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* ================= SECTION 5: OUR VALUES SECTION (LUXURY STYLE GRID) ================= */}
-        <section className="py-24 px-6 sm:px-12 bg-white relative">
-          <div className="max-w-7xl mx-auto space-y-20 relative z-10">
+
+        {/* =========================================================================
+            SECTION 5: CORE VALUES (LUXURY ROMAN NUMERAL STYLE GRID)
+           ========================================================================= */}
+        <section className="py-16 md:py-24 bg-white border-t border-slate-100">
+          <div className="container-px mx-auto max-w-7xl text-left space-y-12">
             
-            <div className="text-center max-w-2xl mx-auto space-y-4">
-              <span className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#D4AF37]/5 px-4.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#C59B27]">
-                Corporate Standard
+            <div className="max-w-3xl space-y-3">
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D]">
+                CORPORATE STANDARD
               </span>
-              <h2 className="text-3xl sm:text-4xl font-bold font-serif text-[#0D2A1C] tracking-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight font-['Outfit',sans-serif]">
                 Our Core Foundations
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {values.map((val, idx) => (
                 <div 
                   key={idx}
-                  className="border-t-2 border-[#D4AF37]/30 pt-6 flex flex-col justify-between text-left group hover:border-[#D4AF37] transition-all duration-300"
+                  className="bg-[#FAFBF9] border border-slate-200/90 rounded-[24px] p-6 flex flex-col justify-between text-left group hover:border-[#85CC14] hover:shadow-md transition-all duration-300"
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-baseline">
-                      <span className="text-3xl font-serif italic font-black text-[#D4AF37]/30 group-hover:text-[#D4AF37] transition-colors duration-300">{val.number}</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <span className="text-3xl font-black text-[#85CC14] font-['Outfit',sans-serif]">{val.number}</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <h3 className="text-lg font-bold text-[#0D2A1C] font-serif uppercase tracking-wider">{val.name}</h3>
-                    <p className="text-gray-500 text-xs sm:text-sm leading-relaxed font-medium">
+                    <h3 className="text-lg font-bold text-[#0F291E] font-['Outfit',sans-serif] uppercase tracking-wider">{val.name}</h3>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed font-normal">
                       {val.description}
                     </p>
                   </div>
@@ -453,112 +539,40 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* ================= SECTION 6: IMPACT REPORT SECTION (CHARCOAL DARK CONTRAST) ================= */}
-        <section className="py-24 px-6 sm:px-12 bg-[#121A15] text-white relative overflow-hidden">
-          {/* Subtle green ambient spotlights */}
-          <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: "radial-gradient(white 2px, transparent 2px)", backgroundSize: "32px 32px" }} />
-          <div className="absolute top-1/2 left-1/4 w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
-          <div className="absolute bottom-[-100px] right-[-50px] w-[350px] h-[350px] bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none" />
 
-          <div className="max-w-7xl mx-auto relative z-10 text-left">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-              
-              {/* Left Column info */}
-              <div className="lg:col-span-5 space-y-6">
-                <span className="text-[#F3CD5F] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-[2px] bg-[#D4AF37]"></span> Annual Performance
-                </span>
-                <h2 className="text-3xl sm:text-5xl font-bold font-serif text-white tracking-tight leading-tight">
-                  Global Impact Report
-                </h2>
-                <p className="text-gray-300 text-base leading-relaxed font-medium">
-                  We measure our success in the productivity, prosperity, and ecological balance of the farming communities we enable across East Africa.
-                </p>
-                <div className="pt-2">
-                  <span className="text-[10px] border border-white/10 px-4 py-2 rounded-full uppercase tracking-wider text-gray-400 font-bold bg-white/5">
-                    Data Verified Audit Q3 2026
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Column statistics grid */}
-              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-8">
-                
-                {/* Stat 1 */}
-                <div className="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-sm hover:border-[#D4AF37]/50 hover:bg-white/10 transition-all duration-300">
-                  <h4 className="text-4xl sm:text-5xl font-serif font-black text-[#F3CD5F]">50,000+</h4>
-                  <h5 className="text-sm font-bold text-white mt-2 font-serif">Farmers Empowered</h5>
-                  <p className="text-gray-400 text-xs mt-1 font-medium">Accessing inputs, diagnostics, and wholesale prices.</p>
-                </div>
-
-                {/* Stat 2 */}
-                <div className="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-sm hover:border-[#D4AF37]/50 hover:bg-white/10 transition-all duration-300">
-                  <h4 className="text-4xl sm:text-5xl font-serif font-black text-[#F3CD5F]">1,200+</h4>
-                  <h5 className="text-sm font-bold text-white mt-2 font-serif">Agribusinesses Connected</h5>
-                  <p className="text-gray-400 text-xs mt-1 font-medium">Cooperatives, input vendors, and regional traders.</p>
-                </div>
-
-                {/* Stat 3 */}
-                <div className="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-sm hover:border-[#D4AF37]/50 hover:bg-white/10 transition-all duration-300">
-                  <h4 className="text-4xl sm:text-5xl font-serif font-black text-[#F3CD5F]">150+</h4>
-                  <h5 className="text-sm font-bold text-white mt-2 font-serif">Communities Reached</h5>
-                  <p className="text-gray-400 text-xs mt-1 font-medium">Establishing decentralized distribution collection points.</p>
-                </div>
-
-                {/* Stat 4 */}
-                <div className="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-sm hover:border-[#D4AF37]/50 hover:bg-white/10 transition-all duration-300">
-                  <h4 className="text-4xl sm:text-5xl font-serif font-black text-[#F3CD5F]">$5M+</h4>
-                  <h5 className="text-sm font-bold text-white mt-2 font-serif">Opportunities Created</h5>
-                  <p className="text-gray-400 text-xs mt-1 font-medium">Direct market trade transaction value optimization.</p>
-                </div>
-
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ================= SECTION 7: BREATHTAKING CLOSING CTA ================= */}
-        <section className="py-24 px-6 sm:px-12 bg-[#FAF9F6] relative overflow-hidden">
-          <div className="max-w-5xl mx-auto bg-[#0D2A1C] border border-[#D4AF37]/45 rounded-3xl p-10 sm:p-20 text-center relative overflow-hidden shadow-2xl">
+        {/* =========================================================================
+            SECTION 6: BREATHTAKING CLOSING CTA BANNER
+           ========================================================================= */}
+        <section className="py-16 md:py-20 container-px mx-auto max-w-7xl">
+          <div className="bg-[#0F291E] border border-white/10 rounded-[36px] p-8 sm:p-16 text-center relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#85CC14]/10 rounded-full blur-3xl pointer-events-none" />
             
-            {/* Cinematic background image layer representing success / golden sunset over farm */}
-            <div className="absolute inset-0 z-0">
-              <img 
-                src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1600&auto=format&fit=crop&q=80" 
-                alt="Golden farm harvest sunset" 
-                className="w-full h-full object-cover opacity-20 filter brightness-90 saturate-50"
-              />
-              <div className="absolute inset-0 bg-[#0D2A1C]/90" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            </div>
-
-            <div className="relative z-10 space-y-8">
-              <span className="inline-flex items-center gap-2 border border-[#D4AF37]/35 bg-[#D4AF37]/10 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-[#F3CD5F]">
-                Start Today
+            <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#85CC14] border border-white/15">
+                START TODAY
               </span>
               
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black font-serif text-white tracking-tight leading-tight">
-                The Future Of Agriculture <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F3CD5F] via-[#D4AF37] to-amber-100 italic">Starts Here</span>
+              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight font-['Outfit',sans-serif]">
+                The Future of Agriculture <br />
+                <span className="text-[#85CC14]">Starts Here</span>
               </h2>
               
-              <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto font-medium">
-                Join Mkulima and experience agriculture delivered first class.
+              <p className="text-white/80 text-sm sm:text-base leading-relaxed font-normal max-w-xl mx-auto">
+                Join thousands of progressive farmers and agribusinesses experiencing agriculture delivered first class.
               </p>
               
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-md mx-auto pt-4">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
                 <Link 
                   to="/auth/sign-up" 
-                  className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#C59B27] text-[#0D2A1C] font-extrabold text-xs sm:text-sm uppercase tracking-wider py-4.5 px-8 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 text-center cursor-pointer"
+                  className="w-full sm:w-auto bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-extrabold text-xs sm:text-sm uppercase tracking-wider py-4 px-8 rounded-full shadow-lg transition duration-200 text-center cursor-pointer active:scale-98"
                 >
-                  Join Mkulima
+                  Join Mqulima Today
                 </Link>
                 <Link 
                   to="/services" 
-                  className="w-full sm:w-auto bg-transparent border border-white/20 hover:border-[#D4AF37] text-white hover:text-[#F3CD5F] font-extrabold text-xs sm:text-sm uppercase tracking-wider py-4.5 px-8 rounded-xl transition duration-300 text-center cursor-pointer"
+                  className="w-full sm:w-auto bg-white/15 backdrop-blur-md border border-white/25 hover:bg-white/25 text-white font-bold text-xs sm:text-sm uppercase tracking-wider py-4 px-8 rounded-full transition duration-200 text-center cursor-pointer active:scale-98"
                 >
-                  Explore Our Platform
+                  Explore Services
                 </Link>
               </div>
             </div>

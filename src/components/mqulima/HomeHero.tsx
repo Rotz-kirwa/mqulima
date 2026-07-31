@@ -73,20 +73,20 @@ export function HomeHero() {
               {/* Action Buttons */}
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap items-center gap-4 pt-2"
+                className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-4 pt-2 w-full max-w-lg sm:max-w-none"
               >
                 <Link
                   to="/auth/sign-up"
-                  className="group inline-flex items-center gap-2.5 rounded-xl bg-[#F5A623] px-7 py-4 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition-all duration-300 hover:bg-[#e09520] hover:scale-[1.02] active:scale-100"
+                  className="group inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#F5A623] px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition-all duration-300 hover:bg-[#e09520] hover:scale-[1.02] active:scale-100 text-center"
                 >
-                  Join Us
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  <span>Join Us</span>
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
                 <Link
                   to="/tools"
-                  className="inline-flex items-center gap-2.5 rounded-xl border border-white/20 bg-white/5 px-7 py-4 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all duration-300 hover:bg-white/15"
+                  className="inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#15803D] hover:bg-[#166534] border border-[#4ADE80]/40 px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-950/50 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-100 text-center"
                 >
-                  Explore the Ecosystem
+                  Explore Ecosystem
                 </Link>
               </motion.div>
             </motion.div>

@@ -1,21 +1,18 @@
+// ============================================================================
+// CropDoctor.tsx — AI Plant Pathology Neural Diagnostics
+// Bright Light Theme — Fresh Greens, Sun Yellow Buttons, White Cards
+// ============================================================================
+
 import { useState, useRef } from "react";
 import {
   UploadCloud,
   ScanLine,
   Database,
   Sparkles,
-  ClipboardList,
   X,
   History,
   AlertTriangle,
-  Calendar,
-  Sprout,
-  Thermometer,
-  ShieldCheck,
-  Droplet,
-  ArrowRight,
-  Info,
-  Activity
+  Cpu
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -92,7 +89,6 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
     Object.fromEntries(SYMPTOMS.map((s) => [s.key, false]))
   );
   
-  // New deep diagnostic form states
   const [subCounty, setSubCounty] = useState("");
   const [cropAge, setCropAge] = useState("45 days");
   const [plantingDate, setPlantingDate] = useState("2026-05-15");
@@ -104,13 +100,7 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
   const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // UI state for tabs in report viewer
-  const [activeReportTab, setActiveReportTab] = useState<"treatment" | "prevention" | "soil" | "weather">("treatment");
-  const [treatmentSubTab, setTreatmentSubTab] = useState<"organic" | "chemical" | "ipm">("organic");
-  const [completedActions, setCompletedActions] = useState<Record<number, boolean>>({});
 
   const toggleSymptom = (key: string) =>
     setSymptoms((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -132,7 +122,7 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
     const reader = new FileReader();
     reader.onload = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
-    toast.success(`Image "${file.name}" selected — ready for scanning.`);
+    toast.success(`Image "${file.name}" selected — ready for neural scan.`);
   };
 
   const clearImage = () => {
@@ -144,15 +134,13 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
   const runDiagnosis = async () => {
     const activeSymptoms = Object.keys(symptoms).filter((k) => symptoms[k]);
     if (activeSymptoms.length === 0 && !imageFile && !farmerQuestion) {
-      toast.warning("Please provide symptoms, observations, or upload a plant photo.");
+      toast.warning("Please select symptoms, input observations, or upload a plant photo.");
       return;
     }
 
     setIsScanning(true);
     setDiagnosis(null);
-    setCompletedActions({});
 
-    // Inject shared weather context
     const current = weatherState?.data?.current;
     const dailyToday = weatherState?.data?.daily?.[0];
     const currentWeather = current
@@ -183,8 +171,8 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
       });
 
       setDiagnosis(result as DiagnosisResult);
-      toast.success("AI Crop Diagnosis Complete!", {
-        description: `Identified ${result.disease} with ${result.confidence}% confidence.`,
+      toast.success("AI Neural Crop Scan Complete!", {
+        description: `Identified ${result.disease} with ${result.confidence}% accuracy confidence.`,
       });
     } catch (err: any) {
       console.error(err);
@@ -195,654 +183,294 @@ export function CropDoctor({ weatherState }: { weatherState?: any }) {
   };
 
   const loadHistory = async () => {
-    setHistoryLoading(true);
-    setShowHistory(true);
-    try {
-      const h = await getDiagnosisHistory();
-      setHistory(h as HistoryEntry[]);
-    } catch {
-      toast.error("Could not load diagnosis history. Please log in.");
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  const selectHistoryEntry = (entry: HistoryEntry) => {
-    if (entry.resultJson) {
-      setDiagnosis({
-        id: entry.id,
-        ...entry.resultJson,
-      });
-      setCompletedActions({});
-      toast.success(`Loaded saved diagnosis: ${entry.disease}`);
-    } else {
-      // Fallback for older legacy rows
-      setDiagnosis({
-        id: entry.id,
-        crop: entry.crop,
-        disease: entry.disease,
-        confidence: parseFloat(entry.confidence),
-        scientificName: entry.crop === "tomato" ? "Solanum lycopersicum" : entry.crop === "potato" ? "Solanum tuberosum" : "Zea mays",
-        scientificDisease: "Unknown pathogen",
-        growthStage: "Unknown",
-        healthStatus: "Infected",
-        severity: "Moderate",
-        symptoms: entry.symptoms,
-        visualObservations: ["Legacy diagnosis log, full metadata not stored."],
-        possibleCauses: ["Legacy migration entry."],
-        organicTreatment: ["Consult standard crop disease manual."],
-        chemicalTreatment: ["Consult standard crop disease manual."],
-        ipmRecommendations: [],
-        prevention: [],
-        soilRecommendations: { ph: "—", fertilizer: "—", npk: "—", organicMatter: "—" },
-        weatherAdvice: [],
-        recommendedProductTypes: [],
-        followUpActions: [],
-        emergency: false,
-        needsExpertInspection: false,
-        additionalImagesRequired: [],
-        summary: "Legacy diagnosis trace.",
-        recommendedProducts: [],
-      });
+    setShowHistory(!showHistory);
+    if (!showHistory) {
+      try {
+        const h = await getDiagnosisHistory();
+        setHistory(h as HistoryEntry[]);
+      } catch {
+        toast.error("Could not load diagnosis history. Please log in.");
+      }
     }
   };
 
   const getSeverityBadgeClass = (severity: string) => {
     const sev = severity?.toLowerCase() || "";
-    if (sev === "healthy") return "bg-emerald-950/60 border border-emerald-500/50 text-emerald-400";
-    if (sev === "very mild" || sev === "mild") return "bg-teal-950/60 border border-teal-500/50 text-teal-400";
-    if (sev === "moderate") return "bg-amber-950/60 border border-amber-500/50 text-amber-400";
-    if (sev === "severe") return "bg-orange-950/60 border border-orange-500/50 text-orange-400";
-    return "bg-rose-950/60 border border-rose-500/50 text-rose-400 animate-pulse";
-  };
-
-  const toggleAction = (idx: number) => {
-    setCompletedActions(prev => ({
-      ...prev,
-      [idx]: !prev[idx]
-    }));
+    if (sev === "healthy") return "bg-emerald-100 border border-emerald-300 text-emerald-800";
+    if (sev === "very mild" || sev === "mild" || sev === "moderate") return "bg-amber-100 border border-amber-300 text-amber-900";
+    return "bg-red-100 border border-red-300 text-red-800 animate-pulse";
   };
 
   return (
-    <div className="grid gap-10 lg:grid-cols-12 animate-fadeIn">
-      {/* ── Control Panel (left) ───────────────────── */}
-      <div className="lg:col-span-5 space-y-6">
-        <div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-black text-[#4EFE98] uppercase tracking-wider font-serif">
-                AI Crop Diagnostic Core
-              </h3>
-              <p className="text-xs text-[#A2AAA0] mt-1 leading-relaxed">
-                Configure crop growth variables, input observations, and run neural pathogen diagnostic checks.
+    <div className="space-y-8 animate-fadeIn text-left font-['Plus_Jakarta_Sans',sans-serif]">
+
+      {/* ── Control Panel Grid ────────────────────────────── */}
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-12">
+        
+        {/* Left Column — Config & Scan Trigger */}
+        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+          
+          {/* Header Card (Deep Forest Green) */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2117] via-[#0F291E] to-[#143B2B] text-white border-2 border-[#85CC14]/30 shadow-xl shadow-[#0F291E]/20 relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-black uppercase tracking-wider text-white font-['Outfit',sans-serif]">
+                  AI PLANT PATHOLOGY CORE
+                </h3>
+                <Sparkles className="h-4 w-4 text-[#85CC14] shrink-0" />
+              </div>
+              <p className="text-xs text-white/80 mt-1">
+                Neural diagnostic engine trained on East African pathogens.
               </p>
             </div>
+            
             <button
               onClick={loadHistory}
-              className="flex items-center gap-1 px-2.5 py-1 border border-[#2D6A4F]/30 text-[9px] font-bold uppercase tracking-wider text-[#52B788] hover:bg-[#112E22] transition rounded-none shrink-0"
+              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-mono font-bold text-[#D4E157] transition shadow-sm shrink-0 cursor-pointer active:scale-95 relative z-10"
             >
-              <History className="h-3.5 w-3.5" />
+              <History className="h-4 w-4 inline mr-1 text-[#85CC14]" />
               History
             </button>
           </div>
-        </div>
 
-        {/* 1. Crop details selection */}
-        <div className="space-y-4 bg-[#091D13]/40 border border-[#1C462C] p-4">
-          <span className="text-[10px] font-black uppercase text-[#F5A623] tracking-wider block">
-            1. Crop Registry & Geographic Focus
-          </span>
+          {/* Central Upload Zone (Deep Forest Green & Green Border) */}
+          <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2117] via-[#0F291E] to-[#143B2B] text-white border-2 border-[#85CC14]/30 p-4 sm:p-6 space-y-4 shadow-xl shadow-[#0F291E]/20">
+            <span className="text-xs font-mono font-bold text-[#D4E157] uppercase tracking-widest block">
+              1. IMAGE UPLOAD & SCANNER
+            </span>
 
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-[9px] font-bold text-[#A2AAA0] uppercase tracking-wider">
-                Select Crop Type
-              </label>
-              <select
-                value={selectedCrop}
-                onChange={(e) => setSelectedCrop(e.target.value)}
-                className="w-full bg-[#091D13] border border-[#1C462C] text-xs rounded-none p-2.5 text-[#FAF9F5] outline-none focus:border-[#F5A623]"
-              >
-                {CROPS.map((c) => (
-                  <option key={c.value} value={c.value} className="bg-[#112F20]">
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-[#A2AAA0] uppercase tracking-wider">
-                  County Location
-                </label>
-                <div className="bg-[#091D13] border border-[#1C462C]/40 text-xs p-2.5 text-[#FAF9F5]/70 font-bold truncate">
-                  {weatherState?.location?.type === "county" ? `${weatherState.location.county}` : "GPS Detected"}
+            {imagePreview ? (
+              <div className="relative rounded-2xl overflow-hidden border-2 border-[#85CC14] group">
+                <img src={imagePreview} alt="Target crop" className="w-full h-44 sm:h-48 object-cover" />
+                <button
+                  onClick={clearImage}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition shadow-md cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="absolute bottom-0 inset-x-0 bg-[#0B2117]/90 backdrop-blur-md p-2 text-center text-xs font-mono text-[#D4E157] font-bold truncate">
+                  {imageFile?.name}
                 </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-[#A2AAA0] uppercase tracking-wider">
-                  Sub-County
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Turbo"
-                  value={subCounty}
-                  onChange={(e) => setSubCounty(e.target.value)}
-                  className="w-full bg-[#091D13] border border-[#1C462C] text-xs rounded-none p-2.5 text-[#FAF9F5] outline-none focus:border-[#F5A623]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-[#A2AAA0] uppercase tracking-wider">
-                  Crop Age / Stage
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 45 days"
-                  value={cropAge}
-                  onChange={(e) => setCropAge(e.target.value)}
-                  className="w-full bg-[#091D13] border border-[#1C462C] text-xs rounded-none p-2.5 text-[#FAF9F5] outline-none focus:border-[#F5A623]"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-[#A2AAA0] uppercase tracking-wider">
-                  Planting Date
-                </label>
-                <input
-                  type="date"
-                  value={plantingDate}
-                  onChange={(e) => setPlantingDate(e.target.value)}
-                  className="w-full bg-[#091D13] border border-[#1C462C] text-xs rounded-none p-2 text-[#FAF9F5] outline-none focus:border-[#F5A623] font-mono"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Symptoms Checkbox Grid */}
-        <div className="space-y-3">
-          <span className="text-[10px] font-black uppercase text-[#F5A623] tracking-wider block">
-            2. Checked Observations
-          </span>
-          <div className="grid grid-cols-2 gap-2 bg-[#091D13]/60 p-4 border border-[#1C462C] text-xs text-[#FAF9F5]">
-            {SYMPTOMS.map(({ key, label }) => (
-              <label
-                key={key}
-                className="flex items-center gap-2 cursor-pointer hover:text-[#52B788] py-1 transition select-none"
-              >
-                <input
-                  type="checkbox"
-                  checked={symptoms[key]}
-                  onChange={() => toggleSymptom(key)}
-                  className="rounded-none border-[#1C462C] text-[#2D6A4F] focus:ring-0 cursor-pointer h-4 w-4 accent-[#2D6A4F]"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. Farmer Question / Description */}
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-[#F5A623] tracking-wider block">
-            3. Specific Observations / Question
-          </label>
-          <textarea
-            placeholder="Leaves are turning yellow and have brown spots..."
-            value={farmerQuestion}
-            onChange={(e) => setFarmerQuestion(e.target.value)}
-            rows={3}
-            className="w-full bg-[#091D13] border border-[#1C462C] text-xs rounded-none p-3 text-[#FAF9F5] outline-none focus:border-[#F5A623] resize-none leading-relaxed"
-          />
-        </div>
-
-        {/* 4. Image Upload Block */}
-        <div className="space-y-2">
-          <span className="text-[10px] font-black uppercase text-[#F5A623] tracking-wider block">
-            4. Image Upload (Optional)
-          </span>
-
-          {imagePreview ? (
-            <div className="relative border border-[#1C462C] bg-[#091D13]/40 rounded-none overflow-hidden">
-              <img
-                src={imagePreview}
-                alt="Selected plant"
-                className="w-full h-40 object-cover"
-              />
-              <button
-                onClick={clearImage}
-                className="absolute top-2 right-2 bg-red-900/85 border border-red-700 text-white p-1 rounded-none hover:bg-red-800 transition"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-              <div className="p-2 text-[10px] text-[#A2AAA0] font-mono truncate">
-                {imageFile?.name} · {((imageFile?.size ?? 0) / 1024).toFixed(0)}KB
-              </div>
-            </div>
-          ) : (
-            <div className="border border-dashed border-[#1C462C] bg-[#091D13]/40 hover:bg-[#112F20]/40 transition p-6 rounded-none text-center relative flex flex-col items-center justify-center cursor-pointer group">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                aria-label="Upload plant photo"
-              />
-              <UploadCloud className="h-7 w-7 text-[#FAF9F5]/40 mb-2 group-hover:text-white transition" />
-              <span className="text-xs font-bold text-[#FAF9F5] block">
-                Click to select or drop image
-              </span>
-              <span className="text-[10px] text-[#A2AAA0]/60 mt-1 block">
-                JPEG, PNG, WebP · Max {MAX_FILE_SIZE_MB}MB
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Trigger check */}
-        <button
-          onClick={runDiagnosis}
-          disabled={isScanning}
-          className="w-full h-12 bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs uppercase tracking-widest rounded-none transition flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {isScanning ? (
-            <>
-              <ScanLine className="h-4 w-4 animate-spin" />
-              Scanning plant tissue...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Execute Diagnostics Check
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* ── Diagnostics Monitor (right) ──────────── */}
-      <div className="lg:col-span-7 flex flex-col justify-start space-y-4">
-        {/* Main diagnostic screen */}
-        <div className="bg-[#091D13]/60 border border-[#1C462C] p-6 min-h-[500px] rounded-none flex flex-col relative justify-between overflow-hidden shadow-inner">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(45,106,79,0.05)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(45,106,79,0.05)_1px,_transparent_1px)] bg-[size:20px_20px] opacity-70 pointer-events-none" />
-
-          {isScanning && (
-            <div
-              className="absolute inset-x-0 h-1 bg-[#22C55E] shadow-[0_0_15px_#22C55E] z-20 pointer-events-none"
-              style={{ animation: "scanLine 2.8s linear infinite", top: 0 }}
-            />
-          )}
-
-          {/* Idle state */}
-          {!isScanning && !diagnosis && (
-            <div className="my-auto text-center space-y-4 max-w-sm mx-auto py-12 relative z-10">
-              <div className="grid h-14 w-14 place-items-center bg-[#2D6A4F]/20 border border-[#2D6A4F]/30 text-[#FAF9F5]/80 mx-auto rounded-none">
-                <Database className="h-6 w-6" />
-              </div>
-              <h4 className="text-sm font-bold uppercase tracking-wider text-[#FAF9F5]">
-                Diagnostics Awaiting Trigger
-              </h4>
-              <p className="text-xs text-[#A2AAA0] leading-relaxed">
-                Configure crop parameters on the left panel, then run the diagnostics scan.
-                The expert system matches symptoms with East African agricultural diseases.
-              </p>
-            </div>
-          )}
-
-          {/* Scanning state */}
-          {isScanning && (
-            <div className="my-auto text-center space-y-4 max-w-sm mx-auto py-12 relative z-10">
-              <div className="h-10 w-10 border-2 border-t-[#FAF9F5] border-[#FAF9F5]/20 rounded-full animate-spin mx-auto" />
-              <h4 className="text-sm font-bold uppercase tracking-widest text-[#FAF9F5] animate-pulse">
-                Running Neural Analytics...
-              </h4>
-              <p className="text-[11px] text-[#A2AAA0] leading-relaxed">
-                Analyzing leaf chlorosis ratios, spot patterns, and environmental factors
-                against crop diagnostic models.
-              </p>
-            </div>
-          )}
-
-          {/* Upgraded Result State */}
-          {!isScanning && diagnosis && (
-            <div className="space-y-6 relative z-10 text-left">
-              
-              {/* Emergency Alert Banner */}
-              {(diagnosis.emergency || diagnosis.needsExpertInspection) && (
-                <div className="bg-red-950/80 border border-red-500/80 px-4 py-3 flex items-start gap-3 text-red-200">
-                  <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                  <div className="text-xs space-y-1">
-                    <strong className="font-extrabold block text-red-400 uppercase tracking-wide">
-                      Urgent Agricultural Warning
-                    </strong>
-                    <p className="leading-relaxed">
-                      Critical pathogen spread detected. We recommend isolating the affected block immediately
-                      and contacting agricultural extension officers in {subCounty ? `${subCounty}, ` : ""} Uasin Gishu.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Header diagnostic overview */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2D6A4F]/20 pb-4">
-                <div>
-                  <span className="text-[8px] font-black uppercase text-[#F5A623] tracking-widest block">
-                    Diagnostic Core Result
-                  </span>
-                  <h4 className="text-lg font-black text-[#FAF9F5] mt-0.5 uppercase tracking-wide font-serif">
-                    {diagnosis.disease}
-                  </h4>
-                  <span className="text-[10px] text-[#A2AAA0] italic block font-mono">
-                    {diagnosis.scientificDisease} · {diagnosis.crop} ({diagnosis.scientificName})
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <div className="bg-[#13301E] border border-[#2D6A4F]/30 px-3 py-1.5 text-center">
-                    <span className="text-[8px] font-bold text-[#A2AAA0] block uppercase">Confidence</span>
-                    <strong className="text-xs font-black text-[#FAF9F5] font-mono">
-                      {diagnosis.confidence}%
-                    </strong>
-                  </div>
-                  <div className={`border px-3 py-1.5 text-center ${getSeverityBadgeClass(diagnosis.severity)}`}>
-                    <span className="text-[8px] font-bold block uppercase opacity-80">Severity</span>
-                    <strong className="text-xs font-black uppercase">
-                      {diagnosis.severity}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Observations & Causes Row */}
-              <div className="grid gap-4 md:grid-cols-2 text-xs">
-                <div className="bg-[#091D13]/40 border border-[#1C462C]/60 p-3.5 space-y-2">
-                  <span className="text-[10px] font-black text-[#52B788] uppercase tracking-wider block flex items-center gap-1.5">
-                    <Activity className="h-3.5 w-3.5" />
-                    Visual Observations
-                  </span>
-                  <ul className="space-y-1 text-[#A2AAA0] list-disc list-inside">
-                    {diagnosis.visualObservations.map((obs, i) => (
-                      <li key={i} className="leading-relaxed text-[11px]">{obs}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="bg-[#091D13]/40 border border-[#1C462C]/60 p-3.5 space-y-2">
-                  <span className="text-[10px] font-black text-[#F5A623] uppercase tracking-wider block flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5" />
-                    Pathogen Root Causes
-                  </span>
-                  <ul className="space-y-1 text-[#A2AAA0] list-disc list-inside">
-                    {diagnosis.possibleCauses.map((cause, i) => (
-                      <li key={i} className="leading-relaxed text-[11px]">{cause}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Tabbed Recommendations */}
-              <div className="space-y-4">
-                <div className="flex border-b border-[#2D6A4F]/20">
-                  {[
-                    { id: "treatment", label: "Treatments", icon: Sprout },
-                    { id: "prevention", label: "Prevention", icon: ShieldCheck },
-                    { id: "soil", label: "Soil & Nutrients", icon: Droplet },
-                    { id: "weather", label: "Weather Context", icon: Thermometer },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveReportTab(tab.id as any)}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider border-b-2 transition ${
-                        activeReportTab === tab.id
-                          ? "border-[#F5A623] text-[#FAF9F5] bg-[#112F20]/60"
-                          : "border-transparent text-[#A2AAA0] hover:text-[#FAF9F5]"
-                      }`}
-                    >
-                      <tab.icon className="h-3.5 w-3.5" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Tab Contents */}
-                <div className="bg-[#091D13]/40 border border-[#1C462C]/60 p-4 text-xs">
-                  {activeReportTab === "treatment" && (
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        {["organic", "chemical", "ipm"].map((sub) => (
-                          <button
-                            key={sub}
-                            onClick={() => setTreatmentSubTab(sub as any)}
-                            className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider border transition ${
-                              treatmentSubTab === sub
-                                ? "bg-[#2D6A4F] border-[#2D6A4F] text-[#FAF9F5]"
-                                : "border-[#1C462C]/60 text-[#A2AAA0] hover:text-[#FAF9F5]"
-                            }`}
-                          >
-                            {sub} Protocol
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="space-y-2">
-                        {treatmentSubTab === "organic" && (
-                          <ul className="space-y-1.5 text-[#A2AAA0] list-disc list-inside">
-                            {diagnosis.organicTreatment.map((t, idx) => (
-                              <li key={idx} className="leading-relaxed text-[11px]">{t}</li>
-                            ))}
-                          </ul>
-                        )}
-                        {treatmentSubTab === "chemical" && (
-                          <ul className="space-y-1.5 text-[#A2AAA0] list-disc list-inside">
-                            {diagnosis.chemicalTreatment.map((t, idx) => (
-                              <li key={idx} className="leading-relaxed text-[11px]">{t}</li>
-                            ))}
-                          </ul>
-                        )}
-                        {treatmentSubTab === "ipm" && (
-                          <ul className="space-y-1.5 text-[#A2AAA0] list-disc list-inside">
-                            {diagnosis.ipmRecommendations.map((t, idx) => (
-                              <li key={idx} className="leading-relaxed text-[11px]">{t}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeReportTab === "prevention" && (
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-[#52B788] uppercase block">
-                        Long-Term Preventive Measures:
-                      </span>
-                      <ul className="space-y-1.5 text-[#A2AAA0] list-disc list-inside">
-                        {diagnosis.prevention.map((p, idx) => (
-                          <li key={idx} className="leading-relaxed text-[11px]">{p}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {activeReportTab === "soil" && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="border-r border-[#1C462C]/40 pr-2">
-                          <span className="text-[9px] font-bold text-[#A2AAA0] uppercase block">Recommended Soil pH</span>
-                          <strong className="text-sm font-mono text-[#FAF9F5] block mt-0.5">{diagnosis.soilRecommendations.ph}</strong>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-bold text-[#A2AAA0] uppercase block">Target NPK Ratio</span>
-                          <strong className="text-sm font-mono text-[#F5A623] block mt-0.5">{diagnosis.soilRecommendations.npk}</strong>
-                        </div>
-                      </div>
-                      <div className="border-t border-[#1C462C]/40 pt-2 space-y-1">
-                        <span className="text-[9px] font-bold text-[#A2AAA0] uppercase block">Fertility Advisory</span>
-                        <p className="text-[11px] text-[#A2AAA0] leading-relaxed">{diagnosis.soilRecommendations.fertilizer}</p>
-                      </div>
-                      <div className="border-t border-[#1C462C]/40 pt-2 space-y-0.5">
-                        <span className="text-[9px] font-bold text-[#A2AAA0] uppercase block">Organic Matter Advice</span>
-                        <p className="text-[11px] text-[#A2AAA0] leading-relaxed">{diagnosis.soilRecommendations.organicMatter}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeReportTab === "weather" && (
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-[#F5A623] uppercase block">
-                        Microclimate-driven Advisory:
-                      </span>
-                      <ul className="space-y-1.5 text-[#A2AAA0] list-disc list-inside">
-                        {diagnosis.weatherAdvice.map((w, idx) => (
-                          <li key={idx} className="leading-relaxed text-[11px]">{w}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Dynamic Follow-Up Checklist */}
-              {diagnosis.followUpActions.length > 0 && (
-                <div className="bg-[#112F20]/60 border border-[#2D6A4F]/30 p-4 space-y-2.5">
-                  <span className="text-[10px] font-black text-[#FAF9F5] uppercase tracking-wider block flex items-center gap-1.5">
-                    <ClipboardList className="h-4 w-4 text-[#F5A623]" />
-                    Recommended Follow-up Actions
-                  </span>
-                  <div className="space-y-2 text-xs">
-                    {diagnosis.followUpActions.map((action, idx) => (
-                      <label
-                        key={idx}
-                        onClick={() => toggleAction(idx)}
-                        className="flex items-start gap-2.5 cursor-pointer hover:text-white select-none py-0.5 transition"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!completedActions[idx]}
-                          onChange={() => {}} // handled by parent click
-                          className="rounded-none border-[#1C462C] text-[#52B788] focus:ring-0 cursor-pointer h-4 w-4 mt-0.5 accent-[#2D6A4F]"
-                        />
-                        <span className={`text-[11px] leading-relaxed ${completedActions[idx] ? "line-through text-[#A2AAA0]/50" : "text-[#A2AAA0]"}`}>
-                          {action}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Low Confidence Warning block */}
-              {diagnosis.confidence < 70 && diagnosis.additionalImagesRequired.length > 0 && (
-                <div className="bg-amber-950/60 border border-amber-500/50 p-3.5 text-xs text-amber-200 space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                    <strong className="font-bold uppercase tracking-wider">Low Confidence Advisory</strong>
-                  </div>
-                  <p className="text-[11px] leading-relaxed">
-                    Diagnostics score is under 70%. To improve diagnosis accuracy, please submit additional pictures showing:
-                  </p>
-                  <ul className="grid grid-cols-2 gap-1 text-[10px] text-amber-300 list-disc list-inside">
-                    {diagnosis.additionalImagesRequired.map((imgReq, idx) => (
-                      <li key={idx} className="truncate">{imgReq}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* E-Commerce Recommended Products list */}
-              {diagnosis.recommendedProducts.length > 0 && (
-                <div className="border-t border-[#2D6A4F]/20 pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#F5A623] uppercase tracking-wider block">
-                      Recommended Agrovet Solutions
-                    </span>
-                    <span className="text-[9px] text-[#A2AAA0] block">
-                      Matching product categories: {diagnosis.recommendedProductTypes.join(", ")}
-                    </span>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {diagnosis.recommendedProducts.map((p, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center bg-[#091D13]/40 border border-[#1C462C]/60 p-2.5 hover:border-[#F5A623]/30 transition"
-                      >
-                        <div className="max-w-[70%]">
-                          <strong className="text-[11px] text-[#FAF9F5] block leading-snug truncate">
-                            {p.name}
-                          </strong>
-                          <span className="text-[10px] font-mono text-[#F5A623] font-bold">
-                            {p.price}
-                          </span>
-                        </div>
-                        <Link
-                          to="/shop"
-                          search={{ category: "Pesticides" } as any}
-                          className="px-3 py-1.5 bg-[#F5A623] hover:bg-[#e09520] text-white text-[9px] font-black uppercase tracking-wider transition rounded-none shrink-0 flex items-center gap-1"
-                        >
-                          Buy
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── Diagnosis History Panel ─────────────── */}
-        {showHistory && (
-          <div className="bg-[#091D13]/60 border border-[#1C462C] p-5 space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-[#2D6A4F]/20 pb-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#F5A623] uppercase tracking-wider">
-                <ClipboardList className="h-4 w-4" />
-                Recent Diagnosis History
-              </div>
-              <button
-                onClick={() => setShowHistory(false)}
-                className="text-[#A2AAA0] hover:text-[#FAF9F5] transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {historyLoading ? (
-              <div className="py-6 text-center text-xs text-[#A2AAA0]/50 animate-pulse">
-                Loading history logs...
-              </div>
-            ) : history.length === 0 ? (
-              <div className="py-6 text-center text-xs text-[#A2AAA0]/50">
-                No diagnosis history found. Log in to save results.
               </div>
             ) : (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                {history.map((h) => (
-                  <div
-                    key={h.id}
-                    onClick={() => selectHistoryEntry(h)}
-                    className="flex items-center justify-between bg-[#112F20]/40 border border-[#1C462C]/60 p-3 text-xs cursor-pointer hover:border-[#F5A623]/30 hover:bg-[#112F20]/60 transition select-none"
-                  >
-                    <div>
-                      <strong className="text-[#FAF9F5] block text-[11px]">{h.disease}</strong>
-                      <span className="text-[#A2AAA0] text-[10px]">
-                        {h.crop} · {h.symptoms.join(", ")}
-                      </span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[#52B788] font-mono font-bold block">{h.confidence}</span>
-                      <span className="text-[9px] text-[#A2AAA0] font-mono">
-                        {new Date(h.createdAt).toLocaleDateString("en-KE")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="border-2 border-dashed border-[#85CC14]/40 hover:border-[#85CC14] bg-[#091D14]/60 hover:bg-[#091D14] transition rounded-2xl p-5 sm:p-8 text-center relative flex flex-col items-center justify-center cursor-pointer group">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                />
+                
+                <div className="relative h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-[#85CC14]/20 border-2 border-[#85CC14] flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm">
+                  <UploadCloud className="h-6 w-6 sm:h-8 sm:w-8 text-[#85CC14] animate-pulse" />
+                </div>
+
+                <span className="text-xs sm:text-sm font-bold text-white block font-['Outfit',sans-serif]">
+                  Tap or Drag Photo to Upload Leaf Specimen
+                </span>
+                <span className="text-[10px] font-mono text-white/60 mt-1 block">
+                  Supports JPEG, PNG, WebP • Max {MAX_FILE_SIZE_MB}MB
+                </span>
               </div>
             )}
           </div>
-        )}
+
+          {/* Crop Parameters & Symptoms Checklist */}
+          <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2117] via-[#0F291E] to-[#143B2B] text-white border-2 border-[#85CC14]/30 p-4 sm:p-6 space-y-4 shadow-xl shadow-[#0F291E]/20">
+            <span className="text-xs font-mono font-bold text-[#D4E157] uppercase tracking-widest block">
+              2. CROP SPECIES & SYMPTOMS CHECKLIST
+            </span>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-mono text-white/80 font-bold uppercase block mb-1">Target Crop</label>
+                <select
+                  value={selectedCrop}
+                  onChange={(e) => setSelectedCrop(e.target.value)}
+                  className="w-full bg-[#091D14] border border-[#85CC14]/40 rounded-xl p-3 text-xs font-mono text-[#D4E157] font-bold outline-none cursor-pointer focus:border-[#85CC14] shadow-sm"
+                >
+                  {CROPS.map((c) => (
+                    <option key={c.value} value={c.value} className="bg-[#0F291E] text-white">
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Symptoms Grid */}
+              <div>
+                <label className="text-xs font-mono text-white/80 font-bold uppercase block mb-2">Observed Symptoms</label>
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                  {SYMPTOMS.map(({ key, label }) => (
+                    <label
+                      key={key}
+                      className={`flex items-center gap-2 p-2.5 rounded-xl border transition cursor-pointer text-xs font-semibold select-none ${
+                        symptoms[key]
+                          ? "bg-[#85CC14] text-[#0B2117] border-[#85CC14] font-bold"
+                          : "bg-[#091D14] border-[#85CC14]/30 text-white/90 hover:bg-[#0F291E]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={symptoms[key]}
+                        onChange={() => toggleSymptom(key)}
+                        className="rounded accent-[#0B2117] h-4 w-4 shrink-0 cursor-pointer"
+                      />
+                      <span className="truncate">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* High Contrast Green Gradient Action Button */}
+            <button
+              onClick={runDiagnosis}
+              disabled={isScanning}
+              className="w-full h-12 sm:h-14 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] hover:brightness-110 text-[#0B2117] font-black text-xs uppercase tracking-wider sm:tracking-widest transition flex items-center justify-center gap-2 shadow-lg shadow-[#85CC14]/20 disabled:opacity-50 mt-4 active:scale-98 cursor-pointer"
+            >
+              {isScanning ? (
+                <>
+                  <ScanLine className="h-5 w-5 animate-spin text-[#0B2117]" />
+                  <span>Scanning Tissue Structure...</span>
+                </>
+              ) : (
+                <>
+                  <Cpu className="h-5 w-5 text-[#0B2117]" />
+                  <span>EXECUTE AI NEURAL DIAGNOSIS</span>
+                </>
+              )}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Right Column — Neural Diagnostic Result Screen */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2117] via-[#0F291E] to-[#143B2B] text-white border-2 border-[#85CC14]/30 p-4 xs:p-6 sm:p-8 min-h-[480px] sm:min-h-[550px] relative flex flex-col justify-between overflow-hidden shadow-xl shadow-[#0F291E]/20">
+            
+            {/* Animated Scan Line */}
+            {isScanning && (
+              <div className="absolute inset-x-0 h-1 bg-[#85CC14] shadow-md shadow-[#85CC14]/50 animate-scan-line z-20" />
+            )}
+
+            {!isScanning && !diagnosis && (
+              <div className="my-auto text-center space-y-4 max-w-md mx-auto py-12 sm:py-16">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[#85CC14]/20 border-2 border-[#85CC14] flex items-center justify-center mx-auto shadow-sm">
+                  <Database className="h-8 w-8 sm:h-10 sm:w-10 text-[#85CC14]" />
+                </div>
+                <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-wider font-['Outfit',sans-serif]">
+                  NEURAL MONITOR STANDBY
+                </h4>
+                <p className="text-xs text-white/80 leading-relaxed">
+                  Select crop observations or upload a photo to initiate neural diagnostic scanning. 
+                  Results match symptoms against verified East African agricultural pathogen databases.
+                </p>
+              </div>
+            )}
+
+            {/* Active Diagnostic Result Display */}
+            {!isScanning && diagnosis && (
+              <div className="space-y-6 relative z-10">
+                
+                {/* Result Header */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-[#85CC14] uppercase tracking-widest block">
+                      DIAGNOSIS COMPLETE
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white uppercase font-['Outfit',sans-serif] mt-1">
+                      {diagnosis.disease}
+                    </h2>
+                    <span className="text-xs font-mono text-[#D4E157] italic block mt-0.5">
+                      {diagnosis.scientificDisease} • {diagnosis.crop} ({diagnosis.scientificName})
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-[#091D14] border border-[#85CC14]/40">
+                      <span className="text-[10px] font-mono text-white/70 font-bold uppercase">Accuracy</span>
+                      <strong className="text-lg sm:text-xl font-mono font-black text-[#85CC14]">
+                        {diagnosis.confidence}%
+                      </strong>
+                    </div>
+
+                    <div className={`px-3.5 py-2 sm:px-4 sm:py-3 rounded-2xl font-mono text-xs font-black uppercase tracking-wider ${getSeverityBadgeClass(diagnosis.severity)}`}>
+                      {diagnosis.severity} SEVERITY
+                    </div>
+                  </div>
+                </div>
+
+                {/* Treatment Protocols */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-mono font-bold text-[#D4E157] uppercase tracking-widest">
+                    RECOMMENDED TREATMENT PROTOCOLS
+                  </h4>
+
+                  <ul className="space-y-3 text-xs sm:text-sm text-white">
+                    {diagnosis.organicTreatment.map((treatment, idx) => (
+                      <li key={idx} className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#091D14]/80 border border-[#85CC14]/30">
+                        <span className="h-6 w-6 rounded-full bg-[#85CC14] text-[#0B2117] font-mono font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                          {idx + 1}
+                        </span>
+                        <span className="leading-relaxed font-medium text-white/95">{treatment}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Recommended Products */}
+                {diagnosis.recommendedProducts.length > 0 && (
+                  <div className="border-t border-white/10 pt-6 space-y-4">
+                    <span className="text-xs font-mono font-bold text-[#85CC14] uppercase tracking-widest block">
+                      VERIFIED AGROVET SOLUTIONS
+                    </span>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {diagnosis.recommendedProducts.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-3.5 rounded-2xl bg-[#091D14] border border-[#85CC14]/40 shadow-sm">
+                          <div>
+                            <strong className="text-xs text-white block font-['Outfit',sans-serif]">{p.name}</strong>
+                            <span className="text-xs font-mono text-[#D4E157] font-bold">{p.price}</span>
+                          </div>
+                          <Link
+                            to="/shop"
+                            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] text-[#0B2117] font-black text-xs uppercase shadow-sm hover:brightness-110"
+                          >
+                            Order
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
+
+      {/* ── History Timeline Strip ───────────────────────── */}
+      {showHistory && history.length > 0 && (
+        <div className="rounded-3xl bg-gradient-to-br from-[#0B2117] via-[#0F291E] to-[#143B2B] text-white border-2 border-[#85CC14]/30 p-6 space-y-4 shadow-xl shadow-[#0F291E]/20">
+          <h4 className="text-xs font-mono font-bold text-[#D4E157] uppercase tracking-widest">
+            HISTORICAL SCAN TIMELINE
+          </h4>
+
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+            {history.map((item) => (
+              <div key={item.id} className="min-w-[200px] p-4 rounded-2xl bg-[#091D14] border border-[#85CC14]/30 space-y-2">
+                <span className="text-[10px] font-mono text-white/60 block">{item.createdAt.substring(0, 10)}</span>
+                <strong className="text-sm font-bold text-white block truncate">{item.disease}</strong>
+                <span className="text-xs font-mono text-[#85CC14] font-bold block">{item.confidence}% Match</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

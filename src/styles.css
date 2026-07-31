@@ -158,6 +158,16 @@
   }
 }
 
+/* Chrome & Edge Autofill Background Override for Forms */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #FCFBF4 inset !important;
+  -webkit-text-fill-color: #1f2937 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 @utility container-px {
   padding-inline: 1.25rem;
   @media (min-width: 768px) {
@@ -253,7 +263,7 @@
 }
 
 @utility animate-ticker {
-  animation: ticker 25s linear infinite;
+  animation: ticker 90s linear infinite;
 }
 
 @keyframes scanLine {
@@ -269,8 +279,10 @@
   animation: fadeIn 0.35s ease-out both;
 }
 
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-hide,
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    Mqulima Flat Button Theme Overrides
@@ -325,13 +337,13 @@ button[class*="border-border"] {
   transition: all 0.2s ease-in-out !important;
 }
 
-/* Partner Marquee Styles */
+/* Partner & Stats Marquee Styles */
 @keyframes marquee {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  100% { transform: translateX(-50%); }
 }
 .animate-marquee {
-  animation: marquee 45s linear infinite;
+  animation: marquee 30s linear infinite;
 }
 .marquee-wrapper:hover .animate-marquee {
   animation-play-state: paused;

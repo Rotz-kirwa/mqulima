@@ -168,7 +168,7 @@ export function ContactForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-emerald-100 p-8 sm:p-10 shadow-[0_10px_40px_-6px_rgba(45,106,79,0.06)] relative overflow-hidden select-text text-left">
+    <div className="bg-white rounded-3xl border border-emerald-100 p-8 sm:p-10 shadow-[0_10px_40px_-6px_rgba(45,106,79,0.06)] relative overflow-hidden select-text text-left" suppressHydrationWarning>
       {/* Dynamic gradient aura */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-50 rounded-full blur-3xl pointer-events-none opacity-60" />
       
@@ -183,6 +183,9 @@ export function ContactForm() {
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.3 }}
             noValidate
+            data-lpignore="true"
+            autoComplete="off"
+            suppressHydrationWarning
           >
             {errors.submit && (
               <div className="bg-red-50 border border-red-200 text-red-750 text-sm p-4 rounded-xl flex items-center gap-3">
@@ -198,7 +201,7 @@ export function ContactForm() {
                 <label htmlFor="fullName" className="block text-xs font-bold text-gray-700 mb-2">
                   Full Name
                 </label>
-                <div className="relative">
+                <div className="relative" suppressHydrationWarning>
                   <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
                     <User className="h-4.5 w-4.5" />
                   </span>
@@ -209,6 +212,8 @@ export function ContactForm() {
                     onChange={(e) => handleChange("fullName", e.target.value)}
                     onBlur={(e) => handleBlur("fullName", e.target.value)}
                     placeholder="Enter your full name"
+                    autoComplete="name"
+                    data-lpignore="true"
                     className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
                       touched.fullName && errors.fullName
                         ? "border-red-300 focus:border-red-500"
@@ -228,7 +233,7 @@ export function ContactForm() {
                 <label htmlFor="email" className="block text-xs font-bold text-gray-700 mb-2">
                   Email Address
                 </label>
-                <div className="relative">
+                <div className="relative" suppressHydrationWarning>
                   <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
                     <Mail className="h-4.5 w-4.5" />
                   </span>
@@ -239,6 +244,8 @@ export function ContactForm() {
                     onChange={(e) => handleChange("email", e.target.value)}
                     onBlur={(e) => handleBlur("email", e.target.value)}
                     placeholder="you@domain.com"
+                    autoComplete="email"
+                    data-lpignore="true"
                     className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
                       touched.email && errors.email
                         ? "border-red-300 focus:border-red-500"
@@ -259,7 +266,7 @@ export function ContactForm() {
               <label htmlFor="phone" className="block text-xs font-bold text-gray-700 mb-2">
                 Phone Number
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2" suppressHydrationWarning>
                 <div className="relative flex items-center">
                   <span className="absolute left-3 pointer-events-none text-gray-400">
                     <Phone className="h-4.5 w-4.5" />
@@ -284,6 +291,8 @@ export function ContactForm() {
                   onChange={(e) => handleChange("phone", e.target.value)}
                   onBlur={(e) => handleBlur("phone", e.target.value)}
                   placeholder="712345678"
+                  autoComplete="tel"
+                  data-lpignore="true"
                   className={`flex-1 rounded-xl border bg-gray-50/50 px-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 ${
                     touched.phone && errors.phone
                       ? "border-red-300 focus:border-red-500"
@@ -304,7 +313,7 @@ export function ContactForm() {
                 <label htmlFor="userType" className="block text-xs font-bold text-gray-700 mb-2">
                   I am a...
                 </label>
-                <div className="relative">
+                <div className="relative" suppressHydrationWarning>
                   <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
                     <Sprout className="h-4.5 w-4.5" />
                   </span>
@@ -329,7 +338,7 @@ export function ContactForm() {
                 <label htmlFor="subject" className="block text-xs font-bold text-gray-700 mb-2">
                   Subject
                 </label>
-                <div className="relative">
+                <div className="relative" suppressHydrationWarning>
                   <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
                     <FileText className="h-4.5 w-4.5" />
                   </span>
@@ -339,6 +348,8 @@ export function ContactForm() {
                     value={subject}
                     onChange={(e) => handleChange("subject", e.target.value)}
                     placeholder="Inquiry Topic"
+                    autoComplete="off"
+                    data-lpignore="true"
                     className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-200"
                   />
                 </div>
@@ -350,7 +361,7 @@ export function ContactForm() {
               <label htmlFor="message" className="block text-xs font-bold text-gray-700 mb-2">
                 Message
               </label>
-              <div className="relative">
+              <div className="relative" suppressHydrationWarning>
                 <span className="absolute top-3.5 left-4 pointer-events-none text-gray-400">
                   <MessageSquare className="h-4.5 w-4.5" />
                 </span>
@@ -362,6 +373,8 @@ export function ContactForm() {
                   rows={4}
                   placeholder="How can we help grow your business?"
                   style={{ minHeight: "120px" }}
+                  autoComplete="off"
+                  data-lpignore="true"
                   className={`w-full rounded-xl border bg-gray-50/50 pl-11 pr-4.5 py-3.5 text-sm text-[#0A1E0C] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-200 resize-none ${
                     touched.message && errors.message
                       ? "border-red-300 focus:border-red-500"
@@ -438,7 +451,7 @@ export function ContactForm() {
               Message Sent Successfully
             </h3>
             <p className="mt-2 text-sm text-gray-500 max-w-sm leading-relaxed font-medium">
-              Thank you for reaching out! Your inquiry has been stored. A Mqulima coordinator will contact you back within 2 hours.
+              Thank you for reaching out! Your inquiry has been stored. A Mqulima coordinator will contact you back within 10 mins.
             </p>
             <button
               onClick={() => setSuccess(false)}

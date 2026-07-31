@@ -1,0 +1,616 @@
+/* ═══════════════════════════════════════════════════════════
+   MQULIMA FORUM — Design System v2.0
+   A premium agricultural social platform for Kenyan farmers
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Space+Grotesk:wght@600;700;800&display=swap');
+
+/* ── Brand Tokens ──────────────────────────────────────── */
+:root {
+  --mq-deep-green: #0B2117;
+  --mq-mid-green: #16382B;
+  --mq-light-green: #2D6A4F;
+  --mq-lime-accent: #85CC14;
+  --mq-harvest-gold: #85CC14;
+  --mq-harvest-gold-dark: #74B510;
+  --mq-warm-bg: #FAFBF9;
+  --mq-card-bg: #FFFFFF;
+  --mq-text-primary: #0F172A;
+  --mq-text-secondary: #475569;
+  --mq-success: #16A34A;
+  --mq-danger: #E63946;
+  --mq-border: rgba(0, 0, 0, 0.07);
+  --mq-border-hover: rgba(133, 204, 20, 0.3);
+  --mq-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --mq-card-shadow-hover: 0 6px 20px rgba(11, 33, 23, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --mq-card-shadow-lg: 0 10px 30px rgba(11, 33, 23, 0.12), 0 3px 10px rgba(0, 0, 0, 0.03);
+  --mq-radius-xl: 18px;
+  --mq-radius-lg: 14px;
+  --mq-radius-md: 10px;
+  --mq-radius-sm: 6px;
+  --mq-nav-active-bg: #EDF7E2;
+  --mq-nav-active-border: #85CC14;
+}
+
+/* ── Base Typography ───────────────────────────────────── */
+.forum-page {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+  color: var(--mq-text-primary);
+  background-color: var(--mq-warm-bg);
+}
+
+.forum-page h1,
+.forum-page h2,
+.forum-page h3,
+.forum-page h4,
+.forum-page h5,
+.forum-page h6,
+.mq-title-stylish {
+  font-family: 'Playfair Display', 'Plus Jakarta Sans', Georgia, serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* ── Card System ───────────────────────────────────────── */
+.mq-card {
+  background: var(--mq-card-bg);
+  border: 1px solid var(--mq-border);
+  border-radius: var(--mq-radius-xl);
+  box-shadow: var(--mq-card-shadow);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+.mq-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mq-card-shadow-hover);
+  border-color: var(--mq-border-hover);
+}
+
+.mq-card-static {
+  background: var(--mq-card-bg);
+  border: 1px solid var(--mq-border);
+  border-radius: var(--mq-radius-xl);
+  box-shadow: var(--mq-card-shadow);
+}
+
+/* ── Button System ─────────────────────────────────────── */
+.mq-btn-primary {
+  background: #85CC14;
+  color: #0B2117;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(133, 204, 20, 0.3);
+}
+
+.mq-btn-primary:hover {
+  background: #74B510;
+  transform: scale(1.02);
+  box-shadow: 0 4px 14px rgba(133, 204, 20, 0.4);
+}
+
+.mq-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.mq-btn-ghost {
+  background: transparent;
+  color: var(--mq-text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--mq-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mq-btn-ghost:hover {
+  background: #EDF7E2;
+  color: var(--mq-deep-green);
+  border-color: rgba(133, 204, 20, 0.3);
+}
+
+.mq-btn-ghost:active {
+  transform: scale(0.98);
+}
+
+/* ── Nav Item System ───────────────────────────────────── */
+.mq-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--mq-radius-lg);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mq-text-secondary);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  position: relative;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.mq-nav-item:hover {
+  background: rgba(27, 67, 50, 0.03);
+  color: var(--mq-deep-green);
+  transform: translateX(2px);
+}
+
+.mq-nav-item.active {
+  background: var(--mq-nav-active-bg);
+  color: var(--mq-deep-green);
+  font-weight: 600;
+  border-left: 4px solid var(--mq-nav-active-border);
+  padding-left: 10px;
+}
+
+.mq-nav-item .nav-badge {
+  margin-left: auto;
+  background: var(--mq-harvest-gold);
+  color: var(--mq-text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Tag / Pill System ─────────────────────────────────── */
+.mq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.mq-tag-green {
+  background: #E9F5EC;
+  color: var(--mq-mid-green);
+  border: 1px solid rgba(45, 106, 79, 0.15);
+}
+
+.mq-tag-green:hover {
+  background: var(--mq-mid-green);
+  color: white;
+}
+
+.mq-tag-gold {
+  background: #FFF3E6;
+  color: #C57B3A;
+  border: 1px solid rgba(244, 162, 97, 0.2);
+}
+
+.mq-tag-red {
+  background: #FDE8EA;
+  color: #C73E4A;
+  border: 1px solid rgba(230, 57, 70, 0.15);
+}
+
+.mq-tag-blue {
+  background: #E8F0FE;
+  color: #3B6EC7;
+  border: 1px solid rgba(59, 110, 199, 0.15);
+}
+
+/* ── Category Badge System ─────────────────────────────── */
+.mq-badge-farm-progress {
+  background: #E9F5EC;
+  color: var(--mq-mid-green);
+  border: 1px solid rgba(45, 106, 79, 0.15);
+}
+
+.mq-badge-harvest {
+  background: #FFF3E6;
+  color: #B8751A;
+  border: 1px solid rgba(244, 162, 97, 0.2);
+}
+
+.mq-badge-question {
+  background: #FDE8EA;
+  color: #C73E4A;
+  border: 1px solid rgba(230, 57, 70, 0.15);
+}
+
+.mq-badge-tips {
+  background: #E8F0FE;
+  color: #3B6EC7;
+  border: 1px solid rgba(59, 110, 199, 0.15);
+}
+
+/* ── Search Input ──────────────────────────────────────── */
+.mq-search {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px 0 44px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-border);
+  background: rgba(245, 245, 240, 0.6);
+  font-size: 13px;
+  color: var(--mq-text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.mq-search:focus {
+  border-color: var(--mq-deep-green);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.06);
+}
+
+.mq-search::placeholder {
+  color: #B2B8C3;
+  font-weight: 400;
+}
+
+/* ── Engagement Bar ────────────────────────────────────── */
+.mq-engage-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--mq-radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mq-text-secondary);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.mq-engage-btn:hover {
+  background: rgba(27, 67, 50, 0.04);
+  color: var(--mq-deep-green);
+}
+
+.mq-engage-btn:active {
+  transform: scale(0.95);
+}
+
+.mq-engage-btn.liked {
+  color: var(--mq-danger);
+}
+
+.mq-engage-btn.saved {
+  color: var(--mq-harvest-gold-dark);
+}
+
+/* ── Like Heart Animation ──────────────────────────────── */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.35); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.heart-pop {
+  animation: heartPop 0.35s ease-out;
+}
+
+/* ── Skeleton Shimmer ──────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.mq-skeleton {
+  background: linear-gradient(90deg, #f0f0ef 25%, #e4e4e2 50%, #f0f0ef 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--mq-radius-md);
+}
+
+/* ── Staggered Fade In ─────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mq-fade-in {
+  animation: fadeInUp 0.35s ease-out both;
+}
+
+/* ── Section Label ─────────────────────────────────────── */
+.mq-section-label {
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mq-deep-green);
+  padding: 4px 0;
+}
+
+/* ── Custom Scrollbar ──────────────────────────────────── */
+.forum-page ::-webkit-scrollbar {
+  width: 5px;
+}
+
+.forum-page ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.forum-page ::-webkit-scrollbar-thumb {
+  background: rgba(27, 67, 50, 0.15);
+  border-radius: 99px;
+}
+
+.forum-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(27, 67, 50, 0.3);
+}
+
+/* ── Focus Ring (Accessibility) ────────────────────────── */
+.forum-page *:focus-visible {
+  outline: 2px solid var(--mq-harvest-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Online Indicator Dot ──────────────────────────────── */
+.mq-online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: #34D399;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+/* ── Right Sidebar Sticky ─────────────────────────────── */
+@media (min-width: 1024px) {
+  .mq-right-sidebar {
+    position: sticky;
+    top: 136px;
+    max-height: calc(100vh - 152px);
+    overflow-y: auto;
+  }
+}
+
+/* ── Post Media Grid ───────────────────────────────────── */
+.mq-media-frame {
+  border-radius: var(--mq-radius-lg);
+  overflow: hidden;
+  max-height: 400px;
+  position: relative;
+  background: #f0f0ef;
+}
+
+.mq-media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.mq-media-frame:hover img {
+  transform: scale(1.02);
+}
+
+/* ── Progress Bar (for reputation) ─────────────────────── */
+.mq-progress-bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.mq-progress-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--mq-deep-green), var(--mq-light-green));
+  transition: width 0.5s ease;
+}
+
+/* ── Responsive Helpers ────────────────────────────────── */
+@media (max-width: 1023px) {
+  .mq-hide-lg-down {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .mq-hide-md-down {
+    display: none !important;
+  }
+}
+
+/* ── Bottom Mobile Nav ─────────────────────────────────── */
+.mq-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mq-mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: white;
+    border-top: 1px solid var(--mq-border);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    padding: 6px 0;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mq-mobile-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--mq-text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: color 0.15s;
+    border-radius: 8px;
+  }
+
+  .mq-mobile-nav button.active {
+    color: var(--mq-deep-green);
+  }
+
+  .forum-page {
+    padding-bottom: 70px;
+  }
+}
+
+/* ── Event Date Block ──────────────────────────────────── */
+.mq-date-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--mq-radius-md);
+  background: var(--mq-nav-active-bg);
+  color: var(--mq-deep-green);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mq-date-block .day {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.mq-date-block .month {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* ── Nested Comment Thread System ──────────────────────── */
+.mq-comment-thread {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.mq-comment-reply-indent {
+  margin-left: 28px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(27, 67, 50, 0.12);
+}
+
+@media (max-width: 640px) {
+  .mq-comment-reply-indent {
+    margin-left: 16px;
+    padding-left: 10px;
+  }
+}
+
+/* ── Lightbox & Modal Overlays ─────────────────────────── */
+.mq-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.mq-lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--mq-radius-xl);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* ── Brand Tokens ──────────────────────────────────────── */
+:root {
+  --mq-deep-green: #1B4332;
+  --mq-mid-green: #2D6A4F;
+  --mq-light-green: #40916C;
+  --mq-harvest-gold: #F4A261;
+  --mq-harvest-gold-dark: #E08D4A;
+  --mq-warm-bg: #F6F7F3; /* Soft warm agricultural cream surface */
+  --mq-card-bg: #FFFFFF;
+  --mq-text-primary: #1E293B;
+  --mq-text-secondary: #64748B;
+  --mq-success: #2D6A4F;
+  --mq-danger: #E63946;
+  --mq-border: rgba(0, 0, 0, 0.07);
+  --mq-border-hover: rgba(0, 0, 0, 0.12);
+  --mq-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --mq-card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --mq-card-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08), 0 3px 10px rgba(0, 0, 0, 0.03);
+  --mq-radius-xl: 18px;
+  --mq-radius-lg: 14px;
+  --mq-radius-md: 10px;
+  --mq-radius-sm: 6px;
+  --mq-nav-active-bg: #E9F5EC;
+  --mq-nav-active-border: #2D6A4F;
+}
+
+/* ── Semantic Badge System ─────────────────────────────── */
+.mq-badge-farm-progress {
+  background-color: #E9F5EC !important;
+  color: #1B4332 !important;
+  border: 1px solid #B7E4C7 !important;
+}
+
+.mq-badge-harvest {
+  background-color: #FFF3E0 !important;
+  color: #B45309 !important;
+  border: 1px solid #FDE68A !important;
+}
+
+.mq-badge-question {
+  background-color: #E0F2FE !important;
+  color: #0369A1 !important;
+  border: 1px solid #BAE6FD !important;
+}
+
+.mq-badge-tips {
+  background-color: #CCFBF1 !important;
+  color: #0D9488 !important;
+  border: 1px solid #99F6E4 !important;
+}
+
+.mq-badge-story {
+  background-color: #FEF3C7 !important;
+  color: #B45309 !important;
+  border: 1px solid #FDE68A !important;
+}
+
+
+

@@ -16,6 +16,20 @@ export const getMarketPrices = createServerFn({ method: "POST" }).handler(
   async () => {
     const sql = await db();
 
+    // Check if prices need automatic KAMIS sync (older than 6 hours)
+    try {
+      const [latest] = await sql`SELECT MAX(recorded_at) as last_sync FROM commodity_price_board`;
+      const lastSync = latest?.last_sync ? new Date(latest.last_sync).getTime() : 0;
+      const sixHoursMs = 6 * 60 * 60 * 1000;
+
+      if (Date.now() - lastSync > sixHoursMs) {
+        const { executeKamisSync } = await import("./market-sync.server");
+        await executeKamisSync();
+      }
+    } catch (e) {
+      console.error("Auto KAMIS sync check notice:", e);
+    }
+
     // Pull all commodities and their latest price board entries
     const rows = await sql`
       SELECT

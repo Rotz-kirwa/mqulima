@@ -17,6 +17,6 @@ export const getGreeting = createServerFn({ method: "POST" })
     const config = getServerConfig();
     return {
       greeting: `Hello, ${data.name}!`,
-      mode: config.nodeEnv ?? "unknown",
+      mode: config.NODE_ENV ?? "unknown",
     };
   });

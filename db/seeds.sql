@@ -3,10 +3,18 @@
 -- Run: PSPASSWORD=mqulima_dev_2026 psql -h localhost -p 5433 -U mqulima -d mqulima_dev -f db/seeds.sql
 -- ============================================================================
 
--- Ensure default super_admin exists first
+-- Ensure default super admin account exists with password 'Admin@2026!'
 INSERT INTO profiles (email, password_hash, full_name, username, role, county_region)
-SELECT 'admin@mqulima.co.ke', '$2b$10$NhGLlk4Y/27CInYAh4QwLe/G72C20Fo..Cbrv0RjHzRiRfqMSnCFK', 'Mqulima Admin', 'mqulima_admin', 'super_admin', 'Nairobi'
-WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE role = 'super_admin');
+VALUES (
+  'admin@mqulima.co.ke',
+  '$2b$10$lWYhhk8gcyIkMgqYv2HKP.FTnQRNHnuLENrd9JaigTUnouGiObATa',
+  'Mqulima Admin',
+  'mqulima_admin',
+  'super_admin',
+  'Nairobi'
+) ON CONFLICT (email) DO UPDATE SET 
+  password_hash = '$2b$10$lWYhhk8gcyIkMgqYv2HKP.FTnQRNHnuLENrd9JaigTUnouGiObATa',
+  role = 'super_admin';
 
 -- Clean up existing demo data to prevent duplicate key errors and redundancy, preserving user accounts & admin
 DELETE FROM show_likes;
@@ -21,7 +29,7 @@ DELETE FROM services;
 DELETE FROM products;
 DELETE FROM blog_posts;
 DELETE FROM blog_authors;
-DELETE FROM profiles WHERE email LIKE '%@mqulima.co.ke' AND role != 'super_admin';
+DELETE FROM profiles WHERE email LIKE '%@mqulima.co.ke' AND email != 'admin@mqulima.co.ke' AND role != 'super_admin';
 
 -- Seed blog authors and blog posts linked to the super_admin
 DO $$
@@ -33,6 +41,14 @@ DECLARE
   author4_id UUID;
 BEGIN
   SELECT id INTO admin_profile_id FROM profiles WHERE role::text = 'super_admin' LIMIT 1;
+  IF admin_profile_id IS NULL THEN
+    SELECT id INTO admin_profile_id FROM profiles LIMIT 1;
+  END IF;
+  IF admin_profile_id IS NULL THEN
+    INSERT INTO profiles (email, password_hash, full_name, username, role)
+    VALUES ('admin@mqulima.co.ke', '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6', 'Mqulima Admin', 'mqulima_admin', 'super_admin')
+    RETURNING id INTO admin_profile_id;
+  END IF;
 
   INSERT INTO blog_authors (id, profile_id, bio, is_active)
   VALUES
@@ -60,7 +76,7 @@ BEGIN
     author3_id,
     'Kenya''s Maize Prices Hit 3-Year High — What Smallholder Farmers Must Do Now',
     'kenya-maize-prices-3-year-high-2026',
-    'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800',
+    '/mqulima_news_banner.png',
     'Maize prices across East Africa have entered a volatile super-cycle. Erratically distributed rainfall coupled with skyrocketing import costs for nitrogenous fertilizers has tightened regional grain balances. In response, wholesale prices in key hubs like Eldoret, Nakuru, and Nairobi have surged, posing both a challenge and an opportunity for agricultural cooperatives.
 
 To capitalize on this, smallholder cultivators must move away from speculation and focus on soil-catalyst inputs to stabilize yield volume. High-grade certified seeds are critical; using recycled seed grain under these weather patterns will lead to severe yield drops.
@@ -75,7 +91,7 @@ Furthermore, collective bargaining groups must negotiate fertilizer subsidies in
     author2_id,
     'How Uasin Gishu Cooperatives Increased Yields by 40% Using Mobile Agronomy',
     'uasin-gishu-cooperatives-mobile-agronomy-40-percent',
-    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500',
+    '/mqulima_news_banner.png',
     'Traditional farming wisdom is no longer sufficient to navigate shifting weather cycles. In Uasin Gishu, a syndicate of 12 smallholder cooperatives partnered with Mqulima''s digital agronomist network to deploy a SMS-based alert system.
 
 The platform monitors localized meteorological data and soil moisture sensors. When conditions are optimal, automated alerts are broadcasted to farmers'' mobile phones, advising them on the exact hour to apply top-dressing fertilizer.
@@ -90,7 +106,7 @@ This precise timing prevents nitrogen runoff during sudden downpours, ensuring t
     author1_id,
     'Organic Ginger Export Guidelines for East African Farmers',
     'organic-ginger-export-guidelines-east-africa',
-    'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500',
+    '/mqulima_news_banner.png',
     'Exporting ginger to European markets requires strict compliance with international phytosanitary standards. Buyers demand proof of pesticide-free cultivation, which means farmers must adopt organic composting techniques.
 
 To start, soil must be enriched with biological organic compost instead of synthetic chemical fertilizers. Crop protection should rely on natural bio-pesticides like neem oil extracts and garlic sprays.
@@ -105,7 +121,7 @@ Documentation is key. Farmers need to keep exhaustive spray registers, field map
     author4_id,
     'Understanding the Subsidized Dairy Feed Policy of 2026',
     'subsidized-dairy-feed-policy-2026',
-    'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=500',
+    '/mqulima_news_banner.png',
     'Dairy farming is capital-intensive. Feeds alone account for up to 70% of operational costs. The new agricultural policy introduces credit subsidies specifically targeting livestock feed millers and cooperative dairies.
 
 Under this bill, registered dairy groups can access capital at a subsidized rate of 6% per annum. This capital must be spent on raw feed materials (yellow maize, cotton seed cake, wheat pollard) to manufacture high-yield dairy meal in-house.
@@ -207,147 +223,185 @@ VALUES
     '+254755667788',
     TRUE,
     10.00
-  ),
-  (
-    'samuel.kirwa@mqulima.co.ke',
-    '$2b$10$/Ljuf.DOutjezdz1SS7H2.DjIHCIBxo5Zrgnki.6Nw0us9gY745v6',
-    'Samuel Kirwa',
-    'mqulima_kirwa_agent',
-    'sales_agent',
-    'Nairobi',
-    '{}',
-    '{}',
-    '{}',
-    3,
-    5,
-    0,
-    '+254766778899',
-    FALSE,
-    0
   );
 
--- 2. Products (matching some shop products in shop-data.ts)
-INSERT INTO products (name, slug, description, base_price, original_price, stock_qty, is_featured, avg_rating, rating_count, status, brand, seller, county, unit, badge, organic, verified_seller, seller_score, condition, shop_type, field, subcategory)
+-- 2. Products (Featured Collection)
+INSERT INTO products (name, slug, description, base_price, original_price, stock_qty, is_featured, avg_rating, rating_count, status, brand, seller, county, unit, badge, organic, verified_seller, seller_score, condition, shop_type, field, subcategory, image_urls)
 VALUES
   (
-    'Mavuno Planting Fertilizer',
-    'mavuno-planting-fertilizer',
-    'Balanced NPK for maize, beans and vegetables. Boosts root development.',
-    3450.00,
-    3800.00,
-    124,
+    'Premium NPK 20:20:20 Fertilizer',
+    'premium-npk-20-20-20-fertilizer',
+    'High-purity water-soluble NPK 20:20:20 balanced fertilizer designed to boost plant growth, flowering, and root health.',
+    3200.00,
+    3600.00,
+    250,
     TRUE,
-    4.8,
-    24,
+    4.9,
+    32,
     'active',
-    'Mavuno',
+    'Yara',
     'Mculima Supplies',
     'Nairobi',
     '50kg bag',
     'Bestseller',
     FALSE,
     TRUE,
-    95,
-    'New',
-    'Agrovet',
-    'Fertilizers',
-    'Planting'
-  ),
-  (
-    'DK 8031 Hybrid Maize Seed',
-    'dk-8031-hybrid-maize-seed',
-    'Drought-tolerant hybrid, matures in 120 days. Ideal for Rift Valley.',
-    680.00,
-    750.00,
-    312,
-    TRUE,
-    4.7,
-    18,
-    'active',
-    'Dekalb',
-    'Kenya Seed Co.',
-    'Uasin Gishu',
-    '2kg pack',
-    'Certified',
-    FALSE,
-    TRUE,
     98,
     'New',
     'Agrovet',
-    'Seeds',
-    'Maize'
+    'Fertilizers',
+    'Planting',
+    ARRAY['https://i.pinimg.com/1200x/30/51/f4/3051f4e634474dad5df2920d1b7e763a.jpg']
   ),
   (
-    'Ridomil Gold MZ 68WG',
-    'ridomil-gold-mz-68wg',
-    'Systemic fungicide for late blight in tomatoes and potatoes.',
-    1250.00,
-    1400.00,
-    88,
-    FALSE,
-    4.5,
-    12,
+    'Lambda-Cyhalothrin 10EC Insecticide',
+    'lambda-cyhalothrin-10ec-insecticide',
+    'Fast-acting synthetic pyrethroid insecticide for controlling caterpillars, aphids, thrips, and beetles on crops.',
+    1450.00,
+    1600.00,
+    180,
+    TRUE,
+    4.8,
+    27,
     'active',
-    'Syngenta',
-    'CropCare Kenya',
+    'Pomais',
+    'AgroChem Supplies',
     'Nairobi',
-    '1kg',
-    'New',
+    '1L bottle',
+    'Best Seller',
     FALSE,
     TRUE,
-    92,
+    96,
     'New',
     'Agrovet',
-    'Pesticides',
-    'Fungicide'
+    'Crop Protection',
+    'Insecticides',
+    ARRAY['https://www.pomais.com/wp-content/uploads/2024/12/Lambda-cyhalothrin10EC-.webp']
   ),
   (
-    'Maclick Super Dewormer',
-    'maclick-super-dewormer',
-    'Broad-spectrum dewormer for cattle, sheep and goats.',
-    980.00,
-    1100.00,
-    56,
-    FALSE,
-    4.6,
-    9,
+    'Seaweed Organic Growth Booster',
+    'seaweed-organic-growth-booster',
+    '100% natural cold-pressed seaweed extract biostimulant. Enhances root expansion, stress tolerance, and crop yields.',
+    2100.00,
+    2400.00,
+    140,
+    TRUE,
+    4.9,
+    41,
     'active',
-    'Norbrook',
-    'Vetcare East Africa',
-    'Kiambu',
-    '500ml',
-    'Popular',
+    'BioGrow',
+    'Organic Farm Solutions',
+    'Nakuru',
+    '1L bottle',
+    'Organic',
+    TRUE,
+    TRUE,
+    99,
+    'Certified Organic',
+    'Agrovet',
+    'Plant Growth & Boosters',
+    'Biostimulants',
+    ARRAY['https://i.pinimg.com/736x/b4/9e/55/b49e55253e882f51514c8a028dda76bd.jpg']
+  ),
+  (
+    '20L Heavy Duty Knapsack Sprayer',
+    '20l-heavy-duty-knapsack-sprayer',
+    'Ergonomic 20-litre manual knapsack sprayer with heavy-duty pump handle, brass lance, and multi-pattern nozzles.',
+    4800.00,
+    5200.00,
+    65,
+    TRUE,
+    4.7,
+    19,
+    'active',
+    'Harvester Tools',
+    'Equipment Direct',
+    'Nairobi',
+    '1 unit',
+    'Hot Deal',
     FALSE,
     TRUE,
     94,
     'New',
     'Agrovet',
-    'Livestock',
-    'Veterinary'
+    'Farm Equipment',
+    'Machinery',
+    ARRAY['https://i.pinimg.com/1200x/74/d7/66/74d766c45e79615e4028f5d86cb1a63d.jpg']
   ),
   (
-    'Knapsack Sprayer 16L',
-    'knapsack-sprayer-16l',
-    'Heavy-duty manual sprayer with adjustable nozzle and brass lance.',
-    4500.00,
-    5000.00,
-    34,
+    'Duduthrin Broad-Spectrum Insecticide',
+    'duduthrin-broad-spectrum-insecticide',
+    'Broad-spectrum EC insecticide formulation effective against cutworms, armyworms, whiteflies, and diamondback moths.',
+    1200.00,
+    1350.00,
+    95,
     TRUE,
-    4.3,
-    15,
+    4.8,
+    22,
     'active',
-    'Cooper',
-    'Harvester Tools',
-    'Nairobi',
-    '1 unit',
-    'Bulk -10%',
+    'Twiga Chemical',
+    'Twiga Agrovet',
+    'Kiambu',
+    '500ml',
+    'Popular',
     FALSE,
     TRUE,
-    89,
+    97,
     'New',
-    'Equipment',
-    'Sprayers',
-    'Manual'
+    'Agrovet',
+    'Crop Protection',
+    'Insecticides',
+    ARRAY['https://i.pinimg.com/736x/e6/29/38/e62938172d5b057b027f3de816b373e2.jpg']
+  ),
+  (
+    'High-Yield Layer Chicken Feed',
+    'high-yield-layer-chicken-feed',
+    'Nutrient-balanced complete laying mash formulated with essential calcium, amino acids, and energy for maximum egg output.',
+    3250.00,
+    3500.00,
+    310,
+    TRUE,
+    4.9,
+    38,
+    'active',
+    'Unga Feeds',
+    'Unga Farmcare',
+    'Nakuru',
+    '70kg bag',
+    'Top Feed',
+    FALSE,
+    TRUE,
+    98,
+    'Fresh',
+    'Agrovet',
+    'Animal Farming',
+    'Animal Feed',
+    ARRAY['https://www.myagrovet.co.ke/images/products/7367/thumb_44e1a1ca768bb3add788ec4afd3b0a57.png']
+  ),
+  (
+    'High-Protein Dairy Meal',
+    'high-protein-dairy-meal',
+    'High-protein concentrate dairy meal enriched with bypass fats, mineral salts, and vitamins to boost daily milk yield.',
+    2950.00,
+    3200.00,
+    280,
+    TRUE,
+    4.8,
+    35,
+    'active',
+    'Pembe Feeds',
+    'Pembe Millers',
+    'Uasin Gishu',
+    '50kg bag',
+    'Bestseller',
+    FALSE,
+    TRUE,
+    97,
+    'Fresh',
+    'Agrovet',
+    'Animal Farming',
+    'Animal Feed',
+    ARRAY['https://www.myagrovet.co.ke/images/products/7402/625a8d9a0cb201e96950aaf15ae003a8.png']
   );
 
 -- 3. Services & Service Requests
@@ -442,7 +496,7 @@ VALUES
     'pending',
     'Kericho Town, Coop Bank Lane',
     'whatsapp',
-    (SELECT id FROM profiles WHERE username = 'mqulima_kirwa_agent' LIMIT 1),
+    NULL,
     'Order placed via WhatsApp conversation'
   ),
   (
@@ -500,36 +554,6 @@ VALUES
     '{"transaction_id": "REF-BANK-998822", "bank_name": "KCB", "status": "approved"}'::jsonb
   );
 
--- 5. Commodity Listings (Soko)
-INSERT INTO commodity_listings (user_id, commodity_id, quantity, asking_price, location, description, status)
-VALUES
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kipchirchir' LIMIT 1),
-    (SELECT id FROM commodities WHERE name = 'Dry Maize' LIMIT 1),
-    45.00,
-    3600.00,
-    'Eldoret, Uasin Gishu',
-    'Premium clean dry white maize. Harvested November last year. Kept in hermetic bags.',
-    'active'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1),
-    (SELECT id FROM commodities WHERE name = 'Shangi Potatoes' LIMIT 1),
-    120.00,
-    2200.00,
-    'Ol Kalou, Nyandarua',
-    'Freshly harvested Shangi potatoes, medium size, clean.',
-    'active'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1),
-    (SELECT id FROM commodities WHERE name = 'Raw Milk' LIMIT 1),
-    350.00,
-    48.00,
-    'Litein, Kericho',
-    'Fresh morning milk from grass-fed cows. High fat content.',
-    'active'
-  );
 
 -- Seed Commodity price board entries
 INSERT INTO commodity_price_board (commodity_id, region, price, source)
@@ -539,56 +563,6 @@ VALUES
   ((SELECT id FROM commodities WHERE name = 'Shangi Potatoes' LIMIT 1), 'Nakuru', 2300.00, 'Wakulima Market Nakuru'),
   ((SELECT id FROM commodities WHERE name = 'Raw Milk' LIMIT 1), 'Nyandarua', 44.00, 'Brookside Nyandarua Coop');
 
--- 6. Show Posts (Forum)
-INSERT INTO show_posts (user_id, type, title, caption, media_urls, like_count, relate_count, comment_count, tags)
-VALUES
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_kipchirchir' LIMIT 1),
-    'harvest',
-    'Maize Harvest 2026',
-    'Bumper harvest this season! Eldoret soils are blessed. Did 28 bags per acre with organic compost!',
-    '{"https://images.unsplash.com/photo-1530595467537-0b5996c41f2d"}',
-    14,
-    8,
-    2,
-    '{"Maize", "Harvest", "Eldoret"}'
-  ),
-  (
-    (SELECT id FROM profiles WHERE username = 'mqulima_mutiso' LIMIT 1),
-    'tragedy',
-    'Armyworms Attack!',
-    'Devastated by armyworms on my late crop. Any recommendations on systemic insecticides?',
-    '{"https://images.unsplash.com/photo-1599599810769-bcde5a160d32"}',
-    8,
-    23,
-    5,
-    '{"Pests", "Help", "Armyworm"}'
-  );
-
--- Show Comments
-INSERT INTO show_comments (post_id, user_id, body)
-VALUES
-  (
-    (SELECT id FROM show_posts WHERE title = 'Maize Harvest 2026' LIMIT 1),
-    (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1),
-    'Congratulations John! What fertilizer spacing did you use?'
-  ),
-  (
-    (SELECT id FROM show_posts WHERE title = 'Armyworms Attack!' LIMIT 1),
-    (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1),
-    'Try spraying Ridomil or Belt immediately. Do it early in the morning when they are active.'
-  );
-
--- Show Likes
-INSERT INTO show_likes (post_id, user_id)
-VALUES
-  (
-    (SELECT id FROM show_posts WHERE title = 'Maize Harvest 2026' LIMIT 1),
-    (SELECT id FROM profiles WHERE username = 'mqulima_wanjiku' LIMIT 1)
-  ),
-  (
-    (SELECT id FROM show_posts WHERE title = 'Armyworms Attack!' LIMIT 1),
-    (SELECT id FROM profiles WHERE username = 'mqulima_kiprono' LIMIT 1)
-  );
 
 -- Done!
+

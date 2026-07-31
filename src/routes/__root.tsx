@@ -73,7 +73,7 @@ export const Route = createRootRouteWithContext<{
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=5" },
       { title: "Mqulima Hub" },
       {
         name: "description",
@@ -88,6 +88,9 @@ export const Route = createRootRouteWithContext<{
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
+      { rel: "dns-prefetch", href: "https://fonts.gstatic.com" },
+      { rel: "dns-prefetch", href: "https://generativelanguage.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -102,6 +105,7 @@ export const Route = createRootRouteWithContext<{
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
+
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
@@ -136,16 +140,20 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <div className="flex min-h-screen flex-col w-full">
-            {!isOnline && (
+          <div className="flex min-h-screen flex-col w-full" suppressHydrationWarning>
+            {mounted && !isOnline && (
               <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
                 <WifiOff className="h-4 w-4" />
                 <span>You are currently offline. Pages you've visited are available offline.</span>
               </div>
             )}
             <Outlet />
-            {mounted && <Toaster richColors position="top-right" />}
-            {mounted && <PWAInstallBanner />}
+            {mounted && (
+              <>
+                <Toaster richColors position="top-right" />
+                <PWAInstallBanner />
+              </>
+            )}
           </div>
         </CartProvider>
       </AuthProvider>

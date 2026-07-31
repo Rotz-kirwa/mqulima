@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/mpesa/callback")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          await handleMpesaCallback(body);
+          await handleMpesaCallback(body, request);
           return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Success" }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
@@ -24,3 +24,4 @@ export const Route = createFileRoute("/api/mpesa/callback")({
     },
   },
 });
+

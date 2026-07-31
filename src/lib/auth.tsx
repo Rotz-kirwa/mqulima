@@ -53,11 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       const { getCsrfTokenFromCookie } = await import("./csrf-client");
-      await logoutUser({ data: { csrfToken: getCsrfTokenFromCookie() } });
+      await logoutUser({ data: { csrfToken: getCsrfTokenFromCookie() || "" } });
     } catch (error) {
-      // Ignore
+      console.error("Logout server error:", error);
     } finally {
       setUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("mqulima_user_account");
+        localStorage.removeItem("mqulima_post_draft");
+        sessionStorage.clear();
+      }
     }
   }, []);
 

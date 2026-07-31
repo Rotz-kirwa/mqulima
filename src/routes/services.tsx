@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { createServiceBooking } from "@/lib/api/services.server";
+import { createServiceBooking, getServiceCategoriesWithServices } from "@/lib/api/services.server";
 import { 
   Check, 
   ArrowRight, 
@@ -15,17 +15,35 @@ import {
   AlertTriangle,  
   Sliders, 
   Droplet, 
-  Download, 
   Activity, 
   Truck, 
   FileText, 
-  ShieldAlert, 
   Coins,
   Sprout,
-  Database
+  Database,
+  User,
+  Wrench,
+  MapPin,
+  Heart,
+  Search,
+  Sparkles,
+  Filter,
+  RotateCcw,
+  Compass,
+  ArrowUpRight,
+  Sun,
+  Layers,
+  Factory,
+  Stethoscope,
+  Tractor,
+  Wheat,
+  X,
+  MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { motion, AnimatePresence } from "framer-motion";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 type ServicesSearch = {
   serviceId?: string;
@@ -41,1267 +59,1007 @@ export const Route = createFileRoute("/services")({
   },
   head: () => ({
     meta: [
-      { title: "Mqulima Services — Professional On-Farm Advisory" },
+      { title: "Mqulima Services — Everything Your Farm Needs, In One Place" },
       {
         name: "description",
-        content: "Book vetted agricultural experts: soil testing, veterinary diagnostics, silage shredding, AI breeding, greenhouses, and borehole installations.",
+        content: "Explore specialist agricultural categories delivered by vetted professionals across Kenya: soil testing, veterinary diagnostics, silage shredding, AI breeding, greenhouses, and borehole installations.",
       },
     ],
   }),
   component: ServicesPage,
 });
 
-function generateReference() {
-  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `MQ-${suffix}`;
+const SERVICES_HERO_STATS = [
+  { icon: User, value: "2,400+", label: "Farmers served" },
+  { icon: Sprout, value: "30+", label: "Specialist services" },
+  { icon: MapPin, value: "47", label: "Counties covered" },
+  { icon: Phone, value: "< 10 mins", label: "Average response" },
+];
+
+// Category definition matching screenshot taxonomy
+interface ServiceCategoryConfig {
+  id: string;
+  title: string;
+  servicesCountText: string;
+  count: number;
+  description: string;
+  image: string;
+  icon: React.ComponentType<any>;
+  checklist: string[];
+  hasBookingButton?: boolean;
+  bookingButtonText?: string;
+  subservices: Array<{
+    id: string;
+    name: string;
+    description: string;
+    estimatedCost: string;
+    image: string;
+  }>;
 }
 
-// Full Service Category and Sub-Service Data Mapping
-type SubService = {
-  id: string;
-  name: string;
-  description: string;
-  estimatedCost: string;
-};
-
-type ServiceCategory = {
-  id: string;
-  name: string;
-  broaderDescription: string;
-  image: string;
-  subservices: SubService[];
-};
-
-const serviceCategories: ServiceCategory[] = [
+const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
   {
     id: "soil",
-    name: "Soil Services",
-    broaderDescription: "Comprehensive agricultural soil testing, diagnostic chemical analysis, corrective soil treatment schedules, and site-specific fertilizer recommendations to optimize crop yields and soil fertility.",
-    image: "/services_soil_analysis.png",
+    title: "Soil Services",
+    servicesCountText: "3 services",
+    count: 3,
+    description: "Improve soil productivity through testing, treatment and professional fertilizer recommendations.",
+    image: "/images/services/soil.png",
+    icon: Sprout,
+    checklist: [
+      "Soil Testing & Analysis",
+      "Soil Treatment",
+      "Fertilizer Recommendation"
+    ],
     subservices: [
       {
-        id: "soil_test",
-        name: "Soil testing & analysis",
-        description: "Accurate physical and chemical soil sampling to measure pH levels, nitrogen, phosphorus, potassium, organic carbon, and trace mineral distribution.",
-        estimatedCost: "KES 2,500 per Sample"
+        id: "soil_testing_analysis",
+        name: "Soil Testing & Analysis",
+        description: "Full spectrum NPK, pH, organic carbon & EC laboratory report with customized agronomy recommendations.",
+        estimatedCost: "KES 2,500 / sample",
+        image: "https://i.pinimg.com/1200x/48/12/12/4812125dd6f1e95e1ac21acdee79498a.jpg"
       },
       {
         id: "soil_treatment",
-        name: "Soil treatment",
-        description: "Corrective application schedules for agricultural lime, gypsum, and soil conditioners to fix soil acidity, sodicity, and compact structures.",
-        estimatedCost: "KES 5,000 per Acre"
+        name: "Soil Treatment & Conditioning",
+        description: "Agricultural lime application, soil reclamation, microbial inoculants and acidity balancing.",
+        estimatedCost: "KES 4,000 / acre",
+        image: "https://images.unsplash.com/photo-1693385998902-656569d40b88?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDJ8fHxlbnwwfHx8fHw%3D"
       },
       {
-        id: "fertilizer_rec",
-        name: "Fertilizer recommendation",
-        description: "Tailored prescription regimens recommending specific NPK ratios, foliar feeds, and micro-nutrients custom-mapped to your crop cycles.",
-        estimatedCost: "KES 1,500 per Report"
+        id: "fertilizer_recommendation",
+        name: "Fertilizer Recommendation & Plan",
+        description: "Crop-specific fertilizer blending guides tailored to soil test findings and target yield goals.",
+        estimatedCost: "KES 1,500 / farm plan",
+        image: "https://i.pinimg.com/1200x/74/0d/a6/740da633e89e8be82af6afff9bec4ac0.jpg"
       }
     ]
   },
   {
-    id: "vet",
-    name: "Veterinary & Animal Health",
-    broaderDescription: "On-farm veterinary diagnosis, clinical animal health, expert artificial insemination (AI) breeding programs, vaccine schedules, and professional emergency veterinary treatments.",
-    image: "/services_veterinary_care.png",
+    id: "veterinary",
+    title: "Veterinary & Animal Health",
+    servicesCountText: "4 services",
+    count: 4,
+    description: "Professional veterinary care, breeding services, vaccinations and livestock diagnosis.",
+    image: "/images/services/veterinary.png",
+    icon: Stethoscope,
+    checklist: [
+      "AI & Breeding",
+      "Vaccination",
+      "Veterinary Diagnosis",
+      "Professional Vet Services"
+    ],
+    hasBookingButton: true,
+    bookingButtonText: "Book Vet",
     subservices: [
       {
         id: "ai_breeding",
-        name: "AI & Breeding",
-        description: "High-conception artificial insemination using premium dairy and beef semen, heat synchronization, and genetic lineage advisory.",
-        estimatedCost: "KES 3,000 per Cow"
+        name: "AI & Artificial Breeding",
+        description: "High-pedigree bull semen straw insemination, heat synchronization & genetic improvement.",
+        estimatedCost: "KES 3,000 / straw",
+        image: "https://i.pinimg.com/736x/20/3c/22/203c222335557e8e22e6b6bcb323e252.jpg"
       },
       {
-        id: "vaccination",
-        name: "Vaccination",
-        description: "Preventative immunization programs protecting livestock herds against foot-and-mouth, anthrax, lumpy skin, and Newcastle disease.",
-        estimatedCost: "KES 150 per Head"
+        id: "livestock_vaccination",
+        name: "Livestock Vaccination",
+        description: "FMD, Anthrax, ECF, CCPP & Newcastle routine immunization and herd health management.",
+        estimatedCost: "KES 500 / head",
+        image: "https://plus.unsplash.com/premium_photo-1661883044790-9c4342a4639c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8TGl2ZXN0b2NrJTIwVmFjY2luYXRpb258ZW58MHx8MHx8fDA%3D"
       },
       {
-        id: "vet_diagnosis",
-        name: "Veterinary diagnosis",
-        description: "Professional on-farm clinical diagnosis, pathology checks, and prescription management for acute and chronic herd sicknesses.",
-        estimatedCost: "KES 2,000 per Visit"
+        id: "veterinary_diagnosis",
+        name: "Veterinary Diagnosis & On-Farm Emergency",
+        description: "Rapid clinical exam, disease diagnosis, surgical interventions & prescription therapy.",
+        estimatedCost: "KES 2,000 / visit",
+        image: "https://i.pinimg.com/1200x/8a/a8/17/8aa8174542e4c4decea9b3c7700e74c8.jpg"
       },
       {
-        id: "professional_vets",
-        name: "Professional vet services",
-        description: "Minor surgical operations, calving assistance, mastitis control, and preventative veterinary herd health advisory.",
-        estimatedCost: "KES 3,500 per Procedure"
+        id: "professional_vet_services",
+        name: "Professional Vet Services & Herd Audit",
+        description: "Comprehensive farm herd health audits, mastitis testing, deworming schedules & reproductive health.",
+        estimatedCost: "KES 5,000 / audit",
+        image: "https://images.unsplash.com/photo-1527153857715-3908f2ae5da8?auto=format&fit=crop&w=800&q=80"
       }
     ]
   },
   {
-    id: "feeds",
-    name: "Animal Feeds & Livestock Solutions",
-    broaderDescription: "Maximize livestock productivity with science-backed nutrition, modern feeding technologies, silage preservation, hatchery services, and precision farm machinery. Our solutions help dairy, poultry, beef, and mixed farmers reduce production costs, improve animal health, and increase profitability.",
-    image: "https://i.pinimg.com/1200x/f4/77/45/f47745a90185d04f09cba6f954261c63.jpg",
+    id: "animal_feeds",
+    title: "Animal Feeds",
+    servicesCountText: "6 services",
+    count: 6,
+    description: "Feed formulation, silage production, incubation and livestock nutrition.",
+    image: "/images/services/animal_feeds.png",
+    icon: Wheat,
+    checklist: [
+      "Feed Formulation",
+      "Feed Advice",
+      "Silage",
+      "Azolla",
+      "Machinery Rental",
+      "Incubation"
+    ],
     subservices: [
       {
         id: "feed_formulation",
-        name: "Custom Feed Formulation",
-        description: "Develop nutritionally balanced feed rations tailored to your livestock using locally available ingredients. Our experts formulate cost-effective diets that support faster growth, higher milk production, improved feed conversion, and healthier animals.",
-        estimatedCost: "KES 1,800 per Formulation"
+        name: "Feed Formulation & Ration Blending",
+        description: "Pearson square least-cost feed formulation for dairy cows, broilers, layers & pigs.",
+        estimatedCost: "KES 2,500 / ration plan",
+        image: "/images/services/feed_formulation.png"
       },
       {
-        id: "silage_shredding",
-        name: "Silage Production & Preservation",
-        description: "Convert fresh fodder into high-quality silage using professional chopping, mixing, and airtight packing techniques that preserve nutrients, minimize spoilage, and ensure reliable feed throughout the year.",
-        estimatedCost: "KES 8,000 per Ton"
+        id: "feed_advice",
+        name: "Livestock Nutrition & Feed Advice",
+        description: "Dietary optimization to increase milk yield per cow per day and improve feed conversion ratio.",
+        estimatedCost: "KES 1,500 / consultation",
+        image: "/images/services/feed_advice.png"
       },
       {
-        id: "azolla",
-        name: "Azolla Production Systems",
-        description: "Establish sustainable Azolla cultivation units to produce natural, protein-rich livestock feed that lowers feeding costs while enhancing dairy, poultry, fish, and pig performance.",
-        estimatedCost: "KES 4,000 per Pond Setup"
+        id: "silage_shredding_packing",
+        name: "Silage Shredding & Packing",
+        description: "Mobile heavy-duty tractor chopper service with molasses inoculant application and bale wrapping.",
+        estimatedCost: "KES 3,500 / ton",
+        image: "/images/services/silage.png"
       },
       {
-        id: "machinery_buy_rent",
-        name: "Machinery Hire",
-        description: "Access reliable tractors, forage harvesters, silage choppers, shredders, and skilled operators for efficient land preparation, fodder processing, harvesting, and other essential farm operations.",
-        estimatedCost: "KES 6,000 per Day"
+        id: "azolla_farming",
+        name: "Azolla Protein Cultivation Setup",
+        description: "High-protein aquatic fern pond setup, seed inoculant supply and harvesting training for poultry & dairy.",
+        estimatedCost: "KES 5,000 / pond unit",
+        image: "/images/services/azolla.png"
       },
       {
-        id: "incubation",
-        name: "Egg Incubation Services",
-        description: "Increase hatch success with professionally managed incubation systems that deliver healthy, high-quality day-old chicks through optimized temperature, humidity, and hatchery management.",
-        estimatedCost: "KES 20 per Egg"
+        id: "feed_machinery_rental",
+        name: "Feed Chopper & Mill Machinery Rental",
+        description: "Rental of diesel multi-purpose hammer mills, chaff cutters and feed mixers.",
+        estimatedCost: "KES 3,000 / day",
+        image: "/images/services/machinery_rental.png"
       },
       {
-        id: "ask_expert_feeds",
-        name: "Livestock Advisory",
-        description: "Receive personalized guidance from experienced livestock specialists on feeding strategies, disease prevention, breeding management, pasture improvement, and productivity optimization to maximize your farm's performance.",
-        estimatedCost: "KES 1,500 per Consultation"
+        id: "egg_incubation",
+        name: "Egg Incubation & Hatchery Service",
+        description: "Automated climate-controlled egg hatching service for Kienyeji, Quails and Turkeys.",
+        estimatedCost: "KES 30 / egg batch",
+        image: "/images/services/incubation.png"
       }
     ]
   },
   {
-    id: "crops",
-    name: "Crop Production & Logistics",
-    broaderDescription: "Commercial greenhouse setup, machinery leasing, solar-powered cold storage, regional farm logistics, land leasing, drip irrigation installations, and expert agronomy consulting.",
-    image: "/services_crop_production.png",
+    id: "crop_production",
+    title: "Crop Production",
+    servicesCountText: "8 services",
+    count: 8,
+    description: "Complete crop production services from land preparation to harvesting.",
+    image: "/images/services/crop_production.png",
+    icon: Tractor,
+    checklist: [
+      "Greenhouse",
+      "Partnerships",
+      "Machinery Rental",
+      "Cold Storage",
+      "Transportation",
+      "Lease Land",
+      "Irrigation",
+      "Agronomy Consultation"
+    ],
+    hasBookingButton: true,
+    bookingButtonText: "Book Service",
     subservices: [
       {
-        id: "greenhouse",
-        name: "Greenhouse services",
-        description: "Turnkey greenhouse steel construction, polythene cladding replacement, misting systems, and soil sterilization setups.",
-        estimatedCost: "KES 120,000 Setup"
+        id: "greenhouse_installation",
+        name: "Greenhouse Installation & Tunnel Setup",
+        description: "Galvanized steel metallic or wooden greenhouse construction with UV-treated covers and drip systems.",
+        estimatedCost: "KES 180,000 / unit (8x15m)",
+        image: "https://i.pinimg.com/1200x/88/aa/65/88aa65f6e8435f9addf612deae8ac0d2.jpg"
       },
       {
-        id: "partnerships",
-        name: "Partnerships",
-        description: "Cooperative outgrower agreements linking growers to certified seeds, agro-chemicals, and export market aggregators.",
-        estimatedCost: "Free Consultation"
+        id: "farming_partnerships",
+        name: "Farm Contract Partnerships",
+        description: "Joint venture commercial farming models connecting land owners with equity investor agronomists.",
+        estimatedCost: "Quote basis",
+        image: "/images/services/partnerships.jpg"
       },
       {
-        id: "rent_machinery_crop",
-        name: "Rent machinery",
-        description: "Tractors, disc plows, rotavators, and precision seeders available with fuel and certified operators.",
-        estimatedCost: "KES 5,500 per Acre"
+        id: "rent_machinery_soil",
+        name: "Tractor & Machinery Rental",
+        description: "Ploughing, harrowing, rotavating, ridge making, combined harvesting and boom spraying equipment.",
+        estimatedCost: "KES 3,000 / acre",
+        image: "https://i.pinimg.com/1200x/3b/e6/a6/3be6a688e5395fd04bee73b103690b3b.jpg"
       },
       {
-        id: "cold_storage",
-        name: "Cold storage",
-        description: "Solar-hybrid cold hubs and crates leasing to extend post-harvest shelf-life for leafy greens, tomatoes, and export herbs.",
-        estimatedCost: "KES 100 per Crate/week"
+        id: "cold_storage_hubs",
+        name: "Solar Cold Storage Hubs",
+        description: "On-farm walk-in cold rooms for horticultural produce preservation post-harvest.",
+        estimatedCost: "KES 50 / crate / day",
+        image: "https://i.pinimg.com/1200x/a2/c7/53/a2c75333acd271ec1ddaa2ee9e5c56ab.jpg"
       },
       {
-        id: "transport",
-        name: "Transportation",
-        description: "Temperature-controlled logistics trucks delivering crop harvests from farm gates to urban wholesale centers.",
-        estimatedCost: "KES 80 per Kilometre"
+        id: "crop_transportation",
+        name: "Produce Transportation Logistics",
+        description: "Refrigerated and open lorry transport from farm gate directly to urban wholesale markets.",
+        estimatedCost: "KES 8,000 / trip",
+        image: "https://i.pinimg.com/1200x/d7/9e/ab/d79eab383df654feb5aedb0fe108d3e7.jpg"
       },
       {
-        id: "lease_land",
-        name: "Lease land",
-        description: "Access vetted agricultural land with long-term leases, water access, and soil health profiles ready for crop production.",
-        estimatedCost: "KES 15,000 per Acre/year"
+        id: "lease_farm_land",
+        name: "Agricultural Land Leasing",
+        description: "Vetted fertile arable land parcels available for seasonal or long-term lease with water access.",
+        estimatedCost: "KES 15,000 / acre / year",
+        image: "https://i.pinimg.com/1200x/df/af/b9/dfafb970a524d98c252bfb2a1c85d84c.jpg"
       },
       {
-        id: "irrigation_setup",
-        name: "Irrigation services",
-        description: "Custom design, piping, filtration, and installation of gravity-fed drip and sprinkler irrigation networks.",
-        estimatedCost: "KES 40,000 per Acre"
+        id: "drip_irrigation_services",
+        name: "Drip & Overhead Irrigation Systems",
+        description: "Button drippers, pressure compensated drip lines, filter kits and automatic fertigation injectors.",
+        estimatedCost: "KES 65,000 / acre",
+        image: "https://i.pinimg.com/1200x/de/53/87/de538732285bfdc37795743685118b36.jpg"
       },
       {
-        id: "agronomy_expert",
-        name: "Consult an Expert/Agronomy services",
-        description: "On-site agronomist visits for crop health checkups, scouting schedules, and export quality controls.",
-        estimatedCost: "KES 2,000 per Visit"
+        id: "consult_expert_agronomy",
+        name: "Agronomy Consultation & Spray Programs",
+        description: "Routine field scouting visits, pest/disease diagnostic reports and tailor-made spray schedules.",
+        estimatedCost: "KES 3,500 / visit",
+        image: "https://i.pinimg.com/1200x/91/9b/90/919b90e49bc35c6863ca1b8ccdf49bbe.jpg"
       }
     ]
   },
   {
-    id: "value",
-    name: "Value Addition & Agro-Processing",
-    broaderDescription: "Transform raw harvests into premium, market-ready products that command higher prices. We design and implement complete value-addition systems—from cleaning, grading, drying, milling, packaging, and branding to processing workflows that help farmers, cooperatives, and agribusinesses maximize profitability while reducing post-harvest losses.",
-    image: "/services_value_addition.png",
+    id: "value_addition",
+    title: "Value Addition",
+    servicesCountText: "4 services",
+    count: 4,
+    description: "Increase the value of your agricultural produce through processing and expert guidance.",
+    image: "/images/services/value_addition.png",
+    icon: Factory,
+    checklist: [
+      "Processing",
+      "Packaging",
+      "Branding",
+      "Expert Advice"
+    ],
     subservices: [
       {
-        id: "ask_expert_value",
-        name: "Talk to a Processing Expert",
-        description: "Receive tailored guidance on selecting the right processing equipment, optimizing production, improving product quality, and creating a premium brand that attracts larger buyers and stronger profit margins.",
-        estimatedCost: "KES 3,000 per Consult"
+        id: "agro_processing",
+        name: "Agro-Processing & Milling Services",
+        description: "Maize flour fortification, oil seed pressing, honey refining, fruit pulping and solar dehydration.",
+        estimatedCost: "KES 5 / kg processed",
+        image: "https://media.istockphoto.com/id/1337512337/photo/modern-granary-elevator-and-seed-cleaning-line.jpg?s=612x612&w=0&k=20&c=XObN1SdB23tVQJVzyreZMP65GANtynoyki8wos1iUfY="
+      },
+      {
+        id: "produce_packaging",
+        name: "Food-Grade Packaging & Pouching",
+        description: "Vacuum sealing, nitrogen flushing, barcoded stand-up pouches and biodegradable produce punnets.",
+        estimatedCost: "KES 15 / package unit",
+        image: "https://i.pinimg.com/736x/13/f1/c6/13f1c6ac50b970963952aa6c44d78d5b.jpg"
+      },
+      {
+        id: "branding_kebs_certification",
+        name: "KEBS Certification & Brand Design",
+        description: "Standardization mark application support, nutritional table testing, logo & packaging design.",
+        estimatedCost: "KES 25,000 / product line",
+        image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "value_addition_expert_advice",
+        name: "Value Addition Expert Advisory",
+        description: "Commercial feasibility studies, recipe formulation, shelf-life extension & export compliance.",
+        estimatedCost: "KES 5,000 / session",
+        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80"
       }
     ]
   },
   {
-    id: "other",
-    name: "Infrastructure & Smart Farming",
-    broaderDescription: "Borehole drilling, advanced solar irrigation networks, livestock shed design, agriculture insurance, finance credit vouchers, climate-smart farming, and digital record keeping.",
-    image: "https://i.pinimg.com/736x/95/bb/1b/95bb1ba4bc02563f8274bdd5a9ff6e77.jpg",
+    id: "other_services",
+    title: "Other Services",
+    servicesCountText: "7 services",
+    count: 7,
+    description: "Additional agricultural services to support profitable farming.",
+    image: "/images/services/other_services.png",
+    icon: Sun,
+    checklist: [
+      "Boreholes",
+      "Irrigation Systems",
+      "Shed Construction",
+      "Agricultural Insurance",
+      "Agricultural Finance",
+      "Climate Smart Agriculture",
+      "Farm Record Keeping"
+    ],
     subservices: [
       {
-        id: "borehole",
-        name: "Borehole services",
-        description: "Geological water surveys, professional borehole drilling, test pumping, and solar water pump installations.",
-        estimatedCost: "KES 150,000 Initial deposit"
+        id: "borehole_drilling",
+        name: "Borehole Drilling & Hydro-Geological Survey",
+        description: "Professional underground water surveys, rotary drilling, steel casing installation and pump testing.",
+        estimatedCost: "KES 6,500 / meter",
+        image: "https://i.pinimg.com/736x/3b/22/64/3b2264ca23820c25831c917f99c24f25.jpg"
       },
       {
-        id: "irrigation_sys",
-        name: "Irrigation and irrigation systems",
-        description: "Advanced sprinkler and overhead drip systems designed for commercial field setups.",
-        estimatedCost: "KES 45,000 per Acre"
+        id: "irrigation_systems_other",
+        name: "Smart Solar Pumping Systems",
+        description: "Submersible solar pump sizing, solar panel array installation and automatic tank level controls.",
+        estimatedCost: "KES 120,000 / kit",
+        image: "https://i.pinimg.com/736x/12/d7/19/12d719413f68bf7b49af1b2caebf2d33.jpg"
       },
       {
         id: "shed_construction",
-        name: "Shed construction & advisory",
-        description: "Architectural blueprints and timber/steel construction for zero-grazing cattle sheds and poultry multi-tier cages.",
-        estimatedCost: "KES 75,000 Setup fee"
+        name: "Zero-Grazing & Poultry Shed Construction",
+        description: "Biosecure farm structures, concrete calf pens, raised deep litter poultry houses and silage pits.",
+        estimatedCost: "KES 95,000 / unit",
+        image: "https://i.pinimg.com/1200x/db/6e/ba/db6eba6dc56b198e13976d209df48c09.jpg"
       },
       {
         id: "agri_insurance",
-        name: "Agriculture Insurance",
-        description: "Multi-peril crop and index-based livestock insurance packages buffering against drought and flood tragedies.",
-        estimatedCost: "KES 2.5% of Crop value"
+        name: "Multi-Peril Crop & Livestock Insurance",
+        description: "Satellite-indexed drought, flood, pest attack and livestock mortality insurance coverage.",
+        estimatedCost: "3.5% of crop value",
+        image: "/images/services/agri_insurance.jpg"
       },
       {
         id: "agri_finance",
-        name: "Agriculture finance",
-        description: "Input credit financing and asset leasing terms matching your crop harvesting calendars.",
-        estimatedCost: "Free Evaluation"
+        name: "Agri-Asset Finance & Working Capital",
+        description: "Low-interest agricultural loan facilitation for greenhouse, solar pump & livestock purchasing.",
+        estimatedCost: "Tailored options",
+        image: "https://i.pinimg.com/1200x/bf/25/9a/bf259add2a1ed5f825e2e9ba0862e631.jpg"
       },
       {
-        id: "climate_smart",
-        name: "Climate Smart Agriculture",
-        description: "Carbon credit registration, water conservation techniques, and drought-tolerant seed mappings.",
-        estimatedCost: "Free Portal access"
+        id: "climate_smart_agri",
+        name: "Climate Smart Agriculture & Conservation",
+        description: "Zero-tillage planting, agro-forestry, rainwater harvesting dams and carbon credit enrollment.",
+        estimatedCost: "KES 4,000 / acre",
+        image: "https://i.pinimg.com/1200x/e7/8b/16/e78b16a40e62dfc38235c4c7018bb1cf.jpg"
       },
       {
-        id: "records",
-        name: "Keep your records",
-        description: "Digital farm logging tools and accounting dashboards tracking input expenses, labor, and crop sales margins.",
-        estimatedCost: "KES 450 per Month"
+        id: "farm_record_keeping",
+        name: "Farm Record Keeping & Digital Audits",
+        description: "Implementation of computerized farm accounting, inventory management and milk yield ledgers.",
+        estimatedCost: "KES 2,000 / month",
+        image: "https://i.pinimg.com/736x/11/bf/6d/11bf6d9c54bf11ed612ac9acdae37239.jpg"
       }
     ]
   }
 ];
 
-const CATEGORY_META: Record<string, { eyebrow: string; icon: React.ComponentType<any> }> = {
-  soil: {
-    eyebrow: "KNOW YOUR SOIL. GROW YOUR HARVEST.",
-    icon: Sprout
-  },
-  vet: {
-    eyebrow: "KEEP LIVESTOCK HEALTHY. OPTIMIZE PRODUCTION.",
-    icon: ShieldCheck
-  },
-  feeds: {
-    eyebrow: "FEED SMART. GROW STRONGER. EARN MORE.",
-    icon: Activity
-  },
-  crops: {
-    eyebrow: "GROW EFFICIENTLY. TRANSPORT SECURELY.",
-    icon: Truck
-  },
-  value: {
-    eyebrow: "TURN HARVESTS INTO HIGH-VALUE PRODUCTS",
-    icon: Coins
-  },
-  other: {
-    eyebrow: "DIGITIZE YOUR FARM. SECURE WATER ACCESS.",
-    icon: Database
-  }
-};
-
-const getCategoryFields = (catId?: string) => {
-  switch (catId) {
-    case "soil":
-      return {
-        scaleLabel: "Field Size to Test (Acres)",
-        scalePlaceholder: "e.g. 2.5",
-        scaleType: "number",
-        activityLabel: "Target Crop Type",
-        activityOptions: ["Cereals (Maize/Wheat)", "Horticulture/Vegetables", "Tubers (Potatoes)", "Cash Crops (Coffee/Tea)", "Fruits/Orchards"],
-        subjectLabel: "Specific Crop Variety (to plant)",
-        subjectPlaceholder: "e.g. H614 Maize, Shangi Potatoes",
-        descriptionLabel: "Field History & Soil Challenge Details",
-        descriptionPlaceholder: "Describe the history of this field: last crop planted, fertilizers previously used, crop discoloration, pest history, or known yield drops..."
-      };
-    case "vet":
-      return {
-        scaleLabel: "Number of Animals to Treat (Head Count)",
-        scalePlaceholder: "e.g. 4",
-        scaleType: "number",
-        activityLabel: "Livestock Category",
-        activityOptions: ["Dairy Cattle", "Beef Cattle", "Poultry (Layers/Broilers)", "Pigs", "Sheep/Goats", "Mixed Livestock"],
-        subjectLabel: "Animal Breed / Age Spec",
-        subjectPlaceholder: "e.g. Friesian cow, 3 months old broilers",
-        descriptionLabel: "Symptoms & Clinical Challenge Details",
-        descriptionPlaceholder: "Describe the animal's physical symptoms in detail: body temperature, feeding rate, milk yield drop, coughing, skin lesions, or calving difficulties..."
-      };
-    case "feeds":
-      return {
-        scaleLabel: "Feed Operation Scale / Target Quantity",
-        scalePlaceholder: "e.g. 50 dairy cows, 3 tons silage, 1 Azolla unit",
-        scaleType: "text",
-        activityLabel: "Feeding Focus",
-        activityOptions: ["Dairy Feeding", "Poultry Feeding", "Silage / Fodder conservation", "Azolla / Alternative feeds", "Mixed feeds"],
-        subjectLabel: "Target Livestock / Machine Model",
-        subjectPlaceholder: "e.g. Dairy cattle herd, silage shredder hired",
-        descriptionLabel: "Feeding Challenge & Formulation Requirements",
-        descriptionPlaceholder: "Describe your feeding challenges, available ingredients (e.g. maize germ, pollard), or target machinery capacity requirement..."
-      };
-    case "crops":
-      return {
-        scaleLabel: "Project Area Size (Acres)",
-        scalePlaceholder: "e.g. 5",
-        scaleType: "number",
-        activityLabel: "Cultivation Setting",
-        activityOptions: ["Open Field farming", "Greenhouse / Protected", "Irrigated farming", "Rainfed cereals", "Logistics & Transport"],
-        subjectLabel: "Crop / System Specification",
-        subjectPlaceholder: "e.g. Greenhouse tomatoes, Gravity Drip irrigation",
-        descriptionLabel: "Cultivation, Logistics, or Irrigation Project Scope",
-        descriptionPlaceholder: "Describe the crop type, greenhouse dimensions, logistics pick-up/drop-off points, or water source (dam, river, borehole) in detail..."
-      };
-    case "value":
-      return {
-        scaleLabel: "Processing Capacity / Volumetric Scale",
-        scalePlaceholder: "e.g. 1000 kg maize daily, 200 liters milk",
-        scaleType: "text",
-        activityLabel: "Value Addition Category",
-        activityOptions: ["Flour / Grain Milling", "Dairy Processing & Pasteurization", "Fruit drying & packaging", "Oil extraction", "General branding & packaging consultancy"],
-        subjectLabel: "Primary Processing Equipment / Raw Material",
-        subjectPlaceholder: "e.g. Posho mill, Milk pasteurizer, Maize grain",
-        descriptionLabel: "Processing Setup & Business Goals",
-        descriptionPlaceholder: "Describe your current raw material volumes, source of supply, packaging specs, hygiene standards, or branding expectations in detail..."
-      };
-    case "other":
-    default:
-      return {
-        scaleLabel: "Project / Infrastructure Scale",
-        scalePlaceholder: "e.g. 150m borehole depth, 3kW solar unit",
-        scaleType: "text",
-        activityLabel: "Infrastructure Project Focus",
-        activityOptions: ["Borehole Drilling & Solar Pumps", "Solar Irrigation Networks", "Livestock sheds / barns construction", "Agricultural Insurance & Credit", "Smart farming apps & record keeping"],
-        subjectLabel: "System Specification / Infrastructure Type",
-        subjectPlaceholder: "e.g. Geological survey & drilling, Solar system",
-        descriptionLabel: "Project Requirements & Technical Specifications",
-        descriptionPlaceholder: "Describe the geological site conditions, power output requirements, insurance package desired, or smart system goals in detail..."
-      };
-  }
-};
-
-const kenyanCounties = [
-  "Baringo",
-  "Bomet",
-  "Bungoma",
-  "Busia",
-  "Elgeyo/Marakwet",
-  "Embu",
-  "Garissa",
-  "Homa Bay",
-  "Isiolo",
-  "Kajiado",
-  "Kakamega",
-  "Kericho",
-  "Kiambu",
-  "Kilifi",
-  "Kirinyaga",
-  "Kisii",
-  "Kisumu",
-  "Kitui",
-  "Kwale",
-  "Laikipia",
-  "Lamu",
-  "Machakos",
-  "Makueni",
-  "Mandera",
-  "Marsabit",
-  "Meru",
-  "Mombasa",
-  "Murang'a",
-  "Nairobi",
-  "Nakuru",
-  "Nandi",
-  "Nyamira",
-  "Nyandarua",
-  "Nyeri",
-  "Samburu",
-  "Siaya",
-  "Taita/Taveta",
-  "Tana River",
-  "Tharaka-Nithi",
-  "Trans Nzoia",
-  "Turkana",
-  "Uasin Gishu",
-  "Vihiga",
-  "Wajir",
-  "West Pokot",
-  "Other"
+const KENYA_COUNTIES = [
+  "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa", "Homa Bay", "Isiolo",
+  "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi", "Kirinyaga", "Kisii", "Kisumu", "Kitui",
+  "Kwale", "Laikipia", "Lamu", "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori",
+  "Mombasa", "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua", "Nyeri",
+  "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi", "Trans Nzoia", "Turkana",
+  "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
 ];
 
 function ServicesPage() {
   const { user } = useAuth();
   const search = Route.useSearch();
-  const [selectedCategoryId, setSelectedCategoryId] = useState("soil");
-  
-  // Booking Wizard states
-  const [selectedSubservice, setSelectedSubservice] = useState<SubService | null>(null);
-  const [step, setStep] = useState(1);
-  const [doneRef, setDoneRef] = useState<string | null>(null);
-  
-  // Customer Booking inputs
-  const [farmerName, setFarmerName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [county, setCounty] = useState("Uasin Gishu");
-  const [subCounty, setSubCounty] = useState("");
-  const [gpsLocation, setGpsLocation] = useState("");
-  const [farmSize, setFarmSize] = useState("");
-  const [farmActivity, setFarmActivity] = useState<string[]>([]);
-  const [otherActivitySpec, setOtherActivitySpec] = useState("");
-  
-  const [targetSubject, setTargetSubject] = useState("");
-  const [vividDescription, setVividDescription] = useState("");
-  
+
+  // Active Category View Drawer Modal State
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategoryConfig | null>(null);
+
+  // Booking Wizard Modal State
+  const [selectedSubservice, setSelectedSubservice] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    estimatedCost: string;
+    categoryTitle: string;
+  } | null>(null);
+
+  const [bookingStep, setBookingStep] = useState(1);
+  const [farmerName, setFarmerName] = useState(user?.name || "");
+  const [phone, setPhone] = useState((user as any)?.phone || "");
+  const [county, setCounty] = useState(user?.county || "Uasin Gishu");
+  const [locationDetails, setLocationDetails] = useState("");
+  const [farmScale, setFarmScale] = useState("2.5 Acres");
   const [bookingDate, setBookingDate] = useState("");
-  const [bookingTime, setBookingTime] = useState("");
-  
-  // M-Pesa Simulator states
-  const [simStep, setSimStep] = useState<"idle" | "loading" | "prompt" | "success" | "failed" | "timeout">("idle");
-  const [pinCode, setPinCode] = useState("");
-  const [pollCountdown, setPollCountdown] = useState(120);
-  const pollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [specialNotes, setSpecialNotes] = useState("");
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+  const [bookingReference, setBookingReference] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-      }
-    };
-  }, []);
-
-
-
-  const currentCategory = serviceCategories.find(cat => 
-    cat.subservices.some(sub => sub.id === selectedSubservice?.id)
-  );
-  
-  const fields = getCategoryFields(currentCategory?.id);
-
-  // Sync url search parameters
-  useEffect(() => {
-    if (selectedSubservice) {
-      const cat = serviceCategories.find(c => 
-        c.subservices.some(sub => sub.id === selectedSubservice.id)
-      );
-      if (cat) {
-        const catFields = getCategoryFields(cat.id);
-        setFarmActivity([catFields.activityOptions[0]]);
-        setOtherActivitySpec("");
-      }
-    }
-  }, [selectedSubservice]);
-  useEffect(() => {
-    if (search.category) {
-      const catExists = serviceCategories.some((cat) => cat.id === search.category);
-      if (catExists) {
-        // Safe check
-      }
-    }
-    
-    if (search.serviceId) {
-      let targetCatId = "";
-      let targetSubId = "";
-      
-      switch (search.serviceId) {
-        case "vet":
-          targetCatId = "vet";
-          targetSubId = "vet_diagnosis";
-          break;
-        case "soil":
-          targetCatId = "soil";
-          targetSubId = "soil_test";
-          break;
-        case "silage":
-          targetCatId = "feeds";
-          targetSubId = "silage_shredding";
-          break;
-        case "ai":
-          targetCatId = "vet";
-          targetSubId = "ai_breeding";
-          break;
-        case "machinery":
-          targetCatId = "feeds";
-          targetSubId = "machinery_buy_rent";
-          break;
-        case "advisory":
-          targetCatId = "crops";
-          targetSubId = "agronomy_expert";
-          break;
-        default:
-          if (serviceCategories.some((cat) => cat.id === search.serviceId)) {
-            targetCatId = search.serviceId;
-          }
-          break;
-      }
-      
-      if (targetCatId) {
-        setSelectedCategoryId(targetCatId);
-        if (targetSubId) {
-          const category = serviceCategories.find((cat) => cat.id === targetCatId);
-          const subservice = category?.subservices.find((sub) => sub.id === targetSubId);
-          if (subservice) {
-            setSelectedSubservice(subservice);
-            setStep(1);
-            setSimStep("idle");
-            setDoneRef(null);
-          }
-        }
-      }
-    }
-  }, [search.category, search.serviceId]);
-
-  const activeCategory = useMemo(() => {
-    return serviceCategories.find((cat) => cat.id === selectedCategoryId) ?? serviceCategories[0];
-  }, [selectedCategoryId]);
-
-  const startPaymentPolling = (orderId: string, reference: string) => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-    }
-    setPollCountdown(120);
-
-    let secondsRemaining = 120;
-
-    pollTimerRef.current = setInterval(async () => {
-      secondsRemaining -= 3;
-      setPollCountdown(secondsRemaining);
-
-      if (secondsRemaining <= 0) {
-        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-        setSimStep("timeout");
-        toast.error("Payment confirmation timed out. Please check your phone or try again.");
-        return;
-      }
-
-      try {
-        const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
-        const statusRes = await getPaymentStatus({ data: { orderId } });
-        if (statusRes.status === "paid") {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-          setSimStep("success");
-          toast.success("Payment Received & Confirmed!");
-
-          setTimeout(() => {
-            toast.success("SMS Confirmation Sent", {
-              description: `Message: Ref ${reference} booked for ${selectedSubservice?.name} is confirmed.`,
-              duration: 8000,
-            });
-          }, 500);
-        } else if (statusRes.status === "failed") {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-          setSimStep("failed");
-          toast.error("M-Pesa payment failed or was cancelled.");
-        }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    }, 3000);
+  // Handle WhatsApp quotation link helper
+  const openWhatsAppQuotation = (serviceName: string) => {
+    const text = encodeURIComponent(
+      `Jambo Mqulima Agri-Desk! 🌿\n\nI am requesting an official quotation & specialist dispatch for: *${serviceName}*.\n\n📍 *Platform Request*: Mqulima Services Core\n📋 *Inquiry*: Pricing breakdown, availability & field consultation.\n\nPlease link me with a verified extension specialist at your earliest convenience. Asante!`
+    );
+    window.open(`https://wa.me/254723346134?text=${text}`, "_blank");
   };
 
-  const handleMpesaSubmit = async (e: React.FormEvent) => {
+  // Sync route URL search query params
+  useEffect(() => {
+    if (search.category) {
+      const matched = CATEGORIES_CONFIG.find(c => c.id === search.category);
+      if (matched) setSelectedCategory(matched);
+    }
+  }, [search.category]);
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^(07|01|254)\d{8}$/.test(phone.trim())) {
-      toast.error("Please enter a valid Kenyan phone number (e.g. 0712345678)");
+    if (!phone.trim()) {
+      toast.error("Please enter a valid phone number for service dispatch.");
       return;
     }
     if (!user) {
       toast.error("Please log in to complete your booking.");
       return;
     }
-    setSimStep("loading");
 
+    setIsSubmittingBooking(true);
     try {
-      const amountNumeric = selectedSubservice?.estimatedCost
-        ? Number(selectedSubservice.estimatedCost.replace(/[^0-9]/g, ""))
-        : 1500;
-
-      // 1. Create booking and get orderId
       const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      const costNumeric = selectedSubservice?.estimatedCost
+        ? Number(selectedSubservice.estimatedCost.replace(/[^0-9]/g, "")) || 2500
+        : 2500;
+
       const res = await createServiceBooking({
         data: {
-          service_type: selectedSubservice?.id || "soil_test",
+          service_type: selectedSubservice?.id || "soil_testing_analysis",
           farmer_id: user.id,
-          location: gpsLocation || subCounty || county,
-          farm_size_acres: parseFloat(farmSize) || 1.0,
+          location: `${locationDetails || "Farm location"}, ${county}`,
+          farm_size_acres: parseFloat(farmScale) || 1.0,
           scheduled_date: bookingDate || new Date().toISOString(),
-          notes: vividDescription || `Booked for ${bookingTime || "09:00 AM"}`,
-          amount: amountNumeric,
+          notes: specialNotes || `Requested for ${selectedSubservice?.name}`,
+          amount: costNumeric,
           csrfToken: getCsrfTokenFromCookie(),
         }
       });
 
-      if (res.success && res.reference && res.orderId) {
-        setDoneRef(res.reference);
-
-        // 2. Initiate STK Push
-        const { initiateStkPush } = await import("@/lib/api/mpesa.server");
-        const pushRes = await initiateStkPush({
-          data: {
-            phone: phone.trim(),
-            amount: amountNumeric,
-            orderId: res.orderId,
-            description: selectedSubservice?.name || "Service Booking"
-          }
-        });
-
-        if (pushRes.success) {
-          toast.success("M-Pesa STK Push Sent!");
-          setSimStep("prompt");
-
-          // 3. Start Polling Status
-          startPaymentPolling(res.orderId, res.reference);
-        } else {
-          throw new Error("Failed to initiate payment prompt");
-        }
+      if (res.success && res.reference) {
+        setBookingReference(res.reference);
+        setBookingStep(3); // Success step
+        toast.success(`Service Booking Submitted! Ref: ${res.reference}`);
       } else {
-        throw new Error("Failed to create booking");
+        throw new Error("Failed to submit service booking");
       }
     } catch (err: any) {
-      console.error(err);
-      setSimStep("idle");
-      toast.error(err.message || "An error occurred during payment setup.");
+      console.error("Booking error:", err);
+      toast.error(err.message || "Could not complete booking request.");
+    } finally {
+      setIsSubmittingBooking(false);
     }
   };
 
-  const handlePaymentRetry = () => {
-    setSimStep("idle");
-    setPinCode("");
-  };
-
-  const resetBooking = () => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-    }
+  const closeBookingModal = () => {
     setSelectedSubservice(null);
-    setDoneRef(null);
-    setStep(1);
-    setFarmerName("");
-    setPhone("");
-    setEmail("");
-    setCounty("Uasin Gishu");
-    setSubCounty("");
-    setGpsLocation("");
-    setFarmSize("");
-    setFarmActivity([]);
-    setOtherActivitySpec("");
-    setTargetSubject("");
-    setVividDescription("");
-    setBookingDate("");
-    setBookingTime("");
-    setSimStep("idle");
-    setPinCode("");
+    setBookingStep(1);
+    setBookingReference(null);
+    setLocationDetails("");
+    setSpecialNotes("");
   };
-
-
 
   return (
     <AppLayout>
-      <div className="bg-[#FAF9F5] text-[#2C332A] min-h-screen font-['Open_Sans'] antialiased">
+      <div className="bg-[#FAFBF9] text-[#1A261C] min-h-screen font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-[#85CC14] selection:text-white">
         
-        {/* Banner Section */}
-        <section className="bg-gradient-to-br from-[#1A3D2F] to-[#2D6A4F] py-16 text-white text-left">
-          <div className="container-px mx-auto max-w-7xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#F5A623]">
-              🩺 Professional On-Farm Services
-            </span>
-            <h1 className="mt-3 text-4xl font-extrabold md:text-5xl font-['Lora'] tracking-tight">Experts at your farm gate.</h1>
-            <p className="mt-2 max-w-xl text-white/80 text-sm leading-relaxed">
-              Book vetted livestock doctors, agricultural scientists, mechanization operations, and track service dispatch live.
-            </p>
+        {/* =========================================================================
+            SECTION 1: HERO BANNER (Pixel-matched to Screenshot 4)
+           ========================================================================= */}
+        <section className="relative overflow-hidden bg-[#0F291E] text-white">
+          {/* High-res panoramic agricultural background image with dark overlay */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
+              alt="Lush agricultural green fields"
+              className="w-full h-full object-cover object-center opacity-40 mix-blend-luminosity scale-105"
+            />
+            {/* Subtle radial green glow gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B2117] via-[#0F291E]/90 to-[#123828]/80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117] via-transparent to-transparent" />
+          </div>
+
+          <div className="relative z-10 container-px mx-auto max-w-7xl pt-8 pb-10 md:pt-10 md:pb-12">
+            <div className="max-w-3xl text-left">
+              
+              {/* Top Pill Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white/90 border border-white/15 mb-3">
+                <Sprout className="h-3.5 w-3.5 text-[#85CC14]" />
+                <span>MQULIMA AGRICULTURAL SERVICES</span>
+              </div>
+
+              {/* Main Headline */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-[1.1] tracking-tight font-['Outfit',sans-serif]">
+                Professional{" "}
+                <span className="text-[#D4E157] underline decoration-[#D4E157]/30 underline-offset-6">
+                  Agricultural
+                </span>{" "}
+                Services
+              </h1>
+
+              {/* Subheading */}
+              <p className="mt-3 text-sm sm:text-base text-white/85 leading-relaxed font-normal max-w-2xl">
+                Mqulima connects farmers with trusted agricultural professionals across Kenya — from soil testing and veterinary care to crop production, value addition and farm infrastructure. Book a service or request a quotation in minutes.
+              </p>
+
+              {/* Action Buttons Row */}
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("our-services-grid");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] text-[#0B2117] font-extrabold text-xs sm:text-sm hover:brightness-110 shadow-md shadow-[#85CC14]/20 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>Book a Service</span>
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
+                </button>
+
+                <button
+                  onClick={() => openWhatsAppQuotation("General Agricultural Service")}
+                  className="px-6 py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white font-bold text-xs sm:text-sm hover:bg-white/25 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <WhatsAppIcon className="h-4.5 w-4.5 text-[#25D366]" />
+                  <span>Request a Quotation</span>
+                </button>
+              </div>
+
+              {/* Trust Badges Checkmark Row */}
+              <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-5 text-xs font-semibold text-white/90">
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span>Vetted professionals</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span>Nationwide coverage</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14]">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span>Transparent pricing</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Stats Bar Ribbon at Bottom of Hero (Infinite Smooth Right-to-Left Marquee Carousel - matching Mqulima Tools) */}
+          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
+            <div className="flex w-max items-center gap-10 sm:gap-16 animate-marquee">
+              {[...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS].map((stat, idx) => (
+                <div key={idx} className="flex items-center gap-3 shrink-0">
+                  <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                    <stat.icon className="h-5 w-5 stroke-[2]" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                      {stat.value}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
 
+        {/* =========================================================================
+            SECTION 2: OUR SERVICES GRID (Pixel-matched to Screenshots 1, 2, 3)
+           ========================================================================= */}
+        <section id="our-services-grid" className="py-16 md:py-24 bg-[#FAFBF9]">
+          <div className="container-px mx-auto max-w-7xl">
+            
+            {/* Section Header */}
+            <div className="text-left max-w-3xl mb-12">
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+                OUR SERVICES
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+                Everything your farm needs,{" "}
+                <span className="text-[#6EA810]">in one place</span>
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+                Explore six specialist categories delivered by vetted professionals. Pick a category, view the services and get a quotation on WhatsApp in minutes.
+              </p>
+            </div>
 
-        {/* Main Content Section */}
-        {!selectedSubservice ? (
-          <section className="bg-white text-[#2C332A] border-t border-gray-200">
-            <div className="container-px mx-auto max-w-7xl py-16 space-y-24">
-              {serviceCategories.map((cat, index) => {
-                const meta = CATEGORY_META[cat.id] || { eyebrow: "EXPERT FARM SERVICES.", icon: Sprout };
-                const IconComponent = meta.icon;
+            {/* 6 Category Cards Grid (3 Columns on Desktop) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {CATEGORIES_CONFIG.map((cat) => {
+                const IconComponent = cat.icon;
+
                 return (
-                  <div key={cat.id} className="grid gap-x-8 gap-y-6 lg:grid-cols-12 lg:items-start border-b border-gray-200/80 last:border-b-0 pb-16 last:pb-0">
-                    
-                    {/* A: Title & Eyebrow (Top on mobile, Right column top row on PC) */}
-                    <div className="order-1 lg:order-2 lg:col-span-7 text-left">
-                      {/* Eyebrow */}
-                      <div className="flex items-center gap-2 text-[#F5A623] font-extrabold text-xs sm:text-sm uppercase tracking-[0.2em] mb-2">
-                        <IconComponent className="h-4.5 w-4.5 shrink-0 text-[#F5A623] stroke-[3]" />
-                        <strong>{meta.eyebrow}</strong>
-                      </div>
-
-                      {/* Title */}
-                      <h2 className="text-3xl font-black sm:text-5xl text-[#1A3D2F] font-serif tracking-tight italic leading-tight">
-                        {cat.name}
-                      </h2>
-                    </div>
-
-                    {/* B: Image (Middle on mobile, Left column spanning 2 rows on PC) */}
-                    <div className="order-2 lg:order-1 lg:col-span-5 lg:row-span-2 lg:sticky lg:top-24 w-full">
-                      <div className="w-full relative group aspect-[4/3] lg:aspect-[3/4] overflow-hidden border border-gray-200 shadow-2xl">
+                  <div
+                    key={cat.id}
+                    className="bg-white rounded-[28px] border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between text-left group"
+                  >
+                    <div>
+                      {/* Card Image Header with Overlays */}
+                      <div className="relative h-56 w-full overflow-hidden bg-slate-100">
                         <img
                           src={cat.image}
-                          alt={cat.name}
-                          className="w-full h-full object-cover rounded-none transition-transform duration-500 group-hover:scale-105"
+                          alt={cat.title}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
                         />
-                      </div>
-                    </div>
+                        {/* Gradient overlay on bottom of image for title readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-[#0B2117]/30 to-transparent" />
 
-                    {/* C: Description, Cards, Buttons (Bottom on mobile, Right column bottom row on PC) */}
-                    <div className="order-3 lg:order-3 lg:col-span-7 space-y-6 text-left flex flex-col justify-between h-full">
-                      <div>
-                        {/* Description */}
-                        <p className="text-sm sm:text-base text-gray-800 font-semibold leading-relaxed max-w-2xl mb-6">
-                          {cat.broaderDescription}
-                        </p>
+                        {/* Top Left Circular Category Icon Badge */}
+                        <div className="absolute top-4 left-4 p-2.5 rounded-full bg-[#16A34A] text-white shadow-md flex items-center justify-center">
+                          <IconComponent className="h-5 w-5 stroke-[2]" />
+                        </div>
 
-                        {/* Sub-services Grid - 2 columns */}
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                          {cat.subservices.map((sub) => (
-                            <div 
-                              key={sub.id} 
-                              className="bg-[#2D6A4F]/5 border border-[#2D6A4F]/20 p-5 hover:bg-[#2D6A4F]/10 hover:border-[#2D6A4F]/40 transition duration-300 flex flex-col justify-between rounded-none shadow-sm"
-                            >
-                              <div>
-                                <h4 className="text-sm sm:text-base font-bold text-[#1A3D2F] tracking-wide mb-1.5">{sub.name}</h4>
-                                <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">{sub.description}</p>
-                              </div>
-                              <div className="text-xs sm:text-sm text-[#2D6A4F] font-bold mt-4 border-t border-[#2D6A4F]/15 pt-3 font-mono flex items-center justify-between">
-                                <span className="bg-[#2D6A4F]/10 px-2.5 py-1 rounded-none">{sub.estimatedCost}</span>
-                                <button
-                                  onClick={() => {
-                                    setSelectedSubservice(sub);
-                                    setStep(1);
-                                    setSimStep("idle");
-                                    setDoneRef(null);
-                                    setTimeout(() => {
-                                      const el = document.getElementById("services-wizard");
-                                      el?.scrollIntoView({ behavior: "smooth" });
-                                    }, 50);
-                                  }}
-                                  className="text-[10px] sm:text-xs bg-[#F5A623] hover:bg-[#e09520] text-black px-3.5 py-1.5 font-sans font-black uppercase transition rounded-none shadow-sm cursor-pointer"
-                                >
-                                  Book
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                        {/* Top Right Translucent Service Count Pill */}
+                        <div className="absolute top-4 right-4 bg-white/85 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/40">
+                          {cat.servicesCountText}
+                        </div>
+
+                        {/* Bottom Left Title Overlay */}
+                        <div className="absolute bottom-4 left-5 right-5">
+                          <h3 className="text-2xl font-bold text-white tracking-tight leading-tight font-['Outfit',sans-serif]">
+                            {cat.title}
+                          </h3>
                         </div>
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex flex-wrap gap-4 pt-4">
-                        <button
-                          onClick={() => {
-                            setSelectedSubservice(cat.subservices[0]);
-                            setStep(1);
-                            setSimStep("idle");
-                            setDoneRef(null);
-                            setTimeout(() => {
-                              const el = document.getElementById("services-wizard");
-                              el?.scrollIntoView({ behavior: "smooth" });
-                            }, 50);
-                          }}
-                          className="h-12 px-8 bg-[#F5A623] hover:bg-[#e09520] text-black font-black text-sm uppercase tracking-wider rounded-none transition flex items-center justify-center shadow-lg shadow-[#F5A623]/25"
-                        >
-                          Book a Service
-                        </button>
-                        <a
-                          href={`https://wa.me/254723346134?text=${encodeURIComponent(
-                            `Hi Mqulima, I would like to consult an expert regarding the "${cat.name}" category.\n\nAbout this category: ${cat.broaderDescription}`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="h-12 px-8 border-2 border-[#2D6A4F] text-[#2D6A4F] hover:bg-[#2D6A4F]/10 font-black text-sm uppercase tracking-wider rounded-none transition flex items-center justify-center"
-                        >
-                          Talk to an Expert
-                        </a>
+                      {/* Card Content Body */}
+                      <div className="p-6">
+                        {/* Description */}
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-6 min-h-[44px]">
+                          {cat.description}
+                        </p>
+
+                        {/* Green Checkmarks List */}
+                        <ul className="space-y-2.5">
+                          {cat.checklist.map((item, idx) => (
+                            <li key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-700">
+                              <Check className="h-4 w-4 text-[#16A34A] stroke-[3] shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
+                    </div>
+
+                    {/* Card Footer Action Buttons */}
+                    <div className="p-6 pt-0 flex flex-wrap items-center gap-2.5">
+                      
+                      {/* Primary View Services Button */}
+                      <button
+                        onClick={() => setSelectedCategory(cat)}
+                        className="flex-1 min-w-[120px] py-2.5 px-4 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-sm"
+                      >
+                        <span>View Services</span>
+                        <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
+                      </button>
+
+                      {/* Direct Booking Pill Button (Book Vet or Book Service) */}
+                      <button
+                        onClick={() => {
+                          const sub = cat.subservices[0];
+                          setSelectedSubservice({
+                            id: sub.id,
+                            name: sub.name,
+                            description: sub.description,
+                            estimatedCost: sub.estimatedCost,
+                            categoryTitle: cat.title
+                          });
+                        }}
+                        className="py-2.5 px-4 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 border border-slate-200"
+                      >
+                        <Calendar className="h-4 w-4 text-slate-600" />
+                        <span>{cat.bookingButtonText || "Book Service"}</span>
+                      </button>
+
+                      {/* WhatsApp Quote Button */}
+                      <button
+                        onClick={() => openWhatsAppQuotation(cat.title)}
+                        className="w-full py-2.5 px-4 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
+                      >
+                        <WhatsAppIcon className="h-4.5 w-4.5 text-white" />
+                        <span>WhatsApp Quote</span>
+                      </button>
+
                     </div>
 
                   </div>
                 );
               })}
             </div>
-          </section>
-        ) : (
-          <section className="py-12">
-            <div className="container-px mx-auto max-w-7xl">
-              
-              {selectedSubservice && (
-                <div className="space-y-12">
-                  
-                  {/* Stepper Wizard popup (if active) */}
-                  <div id="services-wizard" className="max-w-2xl mx-auto rounded-none border border-[#D4DDD0] border-l-4 border-l-[#2D6A4F] bg-white p-6 shadow-md text-left text-[#0A1E0C] md:p-8">
-                    {doneRef ? (
-                      <div className="grid place-items-center py-10 text-center">
-                        <div className="grid h-16 w-16 place-items-center rounded-none border-2 border-emerald-800 bg-emerald-50 text-emerald-800 text-3xl font-bold animate-bounce">
-                          ✓
+
+          </div>
+        </section>
+
+
+        {/* =========================================================================
+            MODAL 1: VIEW CATEGORY SERVICES DRAWER / OVERLAY
+           ========================================================================= */}
+        <AnimatePresence>
+          {selectedCategory && (
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 10 }}
+                className="bg-white w-full max-w-4xl rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
+              >
+                {/* Modal Header */}
+                <div className="relative p-6 sm:p-8 bg-[#0F291E] text-white flex items-center justify-between shrink-0">
+                  <div>
+                    <span className="text-xs font-bold text-[#85CC14] uppercase tracking-wider block mb-1">
+                      {selectedCategory.servicesCountText} AVAILABLE
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl font-black font-['Outfit',sans-serif]">
+                      {selectedCategory.title}
+                    </h3>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Subservices List */}
+                <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-left">
+                  <p className="text-sm text-slate-600 leading-relaxed font-normal">
+                    {selectedCategory.description} Pick a specialized sub-service below to schedule a technician or request an instant cost quotation.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedCategory.subservices.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-[#16A34A] transition-all duration-200 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="relative h-40 w-full rounded-xl overflow-hidden mb-3 bg-slate-100">
+                            <img src={sub.image} alt={sub.name} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+                            <span className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                              {sub.estimatedCost}
+                            </span>
+                          </div>
+                          <h4 className="text-base font-bold text-slate-900 leading-snug mb-1">
+                            {sub.name}
+                          </h4>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {sub.description}
+                          </p>
                         </div>
-                        <h2 className="mt-6 text-2xl font-bold font-serif text-[#1A3D2F] italic">
-                          Booking Confirmed!
-                        </h2>
-                        <p className="mt-2 text-xs text-gray-500 font-semibold">
-                          Reference code: <span className="font-mono font-bold text-[#1A5438]">{doneRef}</span>
-                        </p>
-                        <p className="max-w-xs text-xs text-gray-400 mt-3 leading-relaxed">
-                          Thank you for booking with Mqulima. An SMS confirmation was sent to {phone}. Our field expert will contact you shortly.
-                        </p>
-                        
-                        <div className="flex gap-4 mt-8">
+
+                        <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center gap-2">
                           <button
-                            onClick={resetBooking}
-                            className="rounded-none bg-[#1A5438] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#113B26] transition cursor-pointer uppercase tracking-wider"
+                            onClick={() => {
+                              setSelectedCategory(null);
+                              setSelectedSubservice({
+                                id: sub.id,
+                                name: sub.name,
+                                description: sub.description,
+                                estimatedCost: sub.estimatedCost,
+                                categoryTitle: selectedCategory.title
+                              });
+                            }}
+                            className="flex-1 py-2 px-3 rounded-full bg-[#16A34A] text-white text-xs font-bold hover:bg-[#15803D] transition flex items-center justify-center gap-1.5 cursor-pointer"
                           >
-                            Book Another Service
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Book Now</span>
+                          </button>
+
+                          <button
+                            onClick={() => openWhatsAppQuotation(sub.name)}
+                            className="py-2 px-3 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+                            <span>Quote</span>
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between border-b border-gray-150 pb-4 mb-6">
-                          <div>
-                            <h2 className="text-lg font-bold font-serif text-[#1A3D2F] italic">
-                              Book {selectedSubservice.name}
-                            </h2>
-                            <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mt-0.5">Schedule on-farm expert appointment</p>
-                          </div>
-                          <button 
-                            onClick={() => setSelectedSubservice(null)}
-                            className="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-[#1A1A1A] border border-gray-200 text-[10px] font-black uppercase tracking-wider cursor-pointer transition rounded-none"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-
-                        {/* Steps indicator */}
-                        <div className="grid grid-cols-3 gap-2 w-full mb-8 border-b border-gray-150 pb-3 text-center">
-                          {[
-                            { stepNum: 1, label: "01. PROFILE" },
-                            { stepNum: 2, label: "02. CONTEXT" },
-                            { stepNum: 3, label: "03. PAYMENT" }
-                          ].map((s) => (
-                            <div 
-                              key={s.stepNum} 
-                              className={`text-[9px] font-black tracking-widest transition duration-300 pb-1 border-b-2 ${
-                                step === s.stepNum 
-                                  ? "text-[#1A5438] border-b-[#1A5438]" 
-                                  : step > s.stepNum 
-                                    ? "text-[#2D6A4F] border-b-[#2D6A4F]/40" 
-                                    : "text-gray-400 border-b-transparent"
-                              }`}
-                            >
-                              {s.label}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Step Forms */}
-                        {step === 1 && (
-                          <div className="space-y-4">
-                            <label className="block">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Your Full Name</span>
-                              <input
-                                type="text"
-                                required
-                                placeholder="e.g. Samuel Kiprono"
-                                value={farmerName}
-                                onChange={(e) => setFarmerName(e.target.value)}
-                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                              />
-                            </label>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Phone Number</span>
-                                <input
-                                  type="tel"
-                                  required
-                                  placeholder="e.g. 0712345678"
-                                  value={phone}
-                                  onChange={(e) => setPhone(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                                />
-                              </label>
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Email Address</span>
-                                <input
-                                  type="email"
-                                  required
-                                  placeholder="e.g. samuel@example.com"
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                                />
-                              </label>
-                            </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">County</span>
-                                <select
-                                  value={county}
-                                  onChange={(e) => setCounty(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer font-bold focus:border-[#1A5438]"
-                                >
-                                  {kenyanCounties.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                  ))}
-                                </select>
-                              </label>
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Sub-County / Constituency</span>
-                                <input
-                                  type="text"
-                                  required
-                                  placeholder="e.g. Kesses, Ainabkoi"
-                                  value={subCounty}
-                                  onChange={(e) => setSubCounty(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                                />
-                              </label>
-                            </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.scaleLabel}</span>
-                                <input
-                                  type={fields.scaleType}
-                                  required
-                                  min={fields.scaleType === "number" ? "0.1" : undefined}
-                                  step={fields.scaleType === "number" ? "0.1" : undefined}
-                                  placeholder={fields.scalePlaceholder}
-                                  value={farmSize}
-                                  onChange={(e) => setFarmSize(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                                />
-                              </label>
-                              <div className="block sm:col-span-2">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.activityLabel} (Select all that apply)</span>
-                                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {fields.activityOptions.map((opt) => {
-                                    const isChecked = farmActivity.includes(opt);
-                                    return (
-                                      <label key={opt} className={`flex items-start gap-2.5 cursor-pointer p-2.5 border rounded-none transition ${isChecked ? 'bg-[#1A5438]/5 border-[#1A5438]/40' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isChecked}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setFarmActivity([...farmActivity, opt]);
-                                            } else {
-                                              setFarmActivity(farmActivity.filter((item) => item !== opt));
-                                            }
-                                          }}
-                                          className="mt-0.5 h-3.5 w-3.5 rounded-none border-gray-300 text-[#1A5438] focus:ring-[#1A5438]"
-                                        />
-                                        <span className="text-[11px] font-semibold text-gray-700">{opt}</span>
-                                      </label>
-                                    );
-                                  })}
-                                  {/* Always include Other checkbox */}
-                                  {(() => {
-                                    const isOtherChecked = farmActivity.includes("Other");
-                                    return (
-                                      <label className={`flex items-start gap-2.5 cursor-pointer p-2.5 border rounded-none transition ${isOtherChecked ? 'bg-[#1A5438]/5 border-[#1A5438]/40' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isOtherChecked}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setFarmActivity([...farmActivity, "Other"]);
-                                            } else {
-                                              setFarmActivity(farmActivity.filter((item) => item !== "Other"));
-                                              setOtherActivitySpec("");
-                                            }
-                                          }}
-                                          className="mt-0.5 h-3.5 w-3.5 rounded-none border-gray-300 text-[#1A5438] focus:ring-[#1A5438]"
-                                        />
-                                        <span className="text-[11px] font-semibold text-gray-700">Other / Not Listed</span>
-                                      </label>
-                                    );
-                                  })()}
-                                </div>
-
-                                {farmActivity.includes("Other") && (
-                                  <div className="mt-2">
-                                    <input
-                                      type="text"
-                                      required
-                                      placeholder="Please specify your other requirements..."
-                                      value={otherActivitySpec}
-                                      onChange={(e) => setOtherActivitySpec(e.target.value)}
-                                      className="w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2 text-xs outline-none focus:border-[#1A5438]"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <label className="block">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Directions / Farm Landmark</span>
-                              <input
-                                type="text"
-                                required
-                                placeholder="e.g. 2km past Ainabkoi Junction, near St. Jude Secondary School"
-                                value={gpsLocation}
-                                onChange={(e) => setGpsLocation(e.target.value)}
-                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                              />
-                            </label>
-                          </div>
-                        )}
-
-                        {step === 2 && (
-                          <div className="space-y-4">
-                            <label className="block">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.subjectLabel}</span>
-                              <input
-                                type="text"
-                                required
-                                placeholder={fields.subjectPlaceholder}
-                                value={targetSubject}
-                                onChange={(e) => setTargetSubject(e.target.value)}
-                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                              />
-                            </label>
-
-                            <label className="block">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{fields.descriptionLabel}</span>
-                              <textarea
-                                required
-                                rows={4}
-                                placeholder={fields.descriptionPlaceholder}
-                                value={vividDescription}
-                                onChange={(e) => setVividDescription(e.target.value)}
-                                className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438] resize-none leading-relaxed"
-                              />
-                            </label>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Preferred Appointment Date</span>
-                                <input
-                                  type="date"
-                                  required
-                                  value={bookingDate}
-                                  onChange={(e) => setBookingDate(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer focus:border-[#1A5438]"
-                                />
-                              </label>
-                              <label className="block">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Preferred Time Slot</span>
-                                <input
-                                  type="time"
-                                  required
-                                  value={bookingTime}
-                                  onChange={(e) => setBookingTime(e.target.value)}
-                                  className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none cursor-pointer focus:border-[#1A5438]"
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {step === 3 && (
-                          <div className="space-y-4">
-                            <div className="bg-[#FAF9F5] border border-[#D4DDD0] rounded-none p-4 text-xs">
-                              <span className="text-[9px] font-black text-[#1A5438] uppercase tracking-wider block mb-3 border-b pb-1">
-                                Complete Appointment Summary
-                              </span>
-                              
-                              <div className="grid gap-x-4 gap-y-2.5 sm:grid-cols-2 text-gray-600 font-semibold mb-3">
-                                <div>
-                                  <div className="text-[9px] text-gray-400 uppercase">Customer Profile</div>
-                                  <div className="text-gray-800 font-bold mt-0.5">{farmerName}</div>
-                                  <div className="text-[10px] text-gray-500 font-medium">{phone} • {email}</div>
-                                </div>
-                                <div>
-                                  <div className="text-[9px] text-gray-400 uppercase">Farm/Case Profile</div>
-                                  <div className="text-gray-800 font-bold mt-0.5">{county} County ({subCounty})</div>
-                                  <div className="text-[10px] text-gray-500 font-medium mt-1 space-y-0.5">
-                                    <div><span className="font-bold text-gray-400">{fields.scaleLabel}:</span> <span className="text-gray-700">{farmSize}</span></div>
-                                    <div>
-                                      <span className="font-bold text-gray-400">{fields.activityLabel}:</span>{" "}
-                                      <span className="text-gray-700">
-                                        {farmActivity
-                                          .map((act) => (act === "Other" ? `Other (${otherActivitySpec})` : act))
-                                          .join(", ")}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="sm:col-span-2 border-t pt-2 mt-1">
-                                  <div className="text-[9px] text-gray-400 uppercase">Directions / GPS</div>
-                                  <div className="text-gray-700 font-medium mt-0.5">{gpsLocation}</div>
-                                </div>
-                                <div className="border-t pt-2 sm:col-span-2">
-                                  <div className="text-[9px] text-gray-400 uppercase">Service Details & Target</div>
-                                  <div className="text-gray-800 font-bold mt-0.5 font-serif italic">{selectedSubservice.name} ({targetSubject})</div>
-                                  <div className="text-[10px] text-gray-500 font-medium">Appointment: {bookingDate} at {bookingTime}</div>
-                                </div>
-                                <div className="sm:col-span-2 bg-white p-2 border border-gray-150">
-                                  <div className="text-[9px] text-[#2D6A4F] uppercase font-black tracking-wide">{fields.descriptionLabel}</div>
-                                  <p className="text-[10px] text-gray-600 italic mt-1 leading-relaxed font-medium">"{vividDescription}"</p>
-                                </div>
-                              </div>
-                              
-                              <div className="border-t border-[#D4DDD0] pt-2 flex justify-between text-sm font-black text-[#1A5438]">
-                                <span>Cost Estimate:</span>
-                                <span>{selectedSubservice.estimatedCost}</span>
-                              </div>
-                            </div>
-
-                            {simStep === "idle" && (
-                              <form onSubmit={handleMpesaSubmit} className="space-y-3">
-                                <label className="block">
-                                  <span className="text-[10px] font-black text-[#5D6B5C] uppercase tracking-wider">M-Pesa Number</span>
-                                  <input
-                                    type="tel"
-                                    required
-                                    placeholder="e.g. 0712345678"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    className="mt-1.5 w-full bg-white border border-[#D4DDD0] rounded-none px-3 py-2.5 text-xs outline-none focus:border-[#1A5438]"
-                                  />
-                                </label>
-                                <button
-                                  type="submit"
-                                  className="w-full bg-[#1A5438] hover:bg-[#113B26] text-white py-2.5 rounded-none text-xs font-bold uppercase tracking-wider transition cursor-pointer shadow-sm"
-                                >
-                                  Proceed to MPesa Authorization
-                                </button>
-                              </form>
-                            )}
-                            {simStep === "loading" && (
-                              <div className="text-center py-6">
-                                <div className="w-10 h-10 rounded-none border-4 border-[#1A5438]/20 border-t-[#1A5438] animate-spin mx-auto mb-3" />
-                                <h4 className="text-xs font-bold">Initiating M-Pesa Payment...</h4>
-                                <p className="text-[10px] text-gray-500 mt-1">Please keep this window open</p>
-                              </div>
-                            )}
-
-                            {simStep === "prompt" && (
-                              <div className="text-center py-6 bg-white border border-gray-200 p-4">
-                                <div className="w-10 h-10 rounded-none border-4 border-[#1A5438]/20 border-t-[#1A5438] animate-spin mx-auto mb-3" />
-                                <h4 className="text-xs font-bold text-gray-800">Check Your Phone!</h4>
-                                <p className="text-[11px] text-gray-600 mt-1.5">
-                                  We've sent an M-Pesa PIN prompt to <strong>{phone}</strong>.
-                                  Please enter your PIN on your phone to authorize the transaction of {selectedSubservice.estimatedCost}.
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-3 font-semibold uppercase tracking-wider">
-                                  Waiting for confirmation... ({pollCountdown}s)
-                                </p>
-                              </div>
-                            )}
-
-                            {simStep === "failed" && (
-                              <div className="text-center py-6 bg-red-50/50 border border-red-200 p-4">
-                                <div className="text-2xl text-red-600 mb-2">❌</div>
-                                <h4 className="text-xs font-bold text-red-800">Payment Failed</h4>
-                                <p className="text-[11px] text-red-700 mt-1 leading-relaxed">
-                                  The transaction could not be processed. Please verify your phone number and balance, and try again.
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={handlePaymentRetry}
-                                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
-                                >
-                                  Try Again
-                                </button>
-                              </div>
-                            )}
-
-                            {simStep === "timeout" && (
-                              <div className="text-center py-6 bg-amber-50/50 border border-amber-200 p-4">
-                                <div className="text-2xl text-amber-600 mb-2">⚠️</div>
-                                <h4 className="text-xs font-bold text-amber-800">Request Timed Out</h4>
-                                <p className="text-[11px] text-amber-700 mt-1 leading-relaxed">
-                                  We didn't receive confirmation in time. If you entered your PIN, please check your messages.
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={handlePaymentRetry}
-                                  className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
-                                >
-                                  Try Again
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Back / Continue triggers */}
-                        {simStep === "idle" && (
-                          <div className="mt-6 flex items-center justify-between border-t border-gray-150 pt-4">
-                            <button
-                              disabled={step === 1}
-                              onClick={() => setStep(step - 1)}
-                              className="text-xs font-bold text-gray-500 hover:text-[#1A1A1A] disabled:opacity-30 cursor-pointer uppercase tracking-wider px-5 py-2 border border-transparent transition"
-                            >
-                              ← Back
-                            </button>
-                            {step < 3 ? (
-                              <button
-                                disabled={
-                                  (step === 1 && (
-                                    !farmerName || 
-                                    !phone || 
-                                    !email || 
-                                    !subCounty || 
-                                    !gpsLocation || 
-                                    !farmSize || 
-                                    farmActivity.length === 0 || 
-                                    (farmActivity.includes("Other") && !otherActivitySpec.trim())
-                                  )) || 
-                                  (step === 2 && (
-                                    !targetSubject || 
-                                    !vividDescription || 
-                                    !bookingDate || 
-                                    !bookingTime
-                                  ))
-                                }
-                                onClick={() => setStep(step + 1)}
-                                className="bg-[#1A5438] hover:bg-[#113B26] text-white px-6 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider disabled:opacity-40 transition cursor-pointer shadow-sm"
-                              >
-                                Continue
-                              </button>
-                            ) : null}
-                          </div>
-                        )}
-                      </>
-                    )}
+                    ))}
                   </div>
                 </div>
-              )}
 
+              </motion.div>
             </div>
-          </section>
-        )}
+          )}
+        </AnimatePresence>
+
+
+        {/* =========================================================================
+            MODAL 2: BOOKING WIZARD MODAL
+           ========================================================================= */}
+        <AnimatePresence>
+          {selectedSubservice && (
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 flex flex-col"
+              >
+                {/* Header */}
+                <div className="p-6 bg-[#0F291E] text-white flex items-center justify-between text-left">
+                  <div>
+                    <span className="text-xs font-bold text-[#85CC14] uppercase tracking-wider block">
+                      BOOKING REQUEST
+                    </span>
+                    <h3 className="text-xl font-bold font-['Outfit',sans-serif]">
+                      {selectedSubservice.name}
+                    </h3>
+                  </div>
+
+                  <button
+                    onClick={closeBookingModal}
+                    className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 sm:p-8 text-left">
+                  {bookingStep === 1 && (
+                    <form onSubmit={handleBookingSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Farmer / Contact Name
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={farmerName}
+                          onChange={(e) => setFarmerName(e.target.value)}
+                          placeholder="e.g. James Kariuki"
+                          className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="e.g. 0712345678"
+                            className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            County Location
+                          </label>
+                          <select
+                            value={county}
+                            onChange={(e) => setCounty(e.target.value)}
+                            className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                          >
+                            {KENYA_COUNTIES.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Farm Size / Project Scale
+                          </label>
+                          <input
+                            type="text"
+                            value={farmScale}
+                            onChange={(e) => setFarmScale(e.target.value)}
+                            placeholder="e.g. 3 Acres or 10 Cows"
+                            className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Preferred Service Date
+                          </label>
+                          <input
+                            type="date"
+                            value={bookingDate}
+                            onChange={(e) => setBookingDate(e.target.value)}
+                            className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Specific Requirements / Notes
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={specialNotes}
+                          onChange={(e) => setSpecialNotes(e.target.value)}
+                          placeholder="Describe symptoms, crop type, or location landmarks..."
+                          className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500">
+                          Est. Base Cost: <strong className="text-[#16A34A]">{selectedSubservice.estimatedCost}</strong>
+                        </span>
+
+                        <button
+                          type="submit"
+                          disabled={isSubmittingBooking}
+                          className="py-3 px-6 rounded-full bg-[#16A34A] text-white font-bold text-sm hover:bg-[#15803D] transition disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                        >
+                          {isSubmittingBooking ? "Submitting..." : "Submit Service Booking"}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {bookingStep === 3 && (
+                    <div className="text-center py-6 space-y-4">
+                      <div className="h-16 w-16 bg-[#E5F5D0] text-[#16A34A] rounded-full flex items-center justify-center mx-auto">
+                        <Check className="h-8 w-8 stroke-[3]" />
+                      </div>
+                      <h4 className="text-2xl font-extrabold text-slate-900 font-['Outfit',sans-serif]">
+                        Booking Confirmed!
+                      </h4>
+                      <p className="text-xs text-slate-600 max-w-md mx-auto">
+                        Your request has been logged under reference code <strong className="text-[#16A34A]">{bookingReference}</strong>. An assigned regional agronomist will contact you shortly on <strong>{phone}</strong>.
+                      </p>
+
+                      <button
+                        onClick={closeBookingModal}
+                        className="py-3 px-8 rounded-full bg-[#0F291E] text-white font-bold text-sm hover:bg-[#1A380A] transition cursor-pointer"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+
+        {/* =========================================================================
+            FLOATING WHATSAPP BUTTON (Bottom Right - Matching Screenshot Widget)
+           ========================================================================= */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => openWhatsAppQuotation("General Inquiry")}
+            className="flex items-center gap-2.5 py-3 px-5 rounded-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-sm shadow-xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <WhatsAppIcon className="h-5 w-5 text-white" />
+            <span>Chat with us</span>
+          </button>
+        </div>
+
       </div>
     </AppLayout>
   );

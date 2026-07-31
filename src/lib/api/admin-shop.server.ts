@@ -114,12 +114,7 @@ export const adminCreateProduct = createServerFn({ method: "POST" })
       return { success: true, product: newProduct };
     } catch (err: any) {
       console.error("Failed to insert product into DB:", err);
-      // Return simulated success if DB doesn't have products schema (dev simulation mode support)
-      return { 
-        success: true, 
-        simulated: true, 
-        product: { id: "simulated-id-" + Math.floor(Math.random() * 1000), name: data.name, slug } 
-      };
+      throw new Error(`Failed to create product: ${err.message || String(err)}`);
     }
   });
 
@@ -182,7 +177,7 @@ export const adminUpdateProduct = createServerFn({ method: "POST" })
       return { success: true };
     } catch (err: any) {
       console.error("Failed to update product in DB:", err);
-      return { success: true, simulated: true };
+      throw new Error(`Failed to update product: ${err.message || String(err)}`);
     }
   });
 
@@ -214,12 +209,26 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
       return { success: true };
     } catch (err: any) {
       console.error("Failed to delete product in DB:", err);
-      return { success: true, simulated: true };
+      throw new Error(`Failed to archive product: ${err.message || String(err)}`);
     }
   });
 
 export const adminGetCategoriesList = createServerFn({ method: "GET" })
   .handler(async () => {
+    const { getCurrentUser } = await import("../auth-server");
+    const user = await getCurrentUser();
+    if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
+      // Check admin session helper as fallback
+      const { verifyAdminSession } = await import("../../../admin/src/lib/auth-admin-helper.server").catch(() => ({ verifyAdminSession: null as any }));
+      if (verifyAdminSession) {
+        await verifyAdminSession().catch(() => {
+          throw new Error("Unauthorized: Admin privilege required");
+        });
+      } else {
+        throw new Error("Unauthorized: Admin privilege required");
+      }
+    }
+
     const { getDb } = await import("../db.server");
     const sql = getDb();
     try {
@@ -250,3 +259,4 @@ export const adminGetCategoriesList = createServerFn({ method: "GET" })
       ];
     }
   });
+

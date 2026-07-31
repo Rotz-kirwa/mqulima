@@ -102,3 +102,23 @@ export const createServiceBooking = createServerFn({ method: "POST" })
       orderId
     };
   });
+
+export const getServiceCategoriesWithServices = createServerFn({ method: "GET" }).handler(async () => {
+  const { getDb } = await import("../db.server");
+  const sql = getDb();
+  const categories = await sql`
+    SELECT id, name, slug, description, icon
+    FROM service_categories
+    ORDER BY name ASC
+  `;
+  const services = await sql`
+    SELECT id, category_id, name, slug, description, price_type, base_price::float as base_price
+    FROM services
+    ORDER BY name ASC
+  `;
+  return {
+    categories,
+    services
+  };
+});
+

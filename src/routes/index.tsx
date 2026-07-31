@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { HomeHero } from "@/components/mqulima/HomeHero";
-import { motion, Variants } from "framer-motion";
-import { useRef } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { 
   ArrowRight, 
   Users, 
@@ -22,9 +22,21 @@ import {
   Cpu, 
   MapPin, 
   Award,
-  Layers
+  Layers,
+  Sprout,
+  Shield,
+  Database,
+  Droplet,
+  Coins,
+  Stethoscope,
+  Wheat,
+  Tractor,
+  Factory,
+  Sun,
+  Check,
+  ArrowUpRight
 } from "lucide-react";
-import { articles, services } from "@/lib/mqulima-data";
+import { articles } from "@/lib/mqulima-data";
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedProducts } from "@/lib/api/products.server";
 import { getPublishedBlogPosts } from "@/lib/api/blog.server";
@@ -93,6 +105,96 @@ const testimonials = [
   }
 ];
 
+const HOMEPAGE_CATEGORIES = [
+  {
+    id: "soil",
+    title: "Soil Services",
+    servicesCountText: "3 services",
+    description: "Improve soil productivity through testing, treatment and professional fertilizer recommendations.",
+    image: "/images/services/soil.png",
+    icon: Sprout,
+    checklist: [
+      "Soil Testing & Analysis",
+      "Soil Treatment & Conditioning",
+      "Fertilizer Recommendation"
+    ]
+  },
+  {
+    id: "veterinary",
+    title: "Veterinary & Animal Health",
+    servicesCountText: "4 services",
+    description: "Professional veterinary care, breeding services, vaccinations and livestock diagnosis.",
+    image: "/images/services/veterinary.png",
+    icon: Stethoscope,
+    checklist: [
+      "AI & Breeding",
+      "Vaccination",
+      "Veterinary Diagnosis",
+      "Professional Vet Services"
+    ]
+  },
+  {
+    id: "animal_feeds",
+    title: "Animal Feeds",
+    servicesCountText: "6 services",
+    description: "Feed formulation, silage production, incubation and livestock nutrition.",
+    image: "/images/services/animal_feeds.png",
+    icon: Wheat,
+    checklist: [
+      "Feed Formulation",
+      "Feed Advice",
+      "Silage Shredding",
+      "Azolla Setup",
+      "Machinery Rental",
+      "Egg Incubation"
+    ]
+  },
+  {
+    id: "crop_production",
+    title: "Crop Production",
+    servicesCountText: "8 services",
+    description: "Complete crop production services from land preparation to harvesting.",
+    image: "/images/services/crop_production.png",
+    icon: Tractor,
+    checklist: [
+      "Greenhouse Installation",
+      "Partnerships",
+      "Machinery Rental",
+      "Cold Storage Hubs",
+      "Irrigation Systems",
+      "Agronomy Consultation"
+    ]
+  },
+  {
+    id: "value_addition",
+    title: "Value Addition",
+    servicesCountText: "4 services",
+    description: "Increase the value of your agricultural produce through processing and expert guidance.",
+    image: "/images/services/value_addition.png",
+    icon: Factory,
+    checklist: [
+      "Agro-Processing & Milling",
+      "Food-Grade Packaging",
+      "KEBS Certification & Branding",
+      "Expert Advisory"
+    ]
+  },
+  {
+    id: "other",
+    title: "Other Services",
+    servicesCountText: "7 services",
+    description: "Additional agricultural services to support profitable farming.",
+    image: "/images/services/other_services.png",
+    icon: Sun,
+    checklist: [
+      "Boreholes & Hydro Survey",
+      "Smart Solar Pumping",
+      "Shed Construction",
+      "Agri-Insurance & Finance"
+    ]
+  }
+];
+
 function Index() {
   const { data: dbFeaturedProducts } = useQuery({
     queryKey: ["featuredProducts"],
@@ -107,19 +209,84 @@ function Index() {
   const featuredProducts = dbFeaturedProducts || [];
   const featuredArticles = dbArticles?.slice(0, 3) || articles.slice(0, 3);
 
-  // Slideshow Refs & Scroll Handlers
-  const productsRef = useRef<HTMLDivElement>(null);
-  const servicesRef = useRef<HTMLDivElement>(null);
+  // Auto-sliding showcase carousel state (2 products on mobile, 3 on desktop, 3s interval)
+  const [featuredPageIndex, setFeaturedPageIndex] = useState(0);
+  const [isFeaturedHovered, setIsFeaturedHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const scroll = (ref: React.RefObject<HTMLDivElement | null>, direction: "left" | "right") => {
-    if (ref.current) {
-      const scrollAmount = 340;
-      ref.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth"
-      });
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const itemsPerPage = isMobile ? 2 : 3;
+  const totalPages = Math.max(1, Math.ceil(featuredProducts.length / itemsPerPage));
+
+  // Reset page index if out of bounds on screen resize
+  useEffect(() => {
+    if (featuredPageIndex >= totalPages) {
+      setFeaturedPageIndex(0);
     }
-  };
+  }, [itemsPerPage, totalPages, featuredPageIndex]);
+
+  // Auto slide every 3 seconds (3000ms)
+  useEffect(() => {
+    if (isFeaturedHovered || totalPages <= 1) return;
+    const timer = setInterval(() => {
+      setFeaturedPageIndex((prev) => (prev + 1) % totalPages);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [isFeaturedHovered, totalPages]);
+
+  // Extract current products to display
+  const currentGroupProducts = useMemo(() => {
+    if (!featuredProducts.length) return [];
+    const start = (featuredPageIndex * itemsPerPage) % featuredProducts.length;
+    const group = [];
+    for (let i = 0; i < itemsPerPage; i++) {
+      const p = featuredProducts[(start + i) % featuredProducts.length];
+      if (p) {
+        group.push({ ...p, uniqueKey: `${p.id}-slot-${i}-page-${featuredPageIndex}-${isMobile ? 'm' : 'd'}` });
+      }
+    }
+    return group;
+  }, [featuredProducts, featuredPageIndex, itemsPerPage, isMobile]);
+
+  // Testimonials auto-sliding carousel state (1 on mobile, 2 on desktop, 4s interval)
+  const [testimonialPageIndex, setTestimonialPageIndex] = useState(0);
+  const [isTestimonialHovered, setIsTestimonialHovered] = useState(false);
+
+  const testimonialItemsPerPage = isMobile ? 1 : 2;
+  const totalTestimonialPages = Math.max(1, Math.ceil(testimonials.length / testimonialItemsPerPage));
+
+  useEffect(() => {
+    if (testimonialPageIndex >= totalTestimonialPages) {
+      setTestimonialPageIndex(0);
+    }
+  }, [testimonialItemsPerPage, totalTestimonialPages, testimonialPageIndex]);
+
+  useEffect(() => {
+    if (isTestimonialHovered || totalTestimonialPages <= 1) return;
+    const timer = setInterval(() => {
+      setTestimonialPageIndex((prev) => (prev + 1) % totalTestimonialPages);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isTestimonialHovered, totalTestimonialPages]);
+
+  const currentGroupTestimonials = useMemo(() => {
+    if (!testimonials.length) return [];
+    const start = (testimonialPageIndex * testimonialItemsPerPage) % testimonials.length;
+    const group = [];
+    for (let i = 0; i < testimonialItemsPerPage; i++) {
+      const t = testimonials[(start + i) % testimonials.length];
+      if (t) {
+        group.push({ ...t, uniqueKey: `${t.author}-slot-${i}-page-${testimonialPageIndex}-${isMobile ? 'm' : 'd'}` });
+      }
+    }
+    return group;
+  }, [testimonialPageIndex, testimonialItemsPerPage, isMobile]);
 
   return (
     <AppLayout>
@@ -129,19 +296,9 @@ function Index() {
           1. VALUE PROPOSITION & WHO IS MQULIMA?
           (Picture on Left, Story on Right)
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#FAF9F5] via-white to-white py-12 text-[#0A1E0C] lg:py-16 border-b border-[#0A1E0C]/5">
-        <div className="absolute left-1/4 top-1/4 h-[350px] w-[350px] rounded-full bg-[#52B788]/15 blur-[130px] pointer-events-none" />
-        <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-[#F5A623]/10 blur-[120px] pointer-events-none" />
-        
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(#0A1E0C 1px, transparent 1px)",
-            backgroundSize: "24px 24px"
-          }}
-        />
-
+      <section className="relative overflow-hidden bg-[#FAFBF9] pt-6 pb-10 md:pt-8 md:pb-14 text-[#0F291E] border-b border-slate-200/60">
         <div className="container-px mx-auto max-w-7xl relative z-10">
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 items-center">
+          <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
             
             {/* Left Column: Story & Value Proposition */}
             <motion.div 
@@ -151,22 +308,17 @@ function Index() {
               variants={fadeInUp}
               className="lg:col-span-7 text-left space-y-6"
             >
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#52B788]/10 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-[#2D6A4F]">
-                <Sparkles className="h-3 w-3" />
-                Value Proposition
-              </span>
-              
-              <h2 className="text-4xl font-black tracking-tight text-[#0A1E0C] sm:text-5xl uppercase leading-none">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
                 Welcome to the home of <br />
-                <span className="bg-gradient-to-r from-[#2D6A4F] via-[#52B788] to-[#F5A623] bg-clip-text text-transparent">
-                  modern agriculture.
+                <span className="text-[#6EA810]">
+                  modern agriculture
                 </span>
               </h2>
 
-              <div className="space-y-6 text-[#0A1E0C]/80 text-sm md:text-base leading-relaxed font-medium">
+              <div className="space-y-5 text-slate-600 text-sm md:text-base leading-relaxed font-normal">
                 <p>
-                  We bring together every step of the agricultural journey, to one home.
-                  Whether learning, producing, distributing, trading or adding value- just log
+                  We bring together every step of the agricultural journey to one home.
+                  Whether learning, producing, distributing, trading or adding value — just log
                   into Mqulima. We are Africa's 360° agricultural ecosystem. We bring an end
                   to guesswork, gossip, scattered information and unresponsive support.
                   Because agriculture works better when everything works together.
@@ -177,12 +329,13 @@ function Index() {
                 </p>
 
                 {/* Who is Mqulima block */}
-                <div className="relative overflow-hidden rounded-2xl border border-[#2D6A4F]/20 bg-[#FAF9F5]/70 p-6 shadow-sm">
-                  <h4 className="text-[#2D6A4F] font-black text-lg md:text-xl flex items-center gap-2 uppercase tracking-tight">
+                <div className="relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-6 shadow-sm">
+                  <h4 className="text-[#0F291E] font-extrabold text-lg md:text-xl flex items-center gap-2 font-['Outfit',sans-serif]">
+                    <Sparkles className="h-5 w-5 text-[#85CC14]" />
                     Who is Mqulima?
                   </h4>
-                  <p className="mt-2 text-xs md:text-sm text-[#0A1E0C]/85 italic font-semibold leading-relaxed">
-                    "Mqulima is a farmer’s world. At mqulima, we are building a paradise for
+                  <p className="mt-2 text-xs md:text-sm text-slate-700 italic font-medium leading-relaxed">
+                    "Mqulima is a farmer’s world. At Mqulima, we are building a paradise for
                     everyone in agriculture. With Mqulima, you get a first class seat to success."
                   </p>
                 </div>
@@ -195,19 +348,19 @@ function Index() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
-              className="lg:col-span-5 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/5] rounded-3xl overflow-hidden border border-gray-200/50 shadow-2xl"
+              className="lg:col-span-5 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/5] rounded-[28px] overflow-hidden border border-slate-200/90 shadow-xl"
             >
               <img
                 src="https://i.pinimg.com/736x/d3/8a/07/d38a0721bac4f6b2a4ee73d79c557f08.jpg"
                 alt="Aerial view of lush green modern agriculture fields"
                 className="w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-8">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-transparent to-transparent flex items-end p-8">
                 <div className="text-white text-left">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#F5A623]">
-                    Mqulima Ecosystem
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#85CC14]">
+                    MQULIMA ECOSYSTEM
                   </span>
-                  <h3 className="text-xl font-black uppercase mt-1">Africa’s 360° Ag-Core</h3>
+                  <h3 className="text-xl font-bold uppercase mt-1 font-['Outfit',sans-serif]">Africa’s 360° Ag-Core</h3>
                 </div>
               </div>
             </motion.div>
@@ -218,166 +371,157 @@ function Index() {
 
       {/* ══════════════════════════════════════════
           2. THE ECOSYSTEM: AGRICULTURE CONNECTED
-          (5-Part Custom Solutions Grid)
+          (5-Part Custom Solutions Grid - Services Hero Dark Theme Match)
       ══════════════════════════════════════════ */}
-      <section className="bg-[#1A3D2F] py-12 text-white lg:py-16 relative overflow-hidden border-b border-white/5">
-        <div className="absolute right-1/4 top-1/4 h-[300px] w-[300px] rounded-full bg-[#52B788]/10 blur-[120px] pointer-events-none" />
-        <div className="absolute left-1/4 bottom-1/4 h-[350px] w-[350px] rounded-full bg-[#F5A623]/5 blur-[150px] pointer-events-none" />
-
+      <section className="bg-[#0F291E] py-10 md:py-14 text-white relative overflow-hidden">
         <div className="container-px mx-auto max-w-7xl relative z-10">
           
           {/* Section Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
             <div className="max-w-2xl text-left space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#52B788]/10 text-[10px] font-black uppercase tracking-widest text-[#52B788] border border-[#52B788]/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#52B788] animate-pulse" />
-                The Ecosystem
+              <span className="inline-block rounded-full bg-[#85CC14]/20 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14] border border-[#85CC14]/30">
+                THE ECOSYSTEM
               </span>
-              <h2 className="text-3xl font-black tracking-tight sm:text-4xl uppercase leading-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight font-['Outfit',sans-serif]">
                 Explore the Mqulima Ecosystem. <br />
-                <span className="bg-gradient-to-r from-[#52B788] via-[#8FD0A3] to-[#F5A623] bg-clip-text text-transparent">
+                <span className="text-[#85CC14]">
                   Agriculture Connected.
                 </span>
               </h2>
             </div>
             <div className="max-w-md text-left">
-              <p className="text-xs md:text-sm text-white/60 leading-relaxed font-medium">
+              <p className="text-xs md:text-sm text-white/80 leading-relaxed font-normal">
                 Whatever your role in agriculture and wherever you sit in the chain, Mqulima
                 connects you to the knowledge, products, services and people you need to
-                succeed—all in one place. Explore our solutions.
+                succeed — all in one place.
               </p>
             </div>
           </div>
 
           {/* 5-Solutions Grid */}
-          <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             
             {/* 1. Agroshop */}
-            <div className="bg-[#112F20]/50 border border-amber-500/20 hover:border-amber-400 backdrop-blur-sm shadow-xl p-6 rounded-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_-10px_rgba(245,158,11,0.25)] group relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-500/5 blur-xl group-hover:bg-amber-500/15 transition-all duration-500" />
-              <div className="space-y-4 text-left relative z-10">
-                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)] group-hover:bg-amber-500/20 group-hover:border-amber-400 group-hover:scale-110">
-                  <span className="filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] select-none">🛒</span>
+            <div className="bg-[#16382B]/70 border border-white/10 hover:border-[#85CC14] rounded-[24px] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group">
+              <div className="space-y-4 text-left">
+                <div className="h-12 w-12 rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 flex items-center justify-center text-xl">
+                  <span>🛒</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black tracking-widest text-amber-500/60 group-hover:text-amber-300 transition-colors duration-300 mb-1 block">01</span>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight group-hover:text-amber-300 transition-colors duration-300">Agroshop</h3>
-                  <p className="text-xs text-white/60 leading-relaxed font-medium mt-2.5 group-hover:text-white/80 transition-colors duration-300">
+                  <span className="text-xs font-black tracking-widest text-[#85CC14] mb-1 block">01</span>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-tight font-['Outfit',sans-serif]">Agroshop</h3>
+                  <p className="text-xs text-white/70 leading-relaxed font-normal mt-2">
                     Source trusted agricultural products from verified suppliers and have them delivered to your doorstep.
                   </p>
                 </div>
               </div>
-              <div className="pt-6 text-left relative z-10">
+              <div className="pt-6">
                 <Link
                   to="/shop"
-                  className="inline-flex w-full items-center justify-between gap-1.5 px-4 py-2.5 rounded-xl bg-amber-700 border border-amber-600 text-xs font-black uppercase tracking-wider text-white hover:bg-amber-600 group-hover:bg-amber-600 hover:border-amber-500 group-hover:border-amber-500 transition-all duration-300"
+                  className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>View shop</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
 
             {/* 2. Insights */}
-            <div className="bg-[#112F20]/50 border border-emerald-500/20 hover:border-emerald-400 backdrop-blur-sm shadow-xl p-6 rounded-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_-10px_rgba(16,185,129,0.25)] group relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-emerald-500/5 blur-xl group-hover:bg-emerald-500/15 transition-all duration-500" />
-              <div className="space-y-4 text-left relative z-10">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)] group-hover:bg-emerald-500/20 group-hover:border-emerald-400 group-hover:scale-110">
-                  <span className="filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] select-none">📈</span>
+            <div className="bg-[#16382B]/70 border border-white/10 hover:border-[#85CC14] rounded-[24px] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group">
+              <div className="space-y-4 text-left">
+                <div className="h-12 w-12 rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 flex items-center justify-center text-xl">
+                  <span>📈</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black tracking-widest text-emerald-500/60 group-hover:text-emerald-300 transition-colors duration-300 mb-1 block">02</span>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight group-hover:text-emerald-300 transition-colors duration-300">Insights</h3>
-                  <p className="text-xs text-white/60 leading-relaxed font-medium mt-2.5 group-hover:text-white/80 transition-colors duration-300">
+                  <span className="text-xs font-black tracking-widest text-[#85CC14] mb-1 block">02</span>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-tight font-['Outfit',sans-serif]">Insights</h3>
+                  <p className="text-xs text-white/70 leading-relaxed font-normal mt-2">
                     Stay ahead with practical farming guides, market intelligence, expert articles, and timely updates.
                   </p>
                 </div>
               </div>
-              <div className="pt-6 text-left relative z-10">
+              <div className="pt-6">
                 <Link
                   to="/blog"
-                  className="inline-flex w-full items-center justify-between gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-700 border border-emerald-600 text-xs font-black uppercase tracking-wider text-white hover:bg-emerald-600 group-hover:bg-emerald-600 hover:border-emerald-500 group-hover:border-emerald-500 transition-all duration-300"
+                  className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>View Updates</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
 
             {/* 3. Services */}
-            <div className="bg-[#112F20]/50 border border-sky-500/20 hover:border-sky-400 backdrop-blur-sm shadow-xl p-6 rounded-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_-10px_rgba(14,165,233,0.25)] group relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-500/5 blur-xl group-hover:bg-sky-500/15 transition-all duration-500" />
-              <div className="space-y-4 text-left relative z-10">
-                <div className="h-12 w-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-2xl transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)] group-hover:bg-sky-500/20 group-hover:border-sky-400 group-hover:scale-110">
-                  <span className="filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] select-none">🛠️</span>
+            <div className="bg-[#16382B]/70 border border-white/10 hover:border-[#85CC14] rounded-[24px] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group">
+              <div className="space-y-4 text-left">
+                <div className="h-12 w-12 rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 flex items-center justify-center text-xl">
+                  <span>🛠️</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black tracking-widest text-sky-500/60 group-hover:text-sky-300 transition-colors duration-300 mb-1 block">03</span>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight group-hover:text-sky-300 transition-colors duration-300">Services</h3>
-                  <p className="text-xs text-white/60 leading-relaxed font-medium mt-2.5 group-hover:text-white/80 transition-colors duration-300">
-                    Access trusted professional services when and where you need them—from veterinary care to installation.
+                  <span className="text-xs font-black tracking-widest text-[#85CC14] mb-1 block">03</span>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-tight font-['Outfit',sans-serif]">Services</h3>
+                  <p className="text-xs text-white/70 leading-relaxed font-normal mt-2">
+                    Access trusted professional services when and where you need them — from veterinary care to installation.
                   </p>
                 </div>
               </div>
-              <div className="pt-6 text-left relative z-10">
+              <div className="pt-6">
                 <Link
                   to="/services"
-                  className="inline-flex w-full items-center justify-between gap-1.5 px-4 py-2.5 rounded-xl bg-sky-700 border border-sky-600 text-xs font-black uppercase tracking-wider text-white hover:bg-sky-600 group-hover:bg-sky-600 hover:border-sky-500 group-hover:border-sky-500 transition-all duration-300"
+                  className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>Book a Service</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
 
             {/* 4. Community */}
-            <div className="bg-[#112F20]/50 border border-rose-500/20 hover:border-rose-400 backdrop-blur-sm shadow-xl p-6 rounded-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_-10px_rgba(244,63,94,0.25)] group relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-rose-500/5 blur-xl group-hover:bg-rose-500/15 transition-all duration-500" />
-              <div className="space-y-4 text-left relative z-10">
-                <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)] group-hover:bg-rose-500/20 group-hover:border-rose-400 group-hover:scale-110">
-                  <span className="filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] select-none">🤝</span>
+            <div className="bg-[#16382B]/70 border border-white/10 hover:border-[#85CC14] rounded-[24px] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group">
+              <div className="space-y-4 text-left">
+                <div className="h-12 w-12 rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 flex items-center justify-center text-xl">
+                  <span>🤝</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black tracking-widest text-rose-500/60 group-hover:text-rose-300 transition-colors duration-300 mb-1 block">04</span>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight group-hover:text-rose-300 transition-colors duration-300">Community</h3>
-                  <p className="text-xs text-white/60 leading-relaxed font-medium mt-2.5 group-hover:text-white/80 transition-colors duration-300">
+                  <span className="text-xs font-black tracking-widest text-[#85CC14] mb-1 block">04</span>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-tight font-['Outfit',sans-serif]">Community</h3>
+                  <p className="text-xs text-white/70 leading-relaxed font-normal mt-2">
                     Connect with thousands of farmers, experts, and agribusinesses to learn, share, and solve together.
                   </p>
                 </div>
               </div>
-              <div className="pt-6 text-left relative z-10">
+              <div className="pt-6">
                 <Link
                   to="/community"
-                  className="inline-flex w-full items-center justify-between gap-1.5 px-4 py-2.5 rounded-xl bg-rose-700 border border-rose-600 text-xs font-black uppercase tracking-wider text-white hover:bg-rose-600 group-hover:bg-rose-600 hover:border-rose-500 group-hover:border-rose-500 transition-all duration-300"
+                  className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>Connect</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
 
             {/* 5. Academy */}
-            <div className="bg-[#112F20]/50 border border-violet-500/20 hover:border-violet-400 backdrop-blur-sm shadow-xl p-6 rounded-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_-10px_rgba(139,92,246,0.25)] group relative overflow-hidden sm:col-span-2 lg:col-span-1">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/5 blur-xl group-hover:bg-violet-500/15 transition-all duration-500" />
-              <div className="space-y-4 text-left relative z-10">
-                <div className="h-12 w-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-2xl transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)] group-hover:bg-violet-500/20 group-hover:border-violet-400 group-hover:scale-110">
-                  <span className="filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] select-none">🎓</span>
+            <div className="bg-[#16382B]/70 border border-white/10 hover:border-[#85CC14] rounded-[24px] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group sm:col-span-2 lg:col-span-1">
+              <div className="space-y-4 text-left">
+                <div className="h-12 w-12 rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 flex items-center justify-center text-xl">
+                  <span>🎓</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black tracking-widest text-violet-500/60 group-hover:text-violet-300 transition-colors duration-300 mb-1 block">05</span>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight group-hover:text-violet-300 transition-colors duration-300">Academy</h3>
-                  <p className="text-xs text-white/60 leading-relaxed font-medium mt-2.5 group-hover:text-white/80 transition-colors duration-300">
+                  <span className="text-xs font-black tracking-widest text-[#85CC14] mb-1 block">05</span>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-tight font-['Outfit',sans-serif]">Academy</h3>
+                  <p className="text-xs text-white/70 leading-relaxed font-normal mt-2">
                     Master modern practical agriculture through structured learning and expert real-world guidance.
                   </p>
                 </div>
               </div>
-              <div className="pt-6 text-left relative z-10">
+              <div className="pt-6">
                 <Link
                   to="/academy"
-                  className="inline-flex w-full items-center justify-between gap-1.5 px-4 py-2.5 rounded-xl bg-violet-700 border border-violet-600 text-xs font-black uppercase tracking-wider text-white hover:bg-violet-600 group-hover:bg-violet-600 hover:border-violet-500 group-hover:border-violet-500 transition-all duration-300"
+                  className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>Visit Academy</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
@@ -388,82 +532,219 @@ function Index() {
       </section>
 
       {/* ══════════════════════════════════════════
-          3. FEATURED PRODUCTS (Slideshow Layout)
+          3. FEATURED PRODUCTS (Auto-Sliding Group of 3 - 3s Interval)
       ══════════════════════════════════════════ */}
-      <section className="bg-gradient-to-b from-white to-[#FAF9F5] py-12 text-[#0A1E0C] lg:py-16 overflow-hidden">
+      <section 
+        className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
+        onMouseEnter={() => setIsFeaturedHovered(true)}
+        onMouseLeave={() => setIsFeaturedHovered(false)}
+      >
         <div className="container-px mx-auto max-w-7xl">
           
-          {/* Header Row with Navigation Arrows */}
-          <div className="flex items-end justify-between mb-8 text-left">
+          {/* Header Row with Navigation Arrows and Page Indicators */}
+          <div className="flex items-end justify-between mb-6 text-left">
             <div>
-              <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
-                Featured Collection
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+                FEATURED COLLECTION
               </span>
-              <h2 className="mt-3 text-4xl font-black tracking-tight text-[#0A1E0C] sm:text-5xl uppercase leading-none">
-                Farm Essentials
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+                Farm <span className="text-[#6EA810]">Essentials</span>
               </h2>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              {/* Pagination Dots */}
+              <div className="flex gap-1.5 mr-2 max-w-[140px] sm:max-w-none overflow-x-auto no-scrollbar py-1">
+                {Array.from({ length: totalPages }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setFeaturedPageIndex(idx)}
+                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+                      featuredPageIndex === idx
+                        ? "w-8 bg-[#16A34A]"
+                        : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                    aria-label={`Go to group ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
               <button 
-                onClick={() => scroll(productsRef, "left")}
-                className="h-10 w-10 border border-[#0A1E0C]/10 bg-white hover:bg-[#0A1E0C]/5 flex items-center justify-center transition active:scale-95"
-                aria-label="Scroll left"
+                onClick={() => setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages)}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                aria-label="Previous featured showcase"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button 
-                onClick={() => scroll(productsRef, "right")}
-                className="h-10 w-10 border border-[#0A1E0C]/10 bg-white hover:bg-[#0A1E0C]/5 flex items-center justify-center transition active:scale-95"
-                aria-label="Scroll right"
+                onClick={() => setFeaturedPageIndex((prev) => (prev + 1) % totalPages)}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                aria-label="Next featured showcase"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Slideshow Horizontal Container */}
-          <div 
-            ref={productsRef}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6"
-            style={{ scrollSnapType: "x mandatory" }}
-          >
-            {featuredProducts.map((p) => {
-              const slug = p.slug || p.id;
+          {/* Products Grid/Carousel with Touch Swipe & Auto-Slide */}
+          <div className="relative min-h-[220px] md:min-h-[380px] touch-pan-y overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${featuredPageIndex}-${isMobile ? 'm' : 'd'}`}
+                initial={{ opacity: 0, x: 60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -60 }}
+                transition={{ duration: 0.45, ease: "easeInOut" }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -40) {
+                    setFeaturedPageIndex((prev) => (prev + 1) % totalPages);
+                  } else if (info.offset.x > 40) {
+                    setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages);
+                  }
+                }}
+                className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 cursor-grab active:cursor-grabbing"
+              >
+                {currentGroupProducts.map((p) => {
+                  return (
+                    <div
+                      key={p.uniqueKey || p.id}
+                      className="w-full shrink-0 max-w-sm sm:max-w-none mx-auto"
+                    >
+                      <Link
+                        to="/shop"
+                        className="group block relative aspect-square overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl p-2.5 sm:p-4 cursor-pointer"
+                      >
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          loading="lazy"
+                          className="h-full w-full object-contain p-1 sm:p-2 transition-transform duration-500 group-hover:scale-105"
+                        />
+                        {p.badge && (
+                          <span className="absolute left-2 top-2 sm:left-4 sm:top-4 rounded-none bg-[#16A34A] px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white z-10 shadow-sm">
+                            {p.badge}
+                          </span>
+                        )}
+                      </Link>
+                      <div className="mt-2 sm:mt-4 text-left px-1">
+                        {p.category && (
+                          <h4 className="text-[10px] sm:text-xs font-bold text-[#16A34A] uppercase tracking-wider">{p.category}</h4>
+                        )}
+                        <h3 className="text-xs sm:text-base font-bold text-[#0F291E] mt-0.5 line-clamp-1 font-['Outfit',sans-serif]">{p.name}</h3>
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Explore Agroshop Button */}
+          <div className="mt-4 md:mt-8 text-center flex justify-center">
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-[#16A34A]"
+            >
+              <span>Explore Agroshop</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          4. MQULIMA SERVICES CATEGORIES GRID (Pixel-matched to Services Page)
+      ══════════════════════════════════════════ */}
+      <section className="py-10 md:py-14 bg-[#FAFBF9] border-y border-slate-200/60">
+        <div className="container-px mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-left max-w-3xl mb-8">
+            <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+              OUR SERVICES
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+              Everything your farm needs,{" "}
+              <span className="text-[#6EA810]">in one place</span>
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+              Explore six specialist categories delivered by vetted professionals. Pick a category, view the services and get a quotation on WhatsApp in minutes.
+            </p>
+          </div>
+
+          {/* 6 Category Cards Grid (3 Columns on Desktop) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {HOMEPAGE_CATEGORIES.map((cat) => {
+              const IconComponent = cat.icon;
+
               return (
                 <div
-                  key={p.id}
-                  className="w-[280px] sm:w-[320px] shrink-0 snap-start"
+                  key={cat.id}
+                  className="bg-white rounded-[28px] border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between text-left group"
                 >
-                  <Link
-                    to="/shop/product/$slug"
-                    params={{ slug }}
-                    className="group block relative aspect-square overflow-hidden rounded-2xl border border-[#0A1E0C]/5 bg-white shadow-sm transition-all duration-300 hover:shadow-lg p-4"
-                  >
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      loading="lazy"
-                      className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {p.badge && (
-                      <span className="absolute left-3 top-3 rounded-lg bg-[#F5A623] px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white z-10">
-                        {p.badge}
-                      </span>
-                    )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center p-4 text-center backdrop-blur-xs">
-                      <p className="text-xs md:text-sm font-black text-white line-clamp-2 mb-1 px-2 uppercase">
-                        {p.name}
-                      </p>
-                      <span className="text-[9px] font-black uppercase text-[#F5A623] tracking-widest mt-2 border border-[#F5A623]/30 px-3 py-1 rounded-md bg-[#F5A623]/5">
-                        View Product Details
-                      </span>
+                  <div>
+                    {/* Card Image Header with Overlays */}
+                    <div className="relative h-56 w-full overflow-hidden bg-slate-100">
+                      <img
+                        src={cat.image}
+                        alt={cat.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      {/* Gradient overlay on bottom of image for title readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-[#0B2117]/30 to-transparent" />
+
+                      {/* Top Left Circular Category Icon Badge */}
+                      <div className="absolute top-4 left-4 p-2.5 rounded-full bg-[#16A34A] text-white shadow-md flex items-center justify-center">
+                        <IconComponent className="h-5 w-5 stroke-[2]" />
+                      </div>
+
+                      {/* Top Right Translucent Service Count Pill */}
+                      <div className="absolute top-4 right-4 bg-white/85 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/40">
+                        {cat.servicesCountText}
+                      </div>
+
+                      {/* Bottom Left Title Overlay */}
+                      <div className="absolute bottom-4 left-5 right-5">
+                        <h3 className="text-2xl font-bold text-white tracking-tight leading-tight font-['Outfit',sans-serif]">
+                          {cat.title}
+                        </h3>
+                      </div>
                     </div>
-                  </Link>
-                  <div className="mt-4 text-left px-1">
-                    <h4 className="text-xs font-bold text-[#0A1E0C]/60 uppercase">{p.category}</h4>
-                    <h3 className="text-sm font-black text-[#0A1E0C] mt-0.5 line-clamp-1 uppercase">{p.name}</h3>
-                    <p className="text-sm font-black text-[#2D6A4F] mt-1">KES {p.price.toLocaleString()}</p>
+
+                    {/* Card Content Body */}
+                    <div className="p-6">
+                      {/* Description */}
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-6 min-h-[44px]">
+                        {cat.description}
+                      </p>
+
+                      {/* Green Checkmarks List */}
+                      <ul className="space-y-2.5">
+                        {cat.checklist.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-700">
+                            <Check className="h-4 w-4 text-[#16A34A] stroke-[3] shrink-0" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Card Footer Action Buttons */}
+                  <div className="p-6 pt-0">
+                    <Link
+                      to="/services"
+                      search={{ category: cat.id }}
+                      className="w-full py-2.5 px-4 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-sm"
+                    >
+                      <span>View Services</span>
+                      <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
+                    </Link>
                   </div>
                 </div>
               );
@@ -474,97 +755,26 @@ function Index() {
       </section>
 
       {/* ══════════════════════════════════════════
-          4. FEATURED SERVICES (Slideshow Layout)
-      ══════════════════════════════════════════ */}
-      <section className="bg-[#F4F8F5] py-12 text-[#0A1E0C] lg:py-16 overflow-hidden border-y border-[#0A1E0C]/5">
-        <div className="container-px mx-auto max-w-7xl">
-          
-          {/* Header Row */}
-          <div className="flex items-end justify-between mb-8 text-left">
-            <div>
-              <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
-                Premium Support
-              </span>
-              <h2 className="mt-3 text-4xl font-black tracking-tight text-[#0A1E0C] sm:text-5xl uppercase leading-none">
-                Featured Services
-              </h2>
-            </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => scroll(servicesRef, "left")}
-                className="h-10 w-10 border border-[#0A1E0C]/10 bg-white hover:bg-[#0A1E0C]/5 flex items-center justify-center transition active:scale-95"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button 
-                onClick={() => scroll(servicesRef, "right")}
-                className="h-10 w-10 border border-[#0A1E0C]/10 bg-white hover:bg-[#0A1E0C]/5 flex items-center justify-center transition active:scale-95"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Slideshow Horizontal Container */}
-          <div 
-            ref={servicesRef}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6"
-            style={{ scrollSnapType: "x mandatory" }}
-          >
-            {services.map((s) => (
-              <div
-                key={s.id}
-                className="w-[280px] sm:w-[320px] shrink-0 snap-start bg-white border border-[#0A1E0C]/5 p-6 rounded-2xl flex flex-col justify-between shadow-sm hover:shadow-md transition duration-300"
-              >
-                <div className="text-left space-y-4">
-                  <div className="text-3xl">{s.icon}</div>
-                  <div>
-                    <h3 className="text-base font-black text-[#0A1E0C] uppercase tracking-wide">{s.name}</h3>
-                    <p className="text-xs text-[#0A1E0C]/50 font-bold uppercase mt-0.5">{s.price}</p>
-                  </div>
-                  <p className="text-xs md:text-sm text-[#0A1E0C]/75 leading-relaxed font-medium">
-                    {s.description}
-                  </p>
-                </div>
-                <div className="pt-6 text-left">
-                  <Link
-                    to="/services"
-                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#2D6A4F] hover:underline"
-                  >
-                    Book a Service →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
           5. ACADEMY SECTION
       ══════════════════════════════════════════ */}
-      <section className="bg-white py-12 text-[#0A1E0C] lg:py-16 border-b border-[#0A1E0C]/5">
+      <section className="bg-white py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
         <div className="container-px mx-auto max-w-7xl">
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 items-center">
+          <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
             
             {/* Left text */}
             <div className="lg:col-span-6 text-left space-y-6">
-              <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
-                Structured Academy
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-1">
+                STRUCTURED ACADEMY
               </span>
               
-              <h2 className="text-4xl font-black tracking-tight text-[#0A1E0C] sm:text-5xl uppercase leading-none">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
                 Farming is a science. <br />
-                <span className="bg-gradient-to-r from-[#2D6A4F] to-[#52B788] bg-clip-text text-transparent">
+                <span className="text-[#6EA810]">
                   Learn it like one.
                 </span>
               </h2>
 
-              <p className="text-sm text-[#0A1E0C]/75 leading-relaxed font-medium">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
                 Master modern practical agriculture through structured learning, best practices,
                 and real-world guidance designed to help you farm smarter and grow profitably.
                 Go from amateur planter to commercial agribusiness owner.
@@ -573,10 +783,10 @@ function Index() {
               <div className="pt-2">
                 <Link
                   to="/academy"
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#2D6A4F] px-8 py-4 text-xs font-black uppercase tracking-wider text-white hover:bg-[#1b4332] transition hover:scale-[1.02] shadow-md shadow-[#2D6A4F]/20"
+                  className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 shadow-sm cursor-pointer"
                 >
-                  Visit Academy
-                  <ArrowRight className="h-4 w-4" />
+                  <span>Visit Academy</span>
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
@@ -588,11 +798,11 @@ function Index() {
                 { step: "02", name: "Crop Management", desc: "Implement fertilizer application formulas and dynamic pest alert spray matrices." },
                 { step: "03", name: "Agripreneurship", desc: "Gain market access benchmarks, post-harvest logistics, and export certifications." }
               ].map((item) => (
-                <div key={item.step} className="flex gap-4 p-5 border border-[#0A1E0C]/5 rounded-2xl bg-[#FAF9F5] text-left">
-                  <div className="text-2xl font-black text-[#F5A623]">{item.step}</div>
+                <div key={item.step} className="flex gap-4 p-6 border border-slate-200/90 rounded-[24px] bg-white text-left shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div className="text-2xl font-black text-[#6EA810] font-['Outfit',sans-serif]">{item.step}</div>
                   <div>
-                    <h4 className="text-sm font-black uppercase tracking-wide text-[#0A1E0C]">{item.name}</h4>
-                    <p className="text-xs text-[#0A1E0C]/70 mt-1 font-medium leading-relaxed">{item.desc}</p>
+                    <h4 className="text-base font-bold text-[#0F291E] font-['Outfit',sans-serif]">{item.name}</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1 font-normal leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -606,9 +816,9 @@ function Index() {
           6. BRAND STORY / WHY WE EXIST
           (Picture on Right, Story on Left)
       ══════════════════════════════════════════ */}
-      <section className="bg-gradient-to-b from-white to-[#FAF9F5] py-12 text-[#0A1E0C] lg:py-16">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
         <div className="container-px mx-auto max-w-7xl">
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 items-center">
+          <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
             
             {/* Left Story Column */}
             <motion.div 
@@ -618,21 +828,21 @@ function Index() {
               variants={fadeInUp}
               className="lg:col-span-7 text-left space-y-6"
             >
-              <span className="text-xs font-black tracking-widest text-[#F5A623] uppercase">
-                Why we Exist / Brand Story
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-1">
+                WHY WE EXIST
               </span>
-              <h2 className="text-4xl font-black tracking-tight text-[#0A1E0C] sm:text-5xl uppercase leading-none">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
                 Building the Future <br />
-                <span className="bg-gradient-to-r from-[#2D6A4F] to-[#F5A623] bg-clip-text text-transparent">
+                <span className="text-[#6EA810]">
                   of Agriculture
                 </span>
               </h2>
 
-              <h4 className="text-lg font-black text-[#2D6A4F] uppercase tracking-tight">
+              <h4 className="text-base sm:text-lg font-bold text-[#16A34A] uppercase tracking-wide font-['Outfit',sans-serif]">
                 No farmer should have to gamble with their livelihood.
               </h4>
               
-              <div className="space-y-6 text-[#0A1E0C]/80 text-sm md:text-base leading-relaxed font-medium">
+              <div className="space-y-5 text-slate-600 text-sm md:text-base leading-relaxed font-normal">
                 <p>
                   For too long, farmers and agribusinesses have had to navigate fragmented
                   information, disconnected services, scattered markets and countless
@@ -644,11 +854,11 @@ function Index() {
                   and enjoyable.
                 </p>
                 <p>
-                  We're creating Africa's 360° agricultural ecosystem- a place where farmers,
+                  We're creating Africa's 360° agricultural ecosystem — a place where farmers,
                   traders, researchers, service providers and consumers come together to
                   learn, collaborate and grow.
                 </p>
-                <p className="text-xs font-black text-[#F5A623] uppercase tracking-widest">
+                <p className="text-xs sm:text-sm font-bold text-[#35610D] uppercase tracking-wider">
                   Because when everything works together, agriculture works better.
                 </p>
               </div>
@@ -656,10 +866,10 @@ function Index() {
               <div className="pt-4">
                 <Link
                   to="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#2D6A4F] via-[#52B788] to-[#F5A623] px-8 py-4.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-lg shadow-[#52B788]/25 transition hover:scale-[1.03] hover:shadow-xl hover:from-[#1b4332] hover:to-[#e09520]"
+                  className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 shadow-sm cursor-pointer"
                 >
-                  Partner with us
-                  <ArrowRight className="h-4 w-4" />
+                  <span>Partner with us</span>
+                  <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </motion.div>
@@ -670,21 +880,21 @@ function Index() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
-              className="lg:col-span-5 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/5] rounded-3xl overflow-hidden border border-gray-200/50 shadow-2xl"
+              className="lg:col-span-5 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/5] rounded-[28px] overflow-hidden border border-slate-200/90 shadow-xl"
             >
               <img
                 src={heroFarmerWoman}
                 alt="Modern African farming excellence"
                 className="w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-transparent to-transparent flex items-end p-8">
                 <div className="text-white text-left">
-                  <div className="flex items-center gap-1.5 text-[9px] font-black tracking-widest text-[#F5A623] uppercase mb-1">
-                    <TrendingUp className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-1.5 text-xs font-bold tracking-widest text-[#85CC14] uppercase mb-1">
+                    <TrendingUp className="h-4 w-4" />
                     Verified Excellence
                   </div>
-                  <h4 className="text-lg font-black uppercase tracking-wide">Premium Agricultural Support</h4>
-                  <p className="text-xs text-white/70 font-medium mt-0.5">Taking you first class in agronomy training.</p>
+                  <h4 className="text-lg font-bold uppercase tracking-wide font-['Outfit',sans-serif]">Premium Agricultural Support</h4>
+                  <p className="text-xs text-white/80 font-normal mt-0.5">Taking you first class in agronomy training.</p>
                 </div>
               </div>
             </motion.div>
@@ -697,142 +907,175 @@ function Index() {
           7. SOCIAL PROOF & STATS
           (Served in 5 Countries Reach)
       ══════════════════════════════════════════ */}
-      <section className="bg-gradient-to-b from-[#FAF9F5] to-white py-12 text-[#0A1E0C] lg:py-16">
+      <section 
+        className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60"
+        onMouseEnter={() => setIsTestimonialHovered(true)}
+        onMouseLeave={() => setIsTestimonialHovered(false)}
+      >
         <div className="container-px mx-auto max-w-7xl">
           
-          {/* Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl text-left mb-10"
-          >
-            <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
-              Social Proof
-            </span>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#0A1E0C] sm:text-4xl uppercase leading-tight">
-              Loved by Farmers and adored by agricultural experts
-            </h2>
-          </motion.div>
+          {/* Header with Navigation Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 text-left">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="max-w-2xl"
+            >
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+                SOCIAL PROOF
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-[#Outfit,sans-serif]">
+                Loved by farmers, trusted by <span className="text-[#6EA810]">agricultural experts</span>
+              </h2>
+            </motion.div>
 
-        </div>
-
-        {/* Testimonial Autoscrolling Row */}
-        <div className="relative w-full overflow-hidden marquee-wrapper py-6">
-          <style dangerouslySetInnerHTML={{__html: `
-            @keyframes marquee-testimonials {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-33.3333%); }
-            }
-            .animate-marquee-testimonials {
-              display: flex;
-              width: max-content;
-              animation: marquee-testimonials 40s linear infinite;
-            }
-            .marquee-wrapper:hover .animate-marquee-testimonials {
-              animation-play-state: paused;
-            }
-          `}} />
-          
-          <div className="animate-marquee-testimonials">
-            {[1, 2, 3].map((setIdx) => (
-              <div key={setIdx} className="flex gap-6 shrink-0 pr-6">
-                {testimonials.map((t, idx) => (
-                  <div
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Pagination Dots */}
+              <div className="flex gap-1.5 mr-2 max-w-[140px] sm:max-w-none overflow-x-auto no-scrollbar py-1">
+                {Array.from({ length: totalTestimonialPages }).map((_, idx) => (
+                  <button
                     key={idx}
-                    className={`relative shrink-0 w-[310px] sm:w-[380px] rounded-[24px] border bg-gradient-to-br ${t.color} p-7 md:p-8 shadow-xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-2xl transition-all duration-300`}
+                    onClick={() => setTestimonialPageIndex(idx)}
+                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+                      testimonialPageIndex === idx
+                        ? "w-8 bg-[#16A34A]"
+                        : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                    aria-label={`Go to testimonial group ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setTestimonialPageIndex((prev) => (prev - 1 + totalTestimonialPages) % totalTestimonialPages)}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                aria-label="Previous testimonials"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={() => setTestimonialPageIndex((prev) => (prev + 1) % totalTestimonialPages)}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                aria-label="Next testimonials"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Testimonial Cards Carousel Grid with Framer Motion Auto-Slide + Touch Swipe */}
+          <div className="relative min-h-[220px] touch-pan-y overflow-hidden mb-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${testimonialPageIndex}-${isMobile ? 'm' : 'd'}`}
+                initial={{ opacity: 0, x: 60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -60 }}
+                transition={{ duration: 0.45, ease: "easeInOut" }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -40) {
+                    setTestimonialPageIndex((prev) => (prev + 1) % totalTestimonialPages);
+                  } else if (info.offset.x > 40) {
+                    setTestimonialPageIndex((prev) => (prev - 1 + totalTestimonialPages) % totalTestimonialPages);
+                  }
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 cursor-grab active:cursor-grabbing"
+              >
+                {currentGroupTestimonials.map((t) => (
+                  <div
+                    key={t.uniqueKey || t.author}
+                    className="relative w-full rounded-[24px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm hover:shadow-xl flex flex-col justify-between transition-all duration-300 text-left"
                   >
-                    <div className="text-left space-y-5">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex gap-0.5">
+                        <div className="flex gap-1">
                           {[...Array(t.stars)].map((_, i) => (
-                            <Star key={i} className="h-4.5 w-4.5 fill-amber-400 text-amber-400" />
+                            <Star key={i} className="h-4 w-4 fill-[#F5A623] text-[#F5A623]" />
                           ))}
                         </div>
-                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-white/10 text-white tracking-widest border border-white/5">
+                        <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-[#E5F5D0] text-[#35610D]">
                           {t.badge}
                         </span>
                       </div>
-
-                      <span className="text-6xl text-white/10 font-serif absolute -top-1.5 left-4 pointer-events-none select-none">
-                        “
-                      </span>
                       
-                      <p className="relative z-10 text-xs sm:text-sm leading-relaxed text-white/90 italic font-semibold">
-                        {t.quote}
+                      <p className="text-xs sm:text-sm leading-relaxed text-slate-700 font-normal italic">
+                        "{t.quote}"
                       </p>
                     </div>
 
-                    <div className="mt-8 pt-4 border-t border-white/10 flex items-center gap-3.5">
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3.5">
                       <img
                         src={t.image}
                         alt={t.author}
-                        className="h-11 w-11 rounded-full object-cover border-2 border-white/20 shadow-md shrink-0 bg-slate-800"
+                        className="h-10 w-10 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
                       />
-                      <div className="text-left">
-                        <div className="text-xs font-black uppercase text-white tracking-wide">
+                      <div>
+                        <div className="text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">
                           {t.author}
                         </div>
-                        <div className="text-[10px] text-white/60 font-semibold uppercase">
+                        <div className="text-[11px] text-slate-500 font-normal">
                           {t.role}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
-            ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
 
-        <div className="container-px mx-auto max-w-7xl">
-
-          {/* Tech-Style Stats Board */}
+          {/* Stats Board */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6"
+            className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6"
           >
             {[
               {
                 count: "47",
                 label: "Counties Reached",
                 desc: "Full Kenyan national coverage",
-                color: "bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200/60 dark:from-amber-950/20 dark:to-slate-900 dark:border-amber-900/30 text-amber-950 dark:text-amber-300",
-                iconColor: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/20 dark:text-amber-400"
+                icon: MapPin
               },
               {
-                count: "1000+",
+                count: "1,000+",
                 label: "Products Listed",
                 desc: "100% verified quality inputs",
-                color: "bg-gradient-to-br from-cyan-50 to-cyan-100/50 border-cyan-200/60 dark:from-cyan-950/20 dark:to-slate-900 dark:border-cyan-900/30 text-cyan-900 dark:text-cyan-300",
-                iconColor: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/20 dark:text-cyan-400"
+                icon: ShoppingBag
               },
               {
                 count: "200+",
                 label: "Knowledge Articles",
                 desc: "Agronomist approved research",
-                color: "bg-gradient-to-br from-violet-50 to-violet-100/50 border-violet-200/60 dark:from-violet-950/20 dark:to-slate-900 dark:border-violet-900/30 text-violet-900 dark:text-violet-300",
-                iconColor: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/20 dark:text-violet-400"
+                icon: BookOpen
               },
-            ].map((s, idx) => (
-              <div 
-                key={idx} 
-                className={`flex flex-col items-start text-left p-6 rounded-2xl border ${s.color} shadow-sm hover:shadow-md transition-all duration-300`}
-              >
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${s.iconColor} mb-4`}>
-                  <CheckCircle className="h-5 w-5" />
+            ].map((s, idx) => {
+              const IconComp = s.icon;
+              return (
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between gap-4 text-left p-6 rounded-[24px] border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <div>
+                    <div className="text-3xl font-black text-[#0F291E] leading-none tracking-tight font-['Outfit',sans-serif]">{s.count}</div>
+                    <div className="mt-1.5 text-xs font-bold uppercase tracking-wider text-[#35610D]">
+                      {s.label}
+                    </div>
+                    <div className="text-xs mt-0.5 font-normal text-slate-500">{s.desc}</div>
+                  </div>
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E5F5D0] text-[#35610D]">
+                    <IconComp className="h-6 w-6 stroke-[2.5]" />
+                  </div>
                 </div>
-                <div className="text-3xl font-black leading-none tracking-tight">{s.count}</div>
-                <div className="mt-2 text-[10px] font-black uppercase tracking-wider opacity-85">
-                  {s.label}
-                </div>
-                <div className="text-[10px] mt-1 font-medium opacity-60">{s.desc}</div>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
 
         </div>
@@ -841,11 +1084,11 @@ function Index() {
       {/* ══════════════════════════════════════════
           8. COMMUNITY & KNOWLEDGE HUB
       ══════════════════════════════════════════ */}
-      <section className="bg-gradient-to-b from-white to-[#FAF9F5] py-12 text-[#0A1E0C] lg:py-16">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
         <div className="container-px mx-auto max-w-7xl">
           
           {/* Header */}
-          <div className="grid gap-6 lg:grid-cols-12 lg:gap-12 items-end mb-10 text-left">
+          <div className="grid gap-6 lg:grid-cols-12 lg:gap-12 items-end mb-6 text-left">
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -853,11 +1096,11 @@ function Index() {
               transition={{ duration: 0.6 }}
               className="lg:col-span-7"
             >
-              <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
-                Community and Knowledge Hub
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+                KNOWLEDGE HUB & JOURNALS
               </span>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-[#0A1E0C] sm:text-4xl leading-tight uppercase">
-                Agronomy journals that keep farmers in the know
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+                Agronomy journals that keep <span className="text-[#6EA810]">farmers in the know</span>
               </h2>
             </motion.div>
             <motion.div 
@@ -865,7 +1108,7 @@ function Index() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="lg:col-span-5 text-xs md:text-sm text-[#0A1E0C]/75 leading-relaxed font-medium"
+              className="lg:col-span-5 text-xs md:text-sm text-slate-600 leading-relaxed font-normal"
             >
               <p>
                 The difference between crop failure and record-breaking yields is science-backed information. Our Journal aggregates practical research files from expert soil agronomists, veterinary surgeons, and market intelligence directors.
@@ -882,37 +1125,38 @@ function Index() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-[#0A1E0C]/5 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md text-left"
+                className="group flex flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl text-left"
               >
-                <div className="relative aspect-[16/10] overflow-hidden bg-white">
+                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                   <img
                     src={(a as any).coverImage || (a as any).image}
                     alt={a.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-103"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
-                      e.currentTarget.src = "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500";
+                      e.currentTarget.src = "/mqulima_news_banner.png";
                     }}
                   />
-                  <span className="absolute left-4 top-4 rounded-lg bg-[#0A1E0C] px-3 py-1 text-[9px] font-black uppercase tracking-wider text-white">
+                  <span className="absolute left-4 top-4 rounded-full bg-[#0F291E] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                     {a.category}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-6">
-                  <span className="text-[10px] font-black uppercase text-[#0A1E0C]/45 tracking-wider">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
                     {a.readTime.includes("read") ? a.readTime : `${a.readTime} read`}
                   </span>
-                  <h3 className="mt-2.5 text-sm md:text-base font-black text-[#0A1E0C] line-clamp-2 group-hover:text-[#2D6A4F] transition-colors uppercase leading-snug">
+                  <h3 className="mt-2 text-base font-bold text-[#0F291E] line-clamp-2 group-hover:text-[#16A34A] transition-colors font-['Outfit',sans-serif] leading-snug">
                     {a.title}
                   </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-[#0A1E0C]/65 line-clamp-3 font-medium flex-1">
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600 line-clamp-3 font-normal flex-1">
                     {a.excerpt}
                   </p>
                   
                   <Link
                     to="/blog"
-                    className="mt-6 w-full py-3 bg-[#F5A623] hover:bg-[#E0951F] text-[#0A1E0C] font-black uppercase tracking-wider text-xs rounded-xl transition text-center shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="mt-6 w-full py-2.5 px-4 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
-                    Read article <ArrowRight className="h-4 w-4" />
+                    <span>Read article</span>
+                    <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
                   </Link>
                 </div>
               </motion.article>
@@ -925,7 +1169,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           9. CONVERSION PATH
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#FAF9F5] to-[#E9E4DB] py-12 text-left">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-left">
         <div className="container-px mx-auto max-w-7xl">
           
           <motion.div 
@@ -933,43 +1177,36 @@ function Index() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="relative overflow-hidden bg-gradient-to-br from-[#091F14] via-[#0D2E1E] to-[#040C06] text-white rounded-[32px] p-12 md:p-20 shadow-2xl border border-white/10"
+            className="relative overflow-hidden bg-[#0F291E] text-white rounded-[32px] p-6 md:p-10 shadow-2xl border border-white/10"
           >
-            {/* Stripe-style glowing atmosphere */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#52B788]/15 blur-[150px] pointer-events-none" />
-            <div className="absolute -right-32 -bottom-32 h-[300px] w-[300px] rounded-full bg-[#F5A623]/10 blur-[100px] pointer-events-none" />
-
             <div className="relative z-10 max-w-3xl space-y-6">
-              <span className="text-xs font-black tracking-widest text-[#F5A623] uppercase">
-                Conversion Path
+              <span className="inline-block rounded-full bg-[#85CC14]/20 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14] border border-[#85CC14]/30">
+                JOIN THE ECOSYSTEM
               </span>
-              <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl uppercase leading-none">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif] leading-tight">
                 Ready to Experience Agriculture Differently?
               </h2>
               
-              <p className="text-xs md:text-sm leading-relaxed text-white/80 max-w-2xl font-medium">
+              <p className="text-xs md:text-sm leading-relaxed text-white/85 max-w-2xl font-normal">
                 Agriculture is changing, and so should the way we learn, connect, and grow.
                 Mqulima brings together practical knowledge, trusted services, quality products,
                 and a thriving community into one modern ecosystem built for everyone in
-                agriculture. Whether you're producing, processing, trading, or simply passionate
-                about the sector, you'll find the tools, people, and opportunities to move
-                forward with confidence. Join us as we build the future of African agriculture-
-                together.
+                agriculture.
               </p>
 
-              <div className="flex flex-wrap items-center justify-start gap-4 pt-4">
+              <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-4 pt-4 w-full">
                 <Link
                   to="/auth/sign-up"
-                  className="group inline-flex items-center gap-2.5 rounded-xl bg-[#F5A623] px-8 py-4.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition hover:bg-[#e09520] hover:scale-[1.02] active:scale-100"
+                  className="w-full sm:w-auto py-3.5 px-3 sm:px-8 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-extrabold text-[11px] sm:text-sm transition duration-200 shadow-lg shadow-[#85CC14]/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 text-center"
                 >
-                  Join Us
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <span>Join Mqulima</span>
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.5] shrink-0" />
                 </Link>
                 <Link
                   to="/tools"
-                  className="inline-flex items-center gap-2.5 rounded-xl border border-white/20 bg-white/5 px-8 py-4.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/15"
+                  className="w-full sm:w-auto py-3.5 px-3 sm:px-8 rounded-full bg-white/10 border border-white/20 text-white font-bold text-[11px] sm:text-sm hover:bg-white/20 transition duration-200 backdrop-blur-md flex items-center justify-center text-center"
                 >
-                  Explore the Ecosystem
+                  Explore Ecosystem
                 </Link>
               </div>
             </div>

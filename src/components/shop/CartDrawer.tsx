@@ -67,8 +67,13 @@ export function CartDrawer() {
 
   // Proforma Invoice Modal
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
-  const [invoiceNumber] = useState(() => `MQ-CART-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [invoiceDate] = useState(() => new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' }));
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+
+  useEffect(() => {
+    setInvoiceNumber(`MQ-CART-${Math.floor(100000 + Math.random() * 900000)}`);
+    setInvoiceDate(new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
 
   const { user } = useAuth();
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
@@ -157,7 +162,7 @@ export function CartDrawer() {
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
     const code = couponCode.trim().toUpperCase();
-    if (code === "MUSEMBI10" || code === "SHULAMITE10" || code === "KIRWA10") {
+    if (code === "MUSEMBI10" || code === "SHULAMITE10") {
       setAppliedDiscount(0.10); // 10% off
       setActiveCoupon(code);
       toast.success(`Coupon ${code} applied successfully! 10% discount subtracted.`);
@@ -166,7 +171,7 @@ export function CartDrawer() {
       setActiveCoupon(code);
       toast.success("Welcome coupon applied successfully!");
     } else {
-      toast.error("Invalid coupon code. Try WELCOME5, MUSEMBI10 or KIRWA10");
+      toast.error("Invalid coupon code. Try WELCOME5 or MUSEMBI10");
     }
     setCouponCode("");
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import {
   Package,
@@ -34,18 +34,12 @@ import { getProducts } from "@/lib/api/products.server";
 import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCategoriesList } from "@/lib/api/admin-shop.server";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({
-    meta: [
-      { title: "My Dashboard · Mqulima" },
-      {
-        name: "description",
-        content:
-          "Track orders, manage bookings and view personalized recommendations for your farm.",
-      },
-    ],
-  }),
-  component: Dashboard,
+  component: RedirectToHome,
 });
+
+function RedirectToHome() {
+  return <Navigate to="/" replace />;
+}
 
 function Dashboard() {
   const { user, logout, isLoading } = useAuth();
@@ -99,7 +93,12 @@ function Dashboard() {
     }
   });
 
-  if (isLoading) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FCFBF4]">
         <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
@@ -128,22 +127,29 @@ function Dashboard() {
 
   return (
     <AppLayout>
-      <section className="bg-gradient-to-br from-forest to-primary py-12 text-forest-foreground">
-        <div className="container-px mx-auto max-w-7xl">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
-                Welcome back
+      {/* =========================================================================
+         DASHBOARD HERO BANNER
+         ========================================================================= */}
+      <section className="bg-[#0F291E] py-12 md:py-16 text-white border-b border-white/10 relative overflow-hidden">
+        {/* Ambient glow effects */}
+        <div className="absolute top-0 right-1/4 h-64 w-64 rounded-full bg-[#85CC14]/10 blur-[100px] pointer-events-none" />
+        
+        <div className="container-px mx-auto max-w-7xl relative z-10">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="text-left space-y-2">
+              <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14]">
+                FARMER DASHBOARD
               </span>
-              <h1 className="mt-2 text-3xl font-extrabold md:text-4xl">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
                 Karibu, {user.name.split(" ")[0]} 👋
               </h1>
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-forest-foreground/80">
-                <MapPin className="h-3.5 w-3.5" /> {user.county} · {user.farmSize} · {user.crops} &{" "}
-                {user.livestock}
+              <p className="flex items-center gap-2 text-xs sm:text-sm text-white/80 font-normal">
+                <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" /> 
+                <span>{user.county} · {user.farmSize} · {user.crops} & {user.livestock}</span>
               </p>
             </div>
-            <div className="flex gap-3">
+
+            <div className="flex flex-wrap items-center gap-3">
               <Stat label="Loyalty points" value="2,340" icon={Award} />
               <Stat label="Yield this season" value="+38%" icon={TrendingUp} />
             </div>
@@ -151,11 +157,13 @@ function Dashboard() {
         </div>
       </section>
 
-      {(user.role === "admin" || user.role === "super_admin") && (
-        <section className="container-px mx-auto max-w-7xl pt-12">
-          <AdminFeaturedProductsPanel />
-        </section>
-      )}
+      {/* Main Dashboard Background */}
+      <div className="bg-[#FAFBF9] min-h-screen py-12 md:py-16">
+        {(user.role === "admin" || user.role === "super_admin") && (
+          <section className="container-px mx-auto max-w-7xl pb-10">
+            <AdminFeaturedProductsPanel />
+          </section>
+        )}
 
       <section className="container-px mx-auto max-w-7xl py-12">
         <div className="grid gap-6 lg:grid-cols-3">
@@ -168,25 +176,25 @@ function Dashboard() {
           >
             <div className="space-y-4">
               {/* Connection Status & Mode */}
-              <div className="flex items-center justify-between rounded-xl bg-secondary/50 px-4 py-3">
+              <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-left">
                 <div>
-                  <div className="text-sm font-semibold text-foreground">System Status</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">System Status</div>
+                  <div className="text-[11px] text-slate-500 font-normal">
                     {isInstalled ? "Running as standalone app" : "Running in browser"}
                   </div>
                 </div>
                 <div
                   className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                    isOnline ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
+                    isOnline ? "bg-[#E5F5D0] text-[#35610D]" : "bg-rose-100 text-rose-700"
                   }`}
                 >
                   {isOnline ? (
                     <>
-                      <Wifi className="h-3 w-3 text-success" /> Online
+                      <Wifi className="h-3 w-3 text-[#35610D]" /> Online
                     </>
                   ) : (
                     <>
-                      <WifiOff className="h-3 w-3 text-destructive" /> Offline
+                      <WifiOff className="h-3 w-3 text-rose-600" /> Offline
                     </>
                   )}
                 </div>
@@ -194,36 +202,36 @@ function Dashboard() {
 
               {/* Install Button if Installable */}
               {isInstallable && (
-                <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 text-center">
-                  <p className="text-xs font-medium text-foreground mb-3">
+                <div className="rounded-2xl border border-[#85CC14]/40 bg-[#85CC14]/10 p-4 text-center">
+                  <p className="text-xs font-medium text-[#0F291E] mb-3">
                     Install Mqulima on your device for fast, offline-capable access to your farm
                     tools.
                   </p>
                   <button
                     onClick={triggerInstall}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-gold-foreground transition hover:bg-gold/80"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] px-4 py-2.5 text-xs font-bold text-[#0B2117] transition shadow-sm cursor-pointer"
                   >
-                    <Download className="h-3.5 w-3.5" /> Install App
+                    <Download className="h-4 w-4 stroke-[2.5]" /> Install App
                   </button>
                 </div>
               )}
 
               {isInstalled && !isInstallable && (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center text-xs font-medium text-primary">
+                <div className="rounded-2xl border border-[#85CC14]/30 bg-[#E5F5D0] p-3 text-center text-xs font-bold text-[#35610D]">
                   ✓ Mqulima is installed on your device
                 </div>
               )}
 
               {/* Simulated Notification Toggles */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="space-y-3 pt-2 text-left">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Alert Subscriptions
                 </h4>
 
                 <div className="flex items-center justify-between">
                   <div className="pr-2">
-                    <div className="text-sm font-semibold text-foreground">Sowing Windows</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs font-bold text-[#0F291E]">Sowing Windows</div>
+                    <div className="text-[11px] text-slate-500 font-normal">
                       Alerts for perfect planting times
                     </div>
                   </div>
@@ -235,8 +243,8 @@ function Dashboard() {
 
                 <div className="flex items-center justify-between">
                   <div className="pr-2">
-                    <div className="text-sm font-semibold text-foreground">Market Rates</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs font-bold text-[#0F291E]">Market Rates</div>
+                    <div className="text-[11px] text-slate-500 font-normal">
                       Daily updates for crop prices
                     </div>
                   </div>
@@ -248,8 +256,8 @@ function Dashboard() {
 
                 <div className="flex items-center justify-between">
                   <div className="pr-2">
-                    <div className="text-sm font-semibold text-foreground">AI Weather Alerts</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs font-bold text-[#0F291E]">AI Weather Alerts</div>
+                    <div className="text-[11px] text-slate-500 font-normal">
                       Extreme weather warning notifications
                     </div>
                   </div>
@@ -264,7 +272,7 @@ function Dashboard() {
                     logout();
                     toast.info("Signed out");
                   }}
-                  className="mt-2 w-full rounded-lg border border-border py-2 text-xs font-bold text-foreground transition hover:bg-secondary"
+                  className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 py-2.5 text-xs font-bold text-rose-700 transition cursor-pointer"
                 >
                   Sign out
                 </button>
@@ -275,16 +283,16 @@ function Dashboard() {
           <Card title="My Orders" icon={Package} cta="View all" link="/shop">
             {ordersLoading ? (
               <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
               </div>
             ) : !orders || orders.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground">No orders yet</div>
+              <div className="text-center py-4 text-xs text-slate-400">No orders yet</div>
             ) : (
               orders.map((o) => {
-                let color = "bg-gold/20 text-gold-foreground";
-                if (o.status === "delivered") color = "bg-success/15 text-success";
-                if (o.status === "cancelled") color = "bg-destructive/15 text-destructive";
+                let color = "bg-amber-100 text-amber-800";
+                if (o.status === "delivered") color = "bg-[#E5F5D0] text-[#35610D]";
+                if (o.status === "cancelled") color = "bg-rose-100 text-rose-700";
                 return (
                   <Row key={o.id} title={o.item} sub={o.id} chip={o.status} chipClass={color} />
                 );
@@ -295,16 +303,16 @@ function Dashboard() {
           <Card title="Upcoming Bookings" icon={Calendar} cta="Book a service" link="/services">
             {bookingsLoading ? (
               <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
               </div>
             ) : !bookings || bookings.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground">No bookings yet</div>
+              <div className="text-center py-4 text-xs text-slate-400">No bookings yet</div>
             ) : (
               bookings.map((o) => {
-                let color = "bg-primary/15 text-primary";
-                if (o.status === "completed") color = "bg-success/15 text-success";
-                if (o.status === "cancelled") color = "bg-destructive/15 text-destructive";
+                let color = "bg-sky-100 text-sky-800";
+                if (o.status === "completed") color = "bg-[#E5F5D0] text-[#35610D]";
+                if (o.status === "cancelled") color = "bg-rose-100 text-rose-700";
                 return (
                   <Row key={o.id} title={o.item} sub={o.id} chip={`${o.status} (${o.scheduledDate})`} chipClass={color} />
                 );
@@ -315,11 +323,11 @@ function Dashboard() {
           <Card title="Notifications" icon={Bell} cta="Mark all read" link="/dashboard">
             {notificationsLoading ? (
               <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
-                <div className="h-10 bg-secondary/50 rounded-xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
               </div>
             ) : !notifications || notifications.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground">No notifications</div>
+              <div className="text-center py-4 text-xs text-slate-400">No notifications</div>
             ) : (
               notifications.map((n) => (
                 <Row
@@ -327,7 +335,7 @@ function Dashboard() {
                   title={n.title}
                   sub={n.sub}
                   chip={n.readAt ? "Read" : "Unread"}
-                  chipClass={n.readAt ? "bg-secondary text-muted-foreground" : "bg-gold/20 text-gold-foreground"}
+                  chipClass={n.readAt ? "bg-slate-100 text-slate-500" : "bg-[#E5F5D0] text-[#35610D]"}
                   onClick={!n.readAt ? () => markReadMutation.mutate(n.id) : undefined}
                 />
               ))
@@ -344,7 +352,7 @@ function Dashboard() {
                 title={p.name}
                 sub={`KES ${p.price.toLocaleString()}`}
                 chip="Save 5%"
-                chipClass="bg-gold/20 text-gold-foreground"
+                chipClass="bg-[#E5F5D0] text-[#35610D]"
               />
             ))}
           </Card>
@@ -360,38 +368,41 @@ function Dashboard() {
           </Card>
 
           <Card title="Farm Profile" icon={MapPin} cta="Edit profile" link="/dashboard">
-            <ul className="space-y-3 text-sm">
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">County</span>
-                <span className="font-semibold">Uasin Gishu</span>
+            <ul className="space-y-3 text-xs sm:text-sm text-left">
+              <li className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">County</span>
+                <span className="font-bold text-[#0F291E]">{user.county || "Uasin Gishu"}</span>
               </li>
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Farm size</span>
-                <span className="font-semibold">4 acres</span>
+              <li className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Farm size</span>
+                <span className="font-bold text-[#0F291E]">{user.farmSize || "4 acres"}</span>
               </li>
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Crops</span>
-                <span className="font-semibold">Maize, Beans</span>
+              <li className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Crops</span>
+                <span className="font-bold text-[#0F291E]">{user.crops || "Maize, Beans"}</span>
               </li>
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Livestock</span>
-                <span className="font-semibold">3 dairy cows</span>
+              <li className="flex justify-between py-1">
+                <span className="text-slate-500">Livestock</span>
+                <span className="font-bold text-[#0F291E]">{user.livestock || "3 dairy cows"}</span>
               </li>
             </ul>
           </Card>
         </div>
       </section>
+      </div>
     </AppLayout>
   );
 }
 
 function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 backdrop-blur">
-      <Icon className="h-5 w-5 text-gold" />
-      <div>
-        <div className="text-lg font-extrabold text-gold">{value}</div>
-        <div className="text-[10px] uppercase tracking-wider text-forest-foreground/70">
+    <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 border border-white/15 backdrop-blur-md">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#85CC14]/20 text-[#85CC14]">
+        <Icon className="h-5 w-5 stroke-[2.5]" />
+      </div>
+      <div className="text-left">
+        <div className="text-xl font-black text-[#85CC14] font-['Outfit',sans-serif] leading-none">{value}</div>
+        <div className="text-[10px] uppercase font-bold tracking-wider text-white/70 mt-1">
           {label}
         </div>
       </div>
@@ -413,17 +424,21 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-card">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold uppercase tracking-wider text-forest">{title}</h3>
+    <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left">
+      <div>
+        <div className="mb-5 flex items-center justify-between pb-3.5 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5F5D0] text-[#35610D]">
+              <Icon className="h-4 w-4 stroke-[2.5]" />
+            </div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F291E] font-['Outfit',sans-serif]">{title}</h3>
+          </div>
+          <Link to={link} className="text-xs font-bold text-[#16A34A] hover:text-[#0F291E] hover:underline transition-colors">
+            {cta}
+          </Link>
         </div>
-        <Link to={link} className="text-xs font-semibold text-blue hover:underline">
-          {cta}
-        </Link>
+        <div className="space-y-3">{children}</div>
       </div>
-      <div className="space-y-2.5">{children}</div>
     </div>
   );
 }
@@ -444,13 +459,13 @@ function Row({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3 ${
-        onClick ? "cursor-pointer hover:bg-secondary/70 transition" : ""
+      className={`flex items-center justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-left ${
+        onClick ? "cursor-pointer hover:bg-slate-100 transition-colors" : ""
       }`}
     >
       <div className="min-w-0">
-        <div className="truncate text-sm font-semibold text-foreground">{title}</div>
-        <div className="truncate text-xs text-muted-foreground">{sub}</div>
+        <div className="truncate text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">{title}</div>
+        <div className="truncate text-[11px] text-slate-500 font-normal mt-0.5">{sub}</div>
       </div>
       {chip && (
         <span
@@ -498,7 +513,6 @@ function AdminFeaturedProductsPanel() {
   const categories = categoriesData || [];
 
   const toggleFeatureMutation = useMutation({
-    patternName: "Toggle Featured Status",
     mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
       const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
       return adminUpdateProduct({
@@ -608,16 +622,16 @@ function AdminFeaturedProductsPanel() {
   });
 
   return (
-    <div className="rounded-3xl border border-emerald-100 bg-white p-6 sm:p-8 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 pb-6 mb-6">
+    <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm text-left">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-            <Star className="h-3.5 w-3.5 fill-emerald-600 text-emerald-600 animate-pulse" /> Admin Portal
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-bold text-[#35610D]">
+            <Star className="h-3.5 w-3.5 fill-[#35610D] text-[#35610D] animate-pulse" /> Admin Portal
           </span>
-          <h2 className="mt-2 text-2xl font-extrabold text-[#0D2A1C] font-serif">
+          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-[#0F291E] font-['Outfit',sans-serif]">
             Manage Featured Collection
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Filter by category to add, edit, or remove featured products on the platform.
           </p>
         </div>

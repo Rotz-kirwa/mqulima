@@ -1,18 +1,16 @@
 import postgres from "postgres";
 import process from "node:process";
 
-let sql: ReturnType<typeof postgres>;
+let sql: ReturnType<typeof postgres> | null = null;
 
 export function getDb() {
-  console.log("[SERVER] getDb() called. DATABASE_URL = ", process.env.DATABASE_URL);
   if (!sql) {
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = process.env.DATABASE_URL || "postgresql://mqulima:password@localhost:5432/mqulima_dev";
+
     if (!connectionString) {
-      throw new Error(
-        "DATABASE_URL is not set. Add it to .env:\n" +
-          "DATABASE_URL=postgresql://mqulima:password@localhost:5433/mqulima_dev"
-      );
+      throw new Error("[FATAL] Unable to initialize Admin PostgreSQL pool: DATABASE_URL is missing or unconfigured.");
     }
+
     const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
     sql = postgres(connectionString, {
       max: 10,
@@ -25,3 +23,4 @@ export function getDb() {
 }
 
 export type Sql = ReturnType<typeof postgres>;
+

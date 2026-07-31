@@ -3,7 +3,7 @@ import { setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import * as jose from "jose";
-import { getDb } from "@/lib/db.server";
+import { getDb } from "../db.server";
 
 const COOKIE_NAME = "mq_session";
 
@@ -15,7 +15,7 @@ function getJwtSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-import { SignUpSchema, SignInSchema } from "@/lib/auth-shop-shared";
+import { SignUpSchema, SignInSchema } from "../auth-shop-shared";
 
 export interface AuthErrorResponse {
   error: string;
@@ -31,20 +31,56 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   const cleanPhone = data.phoneNumber.replace(/\s+/g, ""); // Remove formatting spaces e.g. +2547XXXXXXXX
   const cleanId = data.nationalId.trim();
 
-  // 1. Conflict Check: Email
-  const [existingEmail] = await sql`SELECT 1 FROM users WHERE LOWER(email) = ${cleanEmail}`;
+  // 0. Purge any soft-deleted profiles matching email, phone, or national ID from both tables
+  const softDeletedIds = await sql`
+    SELECT id FROM profiles
+    WHERE deleted_at IS NOT NULL
+      AND (LOWER(email) = ${cleanEmail} OR phone = ${cleanPhone} OR id_number = ${cleanId})
+  `;
+  if (softDeletedIds.length > 0) {
+    const ids = softDeletedIds.map(r => r.id);
+    await sql`DELETE FROM users WHERE id = ANY(${ids})`;
+    await sql`DELETE FROM profiles WHERE id = ANY(${ids})`;
+  }
+
+  // 0. Auto-purge any stale soft-deleted or orphaned profile/user records matching email/phone/nationalId
+  await sql`
+    DELETE FROM profiles 
+    WHERE deleted_at IS NOT NULL 
+      AND (LOWER(email) = ${cleanEmail} OR phone = ${cleanPhone} OR id_number = ${cleanId})
+  `;
+  await sql`
+    DELETE FROM users 
+    WHERE (LOWER(email) = ${cleanEmail} OR phone_number = ${cleanPhone} OR national_id = ${cleanId})
+      AND id NOT IN (SELECT id FROM profiles)
+  `;
+
+  // 1. Conflict Check: Email across both users and profiles
+  const [existingEmail] = await sql`
+    SELECT 1 FROM users WHERE LOWER(email) = ${cleanEmail}
+    UNION
+    SELECT 1 FROM profiles WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
+  `;
   if (existingEmail) {
     return { error: "An account with this email already exists", field: "email" };
   }
 
-  // 2. Conflict Check: Phone
-  const [existingPhone] = await sql`SELECT 1 FROM users WHERE phone_number = ${cleanPhone}`;
+  // 2. Conflict Check: Phone across both users and profiles
+  const [existingPhone] = await sql`
+    SELECT 1 FROM users WHERE phone_number = ${cleanPhone}
+    UNION
+    SELECT 1 FROM profiles WHERE phone = ${cleanPhone} AND deleted_at IS NULL
+  `;
   if (existingPhone) {
     return { error: "An account with this phone number already exists", field: "phoneNumber" };
   }
 
-  // 3. Conflict Check: National ID
-  const [existingId] = await sql`SELECT 1 FROM users WHERE national_id = ${cleanId}`;
+  // 3. Conflict Check: National ID across both users and profiles
+  const [existingId] = await sql`
+    SELECT 1 FROM users WHERE national_id = ${cleanId}
+    UNION
+    SELECT 1 FROM profiles WHERE id_number = ${cleanId} AND deleted_at IS NULL
+  `;
   if (existingId) {
     return { error: "An account with this national ID already exists", field: "nationalId" };
   }

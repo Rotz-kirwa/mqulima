@@ -1,11 +1,8 @@
-import { useState, useEffect } from "react";
+import { useLocation } from "@tanstack/react-router";
 
 export function WhatsAppButton() {
-  const [isShop, setIsShop] = useState(false);
-
-  useEffect(() => {
-    setIsShop(window.location.pathname.startsWith("/shop"));
-  }, []);
+  const location = useLocation();
+  const isShop = location.pathname.startsWith("/shop");
 
   return (
     <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} md:bottom-6 right-4 md:right-6 z-40 flex items-center justify-center`}>

@@ -139,26 +139,27 @@ export const getProducts = createServerFn({ method: "GET" })
       whereClause = sql`${whereClause} AND p.shop_type = ${mappedType}`;
     }
 
-    const products = await sql`
-      SELECT p.*, 
-             COALESCE(sc.name, pc.name) AS category_name, 
-             sf.name AS field_name, 
-             ss.name AS subcategory_name
-      FROM products p
-      LEFT JOIN shop_fields sf ON p.field_id = sf.id
-      LEFT JOIN shop_categories sc ON p.category_id = sc.id
-      LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
-      LEFT JOIN product_categories pc ON p.category_id = pc.id
-      WHERE ${whereClause}
-      ORDER BY p.is_featured DESC, p.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-
-    const totalCountRes = await sql`
-      SELECT COUNT(*)::int as count
-      FROM products p
-      WHERE ${whereClause}
-    `;
+    const [products, totalCountRes] = await Promise.all([
+      sql`
+        SELECT p.*, 
+               COALESCE(sc.name, pc.name) AS category_name, 
+               sf.name AS field_name, 
+               ss.name AS subcategory_name
+        FROM products p
+        LEFT JOIN shop_fields sf ON p.field_id = sf.id
+        LEFT JOIN shop_categories sc ON p.category_id = sc.id
+        LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        WHERE ${whereClause}
+        ORDER BY p.is_featured DESC, p.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `,
+      sql`
+        SELECT COUNT(*)::int as count
+        FROM products p
+        WHERE ${whereClause}
+      `
+    ]);
 
     const total = totalCountRes[0]?.count || 0;
     const totalPages = Math.ceil(total / limit) || 1;
@@ -169,6 +170,7 @@ export const getProducts = createServerFn({ method: "GET" })
       page,
       totalPages
     };
+
   });
 
 const CreateShopOrderSchema = z.object({
@@ -235,46 +237,58 @@ export const createShopOrder = createServerFn({ method: "POST" })
     else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
     else if (paymentMethod === "gpay") dbPaymentMethod = "gpay";
 
-    // 4. Insert into orders table
-    const [orderRes] = await sql`
-      INSERT INTO orders (
-        user_id,
-        items,
-        subtotal,
-        total,
-        status,
-        payment_method,
-        payment_status,
-        delivery_address,
-        checkout_channel,
-        notes
-      )
-      VALUES (
-        ${user.id},
-        ${sql.json(items)},
-        ${subtotal},
-        ${total},
-        'pending',
-        ${dbPaymentMethod},
-        'pending',
-        ${deliveryAddress},
-        'website',
-        ${instructions || null}
-      )
-      RETURNING id
-    `;
-
-    const orderId = orderRes.id;
-
-    // Insert into order_items table for normalization/reporting
-    for (const item of items) {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id);
-      const productId = isUuid ? item.id : null;
-      await sql`
-        INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price)
-        VALUES (${orderId}, ${productId}, ${item.name}, ${item.quantity}, ${item.price})
+    // 4. Atomic transaction for order placement and stock deduction
+    let orderId: string = "";
+    await sql.begin(async (tx: any) => {
+      const [orderRes] = await tx`
+        INSERT INTO orders (
+          user_id,
+          items,
+          subtotal,
+          total,
+          status,
+          payment_method,
+          payment_status,
+          delivery_address,
+          checkout_channel,
+          notes
+        )
+        VALUES (
+          ${user.id},
+          ${tx.json(items)},
+          ${subtotal},
+          ${total},
+          'pending',
+          ${dbPaymentMethod},
+          'pending',
+          ${deliveryAddress},
+          'website',
+          ${instructions || null}
+        )
+        RETURNING id
       `;
-    }
+
+      orderId = orderRes.id;
+
+      // Insert into order_items table and atomically decrement product stock
+      for (const item of items) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id);
+        const productId = isUuid ? item.id : null;
+        
+        await tx`
+          INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price)
+          VALUES (${orderId}, ${productId}, ${item.name}, ${item.quantity}, ${item.price})
+        `;
+
+        if (productId) {
+          await tx`
+            UPDATE products
+            SET stock_qty = GREATEST(0, stock_qty - ${item.quantity})
+            WHERE id = ${productId}
+          `;
+        }
+      }
+    });
 
     // 5. Write Audit Log
     const { writeAuditLog } = await import("../audit.server");

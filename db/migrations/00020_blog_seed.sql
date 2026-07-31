@@ -59,7 +59,7 @@ BEGIN
     author3_id,
     'Kenya''s Maize Prices Hit 3-Year High — What Smallholder Farmers Must Do Now',
     'kenya-maize-prices-3-year-high-2026',
-    'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800',
+    '/mqulima_news_banner.png',
     'Maize prices across East Africa have entered a volatile super-cycle. Erratically distributed rainfall coupled with skyrocketing import costs for nitrogenous fertilizers has tightened regional grain balances. In response, wholesale prices in key hubs like Eldoret, Nakuru, and Nairobi have surged, posing both a challenge and an opportunity for agricultural cooperatives.
 
 To capitalize on this, smallholder cultivators must move away from speculation and focus on soil-catalyst inputs to stabilize yield volume. High-grade certified seeds are critical; using recycled seed grain under these weather patterns will lead to severe yield drops.
@@ -74,7 +74,7 @@ Furthermore, collective bargaining groups must negotiate fertilizer subsidies in
     author2_id,
     'How Uasin Gishu Cooperatives Increased Yields by 40% Using Mobile Agronomy',
     'uasin-gishu-cooperatives-mobile-agronomy-40-percent',
-    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500',
+    '/mqulima_news_banner.png',
     'Traditional farming wisdom is no longer sufficient to navigate shifting weather cycles. In Uasin Gishu, a syndicate of 12 smallholder cooperatives partnered with Mqulima''s digital agronomist network to deploy a SMS-based alert system.
 
 The platform monitors localized meteorological data and soil moisture sensors. When conditions are optimal, automated alerts are broadcasted to farmers'' mobile phones, advising them on the exact hour to apply top-dressing fertilizer.
@@ -89,7 +89,7 @@ This precise timing prevents nitrogen runoff during sudden downpours, ensuring t
     author1_id,
     'Organic Ginger Export Guidelines for East African Farmers',
     'organic-ginger-export-guidelines-east-africa',
-    'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500',
+    '/mqulima_news_banner.png',
     'Exporting ginger to European markets requires strict compliance with international phytosanitary standards. Buyers demand proof of pesticide-free cultivation, which means farmers must adopt organic composting techniques.
 
 To start, soil must be enriched with biological organic compost instead of synthetic chemical fertilizers. Crop protection should rely on natural bio-pesticides like neem oil extracts and garlic sprays.
@@ -104,7 +104,7 @@ Documentation is key. Farmers need to keep exhaustive spray registers, field map
     author4_id,
     'Understanding the Subsidized Dairy Feed Policy of 2026',
     'subsidized-dairy-feed-policy-2026',
-    'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=500',
+    '/mqulima_news_banner.png',
     'Dairy farming is capital-intensive. Feeds alone account for up to 70% of operational costs. The new agricultural policy introduces credit subsidies specifically targeting livestock feed millers and cooperative dairies.
 
 Under this bill, registered dairy groups can access capital at a subsidized rate of 6% per annum. This capital must be spent on raw feed materials (yellow maize, cotton seed cake, wheat pollard) to manufacture high-yield dairy meal in-house.

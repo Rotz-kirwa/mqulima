@@ -121,10 +121,10 @@ function ContactPage() {
                       </div>
                       <div className="space-y-1 text-left">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Email</h4>
-                        <a href="mailto:hello@mqulima.com" className="text-base font-bold text-[#0A1E0C] hover:text-emerald-700 transition-colors select-text font-sans break-all">
-                          hello@mqulima.com
+                        <a href="mailto:Mqulima001@gmail.com" className="text-base font-bold text-[#0A1E0C] hover:text-emerald-700 transition-colors select-text font-sans break-all">
+                          Mqulima001@gmail.com
                         </a>
-                        <p className="text-xs text-gray-500 font-medium">Typical response within 2 hours</p>
+                        <p className="text-xs text-gray-500 font-medium">Typical response within 10 mins</p>
                       </div>
                     </div>
 
