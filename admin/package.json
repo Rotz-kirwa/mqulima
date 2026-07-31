@@ -1,6 +1,7 @@
 {
   "name": "mqulima-admin",
   "private": true,
+  "version": "1.0.1",
   "sideEffects": false,
   "type": "module",
   "scripts": {
