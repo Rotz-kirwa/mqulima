@@ -884,7 +884,7 @@ Please notify me if it becomes available!`;
                           <img
                             src={p.image}
                             alt={p.name}
-                            className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-300"
+                            className="w-full h-full object-cover transition duration-300"
                             onError={(e) => { e.currentTarget.src = '/placeholder-product.png'; }}
                           />
 

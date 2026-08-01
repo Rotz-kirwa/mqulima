@@ -481,36 +481,15 @@ function ProductDetailPage() {
             <div className="lg:col-span-6 space-y-4">
               <div 
                 ref={mainBuyPanelRef}
-                className="relative bg-white border border-stone-200/80 rounded-2xl p-4 overflow-hidden aspect-square flex items-center justify-center group shadow-sm cursor-zoom-in"
-                onMouseMove={handleMouseMove}
-                onMouseEnter={() => setIsZoomed(true)}
-                onMouseLeave={() => setIsZoomed(false)}
+                className="relative bg-white border border-stone-200/80 rounded-2xl p-4 overflow-hidden aspect-square flex items-center justify-center group shadow-sm"
                 onClick={() => setLightboxOpen(true)}
               >
                 <img
                   src={productImages[activeImageIndex]}
                   alt={product.name}
-                  className="w-full h-full object-contain rounded-xl max-h-[460px] transition-transform duration-200"
+                  className="w-full h-full object-contain rounded-xl max-h-[460px]"
                   loading="lazy"
                 />
-
-                {/* Magnifier lens preview */}
-                {isZoomed && (
-                  <div
-                    className="absolute inset-0 hidden md:block pointer-events-none z-10 rounded-2xl bg-white"
-                    style={{
-                      backgroundImage: `url(${productImages[activeImageIndex]})`,
-                      backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
-                      backgroundSize: "200%",
-                      backgroundRepeat: "no-repeat"
-                    }}
-                  />
-                )}
-
-                {/* Magnifying Icon Badge */}
-                <span className="absolute bottom-3 right-3 bg-stone-900/80 backdrop-blur-md text-white p-2 rounded-full shadow-lg group-hover:scale-105 transition duration-200">
-                  <ZoomIn size={15} />
-                </span>
 
                 {/* Primary Smart badges overlay */}
                 <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-1">
@@ -535,7 +514,7 @@ function ProductDetailPage() {
                     onClick={() => setActiveImageIndex(idx)}
                     className={`h-16 w-16 bg-white border rounded-xl overflow-hidden p-1 shrink-0 transition-all duration-200 ${
                       activeImageIndex === idx
-                        ? "border-[#2D6A4F] ring-2 ring-[#2D6A4F]/20 scale-102"
+                        ? "border-[#2D6A4F] ring-2 ring-[#2D6A4F]/20"
                         : "border-stone-200 hover:border-stone-400"
                     }`}
                   >
@@ -841,7 +820,7 @@ function ProductDetailPage() {
                     >
                       <div>
                         <div className="aspect-square bg-stone-50 rounded-lg overflow-hidden flex items-center justify-center p-1 relative mb-3">
-                          <img src={p.image} className="h-full w-full object-contain group-hover:scale-102 transition duration-300" />
+                          <img src={p.image} className="h-full w-full object-contain transition duration-300" />
                           {/* Badges & Discount tags overlay */}
                           <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 items-start">
                             {hasDiscount && (

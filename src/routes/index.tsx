@@ -621,7 +621,7 @@ function Index() {
                           src={p.image}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-contain p-1 sm:p-2 transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-contain p-1 sm:p-2 transition-transform duration-500"
                         />
                         {p.badge && (
                           <span className="absolute left-2 top-2 sm:left-4 sm:top-4 rounded-none bg-[#16A34A] px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white z-10 shadow-sm">
