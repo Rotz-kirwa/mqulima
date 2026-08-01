@@ -1363,20 +1363,22 @@ function AdminPanel() {
                     {/* Products Grid */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       {products.filter(p => {
+                        const isFeaturedOnly = !!p.isFeatured;
                         const matchesSearch = p.name.toLowerCase().includes(adminSearch.toLowerCase()) || 
                                               (p.brand || "").toLowerCase().includes(adminSearch.toLowerCase());
                         const matchesCategory = adminCategoryFilter === "All" || p.category === adminCategoryFilter;
-                        return matchesSearch && matchesCategory;
+                        return isFeaturedOnly && matchesSearch && matchesCategory;
                       }).length === 0 ? (
                         <div className="col-span-full bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-400 font-medium">
-                          No matching products found.
+                          No featured products found.
                         </div>
                       ) : (
                         products.filter(p => {
+                          const isFeaturedOnly = !!p.isFeatured;
                           const matchesSearch = p.name.toLowerCase().includes(adminSearch.toLowerCase()) || 
                                                 (p.brand || "").toLowerCase().includes(adminSearch.toLowerCase());
                           const matchesCategory = adminCategoryFilter === "All" || p.category === adminCategoryFilter;
-                          return matchesSearch && matchesCategory;
+                          return isFeaturedOnly && matchesSearch && matchesCategory;
                         }).map(p => {
                           return (
                             <div 
@@ -1473,7 +1475,7 @@ function AdminPanel() {
                       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Catalog</span>
                         <div className="mt-2 flex items-baseline gap-1.5">
-                          <span className="text-2xl font-bold text-gray-900">{products.length}</span>
+                          <span className="text-2xl font-bold text-gray-900">{products.filter(p => !p.isFeatured).length}</span>
                           <span className="text-[10px] text-gray-400 font-medium">SKUs</span>
                         </div>
                       </div>
@@ -1481,7 +1483,7 @@ function AdminPanel() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Inventory Value</span>
                         <div className="mt-2 flex items-baseline gap-1.5">
                           <span className="text-xl font-bold text-gray-900">
-                            KSh {products.reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
+                            KSh {products.filter(p => !p.isFeatured).reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -1489,7 +1491,7 @@ function AdminPanel() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-red-700/80">Out of Stock</span>
                         <div className="mt-2 flex items-baseline gap-1.5">
                           <span className="text-2xl font-bold text-red-600">
-                            {products.filter(p => p.stock === 0).length}
+                            {products.filter(p => !p.isFeatured && p.stock === 0).length}
                           </span>
                           <span className="text-[10px] text-red-500 font-semibold">items</span>
                         </div>
@@ -1498,7 +1500,7 @@ function AdminPanel() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700/80">Low Stock</span>
                         <div className="mt-2 flex items-baseline gap-1.5">
                           <span className="text-2xl font-bold text-amber-600">
-                            {products.filter(p => p.stock > 0 && p.stock <= 5).length}
+                            {products.filter(p => !p.isFeatured && p.stock > 0 && p.stock <= 5).length}
                           </span>
                           <span className="text-[10px] text-amber-500 font-semibold">{"<= 5"}</span>
                         </div>
@@ -1573,10 +1575,11 @@ function AdminPanel() {
                           </thead>
                           <tbody className="divide-y divide-gray-200 text-gray-700">
                             {products.filter(p => {
+                              const isStandardCatalog = !p.isFeatured;
                               const matchesSearch = p.name.toLowerCase().includes(adminSearch.toLowerCase()) || 
                                                     (p.brand || "").toLowerCase().includes(adminSearch.toLowerCase());
                               const matchesCategory = adminCategoryFilter === "All" || p.category === adminCategoryFilter;
-                              return matchesSearch && matchesCategory;
+                              return isStandardCatalog && matchesSearch && matchesCategory;
                             }).length === 0 ? (
                               <tr>
                                 <td colSpan={5} className="text-center py-12 text-gray-450 font-medium">
@@ -1585,10 +1588,11 @@ function AdminPanel() {
                               </tr>
                             ) : (
                               products.filter(p => {
+                                const isStandardCatalog = !p.isFeatured;
                                 const matchesSearch = p.name.toLowerCase().includes(adminSearch.toLowerCase()) || 
                                                       (p.brand || "").toLowerCase().includes(adminSearch.toLowerCase());
                                 const matchesCategory = adminCategoryFilter === "All" || p.category === adminCategoryFilter;
-                                return matchesSearch && matchesCategory;
+                                return isStandardCatalog && matchesSearch && matchesCategory;
                               }).map(p => {
                                 const isOutOfStock = p.stock === 0;
                                 const isLowStock = p.stock > 0 && p.stock <= 5;
