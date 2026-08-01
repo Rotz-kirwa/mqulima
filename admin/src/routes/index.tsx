@@ -889,21 +889,21 @@ function AdminPanel() {
   return (
     <div className="flex h-screen bg-[#F7F7F5] overflow-hidden w-full" style={{ fontFamily: "Inter, sans-serif" }}>
       {/* SIDEBAR */}
-      <aside className={`${sidebarCollapsed ? "w-[68px]" : "w-[260px]"} bg-[#0A0F0D] border-r border-[#2D6A4F]/30 flex flex-col justify-between transition-all duration-300 shrink-0`}>
+      <aside className={`${sidebarCollapsed ? "w-[72px]" : "w-[280px]"} bg-[#113823] border-r border-[#1B5234] flex flex-col justify-between transition-all duration-300 shrink-0 shadow-xl`}>
         <div>
-          {/* Logo */}
-          <div className="px-4 py-5 border-b border-[#2D6A4F]/20 flex items-center gap-3">
-            <MqulimaLogo size={36} className="shrink-0" />
+          {/* Logo Header */}
+          <div className="px-4 py-5 border-b border-[#1B5234] flex items-center gap-3 bg-[#0D2D1C]">
+            <MqulimaLogo size={40} className="shrink-0" />
             {!sidebarCollapsed && (
               <div className="min-w-0">
-                <h1 className="text-xs font-extrabold tracking-widest uppercase text-[#F5A623]">Admin Console</h1>
-                <span className="text-[9px] text-white/40 font-mono block truncate" title={adminUser.email}>{adminUser.email} ({adminUser.role})</span>
+                <h1 className="text-sm font-black tracking-wider uppercase text-[#F5A623]">Admin Console</h1>
+                <span className="text-xs text-emerald-200/70 font-mono block truncate" title={adminUser.email}>{adminUser.email} ({adminUser.role})</span>
               </div>
             )}
           </div>
 
-          {/* Nav */}
-          <nav className="p-3 space-y-1">
+          {/* Navigation Items */}
+          <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
             {[
               { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
               { id: "customers", label: "Customers", icon: Users },
@@ -930,49 +930,49 @@ function AdminPanel() {
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
                   title={sidebarCollapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer relative ${
+                  className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-bold transition cursor-pointer relative ${
                     isActive
-                      ? "bg-[#2D6A4F] text-white shadow-md"
-                      : "text-white/60 hover:bg-[#2D6A4F]/20 hover:text-white"
+                      ? "bg-[#1E603C] text-white shadow-md border border-[#2B8654]/50"
+                      : "text-emerald-100/80 hover:bg-[#184C2F] hover:text-white"
                   }`}
                 >
                   <div className="relative flex items-center justify-center">
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-5 w-5 shrink-0" />
                     {/* Collapsed dot for inquiries */}
                     {item.id === "inquiries" && sidebarCollapsed && unreadInquiriesCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-400 border border-[#0A0F0D] animate-ping" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-[#113823] animate-ping" />
                     )}
                     {item.id === "inquiries" && sidebarCollapsed && unreadInquiriesCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-400 border border-[#0A0F0D]" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-[#113823]" />
                     )}
                     {/* Collapsed dot for orders */}
                     {item.id === "orders" && sidebarCollapsed && pendingOrdersCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#F5A623] border border-[#0A0F0D] animate-ping" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#F5A623] border border-[#113823] animate-ping" />
                     )}
                     {item.id === "orders" && sidebarCollapsed && pendingOrdersCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#F5A623] border border-[#0A0F0D]" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#F5A623] border border-[#113823]" />
                     )}
                     {/* Collapsed dot for forum reports */}
                     {item.id === "forum" && sidebarCollapsed && pendingReportsCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border border-[#0A0F0D] animate-ping" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 border border-[#113823] animate-ping" />
                     )}
                     {item.id === "forum" && sidebarCollapsed && pendingReportsCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border border-[#0A0F0D]" />
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 border border-[#113823]" />
                     )}
                   </div>
-                  {!sidebarCollapsed && <span>{item.label}</span>}
+                  {!sidebarCollapsed && <span className="tracking-tight text-[14px]">{item.label}</span>}
                   {item.id === "orders" && !sidebarCollapsed && pendingOrdersCount > 0 && (
-                    <span className="ml-auto bg-[#F5A623] text-[#0A0F0D] text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
+                    <span className="ml-auto bg-[#F5A623] text-[#0A0F0D] text-xs font-extrabold px-2 py-0.5 rounded-full animate-pulse shadow-xs">
                       {pendingOrdersCount}
                     </span>
                   )}
                   {item.id === "inquiries" && !sidebarCollapsed && unreadInquiriesCount > 0 && (
-                    <span className="ml-auto bg-amber-400 text-amber-950 text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
+                    <span className="ml-auto bg-amber-400 text-amber-950 text-xs font-extrabold px-2 py-0.5 rounded-full animate-pulse shadow-xs">
                       {unreadInquiriesCount}
                     </span>
                   )}
                   {item.id === "forum" && !sidebarCollapsed && pendingReportsCount > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
+                    <span className="ml-auto bg-red-500 text-white text-xs font-extrabold px-2 py-0.5 rounded-full animate-pulse shadow-xs">
                       {pendingReportsCount}
                     </span>
                   )}
@@ -982,13 +982,13 @@ function AdminPanel() {
           </nav>
         </div>
 
-        {/* Sidebar footer */}
-        <div className="p-3 border-t border-[#2D6A4F]/20 space-y-2">
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-[#1B5234] bg-[#0D2D1C] space-y-2">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] text-white/40 hover:text-white transition rounded-lg hover:bg-[#2D6A4F]/20 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-200/70 hover:text-white transition rounded-lg hover:bg-[#184C2F] cursor-pointer"
           >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <><ChevronLeft className="h-4 w-4" /><span>Collapse</span></>}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <><ChevronLeft className="h-4 w-4" /><span>Collapse Sidebar</span></>}
           </button>
           <button
             onClick={async () => {
@@ -1001,9 +1001,9 @@ function AdminPanel() {
                 }
               }
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] text-white/40 hover:text-[#F5A623] transition rounded-lg hover:bg-[#2D6A4F]/10 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-200/70 hover:text-[#F5A623] transition rounded-lg hover:bg-[#184C2F] cursor-pointer"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
             {!sidebarCollapsed && <span>Exit to Main Site</span>}
           </button>
           <button
@@ -1016,9 +1016,9 @@ function AdminPanel() {
                 toast.error("Failed to log out");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] text-white/40 hover:text-red-500 transition rounded-lg hover:bg-red-500/10 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-emerald-200/70 hover:text-red-400 transition rounded-lg hover:bg-red-500/20 cursor-pointer"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
             {!sidebarCollapsed && <span>Log Out</span>}
           </button>
         </div>
