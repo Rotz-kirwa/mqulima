@@ -63,7 +63,7 @@ async function autoPatchSchema(sqlInstance: ReturnType<typeof postgres>) {
           3250.00, 3500.00, 310, TRUE, 4.9, 38, 'active', 'Unga Feeds', 'Unga Farmcare', 'Nakuru', '70kg bag', 'Top Feed', FALSE, TRUE, 98, 'Fresh', 'Agrovet', 'Animal Farming', 'Animal Feed',
           ARRAY['https://www.myagrovet.co.ke/images/products/7367/thumb_44e1a1ca768bb3add788ec4afd3b0a57.png']
         )
-      ON CONFLICT (slug) DO UPDATE SET is_featured = true, status = 'active';
+      ON CONFLICT (slug) DO NOTHING;
     `;
   } catch (err) {
     console.warn("[WARN] Admin Auto-patch schema notice:", err);
