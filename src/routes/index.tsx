@@ -195,18 +195,58 @@ const HOMEPAGE_CATEGORIES = [
   }
 ];
 
-function Index() {
-  const { data: dbFeaturedProducts } = useQuery({
-    queryKey: ["featuredProducts"],
-    queryFn: () => getFeaturedProducts()
-  });
+const FEATURED_FARM_ESSENTIALS = [
+  {
+    id: "fe-1",
+    name: "20L Heavy-Duty Battery & Manual Knapsack Sprayer",
+    category: "Crop Protection & Equipment",
+    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800",
+    badge: "Essential Equipment"
+  },
+  {
+    id: "fe-2",
+    name: "Certified High-Yield Hybrid Seed Vector (H614D)",
+    category: "Seeds & Planting",
+    image: "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800",
+    badge: "Certified Seed"
+  },
+  {
+    id: "fe-3",
+    name: "Solubor Boron & Micro-Nutrient Foliar Fertilizer",
+    category: "Fertilizers & Soil Nutrition",
+    image: "https://images.unsplash.com/photo-1574943320219-553dd213f725?w=800",
+    badge: "Foliar Nutrition"
+  },
+  {
+    id: "fe-4",
+    name: "Complete Gravity Drip Irrigation Kit (1/4 Acre)",
+    category: "Irrigation Systems",
+    image: "https://images.unsplash.com/photo-1563514220-ea97928b4988?w=800",
+    badge: "Smart Irrigation"
+  },
+  {
+    id: "fe-5",
+    name: "Rapid Digital Soil NPK & pH Testing Kit",
+    category: "Soil Health & Testing",
+    image: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=800",
+    badge: "Soil Diagnostics"
+  },
+  {
+    id: "fe-6",
+    name: "Eco-Friendly Organic Crop Protection Concentrate",
+    category: "Organic Farming Inputs",
+    image: "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=800",
+    badge: "Organic Certified"
+  }
+];
 
+function Index() {
   const { data: dbArticles } = useQuery({
     queryKey: ["publishedArticles"],
     queryFn: () => getPublishedBlogPosts()
   });
 
-  const featuredProducts = dbFeaturedProducts || [];
+  const featuredProducts = FEATURED_FARM_ESSENTIALS;
   const featuredArticles = dbArticles?.slice(0, 3) || articles.slice(0, 3);
 
   // Auto-sliding showcase carousel state (2 products on mobile, 3 on desktop, 3s interval)
