@@ -195,58 +195,18 @@ const HOMEPAGE_CATEGORIES = [
   }
 ];
 
-const FEATURED_FARM_ESSENTIALS = [
-  {
-    id: "fe-1",
-    name: "20L Heavy-Duty Battery & Manual Knapsack Sprayer",
-    category: "Crop Protection & Equipment",
-    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80",
-    badge: "Essential Equipment"
-  },
-  {
-    id: "fe-2",
-    name: "Certified High-Yield Hybrid Seed Vector (H614D)",
-    category: "Seeds & Planting",
-    image: "https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=800&q=80",
-    badge: "Certified Seed"
-  },
-  {
-    id: "fe-3",
-    name: "Solubor Boron & Micro-Nutrient Foliar Fertilizer",
-    category: "Fertilizers & Soil Nutrition",
-    image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=800&q=80",
-    badge: "Foliar Nutrition"
-  },
-  {
-    id: "fe-4",
-    name: "Complete Gravity Drip Irrigation Kit (1/4 Acre)",
-    category: "Irrigation Systems",
-    image: "https://images.unsplash.com/photo-1563514220-ea97928b4988?auto=format&fit=crop&w=800&q=80",
-    badge: "Smart Irrigation"
-  },
-  {
-    id: "fe-5",
-    name: "Rapid Digital Soil NPK & pH Testing Kit",
-    category: "Soil Health & Testing",
-    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80",
-    badge: "Soil Diagnostics"
-  },
-  {
-    id: "fe-6",
-    name: "Eco-Friendly Organic Crop Protection Concentrate",
-    category: "Organic Farming Inputs",
-    image: "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&w=800&q=80",
-    badge: "Organic Certified"
-  }
-];
-
 function Index() {
+  const { data: dbFeaturedProducts } = useQuery({
+    queryKey: ["featuredProducts"],
+    queryFn: () => getFeaturedProducts()
+  });
+
   const { data: dbArticles } = useQuery({
     queryKey: ["publishedArticles"],
     queryFn: () => getPublishedBlogPosts()
   });
 
-  const featuredProducts = FEATURED_FARM_ESSENTIALS;
+  const featuredProducts = dbFeaturedProducts || [];
   const featuredArticles = dbArticles?.slice(0, 3) || articles.slice(0, 3);
 
   // Auto-sliding showcase carousel state (2 products on mobile, 3 on desktop, 3s interval)
@@ -654,16 +614,18 @@ function Index() {
                       className="w-full shrink-0 max-w-sm sm:max-w-none mx-auto"
                     >
                       <Link
-                        to="/shop"
+                        to={p.slug ? "/shop/product/$slug" : "/shop"}
+                        params={p.slug ? { slug: p.slug } : undefined}
                         className="group block relative aspect-square overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl cursor-pointer"
                       >
                         <img
-                          src={p.image}
+                          src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
                           alt={p.name}
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500"
                           onError={(e) => {
-                            e.currentTarget.src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80";
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "/placeholder-product.png";
                           }}
                         />
                         {p.badge && (
@@ -676,7 +638,15 @@ function Index() {
                         {p.category && (
                           <h4 className="text-[10px] sm:text-xs font-bold text-[#16A34A] uppercase tracking-wider">{p.category}</h4>
                         )}
-                        <h3 className="text-xs sm:text-base font-bold text-[#0F291E] mt-0.5 line-clamp-1 font-['Outfit',sans-serif]">{p.name}</h3>
+                        <h3 className="text-xs sm:text-base font-bold text-[#0F291E] mt-0.5 line-clamp-1 font-['Outfit',sans-serif]">
+                          <Link
+                            to={p.slug ? "/shop/product/$slug" : "/shop"}
+                            params={p.slug ? { slug: p.slug } : undefined}
+                            className="hover:text-[#16A34A] transition-colors"
+                          >
+                            {p.name}
+                          </Link>
+                        </h3>
                       </div>
                     </div>
                   );
