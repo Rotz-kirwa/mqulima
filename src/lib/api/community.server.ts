@@ -298,7 +298,32 @@ export const getCurrentFarmerProfile = createServerFn({ method: "GET" })
       LEFT JOIN users u ON u.id = p.id
       WHERE p.id = ${user.id}
     `;
-    if (!profile) return null;
+    if (!profile) {
+      return {
+        username: `@${(user.name || "farmer").toLowerCase().replace(/\s+/g, "_")}`,
+        name: user.name || "Mqulima Farmer",
+        country: "Kenya",
+        county: user.county || "Kenya",
+        natureOfAgriculture: "",
+        interests: [],
+        crops: user.crops ? user.crops.split(",").map((s: string) => s.trim()) : [],
+        livestock: user.livestock ? user.livestock.split(",").map((s: string) => s.trim()) : [],
+        yearsFarming: 0,
+        certifications: [],
+        reputationScore: 0,
+        followersCount: 0,
+        followers: [],
+        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || "Farmer")}&backgroundColor=1a5438&textColor=ffffff`,
+        coverImage: "",
+        bio: "",
+        website: "",
+        phone: "",
+        email: user.email || "",
+        farmingActivities: "",
+        farmingPhotos: [],
+        joinedDate: "2024-01-01"
+      };
+    }
 
     return {
       username: profile.username?.startsWith("@") ? profile.username : `@${profile.username || "mqulima_farmer"}`,

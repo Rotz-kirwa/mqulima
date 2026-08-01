@@ -67,6 +67,7 @@ import {
   Paperclip
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -226,6 +227,7 @@ const initialPulsePosts: PulsePost[] = [];
 
 function ForumSubdomainPage() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [subpage, setSubpageState] = useState<"posts" | "soko" | "consult" | "konnekt" | "saved" | "profile" | "network">("posts");
 
   const setSubpage = (page: "posts" | "soko" | "consult" | "konnekt" | "saved" | "profile" | "network") => {
@@ -759,8 +761,60 @@ function ForumSubdomainPage() {
       if (cancelled) return;
       if (profile) {
         setCurrentUser(profile as FarmerProfile);
+      } else if (authUser) {
+        setCurrentUser({
+          username: `@${(authUser.name || "farmer").toLowerCase().replace(/\s+/g, "_")}`,
+          name: authUser.name || "Mqulima Farmer",
+          country: "Kenya",
+          county: authUser.county || "Kenya",
+          natureOfAgriculture: "",
+          interests: [],
+          crops: authUser.crops ? authUser.crops.split(",").map(s => s.trim()) : [],
+          livestock: authUser.livestock ? authUser.livestock.split(",").map(s => s.trim()) : [],
+          yearsFarming: 0,
+          certifications: [],
+          reputationScore: 0,
+          followersCount: 0,
+          followers: [],
+          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.name || "Farmer")}&backgroundColor=1a5438&textColor=ffffff`,
+          coverImage: "",
+          bio: "",
+          website: "",
+          phone: "",
+          email: authUser.email || "",
+          farmingActivities: "",
+          farmingPhotos: [],
+          joinedDate: "2024-01-01"
+        });
       } else {
         setCurrentUser(null);
+      }
+    }).catch(() => {
+      if (!cancelled && authUser) {
+        setCurrentUser({
+          username: `@${(authUser.name || "farmer").toLowerCase().replace(/\s+/g, "_")}`,
+          name: authUser.name || "Mqulima Farmer",
+          country: "Kenya",
+          county: authUser.county || "Kenya",
+          natureOfAgriculture: "",
+          interests: [],
+          crops: authUser.crops ? authUser.crops.split(",").map(s => s.trim()) : [],
+          livestock: authUser.livestock ? authUser.livestock.split(",").map(s => s.trim()) : [],
+          yearsFarming: 0,
+          certifications: [],
+          reputationScore: 0,
+          followersCount: 0,
+          followers: [],
+          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.name || "Farmer")}&backgroundColor=1a5438&textColor=ffffff`,
+          coverImage: "",
+          bio: "",
+          website: "",
+          phone: "",
+          email: authUser.email || "",
+          farmingActivities: "",
+          farmingPhotos: [],
+          joinedDate: "2024-01-01"
+        });
       }
     });
 
@@ -783,7 +837,7 @@ function ForumSubdomainPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authUser]);
 
   // Poll & sync direct messages from PostgreSQL database
   useEffect(() => {

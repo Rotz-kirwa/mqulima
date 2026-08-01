@@ -93,7 +93,7 @@ export const loginUser = createServerFn({ method: "POST" })
     setCookie(COOKIE_NAME, jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
     });
@@ -164,7 +164,7 @@ export const registerUser = createServerFn({ method: "POST" })
     setCookie(COOKIE_NAME, jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
     });
@@ -184,7 +184,7 @@ export const logoutUser = createServerFn({ method: "POST" })
     setCookie(COOKIE_NAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 0,
       expires: new Date(0),
@@ -193,7 +193,7 @@ export const logoutUser = createServerFn({ method: "POST" })
     setCookie("mq_csrf", "", {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 0,
       expires: new Date(0),
