@@ -233,12 +233,12 @@ function Index() {
 
   // Auto slide every 3 seconds (3000ms)
   useEffect(() => {
-    if (isFeaturedHovered || totalPages <= 1) return;
+    if (totalPages <= 1) return;
     const timer = setInterval(() => {
       setFeaturedPageIndex((prev) => (prev + 1) % totalPages);
     }, 3000);
     return () => clearInterval(timer);
-  }, [isFeaturedHovered, totalPages]);
+  }, [totalPages]);
 
   // Extract current products to display
   const currentGroupProducts = useMemo(() => {
@@ -588,7 +588,7 @@ function Index() {
 
           {/* Products Grid/Carousel with Touch Swipe & Auto-Slide */}
           <div className="relative min-h-[220px] md:min-h-[380px] touch-pan-y overflow-hidden">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.div
                 key={`${featuredPageIndex}-${isMobile ? 'm' : 'd'}`}
                 initial={{ opacity: 0, x: 60 }}
