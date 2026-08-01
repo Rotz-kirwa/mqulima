@@ -200,42 +200,42 @@ const FEATURED_FARM_ESSENTIALS = [
     id: "fe-1",
     name: "20L Heavy-Duty Battery & Manual Knapsack Sprayer",
     category: "Crop Protection & Equipment",
-    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800",
+    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80",
     badge: "Essential Equipment"
   },
   {
     id: "fe-2",
     name: "Certified High-Yield Hybrid Seed Vector (H614D)",
     category: "Seeds & Planting",
-    image: "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800",
+    image: "https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=800&q=80",
     badge: "Certified Seed"
   },
   {
     id: "fe-3",
     name: "Solubor Boron & Micro-Nutrient Foliar Fertilizer",
     category: "Fertilizers & Soil Nutrition",
-    image: "https://images.unsplash.com/photo-1574943320219-553dd213f725?w=800",
+    image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=800&q=80",
     badge: "Foliar Nutrition"
   },
   {
     id: "fe-4",
     name: "Complete Gravity Drip Irrigation Kit (1/4 Acre)",
     category: "Irrigation Systems",
-    image: "https://images.unsplash.com/photo-1563514220-ea97928b4988?w=800",
+    image: "https://images.unsplash.com/photo-1563514220-ea97928b4988?auto=format&fit=crop&w=800&q=80",
     badge: "Smart Irrigation"
   },
   {
     id: "fe-5",
     name: "Rapid Digital Soil NPK & pH Testing Kit",
     category: "Soil Health & Testing",
-    image: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=800",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80",
     badge: "Soil Diagnostics"
   },
   {
     id: "fe-6",
     name: "Eco-Friendly Organic Crop Protection Concentrate",
     category: "Organic Farming Inputs",
-    image: "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=800",
+    image: "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&w=800&q=80",
     badge: "Organic Certified"
   }
 ];
@@ -655,16 +655,19 @@ function Index() {
                     >
                       <Link
                         to="/shop"
-                        className="group block relative aspect-square overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl p-2.5 sm:p-4 cursor-pointer"
+                        className="group block relative aspect-square overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl cursor-pointer"
                       >
                         <img
                           src={p.image}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-contain p-1 sm:p-2 transition-transform duration-500"
+                          className="h-full w-full object-cover transition-transform duration-500"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80";
+                          }}
                         />
                         {p.badge && (
-                          <span className="absolute left-2 top-2 sm:left-4 sm:top-4 rounded-none bg-[#16A34A] px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white z-10 shadow-sm">
+                          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-md bg-[#16A34A] px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white z-10 shadow-sm">
                             {p.badge}
                           </span>
                         )}

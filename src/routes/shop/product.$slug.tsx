@@ -191,7 +191,7 @@ function ProductDetailPage() {
       ];
     } else if (product.category?.toLowerCase().includes("seed")) {
       secondaryImages = [
-        "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800", // germinating seed
+        "https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=800&q=80", // certified hybrid seeds
         "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800", // garden bed
         "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=800"  // farmer holding soil
       ];
