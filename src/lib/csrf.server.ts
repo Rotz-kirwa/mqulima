@@ -8,7 +8,7 @@ export const generateCsrfToken = createServerFn({ method: "POST" })
     setCookie("mq_csrf", token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });

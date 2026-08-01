@@ -105,6 +105,16 @@ function SignUp() {
   const countyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    async function initCsrf() {
+      try {
+        const { ensureCsrfToken } = await import("@/lib/csrf-client");
+        await ensureCsrfToken();
+      } catch (e) {
+        console.warn("CSRF token init error:", e);
+      }
+    }
+    initCsrf();
+
     const handler = (e: MouseEvent) => {
       if (countyRef.current && !countyRef.current.contains(e.target as Node)) setCountyOpen(false);
     };

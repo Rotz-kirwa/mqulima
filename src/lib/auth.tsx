@@ -7,10 +7,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check current session on mount
+  // Check current session and initialize CSRF token on mount
   useEffect(() => {
-    async function checkSession() {
+    async function initAuth() {
       try {
+        const { ensureCsrfToken } = await import("./csrf-client");
+        await ensureCsrfToken();
         const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
@@ -19,12 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     }
-    checkSession();
+    initAuth();
   }, []);
 
   const login = useCallback(async (identifier: string, password: string, rememberMe?: boolean) => {
-    const { getCsrfTokenFromCookie } = await import("./csrf-client");
-    const response = await loginUser({ data: { identifier, password, csrfToken: getCsrfTokenFromCookie(), rememberMe } });
+    const { ensureCsrfToken } = await import("./csrf-client");
+    const csrfToken = await ensureCsrfToken();
+    const response = await loginUser({ data: { identifier, password, csrfToken, rememberMe } });
     if (response && response.success) {
       // Fetch full user profile details to ensure consistency
       const currentUser = await getCurrentUser();
@@ -35,11 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (signUpData: any) => {
-    const { getCsrfTokenFromCookie } = await import("./csrf-client");
+    const { ensureCsrfToken } = await import("./csrf-client");
+    const csrfToken = await ensureCsrfToken();
     const response = await registerUser({
       data: {
         data: signUpData,
-        csrfToken: getCsrfTokenFromCookie()
+        csrfToken
       }
     });
     if (response && response.success) {
@@ -52,8 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      const { getCsrfTokenFromCookie } = await import("./csrf-client");
-      await logoutUser({ data: { csrfToken: getCsrfTokenFromCookie() || "" } });
+      const { ensureCsrfToken } = await import("./csrf-client");
+      const csrfToken = await ensureCsrfToken();
+      await logoutUser({ data: { csrfToken: csrfToken || "" } });
     } catch (error) {
       console.error("Logout server error:", error);
     } finally {
