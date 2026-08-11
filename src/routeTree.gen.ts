@@ -19,7 +19,6 @@ import { Route as CommunityRouteImport } from './routes/community'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiRouteImport } from './routes/ai'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -29,8 +28,26 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
+import { Route as ApiUploadPresignRouteImport } from './routes/api/upload/presign'
 import { Route as ApiMpesaCallbackRouteImport } from './routes/api/mpesa/callback'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
+import { Route as ApiAdminServicesRouteImport } from './routes/api/admin/services'
+import { Route as ApiAdminQuotationsRouteImport } from './routes/api/admin/quotations'
+import { Route as ApiAdminProductsRouteImport } from './routes/api/admin/products'
+import { Route as ApiAdminPaymentsRouteImport } from './routes/api/admin/payments'
+import { Route as ApiAdminOrdersRouteImport } from './routes/api/admin/orders'
+import { Route as ApiAdminNewsRouteImport } from './routes/api/admin/news'
+import { Route as ApiAdminMarketPricesRouteImport } from './routes/api/admin/market-prices'
+import { Route as ApiAdminLogisticsRouteImport } from './routes/api/admin/logistics'
+import { Route as ApiAdminLoginRouteImport } from './routes/api/admin/login'
+import { Route as ApiAdminInquiriesRouteImport } from './routes/api/admin/inquiries'
+import { Route as ApiAdminForumModerationRouteImport } from './routes/api/admin/forum-moderation'
+import { Route as ApiAdminFeaturedRouteImport } from './routes/api/admin/featured'
+import { Route as ApiAdminCustomersRouteImport } from './routes/api/admin/customers'
+import { Route as ApiAdminCommodityTrendsRouteImport } from './routes/api/admin/commodity-trends'
+import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
+import { Route as ApiAdminAiForecastsRouteImport } from './routes/api/admin/ai-forecasts'
+import { Route as ApiAdminAcademyRouteImport } from './routes/api/admin/academy'
 
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
@@ -82,11 +99,6 @@ const AiRoute = AiRouteImport.update({
   path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AcademyRoute = AcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
@@ -132,6 +144,11 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   path: '/shop/product/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUploadPresignRoute = ApiUploadPresignRouteImport.update({
+  id: '/api/upload/presign',
+  path: '/api/upload/presign',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMpesaCallbackRoute = ApiMpesaCallbackRouteImport.update({
   id: '/api/mpesa/callback',
   path: '/api/mpesa/callback',
@@ -142,12 +159,96 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
   path: '/api/ai/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminServicesRoute = ApiAdminServicesRouteImport.update({
+  id: '/api/admin/services',
+  path: '/api/admin/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminQuotationsRoute = ApiAdminQuotationsRouteImport.update({
+  id: '/api/admin/quotations',
+  path: '/api/admin/quotations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminProductsRoute = ApiAdminProductsRouteImport.update({
+  id: '/api/admin/products',
+  path: '/api/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPaymentsRoute = ApiAdminPaymentsRouteImport.update({
+  id: '/api/admin/payments',
+  path: '/api/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOrdersRoute = ApiAdminOrdersRouteImport.update({
+  id: '/api/admin/orders',
+  path: '/api/admin/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminNewsRoute = ApiAdminNewsRouteImport.update({
+  id: '/api/admin/news',
+  path: '/api/admin/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminMarketPricesRoute = ApiAdminMarketPricesRouteImport.update({
+  id: '/api/admin/market-prices',
+  path: '/api/admin/market-prices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLogisticsRoute = ApiAdminLogisticsRouteImport.update({
+  id: '/api/admin/logistics',
+  path: '/api/admin/logistics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLoginRoute = ApiAdminLoginRouteImport.update({
+  id: '/api/admin/login',
+  path: '/api/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminInquiriesRoute = ApiAdminInquiriesRouteImport.update({
+  id: '/api/admin/inquiries',
+  path: '/api/admin/inquiries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminForumModerationRoute = ApiAdminForumModerationRouteImport.update({
+  id: '/api/admin/forum-moderation',
+  path: '/api/admin/forum-moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFeaturedRoute = ApiAdminFeaturedRouteImport.update({
+  id: '/api/admin/featured',
+  path: '/api/admin/featured',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCustomersRoute = ApiAdminCustomersRouteImport.update({
+  id: '/api/admin/customers',
+  path: '/api/admin/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCommodityTrendsRoute = ApiAdminCommodityTrendsRouteImport.update({
+  id: '/api/admin/commodity-trends',
+  path: '/api/admin/commodity-trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAnalyticsRoute = ApiAdminAnalyticsRouteImport.update({
+  id: '/api/admin/analytics',
+  path: '/api/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAiForecastsRoute = ApiAdminAiForecastsRouteImport.update({
+  id: '/api/admin/ai-forecasts',
+  path: '/api/admin/ai-forecasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAcademyRoute = ApiAdminAcademyRouteImport.update({
+  id: '/api/admin/academy',
+  path: '/api/admin/academy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
-  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
@@ -163,15 +264,32 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
+  '/api/admin/academy': typeof ApiAdminAcademyRoute
+  '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
+  '/api/admin/customers': typeof ApiAdminCustomersRoute
+  '/api/admin/featured': typeof ApiAdminFeaturedRoute
+  '/api/admin/forum-moderation': typeof ApiAdminForumModerationRoute
+  '/api/admin/inquiries': typeof ApiAdminInquiriesRoute
+  '/api/admin/login': typeof ApiAdminLoginRoute
+  '/api/admin/logistics': typeof ApiAdminLogisticsRoute
+  '/api/admin/market-prices': typeof ApiAdminMarketPricesRoute
+  '/api/admin/news': typeof ApiAdminNewsRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRoute
+  '/api/admin/payments': typeof ApiAdminPaymentsRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/quotations': typeof ApiAdminQuotationsRoute
+  '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/upload/presign': typeof ApiUploadPresignRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
-  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
@@ -187,8 +305,26 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop': typeof ShopIndexRoute
+  '/api/admin/academy': typeof ApiAdminAcademyRoute
+  '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
+  '/api/admin/customers': typeof ApiAdminCustomersRoute
+  '/api/admin/featured': typeof ApiAdminFeaturedRoute
+  '/api/admin/forum-moderation': typeof ApiAdminForumModerationRoute
+  '/api/admin/inquiries': typeof ApiAdminInquiriesRoute
+  '/api/admin/login': typeof ApiAdminLoginRoute
+  '/api/admin/logistics': typeof ApiAdminLogisticsRoute
+  '/api/admin/market-prices': typeof ApiAdminMarketPricesRoute
+  '/api/admin/news': typeof ApiAdminNewsRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRoute
+  '/api/admin/payments': typeof ApiAdminPaymentsRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/quotations': typeof ApiAdminQuotationsRoute
+  '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/upload/presign': typeof ApiUploadPresignRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesById {
@@ -196,7 +332,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
-  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRoute
@@ -212,8 +347,26 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
+  '/api/admin/academy': typeof ApiAdminAcademyRoute
+  '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
+  '/api/admin/customers': typeof ApiAdminCustomersRoute
+  '/api/admin/featured': typeof ApiAdminFeaturedRoute
+  '/api/admin/forum-moderation': typeof ApiAdminForumModerationRoute
+  '/api/admin/inquiries': typeof ApiAdminInquiriesRoute
+  '/api/admin/login': typeof ApiAdminLoginRoute
+  '/api/admin/logistics': typeof ApiAdminLogisticsRoute
+  '/api/admin/market-prices': typeof ApiAdminMarketPricesRoute
+  '/api/admin/news': typeof ApiAdminNewsRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRoute
+  '/api/admin/payments': typeof ApiAdminPaymentsRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/quotations': typeof ApiAdminQuotationsRoute
+  '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/upload/presign': typeof ApiUploadPresignRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRouteTypes {
@@ -222,7 +375,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/academy'
-    | '/admin'
     | '/ai'
     | '/auth'
     | '/blog'
@@ -238,15 +390,32 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/shop/$productId'
     | '/shop/'
+    | '/api/admin/academy'
+    | '/api/admin/ai-forecasts'
+    | '/api/admin/analytics'
+    | '/api/admin/commodity-trends'
+    | '/api/admin/customers'
+    | '/api/admin/featured'
+    | '/api/admin/forum-moderation'
+    | '/api/admin/inquiries'
+    | '/api/admin/login'
+    | '/api/admin/logistics'
+    | '/api/admin/market-prices'
+    | '/api/admin/news'
+    | '/api/admin/orders'
+    | '/api/admin/payments'
+    | '/api/admin/products'
+    | '/api/admin/quotations'
+    | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/upload/presign'
     | '/shop/product/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/academy'
-    | '/admin'
     | '/ai'
     | '/auth'
     | '/blog'
@@ -262,15 +431,32 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/shop/$productId'
     | '/shop'
+    | '/api/admin/academy'
+    | '/api/admin/ai-forecasts'
+    | '/api/admin/analytics'
+    | '/api/admin/commodity-trends'
+    | '/api/admin/customers'
+    | '/api/admin/featured'
+    | '/api/admin/forum-moderation'
+    | '/api/admin/inquiries'
+    | '/api/admin/login'
+    | '/api/admin/logistics'
+    | '/api/admin/market-prices'
+    | '/api/admin/news'
+    | '/api/admin/orders'
+    | '/api/admin/payments'
+    | '/api/admin/products'
+    | '/api/admin/quotations'
+    | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/upload/presign'
     | '/shop/product/$slug'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/academy'
-    | '/admin'
     | '/ai'
     | '/auth'
     | '/blog'
@@ -286,8 +472,26 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/shop/$productId'
     | '/shop/'
+    | '/api/admin/academy'
+    | '/api/admin/ai-forecasts'
+    | '/api/admin/analytics'
+    | '/api/admin/commodity-trends'
+    | '/api/admin/customers'
+    | '/api/admin/featured'
+    | '/api/admin/forum-moderation'
+    | '/api/admin/inquiries'
+    | '/api/admin/login'
+    | '/api/admin/logistics'
+    | '/api/admin/market-prices'
+    | '/api/admin/news'
+    | '/api/admin/orders'
+    | '/api/admin/payments'
+    | '/api/admin/products'
+    | '/api/admin/quotations'
+    | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/upload/presign'
     | '/shop/product/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -295,7 +499,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AcademyRoute: typeof AcademyRoute
-  AdminRoute: typeof AdminRoute
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRouteWithChildren
   BlogRoute: typeof BlogRoute
@@ -308,8 +511,26 @@ export interface RootRouteChildren {
   ToolsRoute: typeof ToolsRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ApiAdminAcademyRoute: typeof ApiAdminAcademyRoute
+  ApiAdminAiForecastsRoute: typeof ApiAdminAiForecastsRoute
+  ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
+  ApiAdminCommodityTrendsRoute: typeof ApiAdminCommodityTrendsRoute
+  ApiAdminCustomersRoute: typeof ApiAdminCustomersRoute
+  ApiAdminFeaturedRoute: typeof ApiAdminFeaturedRoute
+  ApiAdminForumModerationRoute: typeof ApiAdminForumModerationRoute
+  ApiAdminInquiriesRoute: typeof ApiAdminInquiriesRoute
+  ApiAdminLoginRoute: typeof ApiAdminLoginRoute
+  ApiAdminLogisticsRoute: typeof ApiAdminLogisticsRoute
+  ApiAdminMarketPricesRoute: typeof ApiAdminMarketPricesRoute
+  ApiAdminNewsRoute: typeof ApiAdminNewsRoute
+  ApiAdminOrdersRoute: typeof ApiAdminOrdersRoute
+  ApiAdminPaymentsRoute: typeof ApiAdminPaymentsRoute
+  ApiAdminProductsRoute: typeof ApiAdminProductsRoute
+  ApiAdminQuotationsRoute: typeof ApiAdminQuotationsRoute
+  ApiAdminServicesRoute: typeof ApiAdminServicesRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiMpesaCallbackRoute: typeof ApiMpesaCallbackRoute
+  ApiUploadPresignRoute: typeof ApiUploadPresignRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
 }
 
@@ -385,13 +606,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/academy': {
       id: '/academy'
       path: '/academy'
@@ -455,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/upload/presign': {
+      id: '/api/upload/presign'
+      path: '/api/upload/presign'
+      fullPath: '/api/upload/presign'
+      preLoaderRoute: typeof ApiUploadPresignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mpesa/callback': {
       id: '/api/mpesa/callback'
       path: '/api/mpesa/callback'
@@ -467,6 +688,125 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/chat'
       fullPath: '/api/ai/chat'
       preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/services': {
+      id: '/api/admin/services'
+      path: '/api/admin/services'
+      fullPath: '/api/admin/services'
+      preLoaderRoute: typeof ApiAdminServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/quotations': {
+      id: '/api/admin/quotations'
+      path: '/api/admin/quotations'
+      fullPath: '/api/admin/quotations'
+      preLoaderRoute: typeof ApiAdminQuotationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/products': {
+      id: '/api/admin/products'
+      path: '/api/admin/products'
+      fullPath: '/api/admin/products'
+      preLoaderRoute: typeof ApiAdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/payments': {
+      id: '/api/admin/payments'
+      path: '/api/admin/payments'
+      fullPath: '/api/admin/payments'
+      preLoaderRoute: typeof ApiAdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/orders': {
+      id: '/api/admin/orders'
+      path: '/api/admin/orders'
+      fullPath: '/api/admin/orders'
+      preLoaderRoute: typeof ApiAdminOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/news': {
+      id: '/api/admin/news'
+      path: '/api/admin/news'
+      fullPath: '/api/admin/news'
+      preLoaderRoute: typeof ApiAdminNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/market-prices': {
+      id: '/api/admin/market-prices'
+      path: '/api/admin/market-prices'
+      fullPath: '/api/admin/market-prices'
+      preLoaderRoute: typeof ApiAdminMarketPricesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/logistics': {
+      id: '/api/admin/logistics'
+      path: '/api/admin/logistics'
+      fullPath: '/api/admin/logistics'
+      preLoaderRoute: typeof ApiAdminLogisticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/login': {
+      id: '/api/admin/login'
+      path: '/api/admin/login'
+      fullPath: '/api/admin/login'
+      preLoaderRoute: typeof ApiAdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/inquiries': {
+      id: '/api/admin/inquiries'
+      path: '/api/admin/inquiries'
+      fullPath: '/api/admin/inquiries'
+      preLoaderRoute: typeof ApiAdminInquiriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/forum-moderation': {
+      id: '/api/admin/forum-moderation'
+      path: '/api/admin/forum-moderation'
+      fullPath: '/api/admin/forum-moderation'
+      preLoaderRoute: typeof ApiAdminForumModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/featured': {
+      id: '/api/admin/featured'
+      path: '/api/admin/featured'
+      fullPath: '/api/admin/featured'
+      preLoaderRoute: typeof ApiAdminFeaturedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/customers': {
+      id: '/api/admin/customers'
+      path: '/api/admin/customers'
+      fullPath: '/api/admin/customers'
+      preLoaderRoute: typeof ApiAdminCustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commodity-trends': {
+      id: '/api/admin/commodity-trends'
+      path: '/api/admin/commodity-trends'
+      fullPath: '/api/admin/commodity-trends'
+      preLoaderRoute: typeof ApiAdminCommodityTrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/analytics': {
+      id: '/api/admin/analytics'
+      path: '/api/admin/analytics'
+      fullPath: '/api/admin/analytics'
+      preLoaderRoute: typeof ApiAdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/ai-forecasts': {
+      id: '/api/admin/ai-forecasts'
+      path: '/api/admin/ai-forecasts'
+      fullPath: '/api/admin/ai-forecasts'
+      preLoaderRoute: typeof ApiAdminAiForecastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/academy': {
+      id: '/api/admin/academy'
+      path: '/api/admin/academy'
+      fullPath: '/api/admin/academy'
+      preLoaderRoute: typeof ApiAdminAcademyRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -490,7 +830,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcademyRoute: AcademyRoute,
-  AdminRoute: AdminRoute,
   AiRoute: AiRoute,
   AuthRoute: AuthRouteWithChildren,
   BlogRoute: BlogRoute,
@@ -503,8 +842,26 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsRoute: ToolsRoute,
   ShopProductIdRoute: ShopProductIdRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ApiAdminAcademyRoute: ApiAdminAcademyRoute,
+  ApiAdminAiForecastsRoute: ApiAdminAiForecastsRoute,
+  ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
+  ApiAdminCommodityTrendsRoute: ApiAdminCommodityTrendsRoute,
+  ApiAdminCustomersRoute: ApiAdminCustomersRoute,
+  ApiAdminFeaturedRoute: ApiAdminFeaturedRoute,
+  ApiAdminForumModerationRoute: ApiAdminForumModerationRoute,
+  ApiAdminInquiriesRoute: ApiAdminInquiriesRoute,
+  ApiAdminLoginRoute: ApiAdminLoginRoute,
+  ApiAdminLogisticsRoute: ApiAdminLogisticsRoute,
+  ApiAdminMarketPricesRoute: ApiAdminMarketPricesRoute,
+  ApiAdminNewsRoute: ApiAdminNewsRoute,
+  ApiAdminOrdersRoute: ApiAdminOrdersRoute,
+  ApiAdminPaymentsRoute: ApiAdminPaymentsRoute,
+  ApiAdminProductsRoute: ApiAdminProductsRoute,
+  ApiAdminQuotationsRoute: ApiAdminQuotationsRoute,
+  ApiAdminServicesRoute: ApiAdminServicesRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiMpesaCallbackRoute: ApiMpesaCallbackRoute,
+  ApiUploadPresignRoute: ApiUploadPresignRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
 }
 export const routeTree = rootRouteImport

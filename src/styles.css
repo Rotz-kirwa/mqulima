@@ -338,13 +338,6 @@ button[class*="border-border"] {
 }
 
 /* Partner & Stats Marquee Styles */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
 .marquee-wrapper:hover .animate-marquee {
   animation-play-state: paused;
 }

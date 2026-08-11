@@ -204,12 +204,17 @@ export const logoutUser = createServerFn({ method: "POST" })
 
 export const getCurrentUser = createServerFn({ method: "GET" })
   .handler(async () => {
-    let token = getCookie(COOKIE_NAME);
+    let token = null;
+    try {
+      token = getCookie(COOKIE_NAME);
+    } catch (e) {
+      // Safe fallback outside HTTP request context
+    }
     if (!token) {
       try {
         const { getRequestHeaders } = await import("@tanstack/react-start/server");
         const headers = getRequestHeaders();
-        const authHeader = headers.get("authorization");
+        const authHeader = headers?.get("authorization");
         if (authHeader && authHeader.startsWith("Bearer ")) {
           token = authHeader.slice(7).trim();
         }

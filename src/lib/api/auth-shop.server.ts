@@ -88,37 +88,79 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   // Hash password
   const passwordHash = await bcrypt.hash(data.password, 10);
 
-  // Insert user
-  const [newUser] = await sql`
-    INSERT INTO users (
-      first_name,
-      last_name,
-      phone_number,
-      email,
-      national_id,
-      county,
-      delivery_location,
-      landmark,
-      farming_type,
-      specify_farming_type,
-      password_hash
-    ) VALUES (
-      ${data.firstName.trim()},
-      ${data.lastName.trim()},
-      ${cleanPhone},
-      ${cleanEmail},
-      ${cleanId},
-      ${data.county},
-      ${data.deliveryLocation.trim()},
-      ${data.landmark?.trim() || null},
-      ${data.farmingType},
-      ${data.specifyFarmingType?.trim() || null},
-      ${passwordHash}
-    )
-    RETURNING id
-  `;
+  // Atomic insertion into both users and profiles tables for sync architecture
+  const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
+  const username = `${data.firstName.trim().toLowerCase()}_${Date.now().toString().slice(-4)}`;
 
-  return { success: true, userId: newUser.id };
+  let userId: string;
+
+  await sql.begin(async (tx: any) => {
+    const [newUser] = await tx`
+      INSERT INTO users (
+        first_name,
+        last_name,
+        phone_number,
+        email,
+        national_id,
+        county,
+        delivery_location,
+        landmark,
+        farming_type,
+        specify_farming_type,
+        password_hash
+      ) VALUES (
+        ${data.firstName.trim()},
+        ${data.lastName.trim()},
+        ${cleanPhone},
+        ${cleanEmail},
+        ${cleanId},
+        ${data.county},
+        ${data.deliveryLocation.trim()},
+        ${data.landmark?.trim() || null},
+        ${data.farmingType},
+        ${data.specifyFarmingType?.trim() || null},
+        ${passwordHash}
+      )
+      RETURNING id
+    `;
+
+    userId = newUser.id;
+
+    await tx`
+      INSERT INTO profiles (
+        id,
+        email,
+        password_hash,
+        full_name,
+        username,
+        phone,
+        id_number,
+        county_region,
+        delivery_address,
+        role
+      ) VALUES (
+        ${userId},
+        ${cleanEmail},
+        ${passwordHash},
+        ${fullName},
+        ${username},
+        ${cleanPhone},
+        ${cleanId},
+        ${data.county},
+        ${data.deliveryLocation.trim()},
+        'farmer'
+      )
+      ON CONFLICT (id) DO UPDATE
+      SET
+        email = ${cleanEmail},
+        password_hash = ${passwordHash},
+        full_name = ${fullName},
+        phone = ${cleanPhone},
+        updated_at = NOW()
+    `;
+  });
+
+  return { success: true, userId: userId! };
 }
 
 // Core business logic to sign in a shop user
@@ -144,6 +186,33 @@ export async function performSignIn(data: z.infer<typeof SignInSchema>): Promise
       FROM users
       WHERE phone_number = ${cleanPhone} OR phone_number = ${'+254' + cleanPhone} OR phone_number = ${'0' + cleanPhone}
     `;
+  }
+
+  if (!dbUser) {
+    // Fallback: Check profiles table if user registered via core auth
+    if (ident.includes("@")) {
+      const cleanEmail = ident.toLowerCase();
+      const [prof] = await sql`
+        SELECT id, full_name, email, phone as phone_number, password_hash
+        FROM profiles
+        WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
+      `;
+      if (prof) {
+        const names = (prof.full_name || "User").split(" ");
+        dbUser = { id: prof.id, first_name: names[0], last_name: names.slice(1).join(" ") || "", email: prof.email, phone_number: prof.phone_number, password_hash: prof.password_hash };
+      }
+    } else {
+      const cleanPhone = ident.replace(/\s+/g, "");
+      const [prof] = await sql`
+        SELECT id, full_name, email, phone as phone_number, password_hash
+        FROM profiles
+        WHERE (phone = ${cleanPhone} OR phone = ${'+254' + cleanPhone} OR phone = ${'0' + cleanPhone}) AND deleted_at IS NULL
+      `;
+      if (prof) {
+        const names = (prof.full_name || "User").split(" ");
+        dbUser = { id: prof.id, first_name: names[0], last_name: names.slice(1).join(" ") || "", email: prof.email, phone_number: prof.phone_number, password_hash: prof.password_hash };
+      }
+    }
   }
 
   if (!dbUser) {

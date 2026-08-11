@@ -128,7 +128,7 @@ export function Footer() {
           <FooterCol
             title="Platform"
             links={[
-              { to: "/shop", label: "Agrovet Shop" },
+              { to: "/shop", label: "AgroShop" },
               { to: "/academy", label: "Mqulima Academy" },
               { to: "/blog", label: "Mqulima News" },
               { to: "/community", label: "Mqulima Forum" },

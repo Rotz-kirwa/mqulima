@@ -89,9 +89,9 @@ function ShopPage() {
   // Filter states
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(25000);
+  const [maxPrice, setMaxPrice] = useState<number>(1000000);
   const [appliedMinPrice, setAppliedMinPrice] = useState<number>(0);
-  const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(25000);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(1000000);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -143,8 +143,8 @@ function ShopPage() {
       const taxonomy = mapToNewTaxonomy(p);
       return {
         ...p,
-        category: taxonomy.category,
-        subcategory: taxonomy.subcategory
+        category: p.category || taxonomy.category,
+        subcategory: p.subcategory || taxonomy.subcategory
       };
     });
   }, [rawProductsList]);
@@ -680,7 +680,7 @@ Please notify me if it becomes available!`;
 
           {/* Breadcrumb strip / Filter tags */}
           <div className="text-xs text-left mb-6 flex items-center flex-wrap gap-2 text-gray-500 font-medium">
-            <Link to="/shop" onClick={() => handleCategorySelect("All")} className="hover:text-[#2D6A4F] transition font-bold">Shop</Link>
+            <Link to="/shop" onClick={() => handleCategorySelect("All")} className="hover:text-[#2D6A4F] transition font-bold">AgroShop</Link>
             {selectedCategory !== "All" && (
               <>
                 <ChevronRight size={12} className="text-gray-300" />

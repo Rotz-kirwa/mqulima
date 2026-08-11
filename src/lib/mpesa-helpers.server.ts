@@ -124,18 +124,32 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
     if (ResultCode === 0) {
       const items = stkCallback.CallbackMetadata?.Item || [];
       const receiptNumber = items.find((item: any) => item.Name === "MpesaReceiptNumber")?.Value;
+      const paidAmount = items.find((item: any) => item.Name === "Amount")?.Value;
 
-      // Update payment to 'paid' (enum constraint)
+      const expectedAmount = Number(payment.amount) || 0;
+      const actualPaid = Number(paidAmount) || 0;
+
+      let paymentState = "paid";
+      let orderPaymentState = "paid";
+
+      // Verification: Check if paid amount matches expected order total
+      if (actualPaid > 0 && actualPaid < expectedAmount) {
+        console.warn(`[M-PESA SECURITY WARNING] Payment amount mismatch for Order #${payment.order_id}. Expected KSh ${expectedAmount}, received KSh ${actualPaid}.`);
+        paymentState = "partial_paid";
+        orderPaymentState = "partial_payment";
+      }
+
+      // Update payment to 'paid' or 'partial_paid'
       await tx`
         UPDATE payments
-        SET status = 'paid', provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${tx.json(payload)}
+        SET status = ${paymentState}, provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${tx.json(payload)}
         WHERE id = ${payment.id}
       `;
 
-      // Update orders table status to 'paid'
+      // Update orders table status
       await tx`
         UPDATE orders
-        SET payment_status = 'paid'
+        SET payment_status = ${orderPaymentState}
         WHERE id = ${payment.order_id}
       `;
 
@@ -149,20 +163,79 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
           orderId: payment.order_id,
           checkoutRequestId: CheckoutRequestID,
           receiptNumber,
-          amount: payment.amount
+          expectedAmount,
+          actualPaid,
+          status: paymentState,
         }
       });
 
-      console.log(`[M-PESA] Successfully completed payment for order: ${payment.order_id}`);
+      console.log(`[M-PESA] Successfully processed payment for order: ${payment.order_id} (Status: ${paymentState})`);
     } else {
-      // Update payment to 'failed'
+      // Payment failed or cancelled by user
       await tx`
         UPDATE payments
         SET status = 'failed', raw_payload = ${tx.json(payload)}
         WHERE id = ${payment.id}
       `;
 
-      // Write audit log
+      // Fetch order details for inventory restoration
+      const [orderRecord] = await tx`
+        SELECT id, items, status, payment_status
+        FROM orders
+        WHERE id = ${payment.order_id}
+      `;
+
+      if (orderRecord && orderRecord.status !== "cancelled") {
+        // Mark order as cancelled due to payment failure
+        await tx`
+          UPDATE orders
+          SET status = 'cancelled', payment_status = 'failed'
+          WHERE id = ${payment.order_id}
+        `;
+
+        // Restore inventory stock for each order item
+        let restoredItemCount = 0;
+        try {
+          const rawItems = typeof orderRecord.items === "string"
+            ? JSON.parse(orderRecord.items)
+            : (orderRecord.items || []);
+
+          if (Array.isArray(rawItems)) {
+            for (const item of rawItems) {
+              const productId = item.productId || item.id;
+              const qty = Number(item.qty || item.quantity || 1);
+
+              if (productId && qty > 0) {
+                await tx`
+                  UPDATE products
+                  SET stock_qty = stock_qty + ${qty}, updated_at = NOW()
+                  WHERE id = ${productId}
+                `;
+                restoredItemCount++;
+              }
+            }
+          }
+        } catch (itemErr) {
+          console.error(`[M-PESA] Failed to parse order items for stock restoration on order ${payment.order_id}:`, itemErr);
+        }
+
+        // Write inventory restoration audit log
+        await writeAuditLog({
+          action: "inventory.restored_on_payment_failure",
+          actorId: null,
+          entityType: "order",
+          entityId: payment.order_id,
+          diff: {
+            checkoutRequestId: CheckoutRequestID,
+            restoredItemCount,
+            reason: ResultDesc || "M-Pesa transaction cancelled or failed",
+          }
+        });
+
+        console.log(`[M-PESA] Restored stock for ${restoredItemCount} items from cancelled order: ${payment.order_id}`);
+      }
+
+      // Write payment failure audit log
       await writeAuditLog({
         action: "payment.failed",
         actorId: null,

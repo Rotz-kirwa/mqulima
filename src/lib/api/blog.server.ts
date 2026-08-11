@@ -6,58 +6,123 @@ import { z } from "zod";
 // ============================================================================
 
 /**
- * Fetch all published blog posts, joined with author profile name.
- * Used by the main /blog page.
+ * Fetch all published blog posts & agritech news, joined with author profile name.
+ * Used by the main /blog & /news pages.
  */
 export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
   async () => {
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    const posts = await sql`
-      SELECT
-        bp.id,
-        bp.title,
-        bp.slug,
-        bp.cover_image,
-        bp.excerpt,
-        bp.body,
-        bp.category,
-        bp.status,
-        bp.published_at,
-        bp.view_count,
-        bp.created_at,
-        p.full_name   AS author_name,
-        p.username    AS author_username,
-        ba.bio        AS author_bio
-      FROM blog_posts bp
-      JOIN blog_authors ba ON ba.id = bp.author_id
-      JOIN profiles p      ON p.id  = ba.profile_id
-      WHERE bp.status = 'published'
-      ORDER BY bp.published_at DESC NULLS LAST
+    // Ensure agritech_news table columns exist
+    await sql`
+      ALTER TABLE agritech_news 
+      ADD COLUMN IF NOT EXISTS media_type varchar(20) DEFAULT 'image',
+      ADD COLUMN IF NOT EXISTS media_url text;
     `;
 
-    return posts.map((row) => ({
+    // Fetch published agritech news from CMS table
+    const agritechArticles = await sql`
+      SELECT
+        id,
+        title,
+        slug,
+        summary AS excerpt,
+        content AS body,
+        media_type AS "mediaType",
+        media_url AS "mediaUrl",
+        category,
+        source_attribution AS "authorName",
+        published_at AS "publishedAt",
+        created_at AS "createdAt"
+      FROM agritech_news
+      WHERE status = 'published'
+      ORDER BY published_at DESC NULLS LAST
+    `;
+
+    // Fetch published blog posts
+    let legacyPosts: any[] = [];
+    try {
+      legacyPosts = await sql`
+        SELECT
+          bp.id,
+          bp.title,
+          bp.slug,
+          bp.cover_image AS "mediaUrl",
+          bp.excerpt,
+          bp.body,
+          bp.category,
+          bp.status,
+          bp.published_at AS "publishedAt",
+          bp.view_count AS "viewCount",
+          bp.created_at AS "createdAt",
+          p.full_name   AS "authorName",
+          p.username    AS author_username,
+          ba.bio        AS author_bio
+        FROM blog_posts bp
+        LEFT JOIN blog_authors ba ON ba.id = bp.author_id
+        LEFT JOIN profiles p      ON p.id  = ba.profile_id
+        WHERE bp.status = 'published'
+        ORDER BY bp.published_at DESC NULLS LAST
+      `;
+    } catch (_) {
+      legacyPosts = [];
+    }
+
+    const formattedAgritech = agritechArticles.map((row) => ({
       id: row.id as string,
       title: row.title as string,
       slug: row.slug as string,
-      coverImage: (row.cover_image as string) || "",
+      coverImage: (row.mediaUrl as string) || "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+      mediaType: (row.mediaType as "image" | "video") || "image",
+      mediaUrl: (row.mediaUrl as string) || "",
+      excerpt: (row.excerpt as string) || "",
+      body: row.body as string,
+      category: (row.category as string) || "Policy & Market",
+      publishedAt: row.publishedAt
+        ? new Date(row.publishedAt as string).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : new Date(row.createdAt as string).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+      viewCount: 1,
+      readTime: `${Math.max(2, Math.ceil(((row.body as string) || "").split(" ").length / 150))} min read`,
+      author: {
+        name: (row.authorName as string) || "Mqulima Editorial Desk",
+        role: "Agritech News Desk",
+        avatarInitials: "MN",
+        bio: "Official Mqulima Agricultural Intelligence & Extension Division",
+      },
+    }));
+
+    const formattedLegacy = legacyPosts.map((row) => ({
+      id: row.id as string,
+      title: row.title as string,
+      slug: row.slug as string,
+      coverImage: (row.mediaUrl as string) || "",
+      mediaType: "image" as const,
+      mediaUrl: (row.mediaUrl as string) || "",
       excerpt: (row.excerpt as string) || "",
       body: row.body as string,
       category: (row.category as string) || "General",
-      publishedAt: row.published_at
-        ? new Date(row.published_at as string).toLocaleDateString("en-US", {
+      publishedAt: row.publishedAt
+        ? new Date(row.publishedAt as string).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
           })
         : "",
-      viewCount: (row.view_count as number) || 0,
+      viewCount: (row.viewCount as number) || 0,
       readTime: `${Math.max(2, Math.ceil(((row.body as string) || "").split(" ").length / 150))} min read`,
       author: {
-        name: (row.author_name as string) || "Mqulima Author",
+        name: (row.authorName as string) || "Mqulima Author",
         role: "Mqulima Agronomist",
-        avatarInitials: ((row.author_name as string) || "MA")
+        avatarInitials: ((row.authorName as string) || "MA")
           .split(" ")
           .map((n: string) => n[0])
           .join("")
@@ -66,6 +131,8 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
         bio: (row.author_bio as string) || "",
       },
     }));
+
+    return [...formattedAgritech, ...formattedLegacy];
   }
 );
 
@@ -73,75 +140,16 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
  * Increment view count for a blog post.
  */
 export const incrementBlogViewCount = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ postId: z.string().uuid() }))
+  .inputValidator(z.object({ postId: z.string() }))
   .handler(async ({ data }) => {
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
-    await sql`
-      UPDATE blog_posts
-      SET view_count = COALESCE(view_count, 0) + 1
-      WHERE id = ${data.postId}
-    `;
+    try {
+      const { getDb } = await import("../db.server");
+      const sql = getDb();
+      await sql`
+        UPDATE blog_posts
+        SET view_count = COALESCE(view_count, 0) + 1
+        WHERE id = ${data.postId}
+      `;
+    } catch (_) {}
     return { success: true };
-  });
-
-/**
- * Submit a community story / blog post.
- * Creates a draft post attributed to the logged-in user.
- * Requires authentication — returns error if not logged in.
- */
-export const submitBlogPost = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      title: z.string().min(5).max(300),
-      category: z.string().min(1),
-      excerpt: z.string().max(400).optional().default(""),
-      body: z.string().min(20),
-      coverImage: z.string().url().optional().default(""),
-    })
-  )
-  .handler(async ({ data }) => {
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
-
-    // Check if a blog_author record exists for the super_admin / any active admin
-    // For community submissions we attach them to the first active author
-    const [author] = await sql`
-      SELECT ba.id
-      FROM blog_authors ba
-      JOIN profiles p ON p.id = ba.profile_id
-      WHERE ba.is_active = TRUE
-      ORDER BY ba.created_at
-      LIMIT 1
-    `;
-
-    if (!author) {
-      throw new Error(
-        "No active blog author found. Please contact the administrator."
-      );
-    }
-
-    // Generate a URL-safe slug from title
-    const baseSlug = data.title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .slice(0, 80);
-    const slug = `${baseSlug}-${Date.now()}`;
-
-    await sql`
-      INSERT INTO blog_posts (author_id, title, slug, cover_image, excerpt, body, category, status)
-      VALUES (
-        ${author.id},
-        ${data.title},
-        ${slug},
-        ${data.coverImage || null},
-        ${data.excerpt || null},
-        ${data.body},
-        ${data.category},
-        'draft'
-      )
-    `;
-
-    return { success: true, message: "Story submitted for editorial review." };
   });

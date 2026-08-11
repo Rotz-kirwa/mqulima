@@ -21,6 +21,15 @@ import {
   Filter,
   Tag,
   X,
+  Wrench,
+  CheckCircle,
+  Clock,
+  UserCheck,
+  Phone,
+  MessageSquare,
+  FileText,
+  AlertCircle,
+  Eye,
   type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -32,6 +41,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserOrders, getUserServiceBookings, getUserNotifications, markNotificationRead } from "@/lib/api/dashboard.server";
 import { getProducts } from "@/lib/api/products.server";
 import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCategoriesList } from "@/lib/api/admin-shop.server";
+import { adminGetServiceRequests, adminAssignServiceExpert, adminUpdateServiceStatus } from "@/lib/api/admin-services.server";
 
 export const Route = createFileRoute("/dashboard")({
   component: RedirectToHome,
@@ -96,7 +106,14 @@ function Dashboard() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (user && (user.role === "admin" || user.role === "super_admin")) {
+      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link) {
+        link.href = "https://i.pinimg.com/1200x/40/27/8b/40278bca7c2df2276814acc0ae7b8afe.jpg";
+        link.type = "image/jpeg";
+      }
+    }
+  }, [user]);
 
   if (!mounted || isLoading) {
     return (
@@ -160,7 +177,8 @@ function Dashboard() {
       {/* Main Dashboard Background */}
       <div className="bg-[#FAFBF9] min-h-screen py-12 md:py-16">
         {(user.role === "admin" || user.role === "super_admin") && (
-          <section className="container-px mx-auto max-w-7xl pb-10">
+          <section className="container-px mx-auto max-w-7xl pb-10 space-y-10">
+            <AdminServiceRequestsPanel />
             <AdminFeaturedProductsPanel />
           </section>
         )}
@@ -629,10 +647,10 @@ function AdminFeaturedProductsPanel() {
             <Star className="h-3.5 w-3.5 fill-[#35610D] text-[#35610D] animate-pulse" /> Admin Portal
           </span>
           <h2 className="mt-2 text-2xl sm:text-3xl font-black text-[#0F291E] font-['Outfit',sans-serif]">
-            Manage Featured Collection
+            Product Catalog & Inventory
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Filter by category to add, edit, or remove featured products on the platform.
+            Filter by category to add, edit, or pin featured products across the platform.
           </p>
         </div>
 
@@ -971,6 +989,403 @@ function AdminFeaturedProductsPanel() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminServiceRequestsPanel() {
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [channelFilter, setChannelFilter] = useState("All");
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [assignAgentName, setAssignAgentName] = useState("");
+  const [actionNotes, setActionNotes] = useState("");
+  const [modalTargetStatus, setModalTargetStatus] = useState<string>("");
+
+  const { data: requestsList = [], isLoading } = useQuery({
+    queryKey: ["adminServiceRequests"],
+    queryFn: () => adminGetServiceRequests(),
+    refetchInterval: 10000,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async ({ id, assignedAgent, targetStatus, notes }: any) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminAssignServiceExpert({
+        data: {
+          id,
+          assignedAgent,
+          targetStatus: targetStatus || "assigned",
+          notes,
+          csrfToken: getCsrfTokenFromCookie(),
+        },
+      });
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["adminServiceRequests"] });
+      toast.success(res.message);
+      setSelectedRequest(null);
+      setAssignAgentName("");
+      setActionNotes("");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to assign expert");
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, targetStatus, notes }: any) => {
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      return adminUpdateServiceStatus({
+        data: {
+          id,
+          targetStatus,
+          notes,
+          csrfToken: getCsrfTokenFromCookie(),
+        },
+      });
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["adminServiceRequests"] });
+      toast.success(res.message);
+      setSelectedRequest(null);
+      setActionNotes("");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update status");
+    },
+  });
+
+  const filteredRequests = requestsList.filter((r: any) => {
+    const matchesSearch =
+      r.referenceCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.phone.includes(searchTerm) ||
+      r.serviceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.county.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === "All" || r.status === statusFilter;
+    const matchesChannel = channelFilter === "All" || r.channel === channelFilter;
+
+    return matchesSearch && matchesStatus && matchesChannel;
+  });
+
+  const totalCount = requestsList.length;
+  const requestedCount = requestsList.filter((r: any) => r.status === "requested").length;
+  const assignedCount = requestsList.filter((r: any) => r.status === "assigned" || r.status === "in_progress").length;
+  const completedCount = requestsList.filter((r: any) => r.status === "completed").length;
+
+  return (
+    <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm text-left mb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 text-xs font-bold text-emerald-800">
+            <Wrench className="h-3.5 w-3.5 text-emerald-700" /> Service Dispatch Console
+          </span>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-[#0F291E] font-['Outfit',sans-serif]">
+            Incoming Service Orders & Bookings
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Real-time management of farmer service requests from website checkout & WhatsApp quotation dispatch.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-extrabold text-amber-800">
+            <Clock className="h-4 w-4 text-amber-600 animate-pulse" /> {requestedCount} New Requests
+          </span>
+        </div>
+      </div>
+
+      {/* Overview Stat Widgets */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+          <div className="text-xs text-slate-500 font-bold uppercase">Total Bookings</div>
+          <div className="text-2xl font-black text-[#0F291E] mt-1">{totalCount}</div>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div className="text-xs text-amber-700 font-bold uppercase">Pending Action</div>
+          <div className="text-2xl font-black text-amber-900 mt-1">{requestedCount}</div>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <div className="text-xs text-blue-700 font-bold uppercase">Active / Assigned</div>
+          <div className="text-2xl font-black text-blue-900 mt-1">{assignedCount}</div>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+          <div className="text-xs text-emerald-700 font-bold uppercase">Completed</div>
+          <div className="text-2xl font-black text-emerald-900 mt-1">{completedCount}</div>
+        </div>
+      </div>
+
+      {/* Filters & Search Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 mb-5 justify-between">
+        <div className="relative w-full sm:w-80">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+            <Search className="h-4 w-4" />
+          </span>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search ref, farmer, phone, county..."
+            className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 bg-white focus:outline-none"
+          >
+            <option value="All">All Statuses</option>
+            <option value="requested">Requested (Pending)</option>
+            <option value="assigned">Assigned</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          {/* Channel Filter */}
+          <select
+            value={channelFilter}
+            onChange={(e) => setChannelFilter(e.target.value)}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 bg-white focus:outline-none"
+          >
+            <option value="All">All Channels</option>
+            <option value="website">Website Direct</option>
+            <option value="whatsapp">WhatsApp Quote</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+        </div>
+      ) : filteredRequests.length === 0 ? (
+        <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-gray-400 text-xs">
+          No service requests found matching your filter criteria.
+        </div>
+      ) : (
+        <div className="overflow-x-auto border border-gray-100 rounded-2xl">
+          <table className="w-full border-collapse text-left text-xs text-gray-600">
+            <thead className="bg-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3.5">Ref Code</th>
+                <th className="px-4 py-3.5">Farmer & Contact</th>
+                <th className="px-4 py-3.5">Service & Scale</th>
+                <th className="px-4 py-3.5 text-center">Channel</th>
+                <th className="px-4 py-3.5 text-center">Status</th>
+                <th className="px-4 py-3.5 text-center">Assigned Expert</th>
+                <th className="px-4 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {filteredRequests.map((r: any) => {
+                let statusBadge = "bg-amber-100 text-amber-800 border-amber-200";
+                if (r.status === "assigned") statusBadge = "bg-blue-100 text-blue-800 border-blue-200";
+                if (r.status === "in_progress") statusBadge = "bg-purple-100 text-purple-800 border-purple-200";
+                if (r.status === "completed") statusBadge = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                if (r.status === "cancelled") statusBadge = "bg-rose-100 text-rose-800 border-rose-200";
+
+                return (
+                  <tr key={r.id} className="hover:bg-slate-50/70 transition">
+                    <td className="px-4 py-3.5 font-extrabold text-[#0F291E]">
+                      {r.referenceCode}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="font-bold text-gray-900">{r.fullName}</div>
+                      <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-0.5">
+                        <Phone className="h-3 w-3 text-emerald-600 shrink-0" />
+                        <span>{r.phone}</span>
+                        <span className="text-gray-300">•</span>
+                        <span>{r.county}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="font-bold text-[#0F291E]">{r.serviceType}</div>
+                      <div className="text-[11px] text-gray-400">{r.farmScale}</div>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        r.channel === "whatsapp" 
+                          ? "bg-[#25D366]/15 text-[#1DA851]" 
+                          : "bg-slate-100 text-slate-600"
+                      }`}>
+                        {r.channel === "whatsapp" ? <MessageSquare className="h-3 w-3 text-[#25D366]" /> : <FileText className="h-3 w-3 text-slate-500" />}
+                        {r.channel === "whatsapp" ? "WhatsApp" : "Website"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${statusBadge}`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center font-medium">
+                      {r.assignedTechnician ? (
+                        <span className="inline-flex items-center gap-1 text-blue-700 font-bold">
+                          <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+                          {r.assignedTechnician}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(r);
+                          setAssignAgentName(r.assignedTechnician || "");
+                          setModalTargetStatus(r.status);
+                          setActionNotes("");
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#0D2A1C] hover:bg-[#153f2b] text-white text-[11px] font-bold transition shadow-xs cursor-pointer"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> Manage
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Action / Inspection Modal */}
+      {selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 text-left">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                  Service Request Manager
+                </span>
+                <h3 className="text-lg font-black text-[#0F291E] mt-1">
+                  {selectedRequest.referenceCode} — {selectedRequest.serviceType}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Farmer Contact</span>
+                  <span className="font-bold text-gray-800">{selectedRequest.fullName}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Phone Number</span>
+                  <span className="font-bold text-gray-800">{selectedRequest.phone}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Location / County</span>
+                  <span className="font-bold text-gray-800">{selectedRequest.county}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Farm Scale</span>
+                  <span className="font-bold text-gray-800">{selectedRequest.farmScale}</span>
+                </div>
+              </div>
+              {selectedRequest.notes && (
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Farmer Notes</span>
+                  <p className="text-gray-700 italic">{selectedRequest.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Assignment & Status Controls */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Assign Agronomist / Expert Agent
+                </label>
+                <input
+                  type="text"
+                  value={assignAgentName}
+                  onChange={(e) => setAssignAgentName(e.target.value)}
+                  placeholder="e.g. Dr. John Kiprop (Agronomist)"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Update Service Status
+                </label>
+                <select
+                  value={modalTargetStatus}
+                  onChange={(e) => setModalTargetStatus(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none"
+                >
+                  <option value="requested">Requested (Pending)</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Admin Dispatch Notes (Optional)
+                </label>
+                <textarea
+                  value={actionNotes}
+                  onChange={(e) => setActionNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Add notes on dispatch status, quotation pricing or expert schedule..."
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  if (assignAgentName && assignAgentName !== selectedRequest.assignedTechnician) {
+                    assignMutation.mutate({
+                      id: selectedRequest.id,
+                      assignedAgent: assignAgentName,
+                      targetStatus: modalTargetStatus || "assigned",
+                      notes: actionNotes,
+                    });
+                  } else if (modalTargetStatus !== selectedRequest.status) {
+                    updateStatusMutation.mutate({
+                      id: selectedRequest.id,
+                      targetStatus: modalTargetStatus,
+                      notes: actionNotes,
+                    });
+                  } else {
+                    toast.info("No changes were made");
+                  }
+                }}
+                disabled={assignMutation.isPending || updateStatusMutation.isPending}
+                className="px-5 py-2.5 rounded-xl bg-[#0D2A1C] hover:bg-[#153f2b] text-white text-xs font-bold transition shadow-sm"
+              >
+                {assignMutation.isPending || updateStatusMutation.isPending ? "Saving..." : "Save Dispatch Changes"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

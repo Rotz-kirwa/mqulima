@@ -30,11 +30,11 @@ const parsedDbUrl = dbUrl.includes("Mq@Hub#Dev2026!")
   : dbUrl;
 
 async function run() {
-  console.log("Connecting to PostgreSQL...");
+  console.log("⚡ Connecting to PostgreSQL for migration run...");
   const isLocal = parsedDbUrl.includes("localhost") || parsedDbUrl.includes("127.0.0.1") || parsedDbUrl.includes("::1");
   const sql = postgres(parsedDbUrl, { 
     max: 1,
-    ssl: isLocal ? false : "require"
+    ssl: isLocal ? false : { rejectUnauthorized: false }
   });
 
   try {
@@ -58,7 +58,7 @@ async function run() {
       .sort();
 
     if (profilesExists) {
-      console.log("Database already initialized. Seeding schema_migrations with existing files...");
+      console.log("Database initialized. Ensuring legacy migration baselines are recorded...");
       for (const file of files) {
         if (file < "00017_create_users_table.sql") {
           await sql`
@@ -70,7 +70,7 @@ async function run() {
       }
     }
 
-    console.log(`Found ${files.length} migration files.`);
+    console.log(`Found ${files.length} migration files in db/migrations.`);
 
     for (const file of files) {
       const [alreadyApplied] = await sql`
@@ -78,25 +78,27 @@ async function run() {
       `;
 
       if (alreadyApplied) {
-        console.log(`Migration ${file} is already applied.`);
+        console.log(`[SKIP] Migration ${file} is already applied.`);
         continue;
       }
 
-      console.log(`Applying migration ${file}...`);
+      console.log(`[APPLYING] Executing migration ${file}...`);
       const content = fs.readFileSync(path.join(migrationsDir, file), "utf-8");
       
-      // Execute the migration content
-      await sql.unsafe(content);
+      // Execute the migration content inside transaction block
+      await sql.begin(async (tx) => {
+        await tx.unsafe(content);
+        await tx`
+          INSERT INTO schema_migrations (version) VALUES (${file})
+        `;
+      });
 
-      await sql`
-        INSERT INTO schema_migrations (version) VALUES (${file})
-      `;
-      console.log(`Successfully applied ${file}.`);
+      console.log(`[SUCCESS] Migration ${file} applied successfully.`);
     }
 
-    console.log("All migrations applied successfully!");
+    console.log("✅ All migrations applied cleanly and database schema is up-to-date!");
   } catch (error) {
-    console.error("Migrations failed:", error);
+    console.error("❌ Migrations failed:", error);
     process.exit(1);
   } finally {
     await sql.end();

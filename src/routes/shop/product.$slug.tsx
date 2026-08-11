@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/mqulima/AppLayout";
-import { type ShopProduct } from "@/lib/shop-data";
+import { type ShopProduct, mapToNewTaxonomy } from "@/lib/shop-data";
 import { useCart } from "@/lib/cart-context";
 import { useQuery } from "@tanstack/react-query";
 import { getProductBySlug, getProducts } from "@/lib/api/products.server";
@@ -321,12 +321,36 @@ function ProductDetailPage() {
     setShareOpen(false);
   };
 
-  // Related products filters
+  // Related products filters: MUST be strictly within the same category
   const relatedProducts = useMemo(() => {
     if (!product) return [];
-    return allProductsList
-      .filter((p) => p.id !== product.id && p.category === product.category)
-      .slice(0, 6);
+    
+    const targetTax = mapToNewTaxonomy(product);
+    const targetCat = targetTax.category.toLowerCase().trim();
+    const targetSub = targetTax.subcategory.toLowerCase().trim();
+    const rawCat = (product.category || "").toLowerCase().trim();
+    const rawSub = (product.subcategory || "").toLowerCase().trim();
+
+    const matches = allProductsList.filter((p) => {
+      if (p.id === product.id) return false;
+      const pTax = mapToNewTaxonomy(p);
+      const pCat = pTax.category.toLowerCase().trim();
+      const pSub = pTax.subcategory.toLowerCase().trim();
+      const pRawCat = (p.category || "").toLowerCase().trim();
+      const pRawSub = (p.subcategory || "").toLowerCase().trim();
+
+      // 1. Exact category or subcategory match
+      const isExactCategory = (pCat === targetCat) || (pRawCat && targetCat && pRawCat === targetCat) || (rawCat && pCat && rawCat === pCat) || (rawCat && pRawCat && rawCat === pRawCat);
+      const isSubcategoryMatch = (pSub === targetSub && pSub !== "") || (pRawSub === rawSub && pRawSub !== "");
+      
+      // 2. Close plant nutrition sibling relationship (Plant Growth Boosters <-> Fertilizers)
+      const isPlantNutritionGroup = (targetCat.includes("growth") || targetCat.includes("fertilizer") || rawCat.includes("growth") || rawCat.includes("fertilizer")) && 
+                                    (pCat.includes("growth") || pCat.includes("fertilizer") || pRawCat.includes("growth") || pRawCat.includes("fertilizer"));
+
+      return isExactCategory || isSubcategoryMatch || isPlantNutritionGroup;
+    });
+
+    return matches.slice(0, 6);
   }, [product, allProductsList]);
 
   const recommendedProducts = useMemo(() => {
@@ -459,7 +483,7 @@ function ProductDetailPage() {
         <div className="bg-white border-b border-stone-200/80">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between text-xs text-stone-500 font-bold">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Link to="/shop" className="hover:text-[#2D6A4F] transition">Shop</Link>
+              <Link to="/shop" className="hover:text-[#2D6A4F] transition">AgroShop</Link>
               <ChevronRight size={12} className="text-stone-300" />
               <Link to="/shop" search={{ category: product.category }} className="hover:text-[#2D6A4F] transition">
                 {product.category}
@@ -468,7 +492,7 @@ function ProductDetailPage() {
               <span className="text-stone-800 line-clamp-1">{product.name}</span>
             </div>
             <Link to="/shop" className="inline-flex items-center gap-1 hover:text-[#2D6A4F] transition text-stone-600">
-              <ArrowLeft size={12} /> Back to Shop
+              <ArrowLeft size={12} /> Back to AgroShop
             </Link>
           </div>
         </div>
@@ -748,62 +772,19 @@ function ProductDetailPage() {
           </div>
 
 
-          {/* Delivery estimate & County Availability Section */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-stone-200/80 rounded-2xl p-6 text-left shadow-sm font-sans">
-            
-            <div className="flex gap-4 items-start">
-              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
-                <Truck size={20} />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-black text-stone-900 uppercase">Express Delivery</h4>
-                <p className="text-xs text-stone-500 font-bold leading-normal">
-                  Delivered by tomorrow if ordered in the next 3 hours. Standard shipping cost is <strong className="text-stone-850">KSh 250</strong>.
-                </p>
-                <span className="text-[10px] bg-emerald-100 text-[#2D6A4F] font-black px-1.5 py-0.5 rounded">
-                  Free over KSh 5,000
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start">
-              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
-                <MapPin size={20} />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-black text-stone-900 uppercase">County Coverage</h4>
-                <p className="text-xs text-stone-500 font-bold leading-normal">
-                  Full stock availability across all 47 counties.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start">
-              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
-                <Building2 size={20} />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-black text-stone-900 uppercase">Depot Pickup</h4>
-                <p className="text-xs text-stone-500 font-bold leading-normal">
-                  Pickup free of charge at any Mqulima regional partner warehouse/depot.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Description Section */}
+          {/* Product Description Section - Positioned immediately after product card */}
           <div className="mt-8 bg-white border border-stone-200/80 rounded-2xl p-6 md:p-8 text-left shadow-sm font-sans">
-            <h3 className="text-sm font-black uppercase text-stone-900 tracking-wider mb-4">Product Description</h3>
-            <p className="text-xs sm:text-sm text-stone-500 leading-relaxed max-w-4xl font-normal whitespace-pre-wrap">
-              {product.description}
+            <h3 className="text-sm font-black uppercase text-stone-900 tracking-wider mb-4 flex items-center gap-2">
+              <FileText size={16} className="text-[#2D6A4F]" /> Detailed Product Description
+            </h3>
+            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-4xl font-normal whitespace-pre-wrap">
+              {product.description || "High quality certified agricultural input provided directly by verified distributors."}
             </p>
           </div>
 
-
-          {/* RELATED PRODUCTS */}
+          {/* RELATED PRODUCTS / RECOMMENDED PRODUCTS - Positioned right after product description */}
           {relatedProducts.length > 0 && (
-            <div className="mt-12 text-left">
+            <div className="mt-8 text-left">
               <h3 className="text-sm font-black uppercase text-stone-900 tracking-wider mb-6 flex items-center gap-2">
                 <BestSellerIcon size={16} className="text-[#2D6A4F]" /> Recommended Products & Similar Items
               </h3>
@@ -856,6 +837,50 @@ function ProductDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Delivery estimate & County Availability Section */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-stone-200/80 rounded-2xl p-6 text-left shadow-sm font-sans">
+            
+            <div className="flex gap-4 items-start">
+              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
+                <Truck size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-stone-900 uppercase">Express Delivery</h4>
+                <p className="text-xs text-stone-500 font-bold leading-normal">
+                  Delivered by tomorrow if ordered in the next 3 hours. Standard shipping cost is <strong className="text-stone-850">KSh 250</strong>.
+                </p>
+                <span className="text-[10px] bg-emerald-100 text-[#2D6A4F] font-black px-1.5 py-0.5 rounded">
+                  Free over KSh 5,000
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
+                <MapPin size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-stone-900 uppercase">County Coverage</h4>
+                <p className="text-xs text-stone-500 font-bold leading-normal">
+                  Full stock availability across all 47 counties.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="p-3 bg-emerald-50 text-[#2D6A4F] rounded-xl shrink-0">
+                <Building2 size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-stone-900 uppercase">Depot Pickup</h4>
+                <p className="text-xs text-stone-500 font-bold leading-normal">
+                  Pickup free of charge at any Mqulima regional partner warehouse/depot.
+                </p>
+              </div>
+            </div>
+
+          </div>
 
         </div>
 

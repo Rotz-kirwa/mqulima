@@ -13,7 +13,8 @@ import {
   Download, 
   Check, 
   Printer,
-  Loader2
+  Loader2,
+  ChevronDown
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { toast } from "sonner";
@@ -47,6 +48,8 @@ type BlogPost = {
   publishedAt: string;
   readTime: string;
   viewCount?: number;
+  mediaType?: "image" | "video";
+  mediaUrl?: string;
   author: {
     name: string;
     role: string;
@@ -99,6 +102,13 @@ function BlogPage() {
     } catch (e) {
       console.error(e);
     }
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const savedPref = localStorage.getItem("mqulima_blog_alerts");
+      if (savedPref === "enabled" && Notification.permission === "granted") {
+        setRemindToggled(true);
+      }
+    }
   }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -111,46 +121,109 @@ function BlogPage() {
     setNewsletterEmail("");
   };
 
-  const handleToggleReminder = () => {
-    setRemindToggled((prev) => {
-      const next = !prev;
-      if (next) {
-        toast.success(
-          userName 
-            ? `Alerts activated! We will notify you, ${userName}, whenever new insights are published.`
-            : "Alerts activated! Registered farmers will receive new blog push notifications."
-        );
-      } else {
-        toast.info("Notifications deactivated.");
+  const handleToggleReminder = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("Web browser notifications are not supported on this device.");
+      return;
+    }
+
+    if (remindToggled) {
+      setRemindToggled(false);
+      localStorage.setItem("mqulima_blog_alerts", "disabled");
+      toast.info("Browser news alerts deactivated.");
+      return;
+    }
+
+    let permission = Notification.permission;
+
+    if (permission === "default") {
+      permission = await Notification.requestPermission();
+    }
+
+    if (permission === "granted") {
+      setRemindToggled(true);
+      localStorage.setItem("mqulima_blog_alerts", "enabled");
+      toast.success(
+        userName
+          ? `Alerts activated! We will notify you, ${userName}, via browser notifications.`
+          : "Browser news alerts enabled!"
+      );
+
+      try {
+        new Notification("🌾 Mqulima Agritech Alerts Activated", {
+          body: "You will now receive instant browser notifications whenever new agricultural reports, policy updates, or market pricing insights are published.",
+          tag: "mqulima-news-alerts"
+        });
+      } catch (err) {
+        console.warn("Could not dispatch initial browser notification", err);
       }
-      return next;
-    });
+    } else if (permission === "denied") {
+      toast.error(
+        "Browser notifications were blocked. Please enable notification permissions for this website in your browser settings."
+      );
+    }
   };
 
-  const categories = ["All", "Market Prices", "Farm Tips", "Agri-Tech", "Policy & Finance"];
+  const categories = [
+    "All",
+    "Policy & Market",
+    "Agronomy & Farm Tips",
+    "Agri-Tech & Tools",
+    "Weather Advisory",
+    "Livestock & Dairy"
+  ];
+
+  // Flexible category matching helper
+  const isCategoryMatch = (postCategory: string, selectedCat: string) => {
+    if (selectedCat === "All") return true;
+    if (!postCategory) return false;
+
+    const pCat = postCategory.toLowerCase().trim();
+    const sCat = selectedCat.toLowerCase().trim();
+
+    if (pCat === sCat) return true;
+
+    if (sCat.includes("market") && pCat.includes("market")) return true;
+    if (
+      (sCat.includes("farm") || sCat.includes("agronomy") || sCat.includes("tips")) &&
+      (pCat.includes("farm") || pCat.includes("agronomy") || pCat.includes("tip"))
+    ) return true;
+    if (sCat.includes("tech") && pCat.includes("tech")) return true;
+    if (sCat.includes("weather") && pCat.includes("weather")) return true;
+    if (sCat.includes("livestock") && pCat.includes("livestock")) return true;
+    if (sCat.includes("policy") && pCat.includes("policy")) return true;
+
+    return pCat.includes(sCat) || sCat.includes(pCat);
+  };
 
   // Filtered Posts
   const filteredPosts = useMemo(() => {
     return posts.filter((p) => {
-      if (selectedCategory !== "All" && p.category !== selectedCategory) return false;
+      if (!isCategoryMatch(p.category, selectedCategory)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
           p.title.toLowerCase().includes(q) ||
           p.excerpt.toLowerCase().includes(q) ||
-          p.body.toLowerCase().includes(q)
+          p.body.toLowerCase().includes(q) ||
+          (p.category && p.category.toLowerCase().includes(q))
         );
       }
       return true;
     });
   }, [posts, selectedCategory, searchQuery]);
 
-  // Featured Post is the first featured post, or the first post in the array
-  const featuredPost = useMemo(() => {
-    return filteredPosts.find((p) => p.isFeatured) || filteredPosts[0];
-  }, [filteredPosts]);
+  // Featured Post Hero logic (only active on "All" tab when search query is empty)
+  const showHero = useMemo(() => {
+    return selectedCategory === "All" && !searchQuery.trim();
+  }, [selectedCategory, searchQuery]);
 
-  // Remaining posts in grid
+  const featuredPost = useMemo(() => {
+    if (!showHero) return null;
+    return filteredPosts.find((p) => p.isFeatured) || filteredPosts[0];
+  }, [filteredPosts, showHero]);
+
+  // Feed grid posts: if hero post is active, exclude it from grid; otherwise show ALL filtered posts!
   const gridPosts = useMemo(() => {
     if (!featuredPost) return filteredPosts;
     return filteredPosts.filter((p) => p.id !== featuredPost.id);
@@ -190,41 +263,59 @@ function BlogPage() {
             </div>
 
             {/* Notification toggle & Newsletter download button */}
-            <div className="flex flex-wrap gap-2.5 shrink-0">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 w-full sm:w-auto shrink-0">
               <button
                 onClick={handleToggleReminder}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition shadow-sm ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition shadow-sm w-full cursor-pointer text-center ${
                   remindToggled 
                     ? "bg-[#0F766E] text-white" 
                     : "bg-white border border-[#D4DDD0] text-[#1A3A1A] hover:bg-[#FAF9F5]"
                 }`}
               >
-                <Bell className={`h-4 w-4 ${remindToggled ? "animate-swing" : ""}`} />
-                <span>{remindToggled ? "News Alerts Enabled" : "Remind Me of New Posts"}</span>
+                <Bell className={`h-4 w-4 shrink-0 ${remindToggled ? "animate-swing" : ""}`} />
+                <span className="truncate">{remindToggled ? "Alerts Enabled" : "Remind Me"}</span>
               </button>
 
               <button
                 onClick={() => setNewsletterModalOpen(true)}
-                className="bg-[#F5A623] hover:bg-[#E0951F] text-white px-4 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm"
+                className="bg-[#F5A623] hover:bg-[#E0951F] text-white px-3 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm w-full cursor-pointer text-center"
               >
-                <BookOpen className="h-4 w-4" />
-                <span>Weekly Newsletter Digest</span>
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <span className="truncate">Weekly Digest</span>
               </button>
             </div>
           </header>
 
           {/* Search & Categories Bar */}
           <div className="my-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-[#D4DDD0] pb-5">
-            {/* Category tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+            {/* Mobile Category Select Dropdown */}
+            <div className="sm:hidden w-full relative">
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full bg-white border border-[#D4DDD0] rounded-xl px-4 py-2.5 text-xs font-bold text-[#1A3A1A] appearance-none outline-none focus:border-[#1A5438] shadow-xs cursor-pointer pr-10"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === "All" ? "Filter by Category: All" : `Category: ${cat}`}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D6B5C] pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Desktop Category tabs */}
+            <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto w-auto pb-0 scrollbar-none">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                     selectedCategory === cat 
                       ? "bg-[#1A5438] text-white shadow-xs" 
-                      : "text-[#5D6B5C] hover:text-[#1A3A1A]"
+                      : "text-[#5D6B5C] hover:text-[#1A3A1A] hover:bg-white/80"
                   }`}
                 >
                   {cat}
@@ -261,13 +352,21 @@ function BlogPage() {
                   className="bg-white border border-[#D4DDD0] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group"
                 >
                   <div className="aspect-[21/9] w-full relative overflow-hidden bg-[#E2EADF]">
-                    <img
-                      src={featuredPost.coverImage}
-                      alt={featuredPost.title}
-                      className="w-full h-full object-cover group-hover:scale-[1.01] transition duration-300"
-                    />
+                    {featuredPost.mediaType === "video" ? (
+                      <video
+                        src={featuredPost.mediaUrl || featuredPost.coverImage}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={featuredPost.coverImage}
+                        alt={featuredPost.title}
+                        className="w-full h-full object-cover group-hover:scale-[1.01] transition duration-300"
+                      />
+                    )}
                     <span className="absolute top-4 left-4 bg-[#0F766E] text-white text-[9px] font-black px-2.5 py-1 rounded uppercase tracking-wider">
-                      Featured Report
+                      {featuredPost.mediaType === "video" ? "🎥 Video Report" : "Featured Report"}
                     </span>
                   </div>
                   <div className="p-6 sm:p-8">
@@ -293,11 +392,13 @@ function BlogPage() {
                           {featuredPost.author.avatarInitials}
                         </div>
                         <div>
-                          <strong className="text-xs text-[#1A3A1A] block">{featuredPost.author.name}</strong>
+                          <strong className="text-xs font-black text-[#1A5438] block">{featuredPost.author.name}</strong>
                           <span className="text-[10px] text-[#5D6B5C] block font-semibold">{featuredPost.author.role}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-extrabold text-[#1A5438] group-hover:underline">Read Full Story →</span>
+                      <span className="bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-black text-xs px-4 py-2 rounded-none shadow-xs transition duration-200 group-hover:scale-[1.03] flex items-center gap-1.5 shrink-0">
+                        Read Full Story →
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -323,16 +424,24 @@ function BlogPage() {
                     >
                       <div>
                         <div className="aspect-video w-full overflow-hidden bg-[#E2EADF] relative">
-                          <img
-                            src={post.coverImage}
-                            alt={post.title}
-                            className="w-full h-full object-cover group-hover:scale-[1.02] transition"
-                            onError={(e) => {
-                              e.currentTarget.src = "/mqulima_news_banner.png";
-                            }}
-                          />
-                          <span className="absolute top-3 left-3 bg-white/90 text-[#1A3A1A] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider border border-[#D4DDD0]">
-                            {post.category}
+                          {post.mediaType === "video" ? (
+                            <video
+                              src={post.mediaUrl || post.coverImage}
+                              controls
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={post.coverImage}
+                              alt={post.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.02] transition"
+                              onError={(e) => {
+                                e.currentTarget.src = "/mqulima_news_banner.png";
+                              }}
+                            />
+                          )}
+                          <span className="absolute top-3 left-3 bg-white/90 text-[#1A3A1A] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider border border-[#D4DDD0] flex items-center gap-1">
+                            {post.mediaType === "video" ? "🎥 Video" : post.category}
                           </span>
                         </div>
                         <div className="p-5 text-left">
@@ -346,14 +455,16 @@ function BlogPage() {
                         </div>
                       </div>
 
-                      <div className="p-5 border-t border-[#E8ECE7] bg-[#FAF9F5] flex items-center justify-between">
+                      <div className="p-4 sm:p-5 border-t border-[#E8ECE7] bg-[#FAF9F5] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-[#1A5438]/10 text-[#1A5438] flex items-center justify-center font-bold text-[9px]">
                             {post.author.avatarInitials}
                           </div>
-                          <span className="text-[10px] font-bold text-[#1A3A1A]">{post.author.name}</span>
+                          <span className="text-[11px] font-black text-[#1A5438]">{post.author.name}</span>
                         </div>
-                        <span className="text-[10px] font-extrabold text-[#1A5438]">Read Article →</span>
+                        <span className="bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-black text-[10px] sm:text-[11px] px-3.5 py-1.5 rounded-none shadow-xs transition duration-200 group-hover:scale-[1.03] flex items-center gap-1 shrink-0">
+                          Read Article →
+                        </span>
                       </div>
                     </article>
                   ))}
@@ -484,9 +595,10 @@ function BlogPage() {
                     <div className="text-[9px] text-[#5D6B5C] font-semibold mt-1">
                       By {p.author.name} ({p.author.role})
                     </div>
-                    <p className="text-[11px] text-[#5D6B5C] leading-relaxed mt-2.5 whitespace-pre-line font-medium">
-                      {p.body}
-                    </p>
+                    <div 
+                      className="text-xs text-[#3E4C3D] leading-relaxed mt-3 space-y-2.5 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h2]:mt-3 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-2 [&_p]:mb-1.5 font-medium"
+                      dangerouslySetInnerHTML={{ __html: p.body }}
+                    />
                   </div>
                 ))}
               </div>
@@ -545,12 +657,21 @@ function BlogPage() {
 
             {/* Article Detail */}
             <div className="space-y-4">
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100">
-                <img
-                  src={activeReadingPost.coverImage}
-                  alt={activeReadingPost.title}
-                  className="w-full h-full object-cover"
-                />
+              <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 relative">
+                {activeReadingPost.mediaType === "video" ? (
+                  <video
+                    src={activeReadingPost.mediaUrl || activeReadingPost.coverImage}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain bg-black"
+                  />
+                ) : (
+                  <img
+                    src={activeReadingPost.coverImage}
+                    alt={activeReadingPost.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
 
               <div className="flex items-center gap-3 text-[10px] text-[#5D6B5C] font-bold uppercase tracking-wider">
@@ -576,28 +697,11 @@ function BlogPage() {
                 </div>
               </div>
 
-              {/* Article Content with Inline Images support */}
-              <div className="text-xs sm:text-sm text-[#3E4C3D] leading-relaxed space-y-4 font-['Open_Sans'] whitespace-pre-line">
-                <p>{activeReadingPost.body}</p>
-
-                {/* Inline body images */}
-                {activeReadingPost.bodyImages && activeReadingPost.bodyImages.length > 0 && (
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 my-4">
-                    {activeReadingPost.bodyImages.map((imgUrl, i) => (
-                      <div key={i} className="aspect-video rounded-lg overflow-hidden border border-[#D4DDD0] bg-[#E2EADF]">
-                        <img
-                          src={imgUrl}
-                          alt="Inline article visual"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "/mqulima_news_banner.png";
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Article Content with Rich Text HTML rendering */}
+              <div 
+                className="text-xs sm:text-sm text-[#3E4C3D] space-y-3 font-['Open_Sans'] leading-relaxed [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/60 [&_blockquote]:py-2 [&_a]:text-[#0F766E] [&_a]:underline font-medium"
+                dangerouslySetInnerHTML={{ __html: activeReadingPost.body }}
+              />
 
             </div>
 

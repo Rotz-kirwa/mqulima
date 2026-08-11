@@ -456,42 +456,62 @@ async function autoModeratePostOrComment(
     return { status: "published", flaggedReason: null };
   }
 
+  // 1. Offensive & Scam Word Blacklist Check
   if (settings.offensive_words_list && settings.offensive_words_list.length > 0) {
     const textLower = textToCheck.toLowerCase();
     for (const word of settings.offensive_words_list) {
-      if (word && textLower.includes(word.toLowerCase())) {
-        return {
-          status: "flagged",
-          flaggedReason: `Content contains restricted word: "${word}"`
-        };
+      if (word && word.trim()) {
+        const cleanWord = word.trim().toLowerCase();
+        // Regex word boundary matching or string inclusion
+        const wordRegex = new RegExp(`\\b${cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (wordRegex.test(textLower) || textLower.includes(cleanWord)) {
+          return {
+            status: "flagged",
+            flaggedReason: `Content contains forbidden word: "${cleanWord}"`
+          };
+        }
       }
     }
   }
 
+  // 2. Block External URL Links Check
   if (settings.block_external_links) {
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.(com|org|net|xyz|info|co|io)\b)/gi;
     if (urlPattern.test(textToCheck)) {
       return {
         status: "flagged",
-        flaggedReason: "External URLs / links are restricted on the forum."
+        flaggedReason: "External URLs or untrusted links are restricted on the forum."
       };
     }
   }
 
+  // 3. Automated Spam Detection Check
   if (settings.spam_detection_enabled) {
     const mins = settings.repeated_posts_window_mins || 5;
     if (contentType === "post") {
-      const [recentPost] = await sql`
+      const [recentDuplicate] = await sql`
         SELECT id FROM show_posts
         WHERE user_id = ${userId}
           AND caption = ${textToCheck}
           AND created_at >= NOW() - CAST(${mins} || ' minutes' AS INTERVAL)
         LIMIT 1
       `;
-      if (recentPost) {
+      if (recentDuplicate) {
         return {
           status: "flagged",
-          flaggedReason: `Duplicate post within ${mins} minutes window.`
+          flaggedReason: `Duplicate post submitted within ${mins} minute window.`
+        };
+      }
+
+      // Check rapid bot submissions (> 3 posts in 1 minute)
+      const [rapidCountRow] = await sql`
+        SELECT COUNT(*)::int AS count FROM show_posts
+        WHERE user_id = ${userId} AND created_at >= NOW() - INTERVAL '1 minute'
+      `;
+      if (rapidCountRow && rapidCountRow.count >= 3) {
+        return {
+          status: "flagged",
+          flaggedReason: "Rapid automated posting detected (spam rate limit)."
         };
       }
     } else {
@@ -505,7 +525,7 @@ async function autoModeratePostOrComment(
       if (recentComment) {
         return {
           status: "flagged",
-          flaggedReason: `Duplicate comment within ${mins} minutes window.`
+          flaggedReason: `Duplicate comment submitted within ${mins} minute window.`
         };
       }
     }
@@ -910,13 +930,22 @@ export const reportCommunityContent = createServerFn({ method: "POST" })
       )
     `;
 
+    const [modSettings] = await sql`SELECT auto_flag_report_threshold FROM moderation_settings LIMIT 1`.catch(() => []);
+    const threshold = modSettings?.auto_flag_report_threshold ?? 3;
+
     if (data.contentType === "post") {
       await sql`
-        UPDATE show_posts SET reports_count = reports_count + 1 WHERE id = ${data.contentId}
+        UPDATE show_posts 
+        SET reports_count = reports_count + 1,
+            status = CASE WHEN (reports_count + 1) >= ${threshold} THEN 'hidden' ELSE status END
+        WHERE id = ${data.contentId}
       `;
     } else if (data.contentType === "comment") {
       await sql`
-        UPDATE show_comments SET reports_count = reports_count + 1 WHERE id = ${data.contentId}
+        UPDATE show_comments 
+        SET reports_count = reports_count + 1,
+            status = CASE WHEN (reports_count + 1) >= ${threshold} THEN 'hidden' ELSE status END
+        WHERE id = ${data.contentId}
       `;
     }
 

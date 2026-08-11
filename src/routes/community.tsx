@@ -355,22 +355,35 @@ function ForumSubdomainPage() {
   const [selectedProfileUsername, setSelectedProfileUsername] = useState<string | null>(null);
   const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "about" | "farm" | "products" | "media">("posts");
   
-  // Social Follow state tracking
+  // Social Follow state tracking with validation against live farmers
   const [followedUsernames, setFollowedUsernames] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("mqulima_followed_users");
-        return stored ? JSON.parse(stored) : ["@abel_kibet", "@grace_wambui"];
+        // Clear old testing fallback strings if present
+        if (!stored) return [];
+        const parsed = JSON.parse(stored);
+        return Array.isArray(parsed) ? parsed : [];
       } catch {
-        return ["@abel_kibet", "@grace_wambui"];
+        return [];
       }
     }
-    return ["@abel_kibet", "@grace_wambui"];
+    return [];
   });
+
+  const validFollowedUsernames = useMemo(() => {
+    return followedUsernames.filter((u) =>
+      farmers.some((f) => {
+        const fUser = f.username.startsWith("@") ? f.username : `@${f.username}`;
+        return fUser.toLowerCase() === u.toLowerCase();
+      })
+    );
+  }, [followedUsernames, farmers]);
 
   // Custom dropdown / panels states
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [socialModalType, setSocialModalType] = useState<"followers" | "following" | null>(null);
   
   // Registration Profile State
   const [currentUser, setCurrentUser] = useState<FarmerProfile | null>(null);
@@ -824,7 +837,9 @@ function ForumSubdomainPage() {
           setNotifications(data);
         }
       })
-      .catch((e) => console.error("Error loading notifications:", e));
+      .catch(() => {
+        // Silently catch for unauthenticated/guest state
+      });
 
     getPublishedBlogPosts()
       .then((data) => {
@@ -968,6 +983,38 @@ function ForumSubdomainPage() {
       reputationScore: activeFarmers.find(f => f.username === currentUser.username)?.reputationScore || currentUser.reputationScore
     } : null;
   }, [selectedProfileUsername, currentUser, activeFarmers]);
+
+  const viewingFarmerFollowersList = useMemo(() => {
+    if (!viewingFarmer) return [];
+    const cleanViewingUsername = viewingFarmer.username.startsWith("@") ? viewingFarmer.username : `@${viewingFarmer.username}`;
+    
+    // Find all active farmers who follow viewingFarmer
+    const followers = activeFarmers.filter(f => {
+      if (f.username === viewingFarmer.username) return false;
+      const cleanFUser = f.username.startsWith("@") ? f.username : `@${f.username}`;
+      return f.followers?.some(u => u.toLowerCase() === viewingFarmer.username.toLowerCase() || u.toLowerCase() === cleanViewingUsername.toLowerCase());
+    });
+
+    // If currentUser is following viewingFarmer and not already in array, add currentUser
+    if (currentUser && currentUser.username !== viewingFarmer.username) {
+      const isCurrentFollowing = validFollowedUsernames.some(u => u.toLowerCase() === cleanViewingUsername.toLowerCase());
+      if (isCurrentFollowing && !followers.some(f => f.username === currentUser.username)) {
+        followers.unshift(currentUser);
+      }
+    }
+
+    return followers;
+  }, [viewingFarmer, activeFarmers, currentUser, validFollowedUsernames]);
+
+  const viewingFarmerFollowingList = useMemo(() => {
+    if (!viewingFarmer) return [];
+    if (viewingFarmer.username === currentUser?.username) {
+      return activeFarmers.filter(f =>
+        validFollowedUsernames.some(u => u.toLowerCase() === f.username.toLowerCase() || u.toLowerCase() === `@${f.username.replace(/^@/, '')}`.toLowerCase())
+      );
+    }
+    return [];
+  }, [viewingFarmer, activeFarmers, currentUser, validFollowedUsernames]);
   // Notification Handlers
   const handleNotificationClick = async (notif: any) => {
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
@@ -2286,24 +2333,51 @@ function ForumSubdomainPage() {
 
                     {/* Social Stats Highlights Bar */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-left">
-                      <div className="bg-stone-50 border border-stone-200/60 p-3 rounded-2xl">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">Published Posts</span>
-                        <span className="text-base font-bold text-stone-850">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileActiveTab("posts");
+                          const postsEl = document.getElementById("profile-tabs-content");
+                          if (postsEl) postsEl.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="bg-stone-50 hover:bg-stone-100/90 border border-stone-200/60 hover:border-stone-300 p-3 rounded-2xl transition cursor-pointer group text-left shadow-2xs"
+                        title="Click to view published posts"
+                      >
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono group-hover:text-stone-600 transition-colors">Published Posts</span>
+                        <span className="text-base font-bold text-stone-850 block mt-0.5">
                           {posts.filter(p => p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name).length}
                         </span>
-                      </div>
-                      <div className="bg-stone-50 border border-stone-200/60 p-3 rounded-2xl">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">Followers</span>
-                        <span className="text-base font-bold text-emerald-800">
-                          {viewingFarmer.followersCount || (followedUsernames.includes(viewingFarmer.username.startsWith("@") ? viewingFarmer.username : `@${viewingFarmer.username}`) ? 12 : 11)}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setSocialModalType("followers")}
+                        className="bg-emerald-50/40 hover:bg-emerald-50/80 border border-emerald-200/60 hover:border-emerald-300 p-3 rounded-2xl transition cursor-pointer group text-left shadow-2xs"
+                        title="Click to view followers list"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block font-mono group-hover:text-emerald-800 transition-colors">Followers</span>
+                          <Users className="h-3.5 w-3.5 text-emerald-600 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <span className="text-base font-bold text-emerald-800 block mt-0.5">
+                          {viewingFarmerFollowersList.length}
                         </span>
-                      </div>
-                      <div className="bg-stone-50 border border-stone-200/60 p-3 rounded-2xl">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">Following</span>
-                        <span className="text-base font-bold text-stone-850">
-                          {viewingFarmer.username === currentUser?.username ? followedUsernames.length : 8}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSocialModalType("following")}
+                        className="bg-stone-50 hover:bg-stone-100/90 border border-stone-200/60 hover:border-stone-300 p-3 rounded-2xl transition cursor-pointer group text-left shadow-2xs"
+                        title="Click to view following list"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono group-hover:text-stone-600 transition-colors">Following</span>
+                          <UserCheck className="h-3.5 w-3.5 text-stone-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <span className="text-base font-bold text-stone-850 block mt-0.5">
+                          {viewingFarmerFollowingList.length}
                         </span>
-                      </div>
+                      </button>
                       <div className="bg-stone-50 border border-stone-200/60 p-3 rounded-2xl">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">Farming Focus</span>
                         <span className="text-base font-bold text-[#1B4332] truncate block" title={
@@ -4726,10 +4800,10 @@ function ForumSubdomainPage() {
                         {(post.cropsTagged.length > 0 || post.livestockTagged.length > 0) && (
                           <div className="flex flex-wrap gap-1.5">
                             {post.cropsTagged.map((c, idx) => (
-                              <span key={idx} className="mq-tag mq-tag-green">#{c}</span>
+                              <span key={idx} className="mq-tag mq-tag-green">#{String(c).replace(/^#+/, "")}</span>
                             ))}
                             {post.livestockTagged.map((l, idx) => (
-                              <span key={idx} className="mq-tag mq-tag-blue">#{l}</span>
+                              <span key={idx} className="mq-tag mq-tag-blue">#{String(l).replace(/^#+/, "")}</span>
                             ))}
                           </div>
                         )}
@@ -5843,6 +5917,140 @@ function ForumSubdomainPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Social Connections Modal (Followers / Following) */}
+      {socialModalType && viewingFarmer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-stone-200 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden text-left flex flex-col max-h-[85vh]">
+            
+            {/* Modal Header */}
+            <div className="p-5 border-b border-stone-150 flex items-center justify-between bg-stone-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-100/80 rounded-xl text-emerald-800">
+                  {socialModalType === "followers" ? <Users className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900 leading-snug">
+                    {socialModalType === "followers" ? "Followers" : "Following"}
+                  </h3>
+                  <p className="text-xs text-stone-500 font-medium">
+                    {viewingFarmer.name} ({viewingFarmer.username})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSocialModalType(null)}
+                className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-full transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal List Body */}
+            <div className="p-4 overflow-y-auto space-y-3 flex-1">
+              {(() => {
+                const list = socialModalType === "followers" ? viewingFarmerFollowersList : viewingFarmerFollowingList;
+                if (list.length === 0) {
+                  return (
+                    <div className="py-10 px-6 text-center space-y-3">
+                      <div className="h-16 w-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto text-stone-400 border border-stone-200">
+                        {socialModalType === "followers" ? <Users className="h-8 w-8 stroke-[1.5]" /> : <UserCheck className="h-8 w-8 stroke-[1.5]" />}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-stone-800">
+                          {socialModalType === "followers" ? "No followers yet" : "Not following any farmers yet"}
+                        </h4>
+                        <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                          {socialModalType === "followers"
+                            ? "When other verified farmers follow this profile, they will appear here in real-time."
+                            : "Explore the Agri Network tab to discover verified agronomists and peer farmers across Kenya."}
+                        </p>
+                      </div>
+                      {socialModalType === "following" && viewingFarmer.username === currentUser?.username && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSocialModalType(null);
+                            setSubpage("network");
+                          }}
+                          className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#1B4332] hover:bg-[#113B26] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
+                        >
+                          <Users className="h-4 w-4" />
+                          Browse Agri Network
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+
+                return list.map((farmer) => {
+                  const cleanUser = farmer.username.startsWith("@") ? farmer.username : `@${farmer.username}`;
+                  const isFollowing = validFollowedUsernames.some(u => u.toLowerCase() === cleanUser.toLowerCase());
+                  const isSelf = farmer.username === currentUser?.username;
+
+                  return (
+                    <div
+                      key={farmer.username}
+                      className="p-3 bg-stone-50/70 hover:bg-emerald-50/40 border border-stone-200/70 rounded-2xl transition flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={farmer.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(farmer.name)}`}
+                          alt={farmer.name}
+                          className="h-10 w-10 rounded-full object-cover border border-stone-200 shrink-0"
+                        />
+                        <div className="min-w-0 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-stone-900 group-hover:text-emerald-900 truncate">
+                              {farmer.name}
+                            </h4>
+                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          </div>
+                          <p className="text-[11px] text-stone-500 font-mono truncate">{cleanUser}</p>
+                          {farmer.county && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-stone-500 font-medium mt-0.5">
+                              <MapPin className="h-3 w-3 text-stone-400" />
+                              {farmer.county}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSocialModalType(null);
+                            setSelectedProfileUsername(farmer.username);
+                            setSubpage("profile");
+                          }}
+                          className="px-3 py-1.5 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold rounded-xl border border-stone-200 transition cursor-pointer shadow-2xs"
+                        >
+                          View
+                        </button>
+                        {!isSelf && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFollow(farmer.username)}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer shadow-2xs ${
+                              isFollowing
+                                ? "bg-stone-100 hover:bg-red-50 hover:text-red-700 text-stone-700 border border-stone-200"
+                                : "bg-[#1B4332] hover:bg-[#113B26] text-white"
+                            }`}
+                          >
+                            {isFollowing ? "Following" : "Follow"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation */}
       <div className="mq-mobile-nav">

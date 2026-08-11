@@ -1,3 +1,4 @@
+// Mkulima Services Platform - Production Hardened (Zero Price Tag UI)
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -116,21 +117,21 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "soil_testing_analysis",
         name: "Soil Testing & Analysis",
         description: "Full spectrum NPK, pH, organic carbon & EC laboratory report with customized agronomy recommendations.",
-        estimatedCost: "KES 2,500 / sample",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/48/12/12/4812125dd6f1e95e1ac21acdee79498a.jpg"
       },
       {
         id: "soil_treatment",
         name: "Soil Treatment & Conditioning",
         description: "Agricultural lime application, soil reclamation, microbial inoculants and acidity balancing.",
-        estimatedCost: "KES 4,000 / acre",
+        estimatedCost: "On Request",
         image: "https://images.unsplash.com/photo-1693385998902-656569d40b88?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDJ8fHxlbnwwfHx8fHw%3D"
       },
       {
         id: "fertilizer_recommendation",
         name: "Fertilizer Recommendation & Plan",
         description: "Crop-specific fertilizer blending guides tailored to soil test findings and target yield goals.",
-        estimatedCost: "KES 1,500 / farm plan",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/74/0d/a6/740da633e89e8be82af6afff9bec4ac0.jpg"
       }
     ]
@@ -156,28 +157,28 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "ai_breeding",
         name: "AI & Artificial Breeding",
         description: "High-pedigree bull semen straw insemination, heat synchronization & genetic improvement.",
-        estimatedCost: "KES 3,000 / straw",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/736x/20/3c/22/203c222335557e8e22e6b6bcb323e252.jpg"
       },
       {
         id: "livestock_vaccination",
         name: "Livestock Vaccination",
         description: "FMD, Anthrax, ECF, CCPP & Newcastle routine immunization and herd health management.",
-        estimatedCost: "KES 500 / head",
+        estimatedCost: "On Request",
         image: "https://plus.unsplash.com/premium_photo-1661883044790-9c4342a4639c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8TGl2ZXN0b2NrJTIwVmFjY2luYXRpb258ZW58MHx8MHx8fDA%3D"
       },
       {
         id: "veterinary_diagnosis",
         name: "Veterinary Diagnosis & On-Farm Emergency",
         description: "Rapid clinical exam, disease diagnosis, surgical interventions & prescription therapy.",
-        estimatedCost: "KES 2,000 / visit",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/8a/a8/17/8aa8174542e4c4decea9b3c7700e74c8.jpg"
       },
       {
         id: "professional_vet_services",
         name: "Professional Vet Services & Herd Audit",
         description: "Comprehensive farm herd health audits, mastitis testing, deworming schedules & reproductive health.",
-        estimatedCost: "KES 5,000 / audit",
+        estimatedCost: "On Request",
         image: "https://images.unsplash.com/photo-1527153857715-3908f2ae5da8?auto=format&fit=crop&w=800&q=80"
       }
     ]
@@ -203,42 +204,42 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "feed_formulation",
         name: "Feed Formulation & Ration Blending",
         description: "Pearson square least-cost feed formulation for dairy cows, broilers, layers & pigs.",
-        estimatedCost: "KES 2,500 / ration plan",
+        estimatedCost: "On Request",
         image: "/images/services/feed_formulation.png"
       },
       {
         id: "feed_advice",
         name: "Livestock Nutrition & Feed Advice",
         description: "Dietary optimization to increase milk yield per cow per day and improve feed conversion ratio.",
-        estimatedCost: "KES 1,500 / consultation",
+        estimatedCost: "On Request",
         image: "/images/services/feed_advice.png"
       },
       {
         id: "silage_shredding_packing",
         name: "Silage Shredding & Packing",
         description: "Mobile heavy-duty tractor chopper service with molasses inoculant application and bale wrapping.",
-        estimatedCost: "KES 3,500 / ton",
+        estimatedCost: "On Request",
         image: "/images/services/silage.png"
       },
       {
         id: "azolla_farming",
         name: "Azolla Protein Cultivation Setup",
         description: "High-protein aquatic fern pond setup, seed inoculant supply and harvesting training for poultry & dairy.",
-        estimatedCost: "KES 5,000 / pond unit",
+        estimatedCost: "On Request",
         image: "/images/services/azolla.png"
       },
       {
         id: "feed_machinery_rental",
         name: "Feed Chopper & Mill Machinery Rental",
         description: "Rental of diesel multi-purpose hammer mills, chaff cutters and feed mixers.",
-        estimatedCost: "KES 3,000 / day",
+        estimatedCost: "On Request",
         image: "/images/services/machinery_rental.png"
       },
       {
         id: "egg_incubation",
         name: "Egg Incubation & Hatchery Service",
         description: "Automated climate-controlled egg hatching service for Kienyeji, Quails and Turkeys.",
-        estimatedCost: "KES 30 / egg batch",
+        estimatedCost: "On Request",
         image: "/images/services/incubation.png"
       }
     ]
@@ -268,56 +269,56 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "greenhouse_installation",
         name: "Greenhouse Installation & Tunnel Setup",
         description: "Galvanized steel metallic or wooden greenhouse construction with UV-treated covers and drip systems.",
-        estimatedCost: "KES 180,000 / unit (8x15m)",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/88/aa/65/88aa65f6e8435f9addf612deae8ac0d2.jpg"
       },
       {
         id: "farming_partnerships",
         name: "Farm Contract Partnerships",
         description: "Joint venture commercial farming models connecting land owners with equity investor agronomists.",
-        estimatedCost: "Quote basis",
+        estimatedCost: "On Request",
         image: "/images/services/partnerships.jpg"
       },
       {
         id: "rent_machinery_soil",
         name: "Tractor & Machinery Rental",
         description: "Ploughing, harrowing, rotavating, ridge making, combined harvesting and boom spraying equipment.",
-        estimatedCost: "KES 3,000 / acre",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/3b/e6/a6/3be6a688e5395fd04bee73b103690b3b.jpg"
       },
       {
         id: "cold_storage_hubs",
         name: "Solar Cold Storage Hubs",
         description: "On-farm walk-in cold rooms for horticultural produce preservation post-harvest.",
-        estimatedCost: "KES 50 / crate / day",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/a2/c7/53/a2c75333acd271ec1ddaa2ee9e5c56ab.jpg"
       },
       {
         id: "crop_transportation",
         name: "Produce Transportation Logistics",
         description: "Refrigerated and open lorry transport from farm gate directly to urban wholesale markets.",
-        estimatedCost: "KES 8,000 / trip",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/d7/9e/ab/d79eab383df654feb5aedb0fe108d3e7.jpg"
       },
       {
         id: "lease_farm_land",
         name: "Agricultural Land Leasing",
         description: "Vetted fertile arable land parcels available for seasonal or long-term lease with water access.",
-        estimatedCost: "KES 15,000 / acre / year",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/df/af/b9/dfafb970a524d98c252bfb2a1c85d84c.jpg"
       },
       {
         id: "drip_irrigation_services",
         name: "Drip & Overhead Irrigation Systems",
         description: "Button drippers, pressure compensated drip lines, filter kits and automatic fertigation injectors.",
-        estimatedCost: "KES 65,000 / acre",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/de/53/87/de538732285bfdc37795743685118b36.jpg"
       },
       {
         id: "consult_expert_agronomy",
         name: "Agronomy Consultation & Spray Programs",
         description: "Routine field scouting visits, pest/disease diagnostic reports and tailor-made spray schedules.",
-        estimatedCost: "KES 3,500 / visit",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/91/9b/90/919b90e49bc35c6863ca1b8ccdf49bbe.jpg"
       }
     ]
@@ -341,28 +342,28 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "agro_processing",
         name: "Agro-Processing & Milling Services",
         description: "Maize flour fortification, oil seed pressing, honey refining, fruit pulping and solar dehydration.",
-        estimatedCost: "KES 5 / kg processed",
+        estimatedCost: "On Request",
         image: "https://media.istockphoto.com/id/1337512337/photo/modern-granary-elevator-and-seed-cleaning-line.jpg?s=612x612&w=0&k=20&c=XObN1SdB23tVQJVzyreZMP65GANtynoyki8wos1iUfY="
       },
       {
         id: "produce_packaging",
         name: "Food-Grade Packaging & Pouching",
         description: "Vacuum sealing, nitrogen flushing, barcoded stand-up pouches and biodegradable produce punnets.",
-        estimatedCost: "KES 15 / package unit",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/736x/13/f1/c6/13f1c6ac50b970963952aa6c44d78d5b.jpg"
       },
       {
         id: "branding_kebs_certification",
         name: "KEBS Certification & Brand Design",
         description: "Standardization mark application support, nutritional table testing, logo & packaging design.",
-        estimatedCost: "KES 25,000 / product line",
+        estimatedCost: "On Request",
         image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "value_addition_expert_advice",
         name: "Value Addition Expert Advisory",
         description: "Commercial feasibility studies, recipe formulation, shelf-life extension & export compliance.",
-        estimatedCost: "KES 5,000 / session",
+        estimatedCost: "On Request",
         image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80"
       }
     ]
@@ -389,49 +390,49 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
         id: "borehole_drilling",
         name: "Borehole Drilling & Hydro-Geological Survey",
         description: "Professional underground water surveys, rotary drilling, steel casing installation and pump testing.",
-        estimatedCost: "KES 6,500 / meter",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/736x/3b/22/64/3b2264ca23820c25831c917f99c24f25.jpg"
       },
       {
         id: "irrigation_systems_other",
         name: "Smart Solar Pumping Systems",
         description: "Submersible solar pump sizing, solar panel array installation and automatic tank level controls.",
-        estimatedCost: "KES 120,000 / kit",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/736x/12/d7/19/12d719413f68bf7b49af1b2caebf2d33.jpg"
       },
       {
         id: "shed_construction",
         name: "Zero-Grazing & Poultry Shed Construction",
         description: "Biosecure farm structures, concrete calf pens, raised deep litter poultry houses and silage pits.",
-        estimatedCost: "KES 95,000 / unit",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/db/6e/ba/db6eba6dc56b198e13976d209df48c09.jpg"
       },
       {
         id: "agri_insurance",
         name: "Multi-Peril Crop & Livestock Insurance",
         description: "Satellite-indexed drought, flood, pest attack and livestock mortality insurance coverage.",
-        estimatedCost: "3.5% of crop value",
+        estimatedCost: "On Request",
         image: "/images/services/agri_insurance.jpg"
       },
       {
         id: "agri_finance",
         name: "Agri-Asset Finance & Working Capital",
         description: "Low-interest agricultural loan facilitation for greenhouse, solar pump & livestock purchasing.",
-        estimatedCost: "Tailored options",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/bf/25/9a/bf259add2a1ed5f825e2e9ba0862e631.jpg"
       },
       {
         id: "climate_smart_agri",
         name: "Climate Smart Agriculture & Conservation",
         description: "Zero-tillage planting, agro-forestry, rainwater harvesting dams and carbon credit enrollment.",
-        estimatedCost: "KES 4,000 / acre",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/1200x/e7/8b/16/e78b16a40e62dfc38235c4c7018bb1cf.jpg"
       },
       {
         id: "farm_record_keeping",
         name: "Farm Record Keeping & Digital Audits",
         description: "Implementation of computerized farm accounting, inventory management and milk yield ledgers.",
-        estimatedCost: "KES 2,000 / month",
+        estimatedCost: "On Request",
         image: "https://i.pinimg.com/736x/11/bf/6d/11bf6d9c54bf11ed612ac9acdae37239.jpg"
       }
     ]
@@ -464,22 +465,55 @@ function ServicesPage() {
   } | null>(null);
 
   const [bookingStep, setBookingStep] = useState(1);
-  const [farmerName, setFarmerName] = useState(user?.name || "");
-  const [phone, setPhone] = useState((user as any)?.phone || "");
-  const [county, setCounty] = useState(user?.county || "Uasin Gishu");
+  const [farmerName, setFarmerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [county, setCounty] = useState("Uasin Gishu");
   const [locationDetails, setLocationDetails] = useState("");
-  const [farmScale, setFarmScale] = useState("2.5 Acres");
+  const [farmScale, setFarmScale] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [specialNotes, setSpecialNotes] = useState("");
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
 
-  // Handle WhatsApp quotation link helper
-  const openWhatsAppQuotation = (serviceName: string) => {
-    const text = encodeURIComponent(
-      `Jambo Mqulima Agri-Desk! 🌿\n\nI am requesting an official quotation & specialist dispatch for: *${serviceName}*.\n\n📍 *Platform Request*: Mqulima Services Core\n📋 *Inquiry*: Pricing breakdown, availability & field consultation.\n\nPlease link me with a verified extension specialist at your earliest convenience. Asante!`
-    );
-    window.open(`https://wa.me/254723346134?text=${text}`, "_blank");
+  // Handle WhatsApp quotation link helper with Database Persistence
+  const openWhatsAppQuotation = async (serviceName: string, customDetails?: { name?: string; phone?: string; county?: string; notes?: string }) => {
+    try {
+      const { createWhatsAppServiceRequest } = await import("@/lib/api/services.server");
+      const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+      
+      const reqName = customDetails?.name || farmerName || user?.name || "Farmer";
+      const reqPhone = customDetails?.phone || phone || (user as any)?.phone || "0700000000";
+      const reqCounty = customDetails?.county || county || "Nairobi";
+      const reqNotes = customDetails?.notes || specialNotes || `WhatsApp Quotation Inquiry for ${serviceName}`;
+
+      const res = await createWhatsAppServiceRequest({
+        data: {
+          service_type: serviceName,
+          subservice_name: serviceName,
+          contact_name: reqName,
+          contact_phone: reqPhone,
+          county: reqCounty,
+          location: `${locationDetails || reqCounty}, Kenya`,
+          farm_scale: farmScale || "Custom",
+          notes: reqNotes,
+          csrfToken: getCsrfTokenFromCookie(),
+        }
+      });
+
+      const ref = res?.reference || "MQ-WA-REQ";
+      
+      const text = encodeURIComponent(
+        `Jambo Mqulima Agri-Desk! 🌿\n\nI am requesting an official quotation & specialist dispatch for: *${serviceName}*.\n\n📋 *Tracking Ref*: ${ref}\n👤 *Farmer*: ${reqName}\n📞 *Phone*: ${reqPhone !== "0700000000" ? reqPhone : "Provided on call"}\n📍 *County/Location*: ${reqCounty}\n🌾 *Farm Scale*: ${farmScale || "Custom"}\n\nPlease link me with a verified extension specialist at your earliest convenience. Asante!`
+      );
+
+      toast.success(`WhatsApp Request Saved to DB! Ref: ${ref}`);
+      window.open(`https://wa.me/254723346134?text=${text}`, "_blank");
+    } catch {
+      const text = encodeURIComponent(
+        `Jambo Mqulima Agri-Desk! 🌿\n\nI am requesting an official quotation & specialist dispatch for: *${serviceName}*.\n\n📍 *Platform Request*: Mqulima Services Core\n\nPlease link me with a verified extension specialist at your earliest convenience. Asante!`
+      );
+      window.open(`https://wa.me/254723346134?text=${text}`, "_blank");
+    }
   };
 
   // Sync route URL search query params
@@ -511,12 +545,17 @@ function ServicesPage() {
       const res = await createServiceBooking({
         data: {
           service_type: selectedSubservice?.id || "soil_testing_analysis",
+          subservice_name: selectedSubservice?.name || "Soil Testing & Analysis",
           farmer_id: user.id,
+          contact_name: farmerName || user.name,
+          contact_phone: phone || (user as any)?.phone || "",
           location: `${locationDetails || "Farm location"}, ${county}`,
           farm_size_acres: parseFloat(farmScale) || 1.0,
+          farm_scale: farmScale,
           scheduled_date: bookingDate || new Date().toISOString(),
           notes: specialNotes || `Requested for ${selectedSubservice?.name}`,
           amount: costNumeric,
+          channel: "website",
           csrfToken: getCsrfTokenFromCookie(),
         }
       });
@@ -536,11 +575,35 @@ function ServicesPage() {
     }
   };
 
+  const openBookingModal = (subservice: {
+    id: string;
+    name: string;
+    description: string;
+    estimatedCost: string;
+    categoryTitle: string;
+  }) => {
+    setFarmerName("");
+    setPhone("");
+    setCounty("Nairobi");
+    setLocationDetails("");
+    setFarmScale("");
+    setBookingDate("");
+    setSpecialNotes("");
+    setBookingStep(1);
+    setBookingReference(null);
+    setSelectedSubservice(subservice);
+  };
+
   const closeBookingModal = () => {
     setSelectedSubservice(null);
     setBookingStep(1);
     setBookingReference(null);
+    setFarmerName("");
+    setPhone("");
+    setCounty("Nairobi");
     setLocationDetails("");
+    setFarmScale("");
+    setBookingDate("");
     setSpecialNotes("");
   };
 
@@ -636,22 +699,42 @@ function ServicesPage() {
             </div>
           </div>
 
-          {/* Stats Bar Ribbon at Bottom of Hero (Infinite Smooth Right-to-Left Marquee Carousel - matching Mqulima Tools) */}
+          {/* Stats Bar Ribbon at Bottom of Hero (Infinite Smooth Right-to-Left Continuous Marquee Carousel) */}
           <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
-            <div className="flex w-max items-center gap-10 sm:gap-16 animate-marquee">
-              {[...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS].map((stat, idx) => (
-                <div key={idx} className="flex items-center gap-3 shrink-0">
-                  <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
-                    <stat.icon className="h-5 w-5 stroke-[2]" />
+            <div className="marquee-wrapper flex w-max items-center animate-marquee">
+              {/* Track 1 */}
+              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16">
+                {[...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS].map((stat, idx) => (
+                  <div key={`t1-${idx}`} className="flex items-center gap-3 shrink-0">
+                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-5 w-5 stroke-[2]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                        {stat.value}
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
-                      {stat.value}
-                    </span>
-                    <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                ))}
+              </div>
+
+              {/* Track 2 (Identical Clone for 100% Seamless Infinite Continuous Loop) */}
+              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16" aria-hidden="true">
+                {[...SERVICES_HERO_STATS, ...SERVICES_HERO_STATS].map((stat, idx) => (
+                  <div key={`t2-${idx}`} className="flex items-center gap-3 shrink-0">
+                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-5 w-5 stroke-[2]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                        {stat.value}
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -752,7 +835,7 @@ function ServicesPage() {
                       <button
                         onClick={() => {
                           const sub = cat.subservices[0];
-                          setSelectedSubservice({
+                          openBookingModal({
                             id: sub.id,
                             name: sub.name,
                             description: sub.description,
@@ -832,10 +915,7 @@ function ServicesPage() {
                         <div>
                           <div className="relative h-40 w-full rounded-xl overflow-hidden mb-3 bg-slate-100">
                             <img src={sub.image} alt={sub.name} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-                            <span className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                              {sub.estimatedCost}
-                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                           </div>
                           <h4 className="text-base font-bold text-slate-900 leading-snug mb-1">
                             {sub.name}
@@ -849,7 +929,7 @@ function ServicesPage() {
                           <button
                             onClick={() => {
                               setSelectedCategory(null);
-                              setSelectedSubservice({
+                              openBookingModal({
                                 id: sub.id,
                                 name: sub.name,
                                 description: sub.description,
@@ -916,7 +996,7 @@ function ServicesPage() {
                 {/* Content */}
                 <div className="p-6 sm:p-8 text-left">
                   {bookingStep === 1 && (
-                    <form onSubmit={handleBookingSubmit} className="space-y-4">
+                    <form onSubmit={handleBookingSubmit} autoComplete="off" className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                           Farmer / Contact Name
@@ -924,6 +1004,7 @@ function ServicesPage() {
                         <input
                           type="text"
                           required
+                          autoComplete="off"
                           value={farmerName}
                           onChange={(e) => setFarmerName(e.target.value)}
                           placeholder="e.g. James Kariuki"
@@ -939,6 +1020,7 @@ function ServicesPage() {
                           <input
                             type="tel"
                             required
+                            autoComplete="off"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="e.g. 0712345678"
@@ -969,6 +1051,7 @@ function ServicesPage() {
                           </label>
                           <input
                             type="text"
+                            autoComplete="off"
                             value={farmScale}
                             onChange={(e) => setFarmScale(e.target.value)}
                             placeholder="e.g. 3 Acres or 10 Cows"
@@ -982,6 +1065,7 @@ function ServicesPage() {
                           </label>
                           <input
                             type="date"
+                            autoComplete="off"
                             value={bookingDate}
                             onChange={(e) => setBookingDate(e.target.value)}
                             className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-[#16A34A] focus:outline-none"
@@ -995,6 +1079,7 @@ function ServicesPage() {
                         </label>
                         <textarea
                           rows={3}
+                          autoComplete="off"
                           value={specialNotes}
                           onChange={(e) => setSpecialNotes(e.target.value)}
                           placeholder="Describe symptoms, crop type, or location landmarks..."
@@ -1002,15 +1087,11 @@ function ServicesPage() {
                         />
                       </div>
 
-                      <div className="pt-2 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500">
-                          Est. Base Cost: <strong className="text-[#16A34A]">{selectedSubservice.estimatedCost}</strong>
-                        </span>
-
+                      <div className="pt-2 flex items-center justify-end">
                         <button
                           type="submit"
                           disabled={isSubmittingBooking}
-                          className="py-3 px-6 rounded-full bg-[#16A34A] text-white font-bold text-sm hover:bg-[#15803D] transition disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                          className="w-full sm:w-auto py-3.5 px-8 rounded-full bg-[#16A34A] text-white font-bold text-sm hover:bg-[#15803D] transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                         >
                           {isSubmittingBooking ? "Submitting..." : "Submit Service Booking"}
                           <ArrowRight className="h-4 w-4" />
@@ -1045,20 +1126,6 @@ function ServicesPage() {
             </div>
           )}
         </AnimatePresence>
-
-
-        {/* =========================================================================
-            FLOATING WHATSAPP BUTTON (Bottom Right - Matching Screenshot Widget)
-           ========================================================================= */}
-        <div className="fixed bottom-6 right-6 z-40">
-          <button
-            onClick={() => openWhatsAppQuotation("General Inquiry")}
-            className="flex items-center gap-2.5 py-3 px-5 rounded-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-sm shadow-xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            <WhatsAppIcon className="h-5 w-5 text-white" />
-            <span>Chat with us</span>
-          </button>
-        </div>
 
       </div>
     </AppLayout>

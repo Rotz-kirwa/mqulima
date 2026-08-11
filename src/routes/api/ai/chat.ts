@@ -269,7 +269,7 @@ ${marketContext}`;
               weatherContext,
               diagnosesContext,
               marketContext,
-              "The `GEMINI_API_KEY` environment variable is not configured on this server. Running in simulated fallback mode. Set the key in your `.env` file and restart the server to enable the real Gemini 3.5 Flash model.",
+              "The `GEMINI_API_KEY` environment variable is not configured on this server. Running in simulated fallback mode. Set the key in your `.env` file and restart the server to enable the real Gemini 2.5 Flash model.",
               saveMessage
             );
           }
@@ -298,7 +298,7 @@ ${marketContext}`;
             const ai = new GoogleGenAI({ apiKey });
 
             const interactionStream = await ai.models.generateContentStream({
-              model: "gemini-3.5-flash",
+              model: process.env.GEMINI_MODEL_NAME || "gemini-2.5-flash",
               contents: turns,
               config: {
                 systemInstruction: systemPrompt,

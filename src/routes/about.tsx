@@ -265,20 +265,40 @@ function AboutPage() {
 
           {/* Stats Bar Ribbon at Bottom of Hero (Marquee Style) */}
           <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
-            <div className="flex w-max items-center gap-10 sm:gap-16 animate-marquee">
-              {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
-                <div key={idx} className="flex items-center gap-3 shrink-0">
-                  <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
-                    <stat.icon className="h-5 w-5 stroke-[2]" />
+            <div className="marquee-wrapper flex w-max items-center animate-marquee">
+              {/* Track 1 */}
+              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16">
+                {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
+                  <div key={`t1-${idx}`} className="flex items-center gap-3 shrink-0">
+                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-5 w-5 stroke-[2]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                        {stat.value}
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
-                      {stat.value}
-                    </span>
-                    <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                ))}
+              </div>
+
+              {/* Track 2 (Identical Clone for 100% Seamless Infinite Continuous Loop) */}
+              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16" aria-hidden="true">
+                {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
+                  <div key={`t2-${idx}`} className="flex items-center gap-3 shrink-0">
+                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-5 w-5 stroke-[2]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                        {stat.value}
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>

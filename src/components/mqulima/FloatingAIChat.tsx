@@ -14,6 +14,12 @@ export function FloatingAIChat() {
   const { user } = useAuth();
   const location = useLocation();
   const isShop = location.pathname.startsWith("/shop");
+  const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard");
+
+  if (isAdmin) {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([
@@ -144,12 +150,12 @@ export function FloatingAIChat() {
       {/* Floating Toggle Icon Button */}
       <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-auto md:right-6 z-40 flex items-center justify-center`}>
         {/* Subtle glowing halo wave */}
-        <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#F5A623]/25 blur-sm" />
+        <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#00C4BF]/25 blur-sm" />
 
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Mqulima AI Assistant"
-          className="relative z-10 flex items-center justify-center p-1 transition-transform hover:scale-115 active:scale-90 duration-300 cursor-pointer drop-shadow-[0_10px_25px_rgba(245,166,35,0.5)]"
+          className="relative z-10 flex items-center justify-center p-1 transition-transform hover:scale-115 active:scale-90 duration-300 cursor-pointer drop-shadow-[0_10px_25px_rgba(0,196,191,0.4)]"
         >
           <AIIcon className="h-12 w-12 md:h-14 md:w-14" animated={true} />
         </button>

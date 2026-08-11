@@ -1,36 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { nitro } from "nitro/vite";
 import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 export default defineConfig({
-  plugins: [
-    tsconfigPaths(),
-    tailwindcss(),
-    tanstackStart({
-      server: { entry: "src/server.ts" },
-    }),
-    nitro({
-      preset: process.env.NITRO_PRESET || "vercel",
-      ...(process.env.NITRO_PRESET === "node-server" || process.env.NITRO_PRESET === "render"
-        ? {}
-        : {
-            output: {
-              dir: ".vercel/output",
-              serverDir: ".vercel/output/functions/__server.func",
-              publicDir: ".vercel/output/static",
-            },
-          }),
-    }),
-    react(),
-  ],
+  plugins: [react(), tailwindcss()],
   server: {
     port: 8081,
-    fs: {
-      allow: [".."],
+    strictPort: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });
-

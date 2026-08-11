@@ -154,7 +154,7 @@ export function mapToNewTaxonomy(p: any) {
     return { category: "Water & Sanitation", subcategory: subcat };
   }
 
-  return { category: "Seeds & Seedlings", subcategory: "Vegetables" };
+  return { category: cat || "Seeds & Seedlings", subcategory: sub || "General" };
 }
 
 export type ProductSizeOption = {

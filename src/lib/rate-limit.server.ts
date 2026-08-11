@@ -73,6 +73,7 @@ class InMemorySlidingWindowLimiter {
 
 // Instantiate Fallback Limiters (Login: 5 per 15 min; API: 100 per 1 min)
 const fallbackLoginLimiter = new InMemorySlidingWindowLimiter(5, 15 * 60 * 1000);
+const fallbackAccountLimiter = new InMemorySlidingWindowLimiter(5, 15 * 60 * 1000);
 const fallbackApiLimiter = new InMemorySlidingWindowLimiter(100, 60 * 1000);
 
 let redis: Redis | null = null;
@@ -114,7 +115,7 @@ export async function checkLoginRateLimit(ip: string): Promise<void> {
     try {
       const { success } = await loginLimiter.limit(ip);
       if (!success) {
-        throw new Error("Too many login attempts. Please try again in 15 minutes.");
+        throw new Error("Too many login attempts from this network. Please try again in 15 minutes.");
       }
       return;
     } catch (err) {
@@ -128,7 +129,15 @@ export async function checkLoginRateLimit(ip: string): Promise<void> {
   // Fallback to In-Memory Limiter
   const { success } = fallbackLoginLimiter.limit(ip);
   if (!success) {
-    throw new Error("Too many login attempts. Please try again in 15 minutes.");
+    throw new Error("Too many login attempts from this network. Please try again in 15 minutes.");
+  }
+}
+
+export async function checkBruteForceAccountLockout(identifier: string): Promise<void> {
+  const cleanId = identifier.trim().toLowerCase();
+  const { success } = fallbackAccountLimiter.limit(`acc:${cleanId}`);
+  if (!success) {
+    throw new Error("Account temporarily locked due to multiple failed login attempts. Please wait 15 minutes.");
   }
 }
 
@@ -154,4 +163,3 @@ export async function checkApiRateLimit(ip: string): Promise<void> {
     throw new Error("Too many requests. Please try again later.");
   }
 }
-
