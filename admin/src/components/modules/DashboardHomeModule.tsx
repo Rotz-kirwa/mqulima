@@ -38,8 +38,8 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
   const [loading, setLoading] = useState(true);
 
   // Calendar State
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 7, 7)); // August 2026
-  const [selectedDay, setSelectedDay] = useState<number>(7);
+  const [currentDate, setCurrentDate] = useState(() => new Date()); // Dynamic current date
+  const [selectedDay, setSelectedDay] = useState<number>(() => new Date().getDate());
 
   const fetchAnalytics = () => {
     setLoading(true);
@@ -387,7 +387,11 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
 
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const dayNum = i + 1;
-                const isToday = dayNum === 7; // August 7 (Today)
+                const now = new Date();
+                const isToday =
+                  now.getFullYear() === year &&
+                  now.getMonth() === month &&
+                  now.getDate() === dayNum;
                 const isSelected = selectedDay === dayNum;
 
                 return (
