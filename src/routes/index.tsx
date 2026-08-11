@@ -672,7 +672,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           4. MQULIMA SERVICES CATEGORIES GRID (Pixel-matched to Services Page)
       ══════════════════════════════════════════ */}
-      <section className="py-10 md:py-14 bg-[#FAFBF9] border-y border-slate-200/60">
+      <section className="py-10 md:py-14 bg-[#FAFBF9] border-y border-slate-200/60 w-full max-w-full overflow-hidden">
         <div className="container-px mx-auto max-w-7xl">
           
           {/* Section Header */}
@@ -770,7 +770,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           5. ACADEMY SECTION
       ══════════════════════════════════════════ */}
-      <section className="bg-white py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
+      <section className="bg-white py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60 w-full max-w-full overflow-hidden">
         <div className="container-px mx-auto max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
             
@@ -829,7 +829,7 @@ function Index() {
           6. BRAND STORY / WHY WE EXIST
           (Picture on Right, Story on Left)
       ══════════════════════════════════════════ */}
-      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60 w-full max-w-full overflow-hidden">
         <div className="container-px mx-auto max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
             
@@ -921,7 +921,7 @@ function Index() {
           (Served in 5 Countries Reach)
       ══════════════════════════════════════════ */}
       <section 
-        className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60"
+        className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60 w-full max-w-full overflow-hidden"
         onMouseEnter={() => setIsTestimonialHovered(true)}
         onMouseLeave={() => setIsTestimonialHovered(false)}
       >
@@ -1097,7 +1097,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           8. COMMUNITY & KNOWLEDGE HUB
       ══════════════════════════════════════════ */}
-      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] border-b border-slate-200/60 w-full max-w-full overflow-hidden">
         <div className="container-px mx-auto max-w-7xl">
           
           {/* Header */}
@@ -1182,7 +1182,7 @@ function Index() {
       {/* ══════════════════════════════════════════
           9. CONVERSION PATH
       ══════════════════════════════════════════ */}
-      <section className="bg-[#FAFBF9] py-10 md:py-14 text-left">
+      <section className="bg-[#FAFBF9] py-10 md:py-14 text-left w-full max-w-full overflow-hidden">
         <div className="container-px mx-auto max-w-7xl">
           
           <motion.div 

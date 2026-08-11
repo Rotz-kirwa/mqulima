@@ -140,7 +140,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <div className="flex min-h-screen flex-col w-full" suppressHydrationWarning>
+          <div className="flex min-h-screen flex-col w-full max-w-full overflow-x-hidden" suppressHydrationWarning>
             {mounted && !isOnline && (
               <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
                 <WifiOff className="h-4 w-4" />

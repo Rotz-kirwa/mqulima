@@ -26,9 +26,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background" suppressHydrationWarning>
+    <div className="flex min-h-screen flex-col bg-background w-full max-w-full overflow-x-hidden" suppressHydrationWarning>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
       <Footer />
       <WhatsAppButton />
       {mounted && (

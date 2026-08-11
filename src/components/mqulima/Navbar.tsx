@@ -379,7 +379,7 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#0F291E] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)] z-50 text-left"
+                    className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-sm rounded-2xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#0F291E] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)] z-50 text-left"
                   >
                     <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/10">
                       <div className="flex items-center gap-2">
