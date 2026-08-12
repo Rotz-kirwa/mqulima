@@ -16,11 +16,12 @@ export function getRawSql() {
     }
 
     const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
+    const requiresSsl = !isLocal || connectionString.includes("sslmode=require");
     sqlInstance = postgres(connectionString, {
       max: 10,
       idle_timeout: 20,
-      connect_timeout: 10,
-      ssl: isLocal ? false : { rejectUnauthorized: false },
+      connect_timeout: 15,
+      ssl: requiresSsl ? { rejectUnauthorized: false } : false,
       onnotice: () => {},
     });
   }
