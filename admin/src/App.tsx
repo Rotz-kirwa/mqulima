@@ -4,16 +4,18 @@ import { Sidebar, AdminTab } from "./components/layout/Sidebar";
 import { AdminLoginScreen } from "./components/auth/AdminLoginScreen";
 
 import { DashboardHomeModule } from "./components/modules/DashboardHomeModule";
-import { CustomersModule } from "./components/modules/CustomersModule";
-import { ProductsStockModule } from "./components/modules/ProductsStockModule";
-import { OrdersQuotationsModule } from "./components/modules/OrdersQuotationsModule";
-import { PaymentsModule } from "./components/modules/PaymentsModule";
-import { InquiriesModule } from "./components/modules/InquiriesModule";
-import { ForumModerationModule } from "./components/modules/ForumModerationModule";
-import { AcademyExtensionModule } from "./components/modules/AcademyExtensionModule";
-import { ServiceRequestsModule } from "./components/modules/ServiceRequestsModule";
-import { NewsCMSModule } from "./components/modules/NewsCMSModule";
-import { CommodityTrendsModule } from "./components/modules/CommodityTrendsModule";
+
+const CustomersModule = React.lazy(() => import("./components/modules/CustomersModule").then(m => ({ default: m.CustomersModule })));
+const ProductsStockModule = React.lazy(() => import("./components/modules/ProductsStockModule").then(m => ({ default: m.ProductsStockModule })));
+const OrdersQuotationsModule = React.lazy(() => import("./components/modules/OrdersQuotationsModule").then(m => ({ default: m.OrdersQuotationsModule })));
+const PaymentsModule = React.lazy(() => import("./components/modules/PaymentsModule").then(m => ({ default: m.PaymentsModule })));
+const InquiriesModule = React.lazy(() => import("./components/modules/InquiriesModule").then(m => ({ default: m.InquiriesModule })));
+const ForumModerationModule = React.lazy(() => import("./components/modules/ForumModerationModule").then(m => ({ default: m.ForumModerationModule })));
+const AcademyExtensionModule = React.lazy(() => import("./components/modules/AcademyExtensionModule").then(m => ({ default: m.AcademyExtensionModule })));
+const ServiceRequestsModule = React.lazy(() => import("./components/modules/ServiceRequestsModule").then(m => ({ default: m.ServiceRequestsModule })));
+const NewsCMSModule = React.lazy(() => import("./components/modules/NewsCMSModule").then(m => ({ default: m.NewsCMSModule })));
+const CommodityTrendsModule = React.lazy(() => import("./components/modules/CommodityTrendsModule").then(m => ({ default: m.CommodityTrendsModule })));
+
 import { Toaster, toast } from "sonner";
 
 interface AdminUserSession {
@@ -22,6 +24,13 @@ interface AdminUserSession {
   email: string;
   role: string;
 }
+
+const ModuleLoadingFallback: React.FC = () => (
+  <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+    <div className="w-8 h-8 border-3 border-[#278C7B] border-t-transparent rounded-full animate-spin" />
+    <span className="text-xs font-mono text-[#2C5E5B] font-bold">Loading Module...</span>
+  </div>
+);
 
 export const App: React.FC = () => {
   const [adminSession, setAdminSession] = useState<AdminUserSession | null>(() => {
@@ -118,7 +127,9 @@ export const App: React.FC = () => {
       <div className="flex flex-1 pt-16">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <main className="flex-1 ml-60 p-6 overflow-y-auto min-h-[calc(100vh-4rem)] text-left">
-          {renderModule()}
+          <React.Suspense fallback={<ModuleLoadingFallback />}>
+            {renderModule()}
+          </React.Suspense>
         </main>
       </div>
     </div>

@@ -211,156 +211,167 @@ const CreateShopOrderSchema = z.object({
 export const createShopOrder = createServerFn({ method: "POST" })
   .inputValidator((val: unknown) => CreateShopOrderSchema.parse(val || {}))
   .handler(async ({ data }) => {
-    const {
-      items,
-      subtotal,
-      total,
-      fullName,
-      phone,
-      nationalId,
-      county,
-      town,
-      village,
-      instructions,
-      paymentMethod,
-      shippingOption,
-      csrfToken
-    } = data;
+    try {
+      const {
+        items,
+        subtotal,
+        total,
+        fullName,
+        phone,
+        nationalId,
+        county,
+        town,
+        village,
+        instructions,
+        paymentMethod,
+        shippingOption,
+        csrfToken
+      } = data;
 
-    // 1. CSRF Token Validation
-    const { validateCsrfToken } = await import("../csrf-verify.server");
-    validateCsrfToken(csrfToken);
+      // 1. CSRF Token Validation
+      const { validateCsrfToken } = await import("../csrf-verify.server");
+      validateCsrfToken(csrfToken);
 
-    // 2. Check authentication
-    const { getCurrentUser } = await import("../auth-server");
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
-
-    // 3. Format delivery address
-    const deliveryAddress = `Name: ${fullName}\nPhone: ${phone}\nID: ${nationalId}\nCounty: ${county}\nTown: ${town}${village ? `\nVillage: ${village}` : ""}`;
-
-    // Map paymentMethod to payment_method_enum
-    let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" = "mpesa";
-    if (paymentMethod === "card") dbPaymentMethod = "card";
-    else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
-    else if (paymentMethod === "gpay") dbPaymentMethod = "gpay";
-
-    // 4. Atomic transaction for order placement and stock deduction
-    let orderId: string = "";
-    await sql.begin(async (tx: any) => {
-      const [orderRes] = await tx`
-        INSERT INTO orders (
-          user_id,
-          items,
-          subtotal,
-          total,
-          status,
-          payment_method,
-          payment_status,
-          delivery_address,
-          checkout_channel,
-          notes
-        )
-        VALUES (
-          ${user.id},
-          ${tx.json(items)},
-          ${subtotal},
-          ${total},
-          'pending',
-          ${dbPaymentMethod},
-          'pending',
-          ${deliveryAddress},
-          'website',
-          ${instructions || null}
-        )
-        RETURNING id
-      `;
-
-      orderId = orderRes.id;
-
-      // Insert into order_items table and atomically decrement product stock
-      for (const item of items) {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id);
-        const productId = isUuid ? item.id : null;
-        
-        await tx`
-          INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price)
-          VALUES (${orderId}, ${productId}, ${item.name}, ${item.quantity}, ${item.price})
-        `;
-
-        if (productId) {
-          await tx`
-            UPDATE products
-            SET stock_qty = GREATEST(0, stock_qty - ${item.quantity})
-            WHERE id = ${productId}
-          `;
-        }
+      // 2. Check authentication
+      const { getCurrentUser } = await import("../auth-server");
+      const user = await getCurrentUser();
+      if (!user) {
+        return {
+          success: false,
+          error: "You must be logged in to place an order. Please log in and try again."
+        };
       }
 
-      // Insert in-app notification for logged-in user with full purchase details
-      const itemSummaries = items.map((i: any) => `${i.quantity}x ${i.name}`).join(", ");
+      const { getDb } = await import("../db.server");
+      const sql = getDb();
+
+      // 3. Format delivery address
+      const deliveryAddress = `Name: ${fullName}\nPhone: ${phone}\nID: ${nationalId}\nCounty: ${county}\nTown: ${town}${village ? `\nVillage: ${village}` : ""}`;
+
+      // Map paymentMethod to payment_method_enum
+      let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" = "mpesa";
+      if (paymentMethod === "card") dbPaymentMethod = "card";
+      else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
+      else if (paymentMethod === "gpay") dbPaymentMethod = "gpay";
+
+      // 4. Atomic transaction for order placement and stock deduction
+      let orderId: string = "";
+      await sql.begin(async (tx: any) => {
+        const [orderRes] = await tx`
+          INSERT INTO orders (
+            user_id,
+            items,
+            subtotal,
+            total,
+            status,
+            payment_method,
+            payment_status,
+            delivery_address,
+            checkout_channel,
+            notes
+          )
+          VALUES (
+            ${user.id},
+            ${JSON.stringify(items)}::jsonb,
+            ${subtotal},
+            ${total},
+            'pending',
+            ${dbPaymentMethod},
+            'pending',
+            ${deliveryAddress},
+            'website',
+            ${instructions || null}
+          )
+          RETURNING id
+        `;
+
+        orderId = orderRes.id;
+
+        // Insert into order_items table and atomically decrement product stock
+        for (const item of items) {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id);
+          const productId = isUuid ? item.id : null;
+          
+          await tx`
+            INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price)
+            VALUES (${orderId}, ${productId}, ${item.name}, ${item.quantity}, ${item.price})
+          `;
+
+          if (productId) {
+            await tx`
+              UPDATE products
+              SET stock_qty = GREATEST(0, stock_qty - ${item.quantity})
+              WHERE id = ${productId}
+            `;
+          }
+        }
+
+        // Insert in-app notification for logged-in user with full purchase details
+        const itemSummaries = items.map((i: any) => `${i.quantity}x ${i.name}`).join(", ");
+        const shortOrderId = orderId.slice(0, 8).toUpperCase();
+        const notifPayload = {
+          tag: "Order Update",
+          tagClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+          title: `Order #${shortOrderId} Placed (KES ${total.toLocaleString()}) 📦`,
+          desc: `Purchased: ${itemSummaries}. Total: KES ${total.toLocaleString()}. Shipping to ${town}, ${county} (${phone}). Payment Method: ${paymentMethod.toUpperCase()}`,
+          details: {
+            orderId,
+            shortOrderId,
+            items,
+            subtotal,
+            total,
+            fullName,
+            phone,
+            nationalId,
+            county,
+            town,
+            village,
+            instructions,
+            paymentMethod,
+            shippingOption,
+            deliveryAddress,
+            placedAt: new Date().toISOString()
+          },
+          time: "Just now",
+          link: "/shop"
+        };
+
+        await tx`
+          INSERT INTO notifications (user_id, type, payload)
+          VALUES (${user.id}, 'product_purchase', ${JSON.stringify(notifPayload)}::jsonb)
+        `;
+      });
+
+      // 5. Write Audit Log
+      const { writeAuditLog } = await import("../audit.server");
+      await writeAuditLog({
+        actorId: user.id,
+        action: "order.created",
+        entityType: "order",
+        entityId: orderId,
+        diff: { subtotal, total, paymentMethod, shippingOption }
+      });
+
+      // 6. Fire Order Confirmation SMS asynchronously (non-blocking)
       const shortOrderId = orderId.slice(0, 8).toUpperCase();
-      const notifPayload = {
-        tag: "Order Update",
-        tagClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-        title: `Order #${shortOrderId} Placed (KES ${total.toLocaleString()}) 📦`,
-        desc: `Purchased: ${itemSummaries}. Total: KES ${total.toLocaleString()}. Shipping to ${town}, ${county} (${phone}). Payment Method: ${paymentMethod.toUpperCase()}`,
-        details: {
-          orderId,
-          shortOrderId,
-          items,
-          subtotal,
-          total,
-          fullName,
-          phone,
-          nationalId,
-          county,
-          town,
-          village,
-          instructions,
-          paymentMethod,
-          shippingOption,
-          deliveryAddress,
-          placedAt: new Date().toISOString()
-        },
-        time: "Just now",
-        link: "/shop"
+      const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+      const orderSms = `Order #${shortOrderId} confirmed! Total: KES ${total.toLocaleString()} (${itemCount} item${itemCount > 1 ? "s" : ""}). We'll notify you once dispatched. - Mqulima`;
+
+      sendSms({
+        phoneNumber: phone,
+        message: orderSms,
+        triggerType: "order_confirmation",
+      }).catch((err) => console.error("[SHOP ORDER] Order SMS background dispatch error:", err));
+
+      return {
+        success: true,
+        orderId
       };
-
-      await tx`
-        INSERT INTO notifications (user_id, type, payload)
-        VALUES (${user.id}, 'product_purchase', ${tx.json(notifPayload)})
-      `;
-    });
-
-    // 5. Write Audit Log
-    const { writeAuditLog } = await import("../audit.server");
-    await writeAuditLog({
-      actorId: user.id,
-      action: "order.created",
-      entityType: "order",
-      entityId: orderId,
-      diff: { subtotal, total, paymentMethod, shippingOption }
-    });
-
-    // 6. Fire Order Confirmation SMS asynchronously (non-blocking)
-    const shortOrderId = orderId.slice(0, 8).toUpperCase();
-    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-    const orderSms = `Order #${shortOrderId} confirmed! Total: KES ${total.toLocaleString()} (${itemCount} item${itemCount > 1 ? "s" : ""}). We'll notify you once dispatched. - Mqulima`;
-
-    sendSms({
-      phoneNumber: phone,
-      message: orderSms,
-      triggerType: "order_confirmation",
-    }).catch((err) => console.error("[SHOP ORDER] Order SMS background dispatch error:", err));
-
-    return {
-      success: true,
-      orderId
-    };
+    } catch (err: any) {
+      console.error("[CREATE SHOP ORDER ERROR]:", err);
+      return {
+        success: false,
+        error: err?.message || "Failed to create order due to a server error."
+      };
+    }
   });

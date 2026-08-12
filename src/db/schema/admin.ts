@@ -1,4 +1,5 @@
-import { pgTable, varchar, text, integer, timestamp, jsonb, boolean, real } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, integer, timestamp, jsonb, boolean, real, uuid } from "drizzle-orm/pg-core";
+import { orders } from "./orders";
 
 export const adminAuditLogs = pgTable("admin_audit_logs", {
   id: varchar("id", { length: 255 }).primaryKey(),
@@ -24,7 +25,7 @@ export const adminQuotations = pgTable("quotations", {
 
 export const logisticsRecords = pgTable("logistics_records", {
   id: varchar("id", { length: 255 }).primaryKey(),
-  orderId: varchar("order_id", { length: 255 }).notNull(),
+  orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
   courierName: varchar("courier_name", { length: 255 }).notNull(),
   zone: varchar("zone", { length: 100 }).notNull(),
   dispatchStatus: varchar("dispatch_status", { length: 50 }).default("pending").notNull(),

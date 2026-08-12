@@ -11,8 +11,13 @@ export function validateCsrfToken(requestToken: string | undefined): void {
     return;
   }
 
-  const cookieToken = getCookie("mq_csrf");
-  if (!cookieToken || !requestToken) {
+  const rawCookieToken = getCookie("mq_csrf");
+  
+  // Safely extract string values if getCookie or requestToken is passed as an Array or object
+  const cookieStr = Array.isArray(rawCookieToken) ? String(rawCookieToken[0] || "") : (typeof rawCookieToken === "string" ? rawCookieToken : String(rawCookieToken || ""));
+  const requestStr = Array.isArray(requestToken) ? String(requestToken[0] || "") : (typeof requestToken === "string" ? requestToken : String(requestToken || ""));
+
+  if (!cookieStr || !requestStr) {
     if (allowBypass) {
       console.warn("[CSRF WARNING] CSRF token missing in test/development environment. Bypassing.");
       return;
@@ -21,8 +26,8 @@ export function validateCsrfToken(requestToken: string | undefined): void {
     throw new Error("Forbidden: CSRF token missing or invalid");
   }
 
-  const bufA = Buffer.from(cookieToken);
-  const bufB = Buffer.from(requestToken);
+  const bufA = Buffer.from(cookieStr, "utf-8");
+  const bufB = Buffer.from(requestStr, "utf-8");
 
   if (bufA.length !== bufB.length || !crypto.timingSafeEqual(bufA, bufB)) {
     if (allowBypass) {

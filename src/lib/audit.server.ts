@@ -15,12 +15,11 @@ export interface AuditLogPayload {
 export async function logAdminAction(payload: AuditLogPayload): Promise<void> {
   try {
     const id = crypto.randomUUID();
-    const isUuid = payload.actorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.actorId);
-    const validActorId = isUuid ? payload.actorId : null;
+    const validActorId = payload.actorId || "system";
 
     await db.insert(adminAuditLogs).values({
       id,
-      actorId: validActorId as any,
+      actorId: validActorId,
       action: payload.action,
       entityType: payload.entityType || payload.entity || "general",
       entityId: payload.entityId || null,

@@ -5,13 +5,12 @@
     --bg-topbar: #17605E;
     --bg-sidebar: #4AC4AF;
     --bg-sidebar-active: #278C7B;
-    --bg-sidebar-hover: #3EB8A4;
-    --bg-[#0A0F0D]: #E8F4F1;
+    --bg-dark: #E8F4F1;
     --bg-card: #FFFFFF;
     --border-teal: #CCE5E1;
     --text-heading: #0F3D3C;
     --text-body: #2C5E5B;
-    --text-[#0A0F0D]: #0F3D3C;
+    --text-dark: #0F3D3C;
     --primary-teal: #278C7B;
     --accent-gold: #D97706;
   }

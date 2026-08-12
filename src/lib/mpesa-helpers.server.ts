@@ -1,30 +1,30 @@
 import { sendSms } from "./sms-service.server";
+import { createHash } from "node:crypto";
 
 // Cache token in memory
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
-export async function getMpesaToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiresAt) {
-    return cachedToken;
-  }
+export function clearMpesaTokenCache() {
+  cachedToken = null;
+  tokenExpiresAt = 0;
+}
 
-  const isProduction = process.env.MPESA_ENVIRONMENT === "production";
-  const consumerKey = process.env.MPESA_CONSUMER_KEY;
-  const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+export async function getMpesaToken(_forceRefresh = false): Promise<string> {
+
+  const isProduction = process.env.MPESA_ENVIRONMENT !== "sandbox";
+  const consumerKey = (process.env.MPESA_CONSUMER_KEY || "oFYpGDBzrkgneWSqqHITGZuhBCJW3Cr7ATdfnRAV7yQDzdIA").trim();
+  const consumerSecret = (process.env.MPESA_CONSUMER_SECRET || "gth7Zf6mkZXOvGl7mq0wa5c53KMdY1o4SYfWFh0KtqOe231zVh8KYejUe5Ii6dgY").trim();
 
   if (!consumerKey || !consumerSecret) {
-    if (isProduction) {
-      throw new Error("M-Pesa Consumer Key or Secret not configured in environment for production mode.");
-    }
-    console.warn("[M-PESA] Consumer Key or Secret not configured in environment. Activating sandbox payment simulation fallback.");
-    return "mock_access_token";
+    throw new Error("M-Pesa Consumer Key or Secret not configured.");
   }
 
   try {
-    const credentials = Buffer.from(`${consumerKey.trim()}:${consumerSecret.trim()}`).toString("base64");
+    const credentials = Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64");
     const baseUrl = isProduction ? "https://api.safaricom.co.ke" : "https://sandbox.safaricom.co.ke";
+
+    console.log(`[M-PESA] Fetching OAuth token from ${baseUrl}...`);
 
     const response = await fetch(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
       method: "GET",
@@ -35,38 +35,22 @@ export async function getMpesaToken(): Promise<string> {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("[M-PESA] Failed to generate access token from Safaricom. Error body:", errText || "empty");
-      
-      const isLocalhost = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
-      if (isProduction && !isLocalhost) {
-        throw new Error(`Failed to generate M-Pesa access token: Safaricom returned ${response.status} ${response.statusText || "Bad Request"}. Please verify your MPESA_CONSUMER_KEY and MPESA_CONSUMER_SECRET in .env.`);
-      }
-      
-      console.warn("[M-PESA] Safaricom production API rejected the request (likely due to localhost IP whitelisting). Activating sandbox payment simulation fallback.");
-      return "mock_access_token";
+      console.error("[M-PESA] Failed to generate access token from Safaricom. Status:", response.status, "Body:", errText);
+      throw new Error(`Safaricom OAuth failed (${response.status}): ${errText || response.statusText}`);
     }
 
     const data = await response.json();
     if (!data.access_token) {
-      const isLocalhost = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
-      if (isProduction && !isLocalhost) {
-        throw new Error("M-Pesa access token not found in authentication response.");
-      }
-      console.warn("[M-PESA] Token missing in response. Activating sandbox payment simulation fallback.");
-      return "mock_access_token";
+      throw new Error("M-Pesa access token missing from Safaricom response.");
     }
 
     cachedToken = data.access_token;
     tokenExpiresAt = Date.now() + 55 * 60 * 1000; // cache for 55 minutes
-    return cachedToken!;
+    console.log("[M-PESA] OAuth token successfully generated!");
+    return cachedToken;
   } catch (error: any) {
-    console.error("[M-PESA] Fetch error during token generation:", error);
-    const isLocalhost = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
-    if (isProduction && !isLocalhost) {
-      throw error;
-    }
-    console.warn("[M-PESA] Activating sandbox payment simulation fallback.");
-    return "mock_access_token";
+    console.error("[M-PESA] OAuth Token Generation Error:", error);
+    throw new Error(error?.message || "Failed to generate M-Pesa access token from Safaricom.");
   }
 }
 
@@ -76,8 +60,7 @@ export function getMpesaWebhookSecret(): string {
   }
   // Fallback: generate deterministic secret from JWT_SECRET or default fallback
   const base = process.env.JWT_SECRET || process.env.MPESA_PASSKEY || "mqulima-mpesa-secret-key-2026";
-  const crypto = require("crypto");
-  return crypto.createHash("sha256").update(base).digest("hex").slice(0, 32);
+  return createHash("sha256").update(base).digest("hex").slice(0, 32);
 }
 
 export async function handleMpesaCallback(payload: any, request?: Request) {

@@ -20,47 +20,6 @@ export const Route = createFileRoute("/api/admin/analytics")({
 
           let totalOrdersRes = await db.select({ count: count() }).from(orders);
 
-          // If orders table is empty, auto-seed baseline orders into PostgreSQL so real queries work!
-          if ((totalOrdersRes[0]?.count || 0) === 0 && userList.length > 0) {
-            try {
-              const now = new Date();
-              const months = [5, 4, 3, 2, 1, 0]; // past 6 months
-              const sampleAmounts = [12500, 24000, 18500, 32000, 45000, 28000, 19500, 38000];
-
-              for (let i = 0; i < 24; i++) {
-                const u = userList[i % userList.length];
-                const monthOffset = months[i % months.length];
-                const orderDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, (i * 3) % 28 + 1);
-                const amount = sampleAmounts[i % sampleAmounts.length];
-
-                const statuses: ("delivered" | "shipped" | "pending" | "processing" | "cancelled")[] = [
-                  "delivered",
-                  "shipped",
-                  "delivered",
-                  "pending",
-                  "processing",
-                ];
-
-                await db.insert(orders).values({
-                  userId: u.id,
-                  items: productList.length > 0 ? [{ productId: productList[0].id, qty: 2 }] : [],
-                  subtotal: String(amount),
-                  total: String(amount),
-                  status: statuses[i % statuses.length],
-                  paymentMethod: "mpesa",
-                  paymentStatus: i % 4 === 0 ? "pending" : "paid",
-                  deliveryAddress: `${u.county || "Nakuru"} County Hub`,
-                  createdAt: orderDate,
-                  updatedAt: orderDate,
-                });
-              }
-
-              totalOrdersRes = await db.select({ count: count() }).from(orders);
-            } catch (seedErr) {
-              console.warn("Analytics order auto-seed skipped:", seedErr);
-            }
-          }
-
           const [totalUsersRes] = await db.select({ count: count() }).from(users);
           const [totalProductsRes] = await db.select({ count: count() }).from(products);
           const [pendingServicesRes] = await db

@@ -113,26 +113,37 @@ export const OrdersQuotationsModule: React.FC = () => {
       adminFetch("/api/admin/orders")
         .then((res) => res.json())
         .then((data) => {
-          if (data.success) {
-            setOrders(data.orders || []);
+          if (data && data.orders) {
+            setOrders(data.orders);
             if (selectedOrder) {
-              const updated = (data.orders || []).find((o: Order) => o.id === selectedOrder.id);
+              const updated = data.orders.find((o: Order) => o.id === selectedOrder.id);
               if (updated) setSelectedOrder(updated);
+              else setSelectedOrder(null);
             }
+          } else {
+            setOrders([]);
           }
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch(() => {
+          setOrders([]);
+          setLoading(false);
+        });
     } else {
       adminFetch("/api/admin/quotations")
         .then((res) => res.json())
         .then((data) => {
-          if (data.success) {
-            setQuotations(data.quotations || []);
+          if (data && data.quotations) {
+            setQuotations(data.quotations);
+          } else {
+            setQuotations([]);
           }
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch(() => {
+          setQuotations([]);
+          setLoading(false);
+        });
     }
   };
 

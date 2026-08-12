@@ -322,14 +322,14 @@ export function CartDrawer() {
             // 3. Start Polling
             startPaymentPolling(res.orderId);
           } else {
-            throw new Error("Failed to initiate payment prompt");
+            throw new Error(pushRes.error || "Failed to initiate payment prompt");
           }
         } else {
           // Simulated Card/Bank flow countdown
           setCountdown(5);
         }
       } else {
-        throw new Error("Failed to create order");
+        throw new Error(res.error || "Failed to create order");
       }
     } catch (err: any) {
       console.error(err);
