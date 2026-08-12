@@ -27,7 +27,8 @@ export const App: React.FC = () => {
   const [adminSession, setAdminSession] = useState<AdminUserSession | null>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("mqulima_admin_session") || sessionStorage.getItem("mqulima_admin_session");
-      if (stored) {
+      const token = localStorage.getItem("mqulima_admin_token") || sessionStorage.getItem("mqulima_admin_token");
+      if (stored && token) {
         try {
           return JSON.parse(stored);
         } catch (_) {}
@@ -38,15 +39,6 @@ export const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
 
-  const handleLoginSuccess = (user: AdminUserSession) => {
-    setAdminSession(user);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("mqulima_admin_session", JSON.stringify(user));
-      sessionStorage.setItem("mqulima_admin_session", JSON.stringify(user));
-    }
-    toast.success(`Welcome back, ${user.name}!`);
-  };
-
   const handleLogout = () => {
     setAdminSession(null);
     if (typeof window !== "undefined") {
@@ -56,6 +48,24 @@ export const App: React.FC = () => {
       sessionStorage.removeItem("mqulima_admin_token");
     }
     toast.info("Logged out of Mqulima Admin Console.");
+  };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      handleLogout();
+      toast.error("Session expired. Please log in again.");
+    };
+    window.addEventListener("admin_unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("admin_unauthorized", handleUnauthorized);
+  }, []);
+
+  const handleLoginSuccess = (user: AdminUserSession) => {
+    setAdminSession(user);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("mqulima_admin_session", JSON.stringify(user));
+      sessionStorage.setItem("mqulima_admin_session", JSON.stringify(user));
+    }
+    toast.success(`Welcome back, ${user.name}!`);
   };
 
   if (!adminSession) {

@@ -132,9 +132,9 @@ export const registerUser = createServerFn({ method: "POST" })
     validateCsrfToken(csrfToken);
 
     // 2. Rate Limiting Check
-    const { getClientIp, checkLoginRateLimit } = await import("./rate-limit.server");
+    const { getClientIp, checkSignupRateLimit } = await import("./rate-limit.server");
     const ip = getClientIp();
-    await checkLoginRateLimit(ip);
+    await checkSignupRateLimit(ip);
 
     // 3. Perform Sign Up insertion
     const { performSignUp } = await import("./api/auth-shop.server");

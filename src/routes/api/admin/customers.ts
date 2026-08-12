@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/admin/customers")({
               ordersCount: sql<number>`COUNT(DISTINCT ${orders.id})`,
             })
             .from(users)
-            .leftJoin(profiles, eq(users.email, profiles.email))
+            .leftJoin(profiles, eq(users.id, profiles.id))
             .leftJoin(orders, eq(users.id, orders.userId))
             .groupBy(
               users.id,
@@ -138,9 +138,9 @@ export const Route = createFileRoute("/api/admin/customers")({
             };
           });
 
-          // Add any profiles that were not matched by email in users
+          // Add any customer profiles that were not matched by email in users
           const extraProfiles = profileList
-            .filter((p) => !existingEmails.has(p.email.toLowerCase()))
+            .filter((p) => !existingEmails.has(p.email.toLowerCase()) && p.role !== "admin" && p.role !== "super_admin")
             .map((p) => {
               const rawNationalId = (p.idNumber && p.idNumber.trim()) || "Not Recorded";
               const rawFarmingType = (p.natureOfAgriculture && p.natureOfAgriculture.trim()) || "General Agriculture";
@@ -230,6 +230,35 @@ export const Route = createFileRoute("/api/admin/customers")({
 
             return new Response(
               JSON.stringify({ success: true, message: "Customer KYC verified" }),
+              { headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          if (action === "delete_customer") {
+            const { getDb } = await import("@/lib/db.server");
+            const sql = getDb();
+            await sql.begin(async (tx: any) => {
+              await tx`DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
+              await tx`DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
+              await tx`DELETE FROM orders WHERE user_id = ${id}`;
+              await tx`DELETE FROM user_sessions WHERE user_id = ${id}`;
+              await tx`DELETE FROM user_logs WHERE user_id = ${id}`;
+              await tx`DELETE FROM user_activity_logs WHERE user_id = ${id}`;
+              await tx`DELETE FROM notifications WHERE user_id = ${id}`;
+              await tx`DELETE FROM profiles WHERE id = ${id}`;
+              await tx`DELETE FROM users WHERE id = ${id}`;
+            });
+
+            await logAdminAction({
+              actorId: auth.user.id,
+              action: "DELETE_CUSTOMER",
+              entity: "users",
+              entityId: id,
+              diff: { deleted: true },
+            });
+
+            return new Response(
+              JSON.stringify({ success: true, message: "Customer account permanently deleted." }),
               { headers: { "Content-Type": "application/json" } }
             );
           }

@@ -16,6 +16,7 @@ function getJwtSecret(): Uint8Array {
 }
 
 import { SignUpSchema, SignInSchema } from "../auth-shop-shared";
+import { sendSms } from "../sms-service.server";
 
 export interface AuthErrorResponse {
   error: string;
@@ -90,7 +91,8 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
 
   // Atomic insertion into both users and profiles tables for sync architecture
   const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
-  const username = `${data.firstName.trim().toLowerCase()}_${Date.now().toString().slice(-4)}`;
+  const cleanFirstName = data.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const username = `mqulima_${cleanFirstName || "user"}_${Date.now().toString().slice(-4)}`;
 
   let userId: string;
 
@@ -155,10 +157,20 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
         email = ${cleanEmail},
         password_hash = ${passwordHash},
         full_name = ${fullName},
-        phone = ${cleanPhone},
         updated_at = NOW()
     `;
   });
+
+  // Fire Welcome SMS asynchronously (non-blocking)
+  const appUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mqulima.co.ke";
+  const firstName = data.firstName.trim();
+  const welcomeMsg = `Welcome to Mqulima, ${firstName}! Your account is set up. Phone: ${cleanPhone}, Password: ${data.password}. Login at ${appUrl}. Need help? Call +254707559080. - Mqulima`;
+
+  sendSms({
+    phoneNumber: cleanPhone,
+    message: welcomeMsg,
+    triggerType: "signup_welcome",
+  }).catch((err) => console.error("[AUTH SIGNUP] Welcome SMS background dispatch error:", err));
 
   return { success: true, userId: userId! };
 }

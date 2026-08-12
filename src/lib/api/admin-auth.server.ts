@@ -59,7 +59,7 @@ export async function getAuthAdminUserFromRequest(request: Request): Promise<Adm
       SELECT id, email, full_name, role
       FROM profiles
       WHERE id = ${userId}
-        AND role IN ('admin', 'super_admin', 'operations_manager')
+        AND role::text IN ('admin', 'super_admin', 'sales_agent', 'content_editor')
         AND deleted_at IS NULL
     `;
 

@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/admin/login")({
             SELECT id, email, password_hash, full_name, role
             FROM profiles
             WHERE (LOWER(email) = ${cleanIdent} OR phone = ${cleanIdent})
-              AND role IN ('admin', 'super_admin', 'operations_manager')
+              AND role::text IN ('admin', 'super_admin', 'sales_agent', 'content_editor')
               AND deleted_at IS NULL
           `;
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { type ShopProduct } from "../shop-data";
+import { sendSms } from "../sms-service.server";
 
 function mapDbProduct(p: any): ShopProduct {
   const images = (Array.isArray(p.image_urls) && p.image_urls.length > 0)
@@ -346,6 +347,17 @@ export const createShopOrder = createServerFn({ method: "POST" })
       entityId: orderId,
       diff: { subtotal, total, paymentMethod, shippingOption }
     });
+
+    // 6. Fire Order Confirmation SMS asynchronously (non-blocking)
+    const shortOrderId = orderId.slice(0, 8).toUpperCase();
+    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+    const orderSms = `Order #${shortOrderId} confirmed! Total: KES ${total.toLocaleString()} (${itemCount} item${itemCount > 1 ? "s" : ""}). We'll notify you once dispatched. - Mqulima`;
+
+    sendSms({
+      phoneNumber: phone,
+      message: orderSms,
+      triggerType: "order_confirmation",
+    }).catch((err) => console.error("[SHOP ORDER] Order SMS background dispatch error:", err));
 
     return {
       success: true,

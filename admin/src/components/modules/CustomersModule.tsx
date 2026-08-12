@@ -21,7 +21,8 @@ import {
   UserCheck,
   Building,
   RefreshCw,
-  Award
+  Award,
+  Trash2
 } from "lucide-react";
 import { adminFetch } from "../../lib/api";
 
@@ -30,6 +31,7 @@ export const CustomersModule: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<any | null>(null);
 
   const fetchCustomers = () => {
     setLoading(true);
@@ -68,6 +70,29 @@ export const CustomersModule: React.FC = () => {
       }
     } catch (e) {
       console.error("Status update error:", e);
+    }
+  };
+
+  const handleDeleteCustomer = async (customer: any) => {
+    try {
+      const res = await adminFetch("/api/admin/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: customer.id, action: "delete_customer" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomerToDelete(null);
+        if (selectedCustomer?.id === customer.id) {
+          setSelectedCustomer(null);
+        }
+        fetchCustomers();
+      } else {
+        alert(data.error || "Failed to delete customer");
+      }
+    } catch (e: any) {
+      console.error("Delete customer error:", e);
+      alert(e.message || "Failed to delete customer");
     }
   };
 
@@ -239,12 +264,21 @@ export const CustomersModule: React.FC = () => {
 
                     {/* Actions */}
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => setSelectedCustomer(customer)}
-                        className="px-3 py-1.5 text-xs bg-[#0F3D3C] hover:bg-[#1E6B5E] text-white font-bold rounded-[6px] cursor-pointer inline-flex items-center gap-1 transition shadow-xs"
-                      >
-                        <Eye className="h-3.5 w-3.5 text-[#3EB8A4]" /> Full Profile
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setSelectedCustomer(customer)}
+                          className="px-2.5 py-1.5 text-xs bg-[#0F3D3C] hover:bg-[#1E6B5E] text-white font-bold rounded-[6px] cursor-pointer inline-flex items-center gap-1 transition shadow-xs"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-[#3EB8A4]" /> Full Profile
+                        </button>
+                        <button
+                          onClick={() => setCustomerToDelete(customer)}
+                          className="px-2.5 py-1.5 text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-[6px] cursor-pointer inline-flex items-center gap-1 transition border border-rose-200"
+                          title="Delete Customer Account"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-rose-600" /> Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -442,13 +476,19 @@ export const CustomersModule: React.FC = () => {
                     onClick={() => handleStatusUpdate(selectedCustomer.id, "active")}
                     className="flex-1 py-2 bg-[#278C7B] hover:bg-[#1E6B5E] text-white rounded-[6px] font-bold cursor-pointer transition text-xs flex items-center justify-center gap-1"
                   >
-                    <Check className="h-4 w-4" /> Activate Account
+                    <Check className="h-4 w-4" /> Activate
                   </button>
                   <button
                     onClick={() => handleStatusUpdate(selectedCustomer.id, "suspended")}
+                    className="flex-1 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-[6px] font-bold cursor-pointer transition text-xs flex items-center justify-center gap-1"
+                  >
+                    <X className="h-4 w-4" /> Suspend
+                  </button>
+                  <button
+                    onClick={() => setCustomerToDelete(selectedCustomer)}
                     className="flex-1 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-[6px] font-bold cursor-pointer transition text-xs flex items-center justify-center gap-1"
                   >
-                    <X className="h-4 w-4" /> Suspend Account
+                    <Trash2 className="h-4 w-4" /> Delete Account
                   </button>
                 </div>
               </div>
@@ -461,6 +501,46 @@ export const CustomersModule: React.FC = () => {
                 className="px-4 py-2 bg-[#0F3D3C] text-white font-bold text-xs rounded-[6px] cursor-pointer hover:bg-[#1E6B5E] transition"
               >
                 Close Drawer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMATION MODAL FOR DELETING CUSTOMER */}
+      {customerToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-rose-200 rounded-[12px] p-6 max-w-md w-full shadow-2xl text-left space-y-4">
+            <div className="flex items-center gap-3 text-rose-700">
+              <div className="p-3 bg-rose-100 rounded-full">
+                <Trash2 className="h-6 w-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-lg text-gray-900">Delete Customer Account</h3>
+                <p className="text-xs text-gray-500 font-mono">Irreversible Admin Action</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Are you sure you want to permanently delete customer <strong>{customerToDelete.name}</strong> ({customerToDelete.email})?
+            </p>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900 font-mono">
+              ⚠️ This will permanently erase their profile, national ID records, shopping orders, and account credentials from PostgreSQL.
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setCustomerToDelete(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-[6px] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteCustomer(customerToDelete)}
+                className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-[6px] cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <Trash2 className="h-4 w-4" /> Permanently Delete
               </button>
             </div>
           </div>

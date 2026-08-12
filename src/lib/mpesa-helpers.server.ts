@@ -1,3 +1,5 @@
+import { sendSms } from "./sms-service.server";
+
 // Cache token in memory
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
@@ -170,6 +172,36 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
       });
 
       console.log(`[M-PESA] Successfully processed payment for order: ${payment.order_id} (Status: ${paymentState})`);
+
+      // Fire Payment Confirmation SMS asynchronously (non-blocking)
+      try {
+        const [orderUser] = await tx`
+          SELECT o.delivery_address, u.phone_number
+          FROM orders o
+          LEFT JOIN users u ON u.id = o.user_id
+          WHERE o.id = ${payment.order_id}
+        `;
+
+        let customerPhone: string | null = orderUser?.phone_number || null;
+        if (!customerPhone && orderUser?.delivery_address) {
+          const match = orderUser.delivery_address.match(/Phone:\s*([^\n]+)/i);
+          if (match) customerPhone = match[1].trim();
+        }
+
+        if (customerPhone) {
+          const shortOrderId = String(payment.order_id).slice(0, 8).toUpperCase();
+          const refCode = receiptNumber || CheckoutRequestID;
+          const paySms = `Payment confirmed for Order #${shortOrderId}! KES ${actualPaid.toLocaleString()} received (Ref: ${refCode}). We are preparing your order. - Mqulima`;
+
+          sendSms({
+            phoneNumber: customerPhone,
+            message: paySms,
+            triggerType: "payment_confirmed",
+          }).catch((err) => console.error("[M-PESA CALLBACK] Payment SMS error:", err));
+        }
+      } catch (smsErr) {
+        console.error("[M-PESA CALLBACK] Failed to resolve customer phone for SMS:", smsErr);
+      }
     } else {
       // Payment failed or cancelled by user
       await tx`

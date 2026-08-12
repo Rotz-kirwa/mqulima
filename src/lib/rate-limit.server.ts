@@ -71,9 +71,10 @@ class InMemorySlidingWindowLimiter {
   }
 }
 
-// Instantiate Fallback Limiters (Login: 5 per 15 min; API: 100 per 1 min)
-const fallbackLoginLimiter = new InMemorySlidingWindowLimiter(5, 15 * 60 * 1000);
-const fallbackAccountLimiter = new InMemorySlidingWindowLimiter(5, 15 * 60 * 1000);
+// Separate Rate Limiters for Signup (20 per 15 min) and Login (10 per 15 min)
+const fallbackLoginLimiter = new InMemorySlidingWindowLimiter(10, 15 * 60 * 1000);
+const fallbackSignupLimiter = new InMemorySlidingWindowLimiter(20, 15 * 60 * 1000);
+const fallbackAccountLimiter = new InMemorySlidingWindowLimiter(10, 15 * 60 * 1000);
 const fallbackApiLimiter = new InMemorySlidingWindowLimiter(100, 60 * 1000);
 
 let redis: Redis | null = null;
@@ -92,7 +93,7 @@ if (redisUrl && redisToken) {
 
     loginLimiter = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(5, "15 m"),
+      limiter: Ratelimit.slidingWindow(10, "15 m"),
       analytics: true,
       prefix: "mq_limit_login",
     });
@@ -110,7 +111,22 @@ if (redisUrl && redisToken) {
   console.info("[RATE LIMIT] Upstash Redis credentials not detected. Active in-memory sliding window rate limiter engaged.");
 }
 
+function isLocalhostIp(ip: string): boolean {
+  return (
+    process.env.NODE_ENV === "development" ||
+    !process.env.NODE_ENV ||
+    ip === "127.0.0.1" ||
+    ip === "::1" ||
+    ip === "localhost" ||
+    ip === "::ffff:127.0.0.1"
+  );
+}
+
 export async function checkLoginRateLimit(ip: string): Promise<void> {
+  if (isLocalhostIp(ip)) {
+    return;
+  }
+
   if (loginLimiter) {
     try {
       const { success } = await loginLimiter.limit(ip);
@@ -130,6 +146,17 @@ export async function checkLoginRateLimit(ip: string): Promise<void> {
   const { success } = fallbackLoginLimiter.limit(ip);
   if (!success) {
     throw new Error("Too many login attempts from this network. Please try again in 15 minutes.");
+  }
+}
+
+export async function checkSignupRateLimit(ip: string): Promise<void> {
+  if (isLocalhostIp(ip)) {
+    return;
+  }
+
+  const { success } = fallbackSignupLimiter.limit(ip);
+  if (!success) {
+    throw new Error("Too many registration attempts from this network. Please try again in 15 minutes.");
   }
 }
 
