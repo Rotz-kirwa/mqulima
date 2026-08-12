@@ -401,12 +401,7 @@ INSERT INTO agritech_news (
     'published',
     NOW() - INTERVAL '2 hours'
   )
-ON CONFLICT (id) DO UPDATE SET
-  title = EXCLUDED.title,
-  summary = EXCLUDED.summary,
-  content = EXCLUDED.content,
-  category = EXCLUDED.category,
-  published_at = EXCLUDED.published_at;
+ON CONFLICT (id) DO NOTHING;
 
 -- Done!
 

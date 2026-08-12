@@ -21,7 +21,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
       ADD COLUMN IF NOT EXISTS media_url text;
     `;
 
-    // Fetch published agritech news from CMS table
+    // Fetch published agritech news from CMS table (single source of truth for Admin CMS and Main Site)
     const agritechArticles = await sql`
       SELECT
         id,
@@ -40,36 +40,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
       ORDER BY published_at DESC NULLS LAST
     `;
 
-    // Fetch published blog posts
-    let legacyPosts: any[] = [];
-    try {
-      legacyPosts = await sql`
-        SELECT
-          bp.id,
-          bp.title,
-          bp.slug,
-          bp.cover_image AS "mediaUrl",
-          bp.excerpt,
-          bp.body,
-          bp.category,
-          bp.status,
-          bp.published_at AS "publishedAt",
-          bp.view_count AS "viewCount",
-          bp.created_at AS "createdAt",
-          p.full_name   AS "authorName",
-          p.username    AS author_username,
-          ba.bio        AS author_bio
-        FROM blog_posts bp
-        LEFT JOIN blog_authors ba ON ba.id = bp.author_id
-        LEFT JOIN profiles p      ON p.id  = ba.profile_id
-        WHERE bp.status = 'published'
-        ORDER BY bp.published_at DESC NULLS LAST
-      `;
-    } catch (_) {
-      legacyPosts = [];
-    }
-
-    const formattedAgritech = agritechArticles.map((row) => ({
+    return agritechArticles.map((row) => ({
       id: row.id as string,
       title: row.title as string,
       slug: row.slug as string,
@@ -99,40 +70,6 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
         bio: "Official Mqulima Agricultural Intelligence & Extension Division",
       },
     }));
-
-    const formattedLegacy = legacyPosts.map((row) => ({
-      id: row.id as string,
-      title: row.title as string,
-      slug: row.slug as string,
-      coverImage: (row.mediaUrl as string) || "",
-      mediaType: "image" as const,
-      mediaUrl: (row.mediaUrl as string) || "",
-      excerpt: (row.excerpt as string) || "",
-      body: row.body as string,
-      category: (row.category as string) || "General",
-      publishedAt: row.publishedAt
-        ? new Date(row.publishedAt as string).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
-        : "",
-      viewCount: (row.viewCount as number) || 0,
-      readTime: `${Math.max(2, Math.ceil(((row.body as string) || "").split(" ").length / 150))} min read`,
-      author: {
-        name: (row.authorName as string) || "Mqulima Author",
-        role: "Mqulima Agronomist",
-        avatarInitials: ((row.authorName as string) || "MA")
-          .split(" ")
-          .map((n: string) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2),
-        bio: (row.author_bio as string) || "",
-      },
-    }));
-
-    return [...formattedAgritech, ...formattedLegacy];
   }
 );
 
