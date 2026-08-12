@@ -221,7 +221,7 @@ function SignUp() {
       await register(fd);
       toast.success("Account created successfully! Welcome to Mqulima Hub.");
       const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-      const redirectUrl = searchParams.get("redirect") || "/community";
+      const redirectUrl = searchParams.get("redirect") || "/";
       navigate({ to: redirectUrl as any });
     } catch (err: any) {
       try {

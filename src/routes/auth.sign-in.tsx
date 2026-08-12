@@ -63,7 +63,7 @@ function SignIn() {
       }
       toast.success("Signed in successfully!");
       const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-      const redirectUrl = searchParams.get("redirect") || "/community";
+      const redirectUrl = searchParams.get("redirect") || "/";
       navigate({ to: redirectUrl as any });
     } catch (err: any) {
       toast.error(err.message || "Invalid credentials. Please try again.");
