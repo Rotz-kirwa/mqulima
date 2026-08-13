@@ -532,53 +532,38 @@ function Index() {
       </section>
 
       {/* ══════════════════════════════════════════
-          3. FEATURED PRODUCTS (Auto-Sliding Group of 3 - 3s Interval)
+          3. FEATURED PRODUCTS (Auto-Sliding Group - 3s Interval)
       ══════════════════════════════════════════ */}
       <section 
-        className="bg-[#FAFBF9] py-10 md:py-14 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
+        className="bg-[#FAFBF9] py-8 md:py-14 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
         onMouseEnter={() => setIsFeaturedHovered(true)}
         onMouseLeave={() => setIsFeaturedHovered(false)}
       >
         <div className="container-px mx-auto max-w-7xl">
           
-          {/* Header Row with Navigation Arrows and Page Indicators */}
-          <div className="flex items-end justify-between mb-6 text-left">
+          {/* Header Row with Clean Title and Navigation Controls */}
+          <div className="flex items-center justify-between gap-4 mb-5 text-left">
             <div>
-              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#35610D] mb-3">
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#35610D] mb-1.5">
                 FEATURED COLLECTION
               </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
                 Farm <span className="text-[#6EA810]">Essentials</span>
               </h2>
             </div>
             
-            <div className="flex items-center gap-3">
-              {/* Pagination Dots */}
-              <div className="flex gap-1.5 mr-2 max-w-[140px] sm:max-w-none overflow-x-auto no-scrollbar py-1">
-                {Array.from({ length: totalPages }).map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setFeaturedPageIndex(idx)}
-                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
-                      featuredPageIndex === idx
-                        ? "w-8 bg-[#16A34A]"
-                        : "w-2.5 bg-slate-300 hover:bg-slate-400"
-                    }`}
-                    aria-label={`Go to group ${idx + 1}`}
-                  />
-                ))}
-              </div>
-
+            {/* Carousel Navigation Chevron Controls */}
+            <div className="flex items-center gap-2 shrink-0">
               <button 
                 onClick={() => setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages)}
-                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-xs cursor-pointer"
                 aria-label="Previous featured showcase"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button 
                 onClick={() => setFeaturedPageIndex((prev) => (prev + 1) % totalPages)}
-                className="h-10 w-10 rounded-full border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer shrink-0"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border border-slate-200 bg-white hover:bg-[#E5F5D0] text-[#0F291E] flex items-center justify-center transition active:scale-95 shadow-xs cursor-pointer"
                 aria-label="Next featured showcase"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -587,14 +572,14 @@ function Index() {
           </div>
 
           {/* Products Grid/Carousel with Touch Swipe & Auto-Slide */}
-          <div className="relative min-h-[220px] md:min-h-[380px] touch-pan-y overflow-hidden">
+          <div className="relative min-h-[200px] md:min-h-[360px] touch-pan-y overflow-hidden">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={`${featuredPageIndex}-${isMobile ? 'm' : 'd'}`}
-                initial={{ opacity: 0, x: 60 }}
+                initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -60 }}
-                transition={{ duration: 0.45, ease: "easeInOut" }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -605,7 +590,7 @@ function Index() {
                     setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages);
                   }
                 }}
-                className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 cursor-grab active:cursor-grabbing"
+                className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4 md:gap-6 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
                   const targetLink = (p as any).linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
@@ -617,7 +602,7 @@ function Index() {
                     >
                       <Link
                         to={targetLink}
-                        className="group block relative aspect-[4/3] sm:aspect-square w-full h-full overflow-hidden rounded-none border border-slate-300 bg-slate-900 shadow-md transition-all duration-300 hover:shadow-2xl cursor-pointer"
+                        className="group block relative aspect-[4/5] sm:aspect-square md:aspect-[4/3] w-full h-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-lg cursor-pointer"
                       >
                         <img
                           src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
@@ -630,12 +615,15 @@ function Index() {
                           }}
                         />
                         {p.name && p.name !== "Farm Essential" && (
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-2.5 sm:p-4">
-                            <div className="text-left">
-                              <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-white font-['Outfit',sans-serif] line-clamp-1 tracking-tight">
-                                {p.name}
-                              </h3>
-                            </div>
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/90 to-transparent pt-8 pb-3 px-3 sm:px-4 text-left">
+                            <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
+                              {p.name}
+                            </h3>
+                            {p.price > 0 && (
+                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5">
+                                KSh {Number(p.price).toLocaleString()}
+                              </span>
+                            )}
                           </div>
                         )}
                       </Link>
@@ -646,11 +634,29 @@ function Index() {
             </AnimatePresence>
           </div>
 
+          {/* Pagination Indicators Below Product Cards */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-1.5 py-1">
+              {Array.from({ length: totalPages }).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setFeaturedPageIndex(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+                    featuredPageIndex === idx
+                      ? "w-7 bg-[#16A34A]"
+                      : "w-2 bg-slate-300 hover:bg-slate-400"
+                  }`}
+                  aria-label={`Go to page ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Explore Agroshop Button */}
-          <div className="mt-4 md:mt-8 text-center flex justify-center">
+          <div className="mt-5 sm:mt-8 text-center flex justify-center">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-[#16A34A]"
+              className="inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-xl md:rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg active:scale-98 cursor-pointer w-full sm:w-auto max-w-xs sm:max-w-none"
             >
               <span>Explore Agroshop</span>
               <ArrowRight className="h-4 w-4" />
