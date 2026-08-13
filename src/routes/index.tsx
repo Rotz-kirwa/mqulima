@@ -572,7 +572,7 @@ function Index() {
           </div>
 
           {/* Products Grid/Carousel with Touch Swipe & Auto-Slide */}
-          <div className="relative min-h-[200px] md:min-h-[360px] touch-pan-y overflow-hidden">
+          <div className="relative min-h-[300px] sm:min-h-[380px] md:min-h-[500px] touch-pan-y overflow-hidden">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={`${featuredPageIndex}-${isMobile ? 'm' : 'd'}`}
@@ -590,7 +590,7 @@ function Index() {
                     setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages);
                   }
                 }}
-                className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4 md:gap-6 cursor-grab active:cursor-grabbing"
+                className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5 md:gap-7 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
                   const targetLink = (p as any).linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
@@ -602,25 +602,25 @@ function Index() {
                     >
                       <Link
                         to={targetLink}
-                        className="group block relative aspect-[4/5] sm:aspect-square md:aspect-[4/3] w-full h-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-lg cursor-pointer"
+                        className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
                       >
                         <img
                           src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
                           alt={p.name || "Farm Essential"}
                           loading="lazy"
-                          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-contain object-center p-3 sm:p-5 pb-16 sm:pb-20 transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "/placeholder-product.png";
                           }}
                         />
                         {p.name && p.name !== "Farm Essential" && (
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/90 to-transparent pt-8 pb-3 px-3 sm:px-4 text-left">
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-4 px-3.5 sm:px-5 text-left pointer-events-none">
                             <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
                               {p.name}
                             </h3>
                             {p.price > 0 && (
-                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5">
+                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-1 font-mono">
                                 KSh {Number(p.price).toLocaleString()}
                               </span>
                             )}
