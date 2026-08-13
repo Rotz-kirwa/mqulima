@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/admin/featured")({
             }
 
             const existing = await db.select().from(featuredItems);
-            const nextPos = existing.length > 0 ? Math.max(...existing.map((e) => e.position)) + 1 : 0;
+            const nextPos = existing.length > 0 ? Math.max(...existing.map((e) => e.position ?? 0)) + 1 : 0;
             const newId = `feat-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
             await db.insert(featuredItems).values({
