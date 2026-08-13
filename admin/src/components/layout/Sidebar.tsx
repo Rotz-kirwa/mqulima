@@ -20,6 +20,7 @@ export type AdminTab =
   | "dashboard"
   | "customers"
   | "products"
+  | "featured"
   | "orders"
   | "payments"
   | "services"
@@ -73,6 +74,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           label: "Products",
           icon: Package,
           badgeBg: "bg-[#10B981]", // Solid Fresh Emerald
+        },
+        {
+          id: "featured",
+          label: "Featured Collection",
+          icon: Star,
+          badgeBg: "bg-[#F59E0B]", // Solid Gold Star
         },
         {
           id: "orders",

@@ -7,6 +7,7 @@ import { DashboardHomeModule } from "./components/modules/DashboardHomeModule";
 
 const CustomersModule = React.lazy(() => import("./components/modules/CustomersModule").then(m => ({ default: m.CustomersModule })));
 const ProductsStockModule = React.lazy(() => import("./components/modules/ProductsStockModule").then(m => ({ default: m.ProductsStockModule })));
+const FeaturedCollectionModule = React.lazy(() => import("./components/modules/FeaturedCollectionModule").then(m => ({ default: m.FeaturedCollectionModule })));
 const OrdersQuotationsModule = React.lazy(() => import("./components/modules/OrdersQuotationsModule").then(m => ({ default: m.OrdersQuotationsModule })));
 const PaymentsModule = React.lazy(() => import("./components/modules/PaymentsModule").then(m => ({ default: m.PaymentsModule })));
 const InquiriesModule = React.lazy(() => import("./components/modules/InquiriesModule").then(m => ({ default: m.InquiriesModule })));
@@ -94,6 +95,8 @@ export const App: React.FC = () => {
         return <CustomersModule />;
       case "products":
         return <ProductsStockModule />;
+      case "featured":
+        return <FeaturedCollectionModule />;
       case "orders":
         return <OrdersQuotationsModule />;
       case "payments":
