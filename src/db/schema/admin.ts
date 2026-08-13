@@ -36,8 +36,11 @@ export const logisticsRecords = pgTable("logistics_records", {
 
 export const featuredItems = pgTable("featured_items", {
   id: varchar("id", { length: 255 }).primaryKey(),
-  entityType: varchar("entity_type", { length: 50 }).notNull(), // 'product' | 'course' | 'post'
-  entityId: varchar("entity_id", { length: 255 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull().default("image"), // 'image' | 'product' | 'course' | 'post'
+  entityId: varchar("entity_id", { length: 255 }).notNull().default("custom"),
+  imageUrl: text("image_url"),
+  title: varchar("title", { length: 255 }),
+  linkUrl: varchar("link_url", { length: 255 }),
   position: integer("position").default(0).notNull(),
   activeFrom: timestamp("active_from"),
   activeTo: timestamp("active_to"),

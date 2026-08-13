@@ -117,6 +117,25 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
+    const featItems = await sql`
+      SELECT id, title, image_url, link_url, position
+      FROM featured_items
+      ORDER BY position ASC
+    `;
+
+    if (featItems.length > 0) {
+      return featItems.map((fi: any) => ({
+        id: fi.id,
+        name: fi.title || "Farm Essential",
+        image: fi.image_url || "/placeholder-product.png",
+        imageUrls: [fi.image_url || "/placeholder-product.png"],
+        linkUrl: fi.link_url || "/shop",
+        category: "Farm Essentials",
+        price: 0,
+        slug: "",
+      }));
+    }
+
     const products = await sql`
       SELECT p.*,
              COALESCE(sc.name, pc.name) AS category_name,

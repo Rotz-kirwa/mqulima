@@ -608,46 +608,37 @@ function Index() {
                 className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
+                  const targetLink = p.linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
+
                   return (
                     <div
                       key={p.uniqueKey || p.id}
-                      className="w-full shrink-0 max-w-sm sm:max-w-none mx-auto"
+                      className="w-full shrink-0 mx-auto"
                     >
                       <Link
-                        to={p.slug ? "/shop/product/$slug" : "/shop"}
-                        params={p.slug ? { slug: p.slug } : undefined}
-                        className="group block relative aspect-square overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl cursor-pointer"
+                        to={targetLink}
+                        className="group block relative aspect-[4/3] sm:aspect-square w-full h-full overflow-hidden rounded-none border border-slate-300 bg-slate-900 shadow-md transition-all duration-300 hover:shadow-2xl cursor-pointer"
                       >
                         <img
                           src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
-                          alt={p.name}
+                          alt={p.name || "Farm Essential"}
                           loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-500"
+                          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "/placeholder-product.png";
                           }}
                         />
-                        {p.badge && (
-                          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-md bg-[#16A34A] px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white z-10 shadow-sm">
-                            {p.badge}
-                          </span>
+                        {p.name && p.name !== "Farm Essential" && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-2.5 sm:p-4">
+                            <div className="text-left">
+                              <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-white font-['Outfit',sans-serif] line-clamp-1 tracking-tight">
+                                {p.name}
+                              </h3>
+                            </div>
+                          </div>
                         )}
                       </Link>
-                      <div className="mt-2 sm:mt-4 text-left px-1">
-                        {p.category && (
-                          <h4 className="text-[10px] sm:text-xs font-bold text-[#16A34A] uppercase tracking-wider">{p.category}</h4>
-                        )}
-                        <h3 className="text-xs sm:text-base font-bold text-[#0F291E] mt-0.5 line-clamp-1 font-['Outfit',sans-serif]">
-                          <Link
-                            to={p.slug ? "/shop/product/$slug" : "/shop"}
-                            params={p.slug ? { slug: p.slug } : undefined}
-                            className="hover:text-[#16A34A] transition-colors"
-                          >
-                            {p.name}
-                          </Link>
-                        </h3>
-                      </div>
                     </div>
                   );
                 })}
