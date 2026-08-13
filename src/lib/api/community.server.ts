@@ -29,10 +29,10 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
         sp.comment_count,
         sp.tags,
         sp.created_at,
-        p.username,
-        p.full_name,
-        p.country,
-        p.county_region,
+        COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-[#a-zA-Z0-9]', '', 'g')))) AS username,
+        COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
+        COALESCE(p.country, 'Kenya') AS country,
+        COALESCE(p.county_region, u.county, 'Kenya') AS county_region,
         p.farming_interests,
         p.crops,
         p.livestock,
@@ -44,15 +44,16 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
         p.bio,
         p.website,
         p.phone,
-        p.email,
+        COALESCE(p.email, u.email) AS email,
         p.farming_activities,
         p.farming_photos,
         p.created_at AS profile_created_at
       FROM show_posts sp
-      JOIN profiles p ON p.id = sp.user_id
-      WHERE sp.status = 'published'
+      LEFT JOIN profiles p ON p.id = sp.user_id
+      LEFT JOIN users u ON u.id = sp.user_id
+      WHERE (sp.status IS NULL OR sp.status IN ('published', 'active'))
       ORDER BY sp.created_at DESC
-      LIMIT 30
+      LIMIT 50
     `;
 
     const { getCurrentUser } = await import("../auth-server");
@@ -75,10 +76,20 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
 
     const comments = posts.length > 0
       ? await sql`
-          SELECT sc.id, sc.post_id, sc.parent_id, sc.body, sc.created_at, p.id AS user_id, p.username, p.full_name, p.avatar_url
+          SELECT
+            sc.id,
+            sc.post_id,
+            sc.parent_id,
+            sc.body,
+            sc.created_at,
+            sc.user_id,
+            COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
+            COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
+            p.avatar_url
           FROM show_comments sc
-          JOIN profiles p ON p.id = sc.user_id
-          WHERE sc.status = 'published' AND sc.post_id IN ${sql(posts.map((post: any) => post.id))}
+          LEFT JOIN profiles p ON p.id = sc.user_id
+          LEFT JOIN users u ON u.id = sc.user_id
+          WHERE (sc.status IS NULL OR sc.status IN ('published', 'active')) AND sc.post_id IN ${sql(posts.map((post: any) => post.id))}
           ORDER BY sc.created_at ASC
           LIMIT 250
         `.catch(() => [])
@@ -459,12 +470,18 @@ async function autoModeratePostOrComment(
   // 1. Offensive & Scam Word Blacklist Check
   if (settings.offensive_words_list && settings.offensive_words_list.length > 0) {
     const textLower = textToCheck.toLowerCase();
+    
+    // Agricultural false-positives whitelist for moderation (e.g., "weed control", "weed management", "weeding", "weed killer", "weeded")
+    const agriWhitelistedText = textLower
+      .replace(/\bweed\s+(control|management|killer|barrier|free|removal|suppression|growth|ing|ed|s)\b/gi, "agri_term")
+      .replace(/\b(weeding|weeded|weeds)\b/gi, "agri_term");
+
     for (const word of settings.offensive_words_list) {
       if (word && word.trim()) {
         const cleanWord = word.trim().toLowerCase();
-        // Regex word boundary matching or string inclusion
+        // Regex word boundary matching for precise word checks
         const wordRegex = new RegExp(`\\b${cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        if (wordRegex.test(textLower) || textLower.includes(cleanWord)) {
+        if (wordRegex.test(agriWhitelistedText)) {
           return {
             status: "flagged",
             flaggedReason: `Content contains forbidden word: "${cleanWord}"`
@@ -554,10 +571,32 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    const [profile] = await sql`
+    let [profile] = await sql`
       SELECT restriction_status FROM profiles WHERE id = ${user.id}
     `;
-    if (profile && profile.restriction_status !== 'active') {
+    if (!profile) {
+      const rawName = user.name || user.email?.split("@")[0] || "farmer";
+      const cleanUser = rawName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 15);
+      const username = `mqulima_${cleanUser}`;
+      try {
+        await sql`
+          INSERT INTO profiles (id, username, full_name, email, county_region, restriction_status, reputation_score, followers_count)
+          VALUES (
+            ${user.id},
+            ${username},
+            ${user.name || "Mqulima Farmer"},
+            ${user.email || null},
+            ${user.county || "Kenya"},
+            'active',
+            0,
+            0
+          )
+          ON CONFLICT (id) DO NOTHING
+        `;
+      } catch (e) {
+        console.error("Auto profile creation notice:", e);
+      }
+    } else if (profile.restriction_status && profile.restriction_status !== 'active') {
       throw new Error(`Action blocked. Your account status is: ${profile.restriction_status.toUpperCase()}. Reason: violation of community guidelines.`);
     }
 
@@ -572,6 +611,7 @@ export const createCommunityPost = createServerFn({ method: "POST" })
 
     const textToCheck = `${data.title} ${data.body} ${data.tags.join(" ")}`;
     const modResult = await autoModeratePostOrComment(sql, user.id, "post", textToCheck);
+    const postStatus = modResult.status === "flagged" ? "flagged" : "published";
 
     const [post] = await sql`
       INSERT INTO show_posts (user_id, type, title, caption, media_urls, tags, status)
@@ -582,7 +622,7 @@ export const createCommunityPost = createServerFn({ method: "POST" })
         ${data.body},
         ${data.images},
         ${data.tags},
-        ${modResult.status}
+        ${postStatus}
       )
       RETURNING id
     `;
@@ -621,7 +661,18 @@ export const createComment = createServerFn({ method: "POST" })
     const [profile] = await sql`
       SELECT restriction_status FROM profiles WHERE id = ${user.id}
     `;
-    if (profile && profile.restriction_status !== 'active') {
+    if (!profile) {
+      const username = `@mqulima_${(user.name || "farmer").toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      try {
+        await sql`
+          INSERT INTO profiles (id, username, full_name, email, county_region, restriction_status, reputation_score, followers_count)
+          VALUES (${user.id}, ${username}, ${user.name || "Mqulima Farmer"}, ${user.email || null}, ${user.county || "Kenya"}, 'active', 0, 0)
+          ON CONFLICT (id) DO NOTHING
+        `;
+      } catch (e) {
+        console.error("Auto profile creation notice:", e);
+      }
+    } else if (profile.restriction_status && profile.restriction_status !== 'active') {
       throw new Error(`Action blocked. Your account status is: ${profile.restriction_status.toUpperCase()}. Reason: violation of community guidelines.`);
     }
 

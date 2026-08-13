@@ -225,6 +225,20 @@ const initialCommunityPosts: CommunityPost[] = [];
 const initialSokoListings: SokoListing[] = [];
 const initialPulsePosts: PulsePost[] = [];
 
+function isUsernameMatch(u1?: string | null, u2?: string | null): boolean {
+  if (!u1 || !u2) return false;
+  const c1 = u1.replace(/^@/, "").trim().toLowerCase();
+  const c2 = u2.replace(/^@/, "").trim().toLowerCase();
+  return c1 === c2;
+}
+
+function isPostByFarmer(post: CommunityPost, farmer?: FarmerProfile | null): boolean {
+  if (!post || !post.author || !farmer) return false;
+  if (isUsernameMatch(post.author.username, farmer.username)) return true;
+  if (post.author.name && farmer.name && post.author.name.trim().toLowerCase() === farmer.name.trim().toLowerCase()) return true;
+  return false;
+}
+
 function ForumSubdomainPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -962,9 +976,9 @@ function ForumSubdomainPage() {
   // Update dynamic scores
   const activeFarmers = useMemo(() => {
     return farmers.map(farmer => {
-      const pCount = posts.filter(p => p.author.username === farmer.username).length;
-      const lCount = posts.filter(p => p.author.username === farmer.username).reduce((acc, curr) => acc + curr.likes, 0);
-      const sCount = sokoListings.filter(s => s.author.username === farmer.username).length;
+      const pCount = posts.filter(p => isPostByFarmer(p, farmer)).length;
+      const lCount = posts.filter(p => isPostByFarmer(p, farmer)).reduce((acc, curr) => acc + curr.likes, 0);
+      const sCount = sokoListings.filter(s => isUsernameMatch(s.author.username, farmer.username)).length;
       const calculatedScore = (pCount * 20) + (lCount * 5) + (sCount * 35) + (farmer.certifications.length * 50);
       return {
         ...farmer,
@@ -976,11 +990,11 @@ function ForumSubdomainPage() {
   // Active viewing farmer details
   const viewingFarmer = useMemo(() => {
     if (selectedProfileUsername) {
-      return activeFarmers.find(f => f.username === selectedProfileUsername) || null;
+      return activeFarmers.find(f => isUsernameMatch(f.username, selectedProfileUsername)) || null;
     }
     return currentUser ? {
       ...currentUser,
-      reputationScore: activeFarmers.find(f => f.username === currentUser.username)?.reputationScore || currentUser.reputationScore
+      reputationScore: activeFarmers.find(f => isUsernameMatch(f.username, currentUser.username))?.reputationScore || currentUser.reputationScore
     } : null;
   }, [selectedProfileUsername, currentUser, activeFarmers]);
 
@@ -1254,6 +1268,54 @@ function ForumSubdomainPage() {
       });
       if (res.success) {
         toast.success("Post published successfully!");
+        
+        const newPostItem: CommunityPost = {
+          id: res.postId || `post_${Date.now()}`,
+          author: currentUser ? {
+            username: currentUser.username || "@mqulima_farmer",
+            name: currentUser.name || "Mqulima Farmer",
+            country: "Kenya",
+            county: currentUser.county || "Kenya",
+            avatarUrl: currentUser.avatarUrl,
+            interests: [],
+            crops: [],
+            livestock: [],
+            yearsFarming: 1,
+            certifications: [],
+            reputationScore: 10,
+            followersCount: 0,
+            followers: [],
+            coverImage: ""
+          } : {
+            username: "@mqulima_farmer",
+            name: "Mqulima Farmer",
+            country: "Kenya",
+            county: "Kenya",
+            avatarUrl: defaultGuestFarmer.avatarUrl,
+            interests: [],
+            crops: [],
+            livestock: [],
+            yearsFarming: 1,
+            certifications: [],
+            reputationScore: 10,
+            followersCount: 0,
+            followers: [],
+            coverImage: ""
+          },
+          title: createBody.slice(0, 50) + (createBody.length > 50 ? "..." : ""),
+          body: createBody.trim(),
+          category: createCategory as any,
+          images: imagesParsed,
+          likes: 0,
+          hasLiked: false,
+          comments: [],
+          cropsTagged: cropTags,
+          livestockTagged: [],
+          location: currentUser?.county || "Kenya",
+          createdAt: "Just now"
+        };
+
+        setPosts(prev => [newPostItem, ...prev.filter(p => p.id !== newPostItem.id)]);
         setCreateBody("");
         setCreateImagesText("");
         setCreateVideoUrl("");
@@ -1266,7 +1328,7 @@ function ForumSubdomainPage() {
         if (typeof window !== "undefined") {
           localStorage.removeItem("mqulima_post_draft");
         }
-        reloadForum();
+        setTimeout(() => reloadForum(), 600);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to share post. Are you logged in?");
@@ -1362,6 +1424,20 @@ function ForumSubdomainPage() {
   // Like Toggle Handler
   const handleLikePost = async (postId: string) => {
     if (!requireAuth("like posts")) return;
+
+    // Optimistically toggle state in UI
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        const currentlyLiked = p.hasLiked;
+        return {
+          ...p,
+          hasLiked: !currentlyLiked,
+          likes: currentlyLiked ? Math.max(0, p.likes - 1) : p.likes + 1
+        };
+      }
+      return p;
+    }));
+
     const csrfToken = getCsrfTokenFromCookie();
     try {
       const res = await toggleLikePost({
@@ -1370,10 +1446,30 @@ function ForumSubdomainPage() {
           csrfToken
         }
       });
-      if (res.success) {
-        reloadForum();
+      if (res && res.success) {
+        setPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              hasLiked: res.liked
+            };
+          }
+          return p;
+        }));
       }
     } catch (err: any) {
+      // Revert state on error
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          const currentlyLiked = p.hasLiked;
+          return {
+            ...p,
+            hasLiked: !currentlyLiked,
+            likes: currentlyLiked ? Math.max(0, p.likes - 1) : p.likes + 1
+          };
+        }
+        return p;
+      }));
       toast.error(err.message || "Failed to update like. Are you logged in?");
     }
   };
@@ -1564,23 +1660,65 @@ function ForumSubdomainPage() {
   const handleAddComment = async (postId: string) => {
     if (!requireAuth("comment on posts")) return;
     if (!commentInput.trim()) return;
+
+    const textToSubmit = commentInput.trim();
+    const parentId = replyToCommentId || undefined;
+    const authorName = currentUser ? (currentUser.name || "Mqulima Farmer") : "Mqulima Farmer";
+    const authorUsername = currentUser ? currentUser.username : "@mqulima_farmer";
+    const avatarUrl = currentUser ? currentUser.avatarUrl : defaultGuestFarmer.avatarUrl;
+
+    const tempCommentId = `temp_comm_${Date.now()}`;
+    const newCommentItem = {
+      id: tempCommentId,
+      parentId: parentId || null,
+      userId: currentUser ? currentUser.username || "guest" : "guest",
+      authorName,
+      authorUsername,
+      authorAvatar: avatarUrl,
+      text: textToSubmit,
+      time: "Just now",
+      createdAt: new Date().toISOString()
+    };
+
+    // Optimistically append comment to UI post state immediately
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: [...p.comments, newCommentItem]
+        };
+      }
+      return p;
+    }));
+
+    setCommentInput("");
+    setReplyToCommentId(null);
+    toast.success("Comment published!");
+
     const csrfToken = getCsrfTokenFromCookie();
     try {
       const res = await createComment({
         data: {
           postId,
-          parentId: replyToCommentId || undefined,
-          body: commentInput.trim(),
+          parentId,
+          body: textToSubmit,
           csrfToken
         }
       });
-      if (res.success) {
-        setCommentInput("");
-        setReplyToCommentId(null);
-        toast.success("Comment published!");
-        reloadForum();
+      if (res && res.success) {
+        setTimeout(() => reloadForum(), 600);
       }
     } catch (err: any) {
+      // Revert optimistic comment on failure
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: p.comments.filter(c => c.id !== tempCommentId)
+          };
+        }
+        return p;
+      }));
       toast.error(err.message || "Failed to add comment. Are you logged in?");
     }
   };
@@ -1595,7 +1733,7 @@ function ForumSubdomainPage() {
     if (subpage === "saved") {
       result = result.filter(p => p.hasSaved);
     } else if (subpage === "profile") {
-      result = result.filter(p => p.author.username === currentUser?.username);
+      result = result.filter(p => isPostByFarmer(p, currentUser));
     }
 
     // Category Chip Filter
@@ -1661,9 +1799,9 @@ function ForumSubdomainPage() {
       >
 
         {/* ══════════════════════════════════════════
-            STICKY TOP NAVIGATION
+            COMMUNITY PAGE HEADER & SEARCH BAR
             ══════════════════════════════════════════ */}
-        <nav className="bg-white/90 backdrop-blur-md sticky top-16 z-30 border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300 shadow-xs">
+        <header className="bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3.5 shadow-2xs relative z-20">
           <div className="max-w-[1400px] mx-auto flex flex-row flex-wrap items-center justify-between gap-3 md:gap-5">
             
             {/* Header: Community Feed title */}
@@ -1941,24 +2079,6 @@ function ForumSubdomainPage() {
                           <User className="h-4 w-4 text-[#636E72]" />
                           <span>My Profile</span>
                         </button>
-
-                        <button 
-                          onClick={() => {
-                            setIsNotifOpen(true);
-                            setIsProfileMenuOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-2.5 text-[13px] text-[#2D3436] hover:bg-black/[0.02] transition font-medium flex items-center justify-between gap-2.5 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <Bell className="h-4 w-4 text-[#636E72]" />
-                            <span>Notifications</span>
-                          </div>
-                          {unreadNotifCount > 0 && (
-                            <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">
-                              {unreadNotifCount}
-                            </span>
-                          )}
-                        </button>
                         
                         <button 
                           onClick={() => {
@@ -1990,18 +2110,18 @@ function ForumSubdomainPage() {
             </div>
 
           </div>
-        </nav>
+        </header>
 
       {/* ══════════════════════════════════════════
           MAIN BODY LAYOUT
           ══════════════════════════════════════════ */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* ══════════════════════════════════════════
               LEFT SIDEBAR: QUICK NAVIGATION
               ══════════════════════════════════════════ */}
-          <aside className={`space-y-5 text-left mq-hide-md-down transition-all duration-300 ${isSidebarCollapsed ? "lg:col-span-1" : "lg:col-span-3"}`} style={{ position: 'sticky', top: '136px' }}>
+          <aside className={`space-y-5 text-left mq-hide-md-down transition-all duration-300 ${isSidebarCollapsed ? "lg:col-span-1" : "lg:col-span-3"}`} style={{ position: 'sticky', top: '88px' }}>
             
 
 
@@ -2345,7 +2465,7 @@ function ForumSubdomainPage() {
                       >
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono group-hover:text-stone-600 transition-colors">Published Posts</span>
                         <span className="text-base font-bold text-stone-850 block mt-0.5">
-                          {posts.filter(p => p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name).length}
+                          {posts.filter(p => isPostByFarmer(p, viewingFarmer)).length}
                         </span>
                       </button>
                       
@@ -2406,10 +2526,10 @@ function ForumSubdomainPage() {
                   <div className="border-t border-stone-200/80 px-4 bg-stone-50/50 overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-1 sm:gap-2">
                       {[
-                        { id: "posts", label: "Posts", icon: <MessageSquare className="h-4 w-4" />, count: posts.filter(p => p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name).length },
+                        { id: "posts", label: "Posts", icon: <MessageSquare className="h-4 w-4" />, count: posts.filter(p => isPostByFarmer(p, viewingFarmer)).length },
                         { id: "about", label: "About", icon: <User className="h-4 w-4" /> },
                         { id: "farm", label: "Farm & Crops", icon: <Sparkles className="h-4 w-4" />, count: viewingFarmer.crops.length },
-                        { id: "products", label: "Products", icon: <ShoppingBag className="h-4 w-4" />, count: sokoListings.filter(s => s.author.username === viewingFarmer.username).length },
+                        { id: "products", label: "Products", icon: <ShoppingBag className="h-4 w-4" />, count: sokoListings.filter(s => isUsernameMatch(s.author.username, viewingFarmer.username)).length },
                         { id: "media", label: "Media", icon: <ImageIcon className="h-4 w-4" /> },
                       ].map((tab) => {
                         const isActive = profileActiveTab === tab.id;
@@ -2529,14 +2649,14 @@ function ForumSubdomainPage() {
                     {/* TAB 1: POSTS */}
                     {profileActiveTab === "posts" && (
                       <div className="space-y-4">
-                        {posts.filter(p => p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name).length === 0 ? (
+                        {posts.filter(p => isPostByFarmer(p, viewingFarmer)).length === 0 ? (
                           <div className="bg-white border border-stone-200/80 p-8 rounded-3xl text-center space-y-2">
                             <MessageSquare className="h-8 w-8 text-stone-300 mx-auto" />
                             <p className="text-sm text-stone-500 font-medium">No published posts yet.</p>
                           </div>
                         ) : (
                           posts
-                            .filter(p => p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name)
+                            .filter(p => isPostByFarmer(p, viewingFarmer))
                             .map(post => (
                               <div key={post.id} className="bg-white border border-stone-200/80 p-5 rounded-3xl space-y-3.5 text-left shadow-2xs">
                                 <div className="flex items-center justify-between">
@@ -2549,7 +2669,7 @@ function ForumSubdomainPage() {
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-md">{post.category}</span>
-                                    {currentUser && (currentUser.username === post.author.username || viewingFarmer.username === currentUser.username) && (
+                                    {currentUser && (isUsernameMatch(currentUser.username, post.author.username) || isUsernameMatch(viewingFarmer.username, currentUser.username)) && (
                                       <button onClick={() => handleDeletePost(post.id)} className="p-1.5 hover:bg-red-50 text-stone-400 hover:text-red-600 rounded-lg transition" title="Delete post">
                                         <Trash2 className="h-4 w-4" />
                                       </button>
@@ -2641,7 +2761,7 @@ function ForumSubdomainPage() {
                     {/* TAB 4: PRODUCTS */}
                     {profileActiveTab === "products" && (
                       <div className="space-y-4">
-                        {sokoListings.filter(s => s.author.username === viewingFarmer.username).length === 0 ? (
+                        {sokoListings.filter(s => isUsernameMatch(s.author.username, viewingFarmer.username)).length === 0 ? (
                           <div className="bg-white border border-stone-200/80 p-8 rounded-3xl text-center space-y-2">
                             <ShoppingBag className="h-8 w-8 text-stone-300 mx-auto" />
                             <p className="text-sm text-stone-500 font-medium">No marketplace products listed yet.</p>
@@ -2649,7 +2769,7 @@ function ForumSubdomainPage() {
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {sokoListings
-                              .filter(s => s.author.username === viewingFarmer.username)
+                              .filter(s => isUsernameMatch(s.author.username, viewingFarmer.username))
                               .map(product => (
                                 <div key={product.id} className="bg-white border border-stone-200/80 p-4 rounded-3xl space-y-3 text-left shadow-2xs">
                                   {product.images && product.images.length > 0 && (
@@ -2675,7 +2795,7 @@ function ForumSubdomainPage() {
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {posts
-                            .filter(p => (p.author.username === viewingFarmer.username || p.author.name === viewingFarmer.name) && p.images && p.images.length > 0)
+                            .filter(p => isPostByFarmer(p, viewingFarmer) && p.images && p.images.length > 0)
                             .flatMap(p => p.images!)
                             .map((img, idx) => (
                               <img key={idx} src={img} alt={`Media ${idx}`} className="w-full h-32 object-cover rounded-2xl border border-stone-200" />
@@ -3253,7 +3373,7 @@ function ForumSubdomainPage() {
                             type="text" 
                             required
                             placeholder="e.g. John Kamau"
-                            value={consultName || (currentUser?.name || "")}
+                            value={consultName}
                             onChange={(e) => setConsultName(e.target.value)}
                             className="w-full bg-stone-50 border border-stone-200/90 focus:border-[#1B4332] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs text-stone-900 outline-none font-medium transition"
                           />
@@ -3586,7 +3706,13 @@ function ForumSubdomainPage() {
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-stone-500 font-mono font-medium block">{farmer.username}</span>
                                 <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                                  {farmer.followersCount || (followedUsernames.includes(farmer.username.startsWith("@") ? farmer.username : `@${farmer.username}`) ? 12 : 11)} Followers
+                                  {(() => {
+                                    const cleanUsername = farmer.username.startsWith("@") ? farmer.username : `@${farmer.username}`;
+                                    const isFollowedByMe = validFollowedUsernames.some(u => isUsernameMatch(u, cleanUsername));
+                                    const baseCount = farmer.followersCount || 0;
+                                    const totalCount = baseCount + (isFollowedByMe ? 1 : 0);
+                                    return `${totalCount} ${totalCount === 1 ? 'Follower' : 'Followers'}`;
+                                  })()}
                                 </span>
                               </div>
                             </div>
@@ -4163,72 +4289,169 @@ function ForumSubdomainPage() {
             {(subpage === "posts" || subpage === "saved") && !selectedProfileUsername && (
               <div className="space-y-6">
                 
-                {/* 1. Sleek Social Media Entry Point */}
-                <div className="bg-white border border-stone-200/80 rounded-3xl p-4 sm:p-5 shadow-2xs transition hover:border-emerald-700/30 text-left space-y-3.5">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={currentUser ? currentUser.avatarUrl : defaultGuestFarmer.avatarUrl} 
-                      alt="avatar" 
-                      className="h-11 w-11 rounded-2xl object-cover border border-stone-200 shrink-0 shadow-2xs" 
+                {/* 1. Spacious Interactive Inline Post Composer */}
+                <div className="bg-white border border-stone-250/90 rounded-3xl p-5 shadow-sm hover:border-emerald-700/40 text-left space-y-4 transition-all duration-200">
+                  
+                  {/* Header: Farmer Info & Category Dropdown */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={currentUser ? currentUser.avatarUrl : defaultGuestFarmer.avatarUrl} 
+                        alt="avatar" 
+                        className="h-11 w-11 rounded-2xl object-cover border border-stone-200 shrink-0 shadow-2xs" 
+                      />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 leading-tight">
+                          {currentUser ? currentUser.name : "Mqulima Farmer"}
+                        </h4>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200/60">
+                            <Globe className="h-3 w-3" />
+                            Everyone
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-stone-500 font-medium">
+                            <MapPin className="h-3 w-3 text-stone-400" />
+                            {currentUser?.county || "Uasin Gishu"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Category Pill Selector */}
+                    <select
+                      value={createCategory}
+                      onChange={(e) => setCreateCategory(e.target.value as any)}
+                      className="bg-stone-50 border border-stone-200 hover:border-emerald-700 text-stone-800 text-xs font-bold px-3 py-1.5 rounded-xl outline-none transition cursor-pointer"
+                    >
+                      <option value="Farm Progress">🌱 Farm Progress</option>
+                      <option value="Harvest Update">🌾 Harvest Update</option>
+                      <option value="Farming Tips">💡 Farming Tips</option>
+                      <option value="Question">❓ Question</option>
+                      <option value="Success Story">🏆 Success Story</option>
+                    </select>
+                  </div>
+
+                  {/* Spacious Text Area for Direct Typing */}
+                  <div className="space-y-2">
+                    <textarea
+                      rows={3}
+                      value={createBody}
+                      onFocus={() => {
+                        if (!currentUser) requireAuth("share post updates");
+                      }}
+                      onChange={(e) => setCreateBody(e.target.value)}
+                      placeholder={currentUser ? `What's happening on your farm, ${currentUser.name.split(' ')[0]}? Share updates, ask questions, or celebrate a harvest...` : "Share an update, milestone, or question with the community..."}
+                      className="w-full bg-stone-50/80 focus:bg-white border border-stone-200 focus:border-emerald-600 rounded-2xl p-4 text-xs sm:text-sm text-stone-850 placeholder:text-stone-400 outline-none resize-none leading-relaxed transition-all duration-200"
                     />
+
+                    {/* Attached Media Thumbnails */}
+                    {postMediaFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {postMediaFiles.map((m, idx) => (
+                          <div key={idx} className="relative h-16 w-16 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 group">
+                            {m.type === "image" ? (
+                              <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-emerald-400 text-xs font-bold">
+                                <Video className="h-5 w-5" />
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePostMedia(idx)}
+                              className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5 transition cursor-pointer"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Controls & Publish Button Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      {/* Device Photo / Video Attachment */}
+                      <label className="py-2 px-3 hover:bg-emerald-50/80 rounded-xl text-stone-600 hover:text-emerald-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-stone-50/60 border border-stone-200/60">
+                        <ImageIcon className="h-4 w-4 text-emerald-600" />
+                        <span className="hidden sm:inline">Add Media</span>
+                        <span className="sm:hidden">Media</span>
+                        <input 
+                          type="file" 
+                          accept="image/*,video/*" 
+                          multiple 
+                          onChange={handlePostMediaUpload} 
+                          className="hidden" 
+                        />
+                      </label>
+
+                      {/* Emoji Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiShortcutBar(!showEmojiShortcutBar)}
+                        className="py-2 px-3 hover:bg-amber-50/80 rounded-xl text-stone-600 hover:text-amber-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-stone-50/60 border border-stone-200/60"
+                      >
+                        <Smile className="h-4 w-4 text-amber-600" />
+                        <span className="hidden sm:inline">Emoji</span>
+                      </button>
+
+                      {/* Full Modal Pop-out Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!requireAuth("create post")) return;
+                          setIsPostComposerOpen(true);
+                        }}
+                        className="py-2 px-3 hover:bg-blue-50/80 rounded-xl text-stone-600 hover:text-blue-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-stone-50/60 border border-stone-200/60"
+                        title="Open full composer modal"
+                      >
+                        <Sparkles className="h-4 w-4 text-blue-600" />
+                        <span className="hidden sm:inline">Full Modal</span>
+                      </button>
+                    </div>
+
+                    {/* Direct Publish Post Button */}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!requireAuth("share post updates")) return;
-                        setIsPostComposerOpen(true);
-                      }}
-                      className="flex-1 bg-stone-100/90 hover:bg-stone-100 text-stone-500 hover:text-stone-850 rounded-2xl px-4 py-3 text-xs font-medium text-left transition flex items-center justify-between group cursor-pointer border border-stone-200/60"
+                      disabled={isSubmittingPost || !createBody.trim()}
+                      onClick={handleCreatePost}
+                      className={`px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-150 flex items-center gap-2 cursor-pointer shadow-md ${
+                        createBody.trim() && !isSubmittingPost
+                          ? "bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] hover:scale-105 active:scale-95"
+                          : "bg-stone-200 text-stone-400 cursor-not-allowed"
+                      }`}
                     >
-                      <span className="truncate">
-                        {currentUser ? `What's happening on your farm, ${currentUser.name.split(' ')[0]}?` : "Share an update, milestone, or question with the community..."}
-                      </span>
-                      <Sparkles className="h-4 w-4 text-emerald-600 group-hover:scale-110 transition-transform shrink-0 ml-2" />
+                      {isSubmittingPost ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>Publishing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5 fill-current" />
+                          <span>Publish Post</span>
+                        </>
+                      )}
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between gap-1 sm:gap-2 border-t border-stone-100 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!requireAuth("upload photos or videos")) return;
-                        setShowMediaFields(true);
-                        setIsPostComposerOpen(true);
-                      }}
-                      className="flex-1 py-2 px-2 hover:bg-emerald-50/70 rounded-xl text-stone-600 hover:text-emerald-800 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <ImageIcon className="h-4 w-4 text-emerald-600" />
-                      <span className="hidden sm:inline">Photo / Video</span>
-                      <span className="sm:hidden">Media</span>
-                    </button>
+                  {/* Emoji Shortcut Panel (if open) */}
+                  {showEmojiShortcutBar && (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-stone-50 rounded-2xl border border-stone-200/70 text-base">
+                      {["🌾", "🌽", "🍅", "🥛", "🐮", "🚜", "🌱", "☀️", "🌧️", "💚", "🎯", "🏷️", "📍", "💡"].map((emoji, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setCreateBody(prev => prev + " " + emoji)}
+                          className="p-1.5 hover:bg-white rounded-lg transition cursor-pointer hover:scale-125"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!requireAuth("share farm updates")) return;
-                        setCreateCategory("Farm Progress");
-                        setIsPostComposerOpen(true);
-                      }}
-                      className="flex-1 py-2 px-2 hover:bg-amber-50/70 rounded-xl text-stone-600 hover:text-amber-800 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Sparkles className="h-4 w-4 text-amber-600" />
-                      <span className="hidden sm:inline">Farm Update</span>
-                      <span className="sm:hidden">Update</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!requireAuth("ask questions")) return;
-                        setCreateCategory("Question");
-                        setIsPostComposerOpen(true);
-                      }}
-                      className="flex-1 py-2 px-2 hover:bg-blue-50/70 rounded-xl text-stone-600 hover:text-blue-800 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <MessageSquare className="h-4 w-4 text-blue-600" />
-                      <span className="hidden sm:inline">Ask Question</span>
-                      <span className="sm:hidden">Question</span>
-                    </button>
-                  </div>
                 </div>
 
                 {/* 2. DEDICATED SOCIAL POST COMPOSER MODAL */}
@@ -4689,7 +4912,7 @@ function ForumSubdomainPage() {
                         </div>
 
                         <div className="flex items-center gap-1">
-                          {currentUser && (currentUser.username === post.author.username || post.author.username === "@mqulima_farmer" || post.author.username === "@mqulima_guest") && (
+                          {currentUser && (isPostByFarmer(post, currentUser) || post.author.username === "@mqulima_farmer" || post.author.username === "@mqulima_guest") && (
                             <button 
                               onClick={() => handleDeletePost(post.id)}
                               className="p-1.5 hover:bg-red-50 text-stone-400 hover:text-red-600 rounded-lg transition cursor-pointer"
@@ -5714,7 +5937,7 @@ function ForumSubdomainPage() {
                         type="text" 
                         required
                         placeholder="e.g. Mary Wanjiku"
-                        value={consultName || (currentUser?.name || "")}
+                        value={consultName}
                         onChange={(e) => setConsultName(e.target.value)}
                         className="w-full bg-[#F5F5F0] border border-black/[0.06] focus:border-[#1B4332] rounded-xl px-3.5 py-2 text-xs text-[#2D3436] outline-none"
                       />

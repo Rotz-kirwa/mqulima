@@ -10,6 +10,7 @@ import {
   Inbox,
   Users,
   Briefcase,
+  ShoppingBag,
   Eye,
   EyeOff
 } from "lucide-react";
@@ -125,8 +126,12 @@ export const InquiriesModule: React.FC = () => {
     (t) => t.category?.toLowerCase().includes("contact")
   ).length;
 
+  const stockSourcingCount = inquiries.filter(
+    (t) => t.category?.toLowerCase().includes("stock sourcing")
+  ).length;
+
   const partnershipServiceCount = inquiries.filter(
-    (t) => !t.category?.toLowerCase().includes("contact")
+    (t) => !t.category?.toLowerCase().includes("contact") && !t.category?.toLowerCase().includes("stock sourcing")
   ).length;
 
   const formatWhatsAppUrl = (phone: string, ticketNo: string, name: string) => {
@@ -209,18 +214,18 @@ export const InquiriesModule: React.FC = () => {
           <div className="text-[10px] text-teal-700 font-mono mt-1 font-medium">Public contact form</div>
         </div>
 
-        {/* Partnerships & Services */}
-        <div className="bg-gradient-to-br from-emerald-50/90 via-green-50/50 to-teal-50/40 border border-emerald-200 rounded-xl p-4 shadow-2xs">
+        {/* Stock Sourcing Requests */}
+        <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/40 border border-amber-200 rounded-xl p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase text-emerald-800 font-extrabold tracking-wider">
-              Partnership & Service
+            <span className="text-[10px] font-mono uppercase text-amber-900 font-extrabold tracking-wider">
+              Stock Sourcing
             </span>
-            <div className="p-1.5 bg-emerald-100 rounded-md">
-              <Briefcase className="w-4 h-4 text-emerald-700" />
+            <div className="p-1.5 bg-amber-100 rounded-md">
+              <ShoppingBag className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-emerald-700 mt-2">{partnershipServiceCount}</div>
-          <div className="text-[10px] text-emerald-700 font-mono mt-1 font-medium">Commercial & advisory</div>
+          <div className="text-3xl font-extrabold font-mono text-amber-800 mt-2">{stockSourcingCount}</div>
+          <div className="text-[10px] text-amber-800 font-mono mt-1 font-medium">Unlisted agro-item queries</div>
         </div>
       </div>
 
@@ -250,6 +255,7 @@ export const InquiriesModule: React.FC = () => {
             className="bg-[#FAFBF9] border border-[#CCE5E1] text-[#0F3D3C] text-xs font-mono px-3 py-2 rounded-lg outline-none focus:border-[#278C7B] transition cursor-pointer"
           >
             <option value="all">All Categories</option>
+            <option value="Stock Sourcing Request">Stock Sourcing Requests</option>
             <option value="General Contact">General Contact</option>
             <option value="Partnership Application">Partnership Application</option>
             <option value="Service Request">Service Request</option>

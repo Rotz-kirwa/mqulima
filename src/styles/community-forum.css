@@ -388,8 +388,8 @@
 @media (min-width: 1024px) {
   .mq-right-sidebar {
     position: sticky;
-    top: 136px;
-    max-height: calc(100vh - 152px);
+    top: 88px;
+    max-height: calc(100vh - 104px);
     overflow-y: auto;
   }
 }

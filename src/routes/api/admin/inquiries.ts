@@ -48,7 +48,57 @@ export const Route = createFileRoute("/api/admin/inquiries")({
             ORDER BY created_at DESC
           `;
 
+          // 4. Fetch Stock Sourcing Requests
+          await sql`
+            CREATE TABLE IF NOT EXISTS stock_sourcing_requests (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              product_name varchar(255) NOT NULL,
+              preferred_brand varchar(255),
+              contact_name varchar(255),
+              contact_phone varchar(50),
+              contact_email varchar(255),
+              status varchar(50) DEFAULT 'open',
+              assigned_staff varchar(100) DEFAULT 'Unassigned',
+              admin_notes text,
+              created_at timestamp with time zone DEFAULT now()
+            );
+          `;
+
+          const stockRequests = await sql`
+            SELECT id, product_name, preferred_brand, contact_name, contact_phone, contact_email, status, assigned_staff, admin_notes, created_at
+            FROM stock_sourcing_requests
+            ORDER BY created_at DESC
+          `;
+
           const allInquiries: any[] = [];
+
+          // Map stock_sourcing_requests
+          stockRequests.forEach((sr: any, idx: number) => {
+            allInquiries.push({
+              id: sr.id,
+              sourceTable: "stock_sourcing_requests",
+              ticketNo: `SRC-400${idx + 1}`,
+              customerName: sr.contact_name || "Farmer Client",
+              customerEmail: sr.contact_email || "farmer@mkulima.co.ke",
+              customerPhone: sr.contact_phone || "+254 723 346 134",
+              title: `Stock Request: ${sr.product_name}`,
+              category: "Stock Sourcing Request",
+              priority: "high",
+              status: sr.status || "open",
+              assignedStaff: sr.assigned_staff || "Unassigned",
+              adminNotes: sr.admin_notes || "",
+              createdAt: sr.created_at ? new Date(sr.created_at).toISOString() : new Date().toISOString(),
+              messages: [
+                {
+                  id: `msg-sr-${sr.id}`,
+                  sender: "customer",
+                  senderName: sr.contact_name || "Farmer Client",
+                  text: `Requested Product: ${sr.product_name}\nPreferred Brand / Volume: ${sr.preferred_brand || "Any brand/volume"}\n\nClient Note:\nLooking for this product through the Mqulima agro-sourcing network.`,
+                  timestamp: sr.created_at ? new Date(sr.created_at).toLocaleString() : "Recent",
+                },
+              ],
+            });
+          });
 
           // Map contact_submissions
           contacts.forEach((c: any, idx: number) => {
@@ -189,6 +239,14 @@ export const Route = createFileRoute("/api/admin/inquiries")({
             await sql`
               UPDATE service_requests
               SET status = ${status || 'open'}
+              WHERE id = ${id}
+            `;
+          } else if (sourceTable === "stock_sourcing_requests") {
+            await sql`
+              UPDATE stock_sourcing_requests
+              SET status = ${status || 'open'},
+                  assigned_staff = ${assignedStaff || 'Unassigned'},
+                  admin_notes = ${adminNotes || ''}
               WHERE id = ${id}
             `;
           }

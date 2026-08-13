@@ -148,17 +148,32 @@ export function FloatingAIChat() {
   return (
     <>
       {/* Floating Toggle Icon Button */}
-      <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-auto md:right-6 z-40 flex items-center justify-center`}>
-        {/* Subtle glowing halo wave */}
-        <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#00C4BF]/25 blur-sm" />
+      <div className={`fixed ${isShop ? "bottom-[80px]" : "bottom-4"} left-4 md:bottom-24 md:left-6 md:right-auto z-40 flex items-center gap-2.5`}>
+        <div className="relative flex items-center justify-center">
+          {/* Subtle glowing halo wave */}
+          <span className="absolute h-14 w-14 md:h-16 md:w-16 animate-pulse rounded-full bg-[#F5C542]/25 blur-sm" />
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Mqulima AI Assistant"
-          className="relative z-10 flex items-center justify-center p-1 transition-transform hover:scale-115 active:scale-90 duration-300 cursor-pointer drop-shadow-[0_10px_25px_rgba(0,196,191,0.4)]"
-        >
-          <AIIcon className="h-12 w-12 md:h-14 md:w-14" animated={true} />
-        </button>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Mqulima AI Assistant"
+            className="relative z-10 flex items-center justify-center p-1 transition-transform hover:scale-115 active:scale-90 duration-300 cursor-pointer drop-shadow-[0_10px_25px_rgba(245,197,66,0.4)]"
+          >
+            <AIIcon className="h-12 w-12 md:h-14 md:w-14" animated={true} />
+          </button>
+        </div>
+
+        {/* Interactive Chatbot indication pill (positioned to the right of the icon when anchored on the left) */}
+        {!isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: -10, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            className="flex items-center gap-2 bg-[#0A1E0C] text-white text-[11px] font-extrabold px-3.5 py-2 rounded-full shadow-xl border border-[#00C4BF]/40 backdrop-blur-md whitespace-nowrap cursor-pointer hover:bg-[#123015] transition"
+            onClick={() => setIsOpen(true)}
+          >
+            <span className="h-2 w-2 rounded-full bg-[#00C4BF] animate-ping shrink-0" />
+            <span>🤖 Mqulima AI — Get Farm Advice</span>
+          </motion.div>
+        )}
       </div>
 
       {/* Floating Chat Overlay */}
@@ -168,7 +183,7 @@ export function FloatingAIChat() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            className={`fixed ${isShop ? "bottom-[136px]" : "bottom-16"} left-4 right-4 md:bottom-38 md:left-auto md:right-6 z-50 w-[calc(100vw-32px)] sm:w-[360px] md:w-[400px] h-[460px] md:h-[520px] bg-white border border-[#0A1E0C]/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col rounded-2xl overflow-hidden`}
+            className={`fixed ${isShop ? "bottom-[136px]" : "bottom-16"} left-4 right-4 md:bottom-38 md:left-6 md:right-auto z-50 w-[calc(100vw-32px)] sm:w-[360px] md:w-[400px] h-[460px] md:h-[520px] bg-white border border-[#0A1E0C]/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col rounded-2xl overflow-hidden`}
           >
             {/* Header: Assistant details */}
             <div className="bg-[#FAF9F5] border-b border-[#0A1E0C]/10 px-5 py-4 flex items-center justify-between">

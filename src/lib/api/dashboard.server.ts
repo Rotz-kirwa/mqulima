@@ -26,7 +26,7 @@ async function ensureAuthenticated(userId: string) {
 export const getUserOrders = createServerFn({ method: "GET" })
   .inputValidator(PageLimitSchema)
   .handler(async ({ data }) => {
-    const { userId, page = 1, limit = 10 } = data;
+    const { userId, page = 1, limit = 20 } = data;
     await ensureAuthenticated(userId);
 
     const { getDb } = await import("../db.server");
@@ -35,7 +35,7 @@ export const getUserOrders = createServerFn({ method: "GET" })
     const offset = (page - 1) * limit;
 
     const orders = await sql`
-      SELECT id, items, total, status, created_at
+      SELECT id, items, subtotal, total, status, payment_method, payment_status, delivery_address, notes, created_at
       FROM orders
       WHERE user_id = ${userId} AND deleted_at IS NULL
       ORDER BY created_at DESC
@@ -44,12 +44,20 @@ export const getUserOrders = createServerFn({ method: "GET" })
 
     return orders.map(o => {
       const itemsList = Array.isArray(o.items) ? o.items : [];
-      const itemText = itemsList.map((i: any) => `${i.name} × ${i.quantity || 1}`).join(", ") || "Order Items";
+      const itemText = itemsList.map((i: any) => `${i.name || i.title || "Product"} × ${i.quantity || 1}`).join(", ") || "Shop Product Purchase";
       return {
-        id: `ORD-${String(o.id).substring(0, 4).toUpperCase()}`,
+        id: `ORD-${String(o.id).substring(0, 8).toUpperCase()}`,
+        rawId: o.id,
+        items: itemsList,
         item: itemText,
-        status: o.status,
-        rawId: o.id
+        subtotal: Number(o.subtotal || o.total || 0),
+        total: Number(o.total || 0),
+        status: o.status || "pending",
+        paymentMethod: o.payment_method || "M-Pesa",
+        paymentStatus: o.payment_status || "pending",
+        deliveryAddress: o.delivery_address || "Standard Farm Delivery",
+        notes: o.notes || "",
+        createdAt: o.created_at ? new Date(o.created_at).toLocaleDateString("en-KE", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Recently"
       };
     });
   });
@@ -57,25 +65,52 @@ export const getUserOrders = createServerFn({ method: "GET" })
 export const getUserServiceBookings = createServerFn({ method: "GET" })
   .inputValidator(UserIdSchema)
   .handler(async ({ data: userId }) => {
-    await ensureAuthenticated(userId);
+    const user = await ensureAuthenticated(userId);
 
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
     const bookings = await sql`
-      SELECT sr.id, sr.reference, s.name as service_name, sr.status, sr.scheduled_date
+      SELECT 
+        sr.id, 
+        sr.reference, 
+        COALESCE(s.name, sr.subservice_name, 'Agricultural Service') as service_name,
+        sr.subservice_name,
+        sr.status, 
+        sr.scheduled_date,
+        sr.location,
+        sr.contact_name,
+        sr.contact_phone,
+        sr.farm_scale,
+        sr.notes,
+        sr.estimated_cost,
+        sr.created_at,
+        p.full_name as expert_name,
+        p.phone as expert_phone
       FROM service_requests sr
-      JOIN services s ON sr.service_id = s.id
-      WHERE sr.user_id = ${userId}
+      LEFT JOIN services s ON sr.service_id = s.id
+      LEFT JOIN profiles p ON sr.assigned_expert_id = p.id
+      WHERE sr.user_id = ${userId} OR sr.contact_phone = ${(user as any).phone || '000'}
       ORDER BY sr.created_at DESC
     `;
 
     return bookings.map(b => ({
-      id: b.reference || `MQ-${String(b.id).substring(0, 6).toUpperCase()}`,
-      item: b.service_name,
-      status: b.status,
-      scheduledDate: b.scheduled_date ? new Date(b.scheduled_date).toLocaleDateString() : "TBD",
-      rawId: b.id
+      id: b.reference || `MQ-SRV-${String(b.id).substring(0, 6).toUpperCase()}`,
+      rawId: b.id,
+      item: b.service_name || "Farm Extension Service",
+      serviceName: b.service_name || "Farm Extension Service",
+      subserviceName: b.subservice_name || b.service_name || "Specialist Service",
+      status: b.status || "requested",
+      scheduledDate: b.scheduled_date ? new Date(b.scheduled_date).toLocaleDateString("en-KE", { year: 'numeric', month: 'short', day: 'numeric' }) : "Pending Schedule",
+      location: b.location || "Farm Site",
+      contactName: b.contact_name || user.name,
+      contactPhone: b.contact_phone || (user as any).phone || "N/A",
+      farmScale: b.farm_scale || "Standard",
+      notes: b.notes || "No special instructions provided",
+      estimatedCost: b.estimated_cost ? Number(b.estimated_cost) : 0,
+      createdAt: b.created_at ? new Date(b.created_at).toLocaleDateString("en-KE", { year: 'numeric', month: 'short', day: 'numeric' }) : "Recently",
+      expertName: b.expert_name || null,
+      expertPhone: b.expert_phone || null
     }));
   });
 
@@ -87,48 +122,20 @@ export const getUserNotifications = createServerFn({ method: "GET" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    let notifications = await sql`
+    const notifications = await sql`
       SELECT id, type, payload, read_at, created_at
       FROM notifications
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
     `;
 
-    if (notifications.length === 0) {
-      // Seed default user notifications
-      await sql`
-        INSERT INTO notifications (user_id, type, payload)
-        VALUES
-          (
-            ${userId},
-            'weather',
-            '{"title": "Rains expected by Wednesday", "sub": "Ideal time to plant maize in Uasin Gishu"}'::jsonb
-          ),
-          (
-            ${userId},
-            'promotion',
-            '{"title": "10% off CAN fertilizer", "sub": "Limited offer — ends Sunday"}'::jsonb
-          ),
-          (
-            ${userId},
-            'report',
-            '{"title": "Your soil report is ready", "sub": "Click to view recommendations"}'::jsonb
-          )
-      `;
-
-      notifications = await sql`
-        SELECT id, type, payload, read_at, created_at
-        FROM notifications
-        WHERE user_id = ${userId}
-        ORDER BY created_at DESC
-      `;
-    }
-
     return notifications.map(n => ({
       id: n.id,
       title: n.payload?.title || n.type,
       sub: n.payload?.sub || n.payload?.message || "",
-      readAt: n.read_at
+      readAt: n.read_at,
+      type: n.type,
+      payload: n.payload
     }));
   });
 

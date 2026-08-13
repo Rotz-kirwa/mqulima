@@ -47,7 +47,7 @@ export async function getMpesaToken(_forceRefresh = false): Promise<string> {
     cachedToken = data.access_token;
     tokenExpiresAt = Date.now() + 55 * 60 * 1000; // cache for 55 minutes
     console.log("[M-PESA] OAuth token successfully generated!");
-    return cachedToken;
+    return data.access_token as string;
   } catch (error: any) {
     console.error("[M-PESA] OAuth Token Generation Error:", error);
     throw new Error(error?.message || "Failed to generate M-Pesa access token from Safaricom.");

@@ -88,3 +88,54 @@ export const submitPartnershipApplication = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+const StockSourcingSchema = z.object({
+  productName: z.string().min(1, "Product name is required"),
+  preferredBrand: z.string().optional(),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  contactEmail: z.string().optional(),
+  csrfToken: z.string().optional()
+});
+
+export const submitStockSourcingRequest = createServerFn({ method: "POST" })
+  .inputValidator(StockSourcingSchema)
+  .handler(async ({ data }) => {
+    const { productName, preferredBrand, contactName, contactPhone, contactEmail } = data;
+
+    const { getDb } = await import("../db.server");
+    const sql = getDb();
+
+    // Ensure table exists
+    await sql`
+      CREATE TABLE IF NOT EXISTS stock_sourcing_requests (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_name varchar(255) NOT NULL,
+        preferred_brand varchar(255),
+        contact_name varchar(255),
+        contact_phone varchar(50),
+        contact_email varchar(255),
+        status varchar(50) DEFAULT 'open',
+        assigned_staff varchar(100) DEFAULT 'Unassigned',
+        admin_notes text,
+        created_at timestamp with time zone DEFAULT now()
+      );
+    `;
+
+    const inserted = await sql`
+      INSERT INTO stock_sourcing_requests (
+        product_name, preferred_brand, contact_name, contact_phone, contact_email
+      )
+      VALUES (
+        ${productName},
+        ${preferredBrand || null},
+        ${contactName || "Farmer Client"},
+        ${contactPhone || "+254 700 000 000"},
+        ${contactEmail || "farmer@mkulima.co.ke"}
+      )
+      RETURNING id
+    `;
+
+    return { success: true, id: inserted[0]?.id };
+  });
+

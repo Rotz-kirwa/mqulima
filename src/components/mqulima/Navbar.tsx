@@ -21,7 +21,7 @@ import {
   type UserNotificationItem
 } from "@/lib/api/user-notifications.server";
 
-// Center Navigation Items
+// Center Navigation Links
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "AgroShop" },
@@ -261,8 +261,8 @@ export function Navbar() {
       <header
         className={`sticky top-0 z-50 w-full transition-all duration-300 ease-out select-none py-3.5 ${
           scrolled
-            ? "bg-white/90 dark:bg-[#0B2117]/95 backdrop-blur-2xl border-b border-[#0B2117]/10 dark:border-white/10 shadow-[0_8px_32px_rgba(11,33,23,0.08)]"
-            : "bg-white/75 dark:bg-[#0B2117]/80 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/5"
+            ? "bg-white dark:bg-[#0B2117] backdrop-blur-2xl border-b border-[#0B2117]/10 dark:border-white/10 shadow-[0_8px_32px_rgba(11,33,23,0.08)]"
+            : "bg-white dark:bg-[#0B2117] backdrop-blur-xl border-b border-black/[0.04] dark:border-white/5"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
@@ -529,7 +529,8 @@ export function Navbar() {
                           <div className="text-xs font-extrabold text-[#0B2117] dark:text-white truncate mt-0.5">{user.email}</div>
                         </div>
                         <Link
-                          to="/shop"
+                          to="/dashboard"
+                          search={{ tab: "orders" }}
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
                         >
@@ -537,7 +538,8 @@ export function Navbar() {
                           <span>Shop Orders</span>
                         </Link>
                         <Link
-                          to="/services"
+                          to="/dashboard"
+                          search={{ tab: "services" }}
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
                         >

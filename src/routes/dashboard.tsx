@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
   Calendar,
@@ -30,6 +31,7 @@ import {
   FileText,
   AlertCircle,
   Eye,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -43,16 +45,28 @@ import { getProducts } from "@/lib/api/products.server";
 import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCategoriesList } from "@/lib/api/admin-shop.server";
 import { adminGetServiceRequests, adminAssignServiceExpert, adminUpdateServiceStatus } from "@/lib/api/admin-services.server";
 
-export const Route = createFileRoute("/dashboard")({
-  component: RedirectToHome,
-});
+type DashboardSearch = {
+  tab?: "orders" | "services" | "profile";
+};
 
-function RedirectToHome() {
-  return <Navigate to="/" replace />;
-}
+export const Route = createFileRoute("/dashboard")({
+  validateSearch: (search: Record<string, unknown>): DashboardSearch => {
+    return {
+      tab: (search.tab as any) || "orders",
+    };
+  },
+  component: Dashboard,
+});
 
 function Dashboard() {
   const { user, logout, isLoading } = useAuth();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const activeTab = search.tab || "orders";
+
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null);
+  const [selectedBookingDetails, setSelectedBookingDetails] = useState<any | null>(null);
+
   const [channels, setChannels] = useState({
     sowing: true,
     market: false,
@@ -147,267 +161,562 @@ function Dashboard() {
       {/* =========================================================================
          DASHBOARD HERO BANNER
          ========================================================================= */}
-      <section className="bg-[#0F291E] py-12 md:py-16 text-white border-b border-white/10 relative overflow-hidden">
-        {/* Ambient glow effects */}
+      <section className="bg-[#0F291E] py-10 md:py-14 text-white border-b border-white/10 relative overflow-hidden">
         <div className="absolute top-0 right-1/4 h-64 w-64 rounded-full bg-[#85CC14]/10 blur-[100px] pointer-events-none" />
         
         <div className="container-px mx-auto max-w-7xl relative z-10">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="text-left space-y-2">
-              <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14]">
-                FARMER DASHBOARD
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14]">
+                  CUSTOMER PORTAL & DASHBOARD
+                </span>
+              </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
                 Karibu, {user.name.split(" ")[0]} 👋
               </h1>
               <p className="flex items-center gap-2 text-xs sm:text-sm text-white/80 font-normal">
                 <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" /> 
-                <span>{user.county} · {user.farmSize} · {user.crops} & {user.livestock}</span>
+                <span>{user.county || "Uasin Gishu"} · {user.farmSize || "Farmer"} · {user.crops || "AgroShop Customer"}</span>
               </p>
             </div>
 
+            {/* Quick Stats Pill Ribbon */}
             <div className="flex flex-wrap items-center gap-3">
-              <Stat label="Loyalty points" value="2,340" icon={Award} />
-              <Stat label="Yield this season" value="+38%" icon={TrendingUp} />
+              <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} />
+              <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} />
             </div>
+          </div>
+
+          {/* MAIN DASHBOARD TOP NAVIGATION TABS */}
+          <div className="mt-8 flex items-center gap-2 border-b border-white/15 pb-0.5 overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => navigate({ search: { tab: "orders" } as any })}
+              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "orders"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <Package className={`h-4 w-4 ${activeTab === "orders" ? "text-[#16A34A]" : "text-white/60"}`} />
+              <span>Shop Orders</span>
+              {orders && orders.length > 0 && (
+                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "orders" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/20 text-white"}`}>
+                  {orders.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => navigate({ search: { tab: "services" } as any })}
+              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "services"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <Wrench className={`h-4 w-4 ${activeTab === "services" ? "text-[#16A34A]" : "text-white/60"}`} />
+              <span>Booked Services</span>
+              {bookings && bookings.length > 0 && (
+                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "services" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/20 text-white"}`}>
+                  {bookings.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => navigate({ search: { tab: "profile" } as any })}
+              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "profile"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <Settings className={`h-4 w-4 ${activeTab === "profile" ? "text-[#16A34A]" : "text-white/60"}`} />
+              <span>Account & App Settings</span>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Main Dashboard Background */}
-      <div className="bg-[#FAFBF9] min-h-screen py-12 md:py-16">
-        {(user.role === "admin" || user.role === "super_admin") && (
-          <section className="container-px mx-auto max-w-7xl pb-10 space-y-10">
-            <AdminServiceRequestsPanel />
-            <AdminFeaturedProductsPanel />
-          </section>
+      {/* TAB CONTENT VIEWS */}
+      <section className="container-px mx-auto max-w-7xl py-6">
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+              <div className="text-left">
+                <h2 className="text-2xl font-black text-[#0F291E]">My Shop Orders</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Track your product purchases, itemized receipts, and order statuses</p>
+              </div>
+              <Link to="/shop" className="px-4 py-2.5 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold hover:bg-[#74B510] transition-colors flex items-center gap-1.5 shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>New Shop Order</span>
+              </Link>
+            </div>
+
+            {ordersLoading ? (
+              <div className="py-16 text-center text-sm font-bold text-gray-400 animate-pulse">Loading your shop orders...</div>
+            ) : !orders || orders.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 border border-gray-200 text-center max-w-md mx-auto my-8 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 text-[#16A34A] flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-black text-[#0F291E]">No Shop Orders Found</h3>
+                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                  You haven't placed any AgroShop product purchases yet. All fertilizers, seeds, and equipment orders will appear here.
+                </p>
+                <Link to="/shop" className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#16382B] text-[#85CC14] font-bold text-xs hover:bg-[#0B2117] transition-all shadow-md">
+                  <span>Browse AgroShop</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {orders.map((o: any) => {
+                  let statusBadge = "bg-amber-100 text-amber-800 border-amber-200";
+                  if (o.status === "delivered" || o.status === "completed") statusBadge = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                  if (o.status === "processing" || o.status === "shipped") statusBadge = "bg-sky-100 text-sky-800 border-sky-200";
+                  if (o.status === "cancelled") statusBadge = "bg-rose-100 text-rose-800 border-rose-200";
+
+                  return (
+                    <div key={o.id} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs hover:shadow-md transition-all text-left">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center font-bold text-sm">
+                            <Package className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-mono font-bold text-gray-400">{o.id}</div>
+                            <div className="text-xs text-gray-500 font-medium">{o.createdAt}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${statusBadge}`}>
+                            {o.status}
+                          </span>
+                          <button
+                            onClick={() => setSelectedOrderDetails(o)}
+                            className="px-3.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View Breakdown</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Purchased Products</span>
+                          <span className="font-extrabold text-[#0F291E] block mt-0.5 line-clamp-2">{o.item}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Delivery & Payment</span>
+                          <span className="font-semibold text-gray-700 block mt-0.5">{o.paymentMethod} · {o.deliveryAddress}</span>
+                        </div>
+                        <div className="sm:text-right">
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Total Paid</span>
+                          <span className="font-black text-[#16A34A] text-sm block mt-0.5">KES {o.total.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
-      <section className="container-px mx-auto max-w-7xl py-12">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* PWA & Notification Center Card */}
-          <Card
-            title="PWA & Notification Center"
-            icon={Settings}
-            cta="App Settings"
-            link="/dashboard"
-          >
-            <div className="space-y-4">
-              {/* Connection Status & Mode */}
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-left">
-                <div>
-                  <div className="text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">System Status</div>
-                  <div className="text-[11px] text-slate-500 font-normal">
-                    {isInstalled ? "Running as standalone app" : "Running in browser"}
+        {activeTab === "services" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+              <div className="text-left">
+                <h2 className="text-2xl font-black text-[#0F291E]">Booked Extension Services</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Track field specialist requests, scheduled dates, and expert assignments</p>
+              </div>
+              <Link to="/services" className="px-4 py-2.5 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold hover:bg-[#74B510] transition-colors flex items-center gap-1.5 shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>Book New Service</span>
+              </Link>
+            </div>
+
+            {bookingsLoading ? (
+              <div className="py-16 text-center text-sm font-bold text-gray-400 animate-pulse">Loading your service bookings...</div>
+            ) : !bookings || bookings.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 border border-gray-200 text-center max-w-md mx-auto my-8 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-lime-100 text-[#35610D] flex items-center justify-center mx-auto mb-4">
+                  <Wrench className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-black text-[#0F291E]">No Booked Services Found</h3>
+                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                  You haven't requested any agricultural services or extension visits yet. Soil testing, vet services, AI breeding & greenhouse setups will appear here.
+                </p>
+                <Link to="/services" className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#16382B] text-[#85CC14] font-bold text-xs hover:bg-[#0B2117] transition-all shadow-md">
+                  <span>Request a Service</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {bookings.map((b: any) => {
+                  let statusBadge = "bg-amber-100 text-amber-800 border-amber-200";
+                  if (b.status === "completed") statusBadge = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                  if (b.status === "assigned" || b.status === "in_progress") statusBadge = "bg-sky-100 text-sky-800 border-sky-200";
+                  if (b.status === "cancelled") statusBadge = "bg-rose-100 text-rose-800 border-rose-200";
+
+                  return (
+                    <div key={b.id} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs hover:shadow-md transition-all text-left">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-lime-100 text-[#35610D] flex items-center justify-center font-bold text-sm">
+                            <Wrench className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-mono font-bold text-gray-400">{b.id}</div>
+                            <div className="text-xs font-bold text-[#0F291E]">{b.subserviceName}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${statusBadge}`}>
+                            {b.status}
+                          </span>
+                          <button
+                            onClick={() => setSelectedBookingDetails(b)}
+                            className="px-3.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View Booking Details</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-4 gap-4 text-xs">
+                        <div>
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Scheduled Date</span>
+                          <span className="font-bold text-[#0F291E] block mt-0.5">{b.scheduledDate}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Farm Location</span>
+                          <span className="font-semibold text-gray-700 block mt-0.5">{b.location}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Contact Person</span>
+                          <span className="font-semibold text-gray-700 block mt-0.5">{b.contactName} ({b.contactPhone})</span>
+                        </div>
+                        <div className="sm:text-right">
+                          <span className="text-gray-400 font-bold block uppercase text-[10px]">Assigned Specialist</span>
+                          <span className="font-bold text-[#16A34A] block mt-0.5">{b.expertName || "Pending Assignment"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* PWA & Notification Center Card */}
+            <Card
+              title="PWA & Notification Center"
+              icon={Settings}
+              cta="App Settings"
+              link="/dashboard"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-left">
+                  <div>
+                    <div className="text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">System Status</div>
+                    <div className="text-[11px] text-slate-500 font-normal">
+                      {isInstalled ? "Running as standalone app" : "Running in browser"}
+                    </div>
+                  </div>
+                  <div
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      isOnline ? "bg-[#E5F5D0] text-[#35610D]" : "bg-rose-100 text-rose-700"
+                    }`}
+                  >
+                    {isOnline ? (
+                      <>
+                        <Wifi className="h-3 w-3 text-[#35610D]" /> Online
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="h-3 w-3 text-rose-600" /> Offline
+                      </>
+                    )}
                   </div>
                 </div>
-                <div
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                    isOnline ? "bg-[#E5F5D0] text-[#35610D]" : "bg-rose-100 text-rose-700"
-                  }`}
-                >
-                  {isOnline ? (
-                    <>
-                      <Wifi className="h-3 w-3 text-[#35610D]" /> Online
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="h-3 w-3 text-rose-600" /> Offline
-                    </>
-                  )}
-                </div>
-              </div>
 
-              {/* Install Button if Installable */}
-              {isInstallable && (
-                <div className="rounded-2xl border border-[#85CC14]/40 bg-[#85CC14]/10 p-4 text-center">
-                  <p className="text-xs font-medium text-[#0F291E] mb-3">
-                    Install Mqulima on your device for fast, offline-capable access to your farm
-                    tools.
-                  </p>
+                {isInstallable && (
+                  <div className="rounded-2xl border border-[#85CC14]/40 bg-[#85CC14]/10 p-4 text-center">
+                    <p className="text-xs font-medium text-[#0F291E] mb-3">
+                      Install Mqulima on your device for fast access to your orders and services.
+                    </p>
+                    <button
+                      onClick={triggerInstall}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] px-4 py-2.5 text-xs font-bold text-[#0B2117] transition shadow-sm cursor-pointer"
+                    >
+                      <Download className="h-4 w-4 stroke-[2.5]" /> Install App
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-2 text-left">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Alert Subscriptions
+                  </h4>
+
+                  <div className="flex items-center justify-between">
+                    <div className="pr-2">
+                      <div className="text-xs font-bold text-[#0F291E]">Sowing Windows</div>
+                      <div className="text-[11px] text-slate-500 font-normal">Alerts for perfect planting times</div>
+                    </div>
+                    <Switch
+                      checked={channels.sowing}
+                      onCheckedChange={(checked) => handleToggleChannel("sowing", checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="pr-2">
+                      <div className="text-xs font-bold text-[#0F291E]">Market Rates</div>
+                      <div className="text-[11px] text-slate-500 font-normal">Daily updates for crop prices</div>
+                    </div>
+                    <Switch
+                      checked={channels.market}
+                      onCheckedChange={(checked) => handleToggleChannel("market", checked)}
+                    />
+                  </div>
+
                   <button
-                    onClick={triggerInstall}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] px-4 py-2.5 text-xs font-bold text-[#0B2117] transition shadow-sm cursor-pointer"
+                    onClick={() => {
+                      logout();
+                      toast.info("Signed out");
+                    }}
+                    className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 py-2.5 text-xs font-bold text-rose-700 transition cursor-pointer"
                   >
-                    <Download className="h-4 w-4 stroke-[2.5]" /> Install App
+                    Sign out
                   </button>
                 </div>
-              )}
+              </div>
+            </Card>
 
-              {isInstalled && !isInstallable && (
-                <div className="rounded-2xl border border-[#85CC14]/30 bg-[#E5F5D0] p-3 text-center text-xs font-bold text-[#35610D]">
-                  ✓ Mqulima is installed on your device
-                </div>
-              )}
+            <Card title="Farm Profile" icon={MapPin} cta="Edit profile" link="/dashboard">
+              <ul className="space-y-3 text-xs sm:text-sm text-left">
+                <li className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Name</span>
+                  <span className="font-bold text-[#0F291E]">{user.name}</span>
+                </li>
+                <li className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Email</span>
+                  <span className="font-bold text-[#0F291E]">{user.email}</span>
+                </li>
+                <li className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">County</span>
+                  <span className="font-bold text-[#0F291E]">{user.county || "Uasin Gishu"}</span>
+                </li>
+                <li className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Farm size</span>
+                  <span className="font-bold text-[#0F291E]">{user.farmSize || "4 acres"}</span>
+                </li>
+              </ul>
+            </Card>
+          </div>
+        )}
+      </section>
 
-              {/* Simulated Notification Toggles */}
-              <div className="space-y-3 pt-2 text-left">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Alert Subscriptions
-                </h4>
-
-                <div className="flex items-center justify-between">
-                  <div className="pr-2">
-                    <div className="text-xs font-bold text-[#0F291E]">Sowing Windows</div>
-                    <div className="text-[11px] text-slate-500 font-normal">
-                      Alerts for perfect planting times
-                    </div>
+      {/* POPUP MODAL: ORDER DETAILS BREAKDOWN */}
+      <AnimatePresence>
+        {selectedOrderDetails && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedOrderDetails(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl z-50 text-left border border-gray-150"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-100 text-[#16A34A]">
+                    <Package className="w-5 h-5" />
                   </div>
-                  <Switch
-                    checked={channels.sowing}
-                    onCheckedChange={(checked) => handleToggleChannel("sowing", checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="pr-2">
-                    <div className="text-xs font-bold text-[#0F291E]">Market Rates</div>
-                    <div className="text-[11px] text-slate-500 font-normal">
-                      Daily updates for crop prices
-                    </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#0F291E]">Order Receipt Details</h3>
+                    <div className="text-[11px] font-mono text-gray-400">{selectedOrderDetails.id}</div>
                   </div>
-                  <Switch
-                    checked={channels.market}
-                    onCheckedChange={(checked) => handleToggleChannel("market", checked)}
-                  />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="pr-2">
-                    <div className="text-xs font-bold text-[#0F291E]">AI Weather Alerts</div>
-                    <div className="text-[11px] text-slate-500 font-normal">
-                      Extreme weather warning notifications
-                    </div>
-                  </div>
-                  <Switch
-                    checked={channels.weather}
-                    onCheckedChange={(checked) => handleToggleChannel("weather", checked)}
-                  />
-                </div>
-
                 <button
-                  onClick={() => {
-                    logout();
-                    toast.info("Signed out");
-                  }}
-                  className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 py-2.5 text-xs font-bold text-rose-700 transition cursor-pointer"
+                  onClick={() => setSelectedOrderDetails(null)}
+                  className="p-1 rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
                 >
-                  Sign out
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          </Card>
 
-          <Card title="My Orders" icon={Package} cta="View all" link="/shop">
-            {ordersLoading ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+              <div className="space-y-4 text-xs">
+                <div className="bg-gray-50 rounded-2xl p-4 space-y-2 border border-gray-100">
+                  <div className="flex justify-between text-gray-500">
+                    <span>Order Date:</span>
+                    <span className="font-bold text-gray-800">{selectedOrderDetails.createdAt}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Status:</span>
+                    <span className="font-black uppercase text-[#16A34A]">{selectedOrderDetails.status}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Payment Method:</span>
+                    <span className="font-bold text-gray-800">{selectedOrderDetails.paymentMethod}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Delivery Address:</span>
+                    <span className="font-bold text-gray-800">{selectedOrderDetails.deliveryAddress}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-2">Itemized Breakdown</h4>
+                  <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden bg-white">
+                    {Array.isArray(selectedOrderDetails.items) && selectedOrderDetails.items.length > 0 ? (
+                      selectedOrderDetails.items.map((item: any, idx: number) => (
+                        <div key={idx} className="p-3 flex items-center justify-between gap-3">
+                          <div>
+                            <div className="font-bold text-[#0F291E]">{item.name || item.title || "AgroShop Product"}</div>
+                            <div className="text-[10px] text-gray-400">Qty: {item.quantity || 1} × KES {Number(item.price || 0).toLocaleString()}</div>
+                          </div>
+                          <div className="font-black text-gray-800">
+                            KES {(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 text-gray-600">{selectedOrderDetails.item}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-sm">
+                  <span className="font-black text-[#0F291E]">Total Amount Paid</span>
+                  <span className="font-black text-[#16A34A] text-lg">KES {selectedOrderDetails.total.toLocaleString()}</span>
+                </div>
               </div>
-            ) : !orders || orders.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-400">No orders yet</div>
-            ) : (
-              orders.map((o) => {
-                let color = "bg-amber-100 text-amber-800";
-                if (o.status === "delivered") color = "bg-[#E5F5D0] text-[#35610D]";
-                if (o.status === "cancelled") color = "bg-rose-100 text-rose-700";
-                return (
-                  <Row key={o.id} title={o.item} sub={o.id} chip={o.status} chipClass={color} />
-                );
-              })
-            )}
-          </Card>
 
-          <Card title="Upcoming Bookings" icon={Calendar} cta="Book a service" link="/services">
-            {bookingsLoading ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setSelectedOrderDetails(null)}
+                  className="px-5 py-2 rounded-xl bg-[#0F291E] text-white text-xs font-bold hover:bg-[#16382B] transition-colors"
+                >
+                  Close Receipt
+                </button>
               </div>
-            ) : !bookings || bookings.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-400">No bookings yet</div>
-            ) : (
-              bookings.map((o) => {
-                let color = "bg-sky-100 text-sky-800";
-                if (o.status === "completed") color = "bg-[#E5F5D0] text-[#35610D]";
-                if (o.status === "cancelled") color = "bg-rose-100 text-rose-700";
-                return (
-                  <Row key={o.id} title={o.item} sub={o.id} chip={`${o.status} (${o.scheduledDate})`} chipClass={color} />
-                );
-              })
-            )}
-          </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
-          <Card title="Notifications" icon={Bell} cta="Mark all read" link="/dashboard">
-            {notificationsLoading ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
-                <div className="h-10 bg-slate-100 rounded-2xl w-full" />
+      {/* POPUP MODAL: SERVICE BOOKING DETAILS BREAKDOWN */}
+      <AnimatePresence>
+        {selectedBookingDetails && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedBookingDetails(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl z-50 text-left border border-gray-150"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-lime-100 text-[#35610D]">
+                    <Wrench className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#0F291E]">Service Booking Record</h3>
+                    <div className="text-[11px] font-mono text-gray-400">{selectedBookingDetails.id}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedBookingDetails(null)}
+                  className="p-1 rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-            ) : !notifications || notifications.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-400">No notifications</div>
-            ) : (
-              notifications.map((n) => (
-                <Row
-                  key={n.id}
-                  title={n.title}
-                  sub={n.sub}
-                  chip={n.readAt ? "Read" : "Unread"}
-                  chipClass={n.readAt ? "bg-slate-100 text-slate-500" : "bg-[#E5F5D0] text-[#35610D]"}
-                  onClick={!n.readAt ? () => markReadMutation.mutate(n.id) : undefined}
-                />
-              ))
-            )}
-          </Card>
 
-          <Card title="Saved Products" icon={Heart} cta="Browse shop" link="/shop">
-            {[
-              { id: "p1", name: "Mavuno Planting Fertilizer", price: 3450 },
-              { id: "p7", name: "Sukari F1 Tomato Seed", price: 1850 },
-            ].map((p) => (
-              <Row
-                key={p.id}
-                title={p.name}
-                sub={`KES ${p.price.toLocaleString()}`}
-                chip="Save 5%"
-                chipClass="bg-[#E5F5D0] text-[#35610D]"
-              />
-            ))}
-          </Card>
+              <div className="space-y-4 text-xs">
+                <div className="bg-gray-50 rounded-2xl p-4 space-y-2 border border-gray-100">
+                  <div className="flex justify-between text-gray-500">
+                    <span>Service Category:</span>
+                    <span className="font-bold text-gray-800">{selectedBookingDetails.serviceName}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Subservice Selected:</span>
+                    <span className="font-bold text-[#16A34A]">{selectedBookingDetails.subserviceName}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Booking Status:</span>
+                    <span className="font-black uppercase text-amber-600">{selectedBookingDetails.status}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Scheduled Date:</span>
+                    <span className="font-bold text-gray-800">{selectedBookingDetails.scheduledDate}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Farm Location:</span>
+                    <span className="font-bold text-gray-800">{selectedBookingDetails.location}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Farm Scale:</span>
+                    <span className="font-bold text-gray-800">{selectedBookingDetails.farmScale}</span>
+                  </div>
+                </div>
 
-          <Card title="Recommended For You" icon={TrendingUp} cta="View shop" link="/shop">
-            {[
-              { name: "CAN Top Dressing", reason: "Matches your maize crop stage" },
-              { name: "Maclick Dewormer", reason: "Due for your dairy cows" },
-              { name: "Layers Mash", reason: "Top pick in Uasin Gishu" },
-            ].map((r, i) => (
-              <Row key={i} title={r.name} sub={r.reason} chip="" chipClass="" />
-            ))}
-          </Card>
+                {selectedBookingDetails.expertName ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-left">
+                    <div className="text-[10px] font-black uppercase text-emerald-800">Assigned Extension Expert</div>
+                    <div className="text-sm font-black text-[#0F291E] mt-1">{selectedBookingDetails.expertName}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">📞 {selectedBookingDetails.expertPhone}</div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-amber-800 text-[11px] font-medium">
+                    ℹ️ Extension specialist assignment is currently in progress by Mqulima Agri-Desk. You will receive an SMS update once assigned.
+                  </div>
+                )}
 
-          <Card title="Farm Profile" icon={MapPin} cta="Edit profile" link="/dashboard">
-            <ul className="space-y-3 text-xs sm:text-sm text-left">
-              <li className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">County</span>
-                <span className="font-bold text-[#0F291E]">{user.county || "Uasin Gishu"}</span>
-              </li>
-              <li className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Farm size</span>
-                <span className="font-bold text-[#0F291E]">{user.farmSize || "4 acres"}</span>
-              </li>
-              <li className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Crops</span>
-                <span className="font-bold text-[#0F291E]">{user.crops || "Maize, Beans"}</span>
-              </li>
-              <li className="flex justify-between py-1">
-                <span className="text-slate-500">Livestock</span>
-                <span className="font-bold text-[#0F291E]">{user.livestock || "3 dairy cows"}</span>
-              </li>
-            </ul>
-          </Card>
-        </div>
-      </section>
-      </div>
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">Farmer Notes / Instructions</h4>
+                  <div className="p-3 bg-gray-50 rounded-xl text-gray-700 font-medium leading-relaxed">
+                    {selectedBookingDetails.notes}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setSelectedBookingDetails(null)}
+                  className="px-5 py-2 rounded-xl bg-[#0F291E] text-white text-xs font-bold hover:bg-[#16382B] transition-colors"
+                >
+                  Close Details
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </AppLayout>
   );
 }

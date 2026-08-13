@@ -31,6 +31,7 @@ import { useCart } from "@/lib/cart-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProducts as getShopProducts } from "@/lib/api/shop.server";
 import { useAuth } from "@/hooks/useAuth";
+import { submitStockSourcingRequest } from "@/lib/api/contact-partnership.server";
 
 type ShopSearch = {
   q?: string;
@@ -426,20 +427,30 @@ function ShopPage() {
     });
   };
 
-  const handleSendStockRequest = (e: React.FormEvent) => {
+  const handleSendStockRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recommendName.trim()) {
       toast.error("Please fill in the product name.");
       return;
     }
-    const message = `Hello Mqulima Support, I'm looking for a product that seems to be out of stock or unavailable:\n
-Product Name: ${recommendName.trim()}
-Brand: ${recommendBrand.trim() || "Any brand"}
-Please notify me if it becomes available!`;
-    window.open(`https://wa.me/254723346134?text=${encodeURIComponent(message)}`, "_blank");
-    setRecommendName("");
-    setRecommendBrand("");
-    toast.success("Stock request query opened in WhatsApp!");
+    try {
+      const res = await submitStockSourcingRequest({
+        data: {
+          productName: recommendName.trim(),
+          preferredBrand: recommendBrand.trim() || undefined,
+          contactName: user?.name || undefined,
+          contactPhone: (user as any)?.phone || undefined,
+          contactEmail: user?.email || undefined,
+        }
+      });
+      if (res.success) {
+        toast.success("Sourcing request submitted! Our agro-sourcing network will locate it and notify you within 24 hours.");
+        setRecommendName("");
+        setRecommendBrand("");
+      }
+    } catch (err: any) {
+      toast.error("Failed to submit request: " + (err.message || "Unknown error"));
+    }
   };
 
   // Render Left Filter Content

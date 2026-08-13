@@ -608,7 +608,7 @@ function Index() {
                 className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
-                  const targetLink = p.linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
+                  const targetLink = (p as any).linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
 
                   return (
                     <div
