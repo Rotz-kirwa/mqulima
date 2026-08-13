@@ -182,7 +182,7 @@ function Dashboard() {
             </div>
 
             {/* Quick Stats Pill Ribbon */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
               <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} />
               <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} />
             </div>
@@ -723,13 +723,13 @@ function Dashboard() {
 
 function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 border border-white/15 backdrop-blur-md">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#85CC14]/20 text-[#85CC14]">
-        <Icon className="h-5 w-5 stroke-[2.5]" />
+    <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-white/10 px-3.5 sm:px-5 py-3 border border-white/15 backdrop-blur-md min-w-0">
+      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-[#85CC14]/20 text-[#85CC14] shrink-0">
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
       </div>
-      <div className="text-left">
-        <div className="text-xl font-black text-[#85CC14] font-['Outfit',sans-serif] leading-none">{value}</div>
-        <div className="text-[10px] uppercase font-bold tracking-wider text-white/70 mt-1">
+      <div className="text-left min-w-0">
+        <div className="text-lg sm:text-xl font-black text-[#85CC14] font-['Outfit',sans-serif] leading-none">{value}</div>
+        <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/80 mt-1 truncate">
           {label}
         </div>
       </div>
