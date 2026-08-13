@@ -602,7 +602,7 @@ function Index() {
                     >
                       <Link
                         to={targetLink}
-                        className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
+                        className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
                       >
                         <img
                           src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
