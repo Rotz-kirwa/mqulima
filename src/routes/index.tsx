@@ -535,16 +535,16 @@ function Index() {
           3. FEATURED PRODUCTS (Auto-Sliding Group - 3s Interval)
       ══════════════════════════════════════════ */}
       <section 
-        className="bg-[#FAFBF9] py-8 md:py-14 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
+        className="bg-[#FAFBF9] py-6 sm:py-8 md:py-12 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
         onMouseEnter={() => setIsFeaturedHovered(true)}
         onMouseLeave={() => setIsFeaturedHovered(false)}
       >
         <div className="container-px mx-auto max-w-7xl">
           
           {/* Header Row with Clean Title and Navigation Controls */}
-          <div className="flex items-center justify-between gap-4 mb-5 text-left">
+          <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4 text-left">
             <div>
-              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#35610D] mb-1.5">
+              <span className="inline-block rounded-full bg-[#E5F5D0] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#35610D] mb-1">
                 FEATURED COLLECTION
               </span>
               <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0F291E] tracking-tight leading-tight font-['Outfit',sans-serif]">
@@ -572,7 +572,7 @@ function Index() {
           </div>
 
           {/* Products Grid/Carousel with Touch Swipe & Auto-Slide */}
-          <div className="relative min-h-[300px] sm:min-h-[380px] md:min-h-[500px] touch-pan-y overflow-hidden">
+          <div className="relative touch-pan-y overflow-hidden">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={`${featuredPageIndex}-${isMobile ? 'm' : 'd'}`}
@@ -590,7 +590,7 @@ function Index() {
                     setFeaturedPageIndex((prev) => (prev - 1 + totalPages) % totalPages);
                   }
                 }}
-                className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5 md:gap-7 cursor-grab active:cursor-grabbing"
+                className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 md:gap-6 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
                   const targetLink = (p as any).linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
@@ -608,19 +608,19 @@ function Index() {
                           src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
                           alt={p.name || "Farm Essential"}
                           loading="lazy"
-                          className="h-full w-full object-contain object-center p-3 sm:p-5 pb-16 sm:pb-20 transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-contain object-center p-2.5 sm:p-4 pb-12 sm:pb-14 transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "/placeholder-product.png";
                           }}
                         />
                         {p.name && p.name !== "Farm Essential" && (
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-4 px-3.5 sm:px-5 text-left pointer-events-none">
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-6 pb-2.5 px-3 sm:px-4 text-left pointer-events-none">
                             <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
                               {p.name}
                             </h3>
                             {p.price > 0 && (
-                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-1 font-mono">
+                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5 font-mono">
                                 KSh {Number(p.price).toLocaleString()}
                               </span>
                             )}
@@ -636,7 +636,7 @@ function Index() {
 
           {/* Pagination Indicators Below Product Cards */}
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-1.5 py-1">
+            <div className="mt-3 sm:mt-4 flex items-center justify-center gap-1.5 py-1">
               {Array.from({ length: totalPages }).map((_, idx) => (
                 <button
                   key={idx}
@@ -653,7 +653,7 @@ function Index() {
           )}
 
           {/* Explore Agroshop Button */}
-          <div className="mt-5 sm:mt-8 text-center flex justify-center">
+          <div className="mt-4 sm:mt-6 text-center flex justify-center">
             <Link
               to="/shop"
               className="inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-xl md:rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg active:scale-98 cursor-pointer w-full sm:w-auto max-w-xs sm:max-w-none"
