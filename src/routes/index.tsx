@@ -999,7 +999,7 @@ function Index() {
                 {currentGroupTestimonials.map((t) => (
                   <div
                     key={t.uniqueKey || t.author}
-                    className="relative w-full rounded-[24px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm hover:shadow-xl flex flex-col justify-between transition-all duration-300 text-left"
+                    className="relative w-full rounded-none border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm hover:shadow-xl flex flex-col justify-between transition-all duration-300 text-left"
                   >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
