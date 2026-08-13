@@ -1071,7 +1071,7 @@ function Index() {
               return (
                 <div 
                   key={idx} 
-                  className="flex items-center justify-between gap-4 text-left p-6 rounded-[24px] border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-300"
+                  className="flex items-center justify-between gap-4 text-left p-6 rounded-none border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <div>
                     <div className="text-3xl font-black text-[#0F291E] leading-none tracking-tight font-['Outfit',sans-serif]">{s.count}</div>
