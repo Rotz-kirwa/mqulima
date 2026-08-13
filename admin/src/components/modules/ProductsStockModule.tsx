@@ -37,7 +37,6 @@ export const ProductsStockModule: React.FC = () => {
   const [prodCategory, setProdCategory] = useState("Seeds & Seedlings");
   const [prodDescription, setProdDescription] = useState("");
   const [prodImageUrl, setProdImageUrl] = useState("");
-  const [prodIsFeatured, setProdIsFeatured] = useState(false);
   const [prodStatus, setProdStatus] = useState("published");
   const [prodRating, setProdRating] = useState<number>(5);
 
@@ -84,7 +83,6 @@ export const ProductsStockModule: React.FC = () => {
     setProdCategory("Seeds & Seedlings");
     setProdDescription("");
     setProdImageUrl("");
-    setProdIsFeatured(false);
     setProdStatus("published");
     setProdRating(5);
     setUploadMode("file");
@@ -99,7 +97,6 @@ export const ProductsStockModule: React.FC = () => {
     setProdCategory(product.category || "Seeds & Seedlings");
     setProdDescription(product.description || "");
     setProdImageUrl(product.imageUrl || "");
-    setProdIsFeatured(!!product.isFeatured);
     setProdStatus(product.status || "published");
     setProdRating(Number(product.rating) || 5);
     setUploadMode(product.imageUrl ? "url" : "file");
@@ -158,7 +155,6 @@ export const ProductsStockModule: React.FC = () => {
         category: prodCategory,
         description: prodDescription,
         imageUrl: prodImageUrl,
-        isFeatured: prodIsFeatured,
         status: prodStatus,
         rating: prodRating,
       };
@@ -378,11 +374,6 @@ export const ProductsStockModule: React.FC = () => {
                         <div>
                           <div className="font-bold text-sm text-[#0F3D3C] flex items-center gap-1.5">
                             {product.name}
-                            {product.isFeatured && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-mono bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold border border-amber-300" title="Featured Product">
-                                <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-600" /> Featured
-                              </span>
-                            )}
                           </div>
                           <div className="text-[10px] text-[#4A7C79] font-mono font-normal">ID: {product.id}</div>
                         </div>
@@ -726,22 +717,6 @@ export const ProductsStockModule: React.FC = () => {
                   value={prodDescription}
                   onChange={(e) => setProdDescription(e.target.value)}
                   className="w-full bg-[#E8F4F1] border border-[#CCE5E1] p-2.5 rounded-[6px] text-[#0F3D3C] font-sans text-xs focus:outline-none focus:border-[#278C7B]"
-                />
-              </div>
-
-              {/* Featured Checkbox */}
-              <div className="p-3 bg-[#E8F4F1] border border-[#CCE5E1] rounded-[6px] flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-[#0F3D3C] block">Featured Shop Item</span>
-                  <span className="text-[10px] text-gray-600 font-sans">
-                    Promote this item on the homepage showcase carousel
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={prodIsFeatured}
-                  onChange={(e) => setProdIsFeatured(e.target.checked)}
-                  className="w-4 h-4 text-[#278C7B] accent-[#278C7B] cursor-pointer"
                 />
               </div>
             </div>
