@@ -1,4 +1,14 @@
+import { sanitizeHtml } from "./sanitization";
+export { sanitizeHtml };
+
 export class SanitizationService {
+  /**
+   * Sanitizes rich HTML content with strict allowlist.
+   */
+  static sanitizeHtml(html: string): string {
+    return sanitizeHtml(html);
+  }
+
   /**
    * Escapes special HTML characters to prevent XSS.
    */

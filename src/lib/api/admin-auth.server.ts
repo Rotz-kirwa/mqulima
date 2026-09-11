@@ -8,12 +8,11 @@ export interface AdminUser {
   role: string;
 }
 
+import { getServerConfig } from "../config.server";
+
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required");
-  }
-  return new TextEncoder().encode(secret);
+  const env = getServerConfig();
+  return new TextEncoder().encode(env.JWT_SECRET);
 }
 
 /**
@@ -78,11 +77,118 @@ export async function getAuthAdminUserFromRequest(request: Request): Promise<Adm
   }
 }
 
+export type AdminPermission =
+  | "customers.read"
+  | "customers.update"
+  | "customers.delete"
+  | "products.read"
+  | "products.create"
+  | "products.update"
+  | "products.archive"
+  | "orders.read"
+  | "orders.update"
+  | "payments.read"
+  | "payments.reconcile"
+  | "content.read"
+  | "content.create"
+  | "content.update"
+  | "content.delete"
+  | "inquiries.read"
+  | "inquiries.update";
+
+export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
+  super_admin: [
+    "customers.read", "customers.update", "customers.delete",
+    "products.read", "products.create", "products.update", "products.archive",
+    "orders.read", "orders.update",
+    "payments.read", "payments.reconcile",
+    "content.read", "content.create", "content.update", "content.delete",
+    "inquiries.read", "inquiries.update",
+  ],
+  admin: [
+    "customers.read", "customers.update", "customers.delete",
+    "products.read", "products.create", "products.update", "products.archive",
+    "orders.read", "orders.update",
+    "payments.read", "payments.reconcile",
+    "content.read", "content.create", "content.update", "content.delete",
+    "inquiries.read", "inquiries.update",
+  ],
+  sales_agent: [
+    "customers.read",
+    "products.read",
+    "orders.read", "orders.update",
+    "payments.read",
+    "inquiries.read", "inquiries.update",
+  ],
+  content_editor: [
+    "content.read", "content.create", "content.update", "content.delete",
+    "products.read",
+    "customers.read",
+    "inquiries.read",
+  ],
+};
+
+export type AdminUserContext = {
+  id?: string;
+  email?: string;
+  role: string;
+};
+
+export function hasPermission(
+  roleOrUser: string | AdminUserContext | AdminUser,
+  permission: AdminPermission
+): boolean {
+  const role = typeof roleOrUser === "string" ? roleOrUser : roleOrUser?.role;
+  const permissions = ROLE_PERMISSIONS[role] || [];
+  return permissions.includes(permission);
+}
+
+export function assertAdminPermission(
+  roleOrUser: string | AdminUserContext | AdminUser,
+  permission: AdminPermission
+): void {
+  if (!hasPermission(roleOrUser, permission)) {
+    const role = typeof roleOrUser === "string" ? roleOrUser : roleOrUser?.role;
+    throw new Error(`Forbidden: role '${role}' lacks required permission '${permission}'.`);
+  }
+}
+
 /**
- * Enforce admin RBAC on an API route Request.
- * Returns either an error Response (if unauthorized) or the authenticated AdminUser.
+ * Enforce granular admin RBAC on an API route Request.
+ * Returns either an error Response (401 or 403) or the authenticated AdminUser.
  */
-export async function requireAdminAuth(request: Request): Promise<{ user: AdminUser } | { response: Response }> {
+export async function requireAdminPermission(
+  request: Request,
+  permission: AdminPermission
+): Promise<{ user: AdminUser } | { response: Response }> {
+  const auth = await requireAdminAuth(request);
+  if ("response" in auth) return auth;
+
+  if (!hasPermission(auth.user.role, permission)) {
+    return {
+      response: new Response(
+        JSON.stringify({
+          success: false,
+          error: `Forbidden: role '${auth.user.role}' lacks required permission '${permission}'.`,
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    };
+  }
+
+  return auth;
+}
+
+/**
+ * Enforce admin authentication, and optionally a required permission.
+ */
+export async function requireAdminAuth(
+  request: Request,
+  requiredPermission?: AdminPermission
+): Promise<{ user: AdminUser } | { response: Response }> {
   const user = await getAuthAdminUserFromRequest(request);
   if (!user) {
     return {
@@ -93,6 +199,21 @@ export async function requireAdminAuth(request: Request): Promise<{ user: AdminU
         }),
         {
           status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    };
+  }
+
+  if (requiredPermission && !hasPermission(user.role, requiredPermission)) {
+    return {
+      response: new Response(
+        JSON.stringify({
+          success: false,
+          error: `Forbidden: role '${user.role}' lacks required permission '${requiredPermission}'.`,
+        }),
+        {
+          status: 403,
           headers: { "Content-Type": "application/json" },
         }
       ),

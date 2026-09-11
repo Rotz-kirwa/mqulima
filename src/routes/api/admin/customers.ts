@@ -5,13 +5,13 @@ import { profiles } from "@/db/schema/profiles";
 import { orders } from "@/db/schema/orders";
 import { eq, desc, sql } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
-import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
 
 export const Route = createFileRoute("/api/admin/customers")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "customers.read");
         if ("response" in auth) return auth.response;
         try {
           // Fetch users merged with profiles and lifetime order totals
@@ -26,6 +26,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               county: users.county,
               deliveryLocation: users.deliveryLocation,
               farmingType: users.farmingType,
+              status: users.status,
+              isVerified: users.isVerified,
               createdAt: users.createdAt,
               // Profile details
               profileId: profiles.id,
@@ -40,6 +42,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               profileNatureOfAgriculture: profiles.natureOfAgriculture,
               profileYearsFarming: profiles.yearsFarming,
               profileRole: profiles.role,
+              profileStatus: profiles.status,
+              profileIsVerified: profiles.isVerified,
               profileIsRetailer: profiles.isRetailer,
               profileRetailerDiscountPct: profiles.retailerDiscountPct,
               profileBio: profiles.bio,
@@ -59,6 +63,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               users.county,
               users.deliveryLocation,
               users.farmingType,
+              users.status,
+              users.isVerified,
               users.createdAt,
               profiles.id,
               profiles.fullName,
@@ -72,6 +78,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               profiles.natureOfAgriculture,
               profiles.yearsFarming,
               profiles.role,
+              profiles.status,
+              profiles.isVerified,
               profiles.isRetailer,
               profiles.retailerDiscountPct,
               profiles.bio
@@ -95,6 +103,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               natureOfAgriculture: profiles.natureOfAgriculture,
               yearsFarming: profiles.yearsFarming,
               role: profiles.role,
+              status: profiles.status,
+              isVerified: profiles.isVerified,
               isRetailer: profiles.isRetailer,
               retailerDiscountPct: profiles.retailerDiscountPct,
               bio: profiles.bio,
@@ -133,8 +143,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               createdAt: c.createdAt,
               lifetimeValueKsh: Number(c.lifetimeValue) || 0,
               ordersCount: Number(c.ordersCount) || 0,
-              isVerified: true,
-              status: "active",
+              isVerified: Boolean(c.isVerified ?? c.profileIsVerified ?? false),
+              status: c.status || c.profileStatus || "active",
             };
           });
 
@@ -168,8 +178,8 @@ export const Route = createFileRoute("/api/admin/customers")({
                 createdAt: p.createdAt,
                 lifetimeValueKsh: 0,
                 ordersCount: 0,
-                isVerified: true,
-                status: "active",
+                isVerified: Boolean(p.isVerified ?? false),
+                status: p.status || "active",
               };
             });
 
@@ -205,12 +215,50 @@ export const Route = createFileRoute("/api/admin/customers")({
           }
 
           if (action === "update_status") {
-            await logAdminAction({
-              actorId,
-              action: `CUSTOMER_STATUS_${status.toUpperCase()}`,
-              entity: "users",
-              entityId: id,
-              diff: { status, notes },
+            if (!hasPermission(auth.user.role, "customers.update")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot update customer status.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            const allowedStatuses = ["active", "suspended", "inactive"];
+            if (!status || !allowedStatuses.includes(status)) {
+              return new Response(JSON.stringify({ success: false, error: "Invalid status value. Allowed: active, suspended, inactive" }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            const { getDb } = await import("@/lib/db.server");
+            const sql = getDb();
+            let updatedCount = 0;
+
+            await sql.begin(async (tx: any) => {
+              const userRes = await tx`
+                UPDATE users 
+                SET status = ${status} 
+                WHERE id = ${id}
+                RETURNING id
+              `;
+              const profileRes = await tx`
+                UPDATE profiles 
+                SET status = ${status} 
+                WHERE id = ${id}
+                RETURNING id
+              `;
+              updatedCount = userRes.length + profileRes.length;
+              if (updatedCount === 0) {
+                throw new Error("Customer not found");
+              }
+
+              await logAdminAction({
+                actorId: auth.user?.id || actorId,
+                action: `CUSTOMER_STATUS_${status.toUpperCase()}`,
+                entity: "users",
+                entityId: id,
+                diff: { status, notes },
+              });
             });
 
             return new Response(
@@ -220,31 +268,86 @@ export const Route = createFileRoute("/api/admin/customers")({
           }
 
           if (action === "verify_kyc") {
-            await logAdminAction({
-              actorId,
-              action: "CUSTOMER_KYC_VERIFIED",
-              entity: "users",
-              entityId: id,
-              diff: { isVerified: true },
+            if (!hasPermission(auth.user.role, "customers.update")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot verify customer KYC.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            const isVerified = body.isVerified !== undefined ? Boolean(body.isVerified) : true;
+            const { getDb } = await import("@/lib/db.server");
+            const sql = getDb();
+            let updatedCount = 0;
+
+            await sql.begin(async (tx: any) => {
+              const userRes = await tx`
+                UPDATE users 
+                SET is_verified = ${isVerified} 
+                WHERE id = ${id}
+                RETURNING id
+              `;
+              const profileRes = await tx`
+                UPDATE profiles 
+                SET is_verified = ${isVerified} 
+                WHERE id = ${id}
+                RETURNING id
+              `;
+              updatedCount = userRes.length + profileRes.length;
+              if (updatedCount === 0) {
+                throw new Error("Customer not found");
+              }
+
+              await logAdminAction({
+                actorId: auth.user?.id || actorId,
+                action: isVerified ? "CUSTOMER_KYC_VERIFIED" : "CUSTOMER_KYC_UNVERIFIED",
+                entity: "users",
+                entityId: id,
+                diff: { isVerified },
+              });
             });
 
             return new Response(
-              JSON.stringify({ success: true, message: "Customer KYC verified" }),
+              JSON.stringify({ success: true, message: `Customer KYC verification set to ${isVerified}` }),
               { headers: { "Content-Type": "application/json" } }
             );
           }
 
           if (action === "delete_customer") {
+            if (!hasPermission(auth.user.role, "customers.delete")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot delete customers.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             const { getDb } = await import("@/lib/db.server");
             const sql = getDb();
             await sql.begin(async (tx: any) => {
+              // Delete order payments and items
               await tx`DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
               await tx`DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
               await tx`DELETE FROM orders WHERE user_id = ${id}`;
+
+              // Delete community forum interactions & posts
+              await tx`DELETE FROM show_likes WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
+              await tx`DELETE FROM show_bookmarks WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
+              await tx`DELETE FROM show_comments WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
+              await tx`DELETE FROM show_posts WHERE user_id = ${id}`;
+
+              // Delete marketplace listings & service requests & diagnoses
+              await tx`DELETE FROM commodity_listings WHERE user_id = ${id}`;
+              await tx`DELETE FROM service_requests WHERE user_id = ${id}`;
+              await tx`DELETE FROM crop_diagnoses WHERE user_id = ${id}`;
+              await tx`DELETE FROM forum_reports WHERE reporter_id = ${id}`;
+
+              // Delete user session & audit records
               await tx`DELETE FROM user_sessions WHERE user_id = ${id}`;
               await tx`DELETE FROM user_logs WHERE user_id = ${id}`;
               await tx`DELETE FROM user_activity_logs WHERE user_id = ${id}`;
               await tx`DELETE FROM notifications WHERE user_id = ${id}`;
+
+              // Delete primary user profile and identity
               await tx`DELETE FROM profiles WHERE id = ${id}`;
               await tx`DELETE FROM users WHERE id = ${id}`;
             });

@@ -14,13 +14,6 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    // Ensure agritech_news table columns exist
-    await sql`
-      ALTER TABLE agritech_news 
-      ADD COLUMN IF NOT EXISTS media_type varchar(20) DEFAULT 'image',
-      ADD COLUMN IF NOT EXISTS media_url text;
-    `;
-
     // Fetch published agritech news from CMS table (single source of truth for Admin CMS and Main Site)
     const agritechArticles = await sql`
       SELECT
@@ -44,7 +37,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
       id: row.id as string,
       title: row.title as string,
       slug: row.slug as string,
-      coverImage: (row.mediaUrl as string) || "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+      coverImage: (row.mediaUrl as string) || "/placeholder-product.png",
       mediaType: (row.mediaType as "image" | "video") || "image",
       mediaUrl: (row.mediaUrl as string) || "",
       excerpt: (row.excerpt as string) || "",

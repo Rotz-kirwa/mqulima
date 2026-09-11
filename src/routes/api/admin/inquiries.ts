@@ -12,21 +12,6 @@ export const Route = createFileRoute("/api/admin/inquiries")({
         try {
           const sql = getDb();
 
-          // Ensure columns exist on contact_submissions & partnership_applications
-          await sql`
-            ALTER TABLE contact_submissions 
-            ADD COLUMN IF NOT EXISTS status varchar(50) DEFAULT 'open',
-            ADD COLUMN IF NOT EXISTS assigned_staff varchar(100) DEFAULT 'Unassigned',
-            ADD COLUMN IF NOT EXISTS admin_notes text;
-          `;
-
-          await sql`
-            ALTER TABLE partnership_applications 
-            ADD COLUMN IF NOT EXISTS status varchar(50) DEFAULT 'open',
-            ADD COLUMN IF NOT EXISTS assigned_staff varchar(100) DEFAULT 'Unassigned',
-            ADD COLUMN IF NOT EXISTS admin_notes text;
-          `;
-
           // 1. Fetch Contact Submissions
           const contacts = await sql`
             SELECT id, name, email, message, status, assigned_staff, admin_notes, created_at
@@ -49,21 +34,6 @@ export const Route = createFileRoute("/api/admin/inquiries")({
           `;
 
           // 4. Fetch Stock Sourcing Requests
-          await sql`
-            CREATE TABLE IF NOT EXISTS stock_sourcing_requests (
-              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-              product_name varchar(255) NOT NULL,
-              preferred_brand varchar(255),
-              contact_name varchar(255),
-              contact_phone varchar(50),
-              contact_email varchar(255),
-              status varchar(50) DEFAULT 'open',
-              assigned_staff varchar(100) DEFAULT 'Unassigned',
-              admin_notes text,
-              created_at timestamp with time zone DEFAULT now()
-            );
-          `;
-
           const stockRequests = await sql`
             SELECT id, product_name, preferred_brand, contact_name, contact_phone, contact_email, status, assigned_staff, admin_notes, created_at
             FROM stock_sourcing_requests

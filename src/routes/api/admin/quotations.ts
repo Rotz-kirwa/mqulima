@@ -5,6 +5,7 @@ import { orders } from "@/db/schema/orders";
 import { desc, eq } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import crypto from "crypto";
 
 export const Route = createFileRoute("/api/admin/quotations")({
   server: {
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/api/admin/quotations")({
             }
 
             const targetQ = q[0];
-            const newOrderId = `ord-q-${Date.now()}`;
+            const newOrderId = crypto.randomUUID();
 
             await db.insert(orders).values({
               id: newOrderId,
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/api/admin/quotations")({
             await logAdminAction({
               actorId,
               action: "B2B_QUOTATION_CONVERTED",
-              entity: "quotations",
+              entity: "admin_quotations",
               entityId: id,
               diff: { convertedOrderId: newOrderId },
             });

@@ -106,22 +106,6 @@ export const submitStockSourcingRequest = createServerFn({ method: "POST" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    // Ensure table exists
-    await sql`
-      CREATE TABLE IF NOT EXISTS stock_sourcing_requests (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        product_name varchar(255) NOT NULL,
-        preferred_brand varchar(255),
-        contact_name varchar(255),
-        contact_phone varchar(50),
-        contact_email varchar(255),
-        status varchar(50) DEFAULT 'open',
-        assigned_staff varchar(100) DEFAULT 'Unassigned',
-        admin_notes text,
-        created_at timestamp with time zone DEFAULT now()
-      );
-    `;
-
     const inserted = await sql`
       INSERT INTO stock_sourcing_requests (
         product_name, preferred_brand, contact_name, contact_phone, contact_email

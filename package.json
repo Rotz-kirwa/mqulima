@@ -6,6 +6,11 @@
   "workspaces": [
     "admin"
   ],
+  "overrides": {
+    "seroval": "1.5.4",
+    "dompurify": "^3.2.4",
+    "jspdf": "^4.2.1"
+  },
   "scripts": {
     "dev": "vite dev",
     "dev:all": "node scripts/start-all.js",
@@ -14,6 +19,7 @@
     "preview": "vite preview",
     "db:migrate": "npx tsx db/scripts/run-migrations.ts",
     "db:seed": "npx tsx db/scripts/run-seeds.ts",
+    "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -99,6 +105,7 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^3.2.7"
   }
 }

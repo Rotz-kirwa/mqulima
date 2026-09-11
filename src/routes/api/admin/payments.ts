@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getDb } from "@/lib/db.server";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import crypto from "crypto";
 
 export const Route = createFileRoute("/api/admin/payments")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "payments.read");
         if ("response" in auth) return auth.response;
         try {
           const sql = getDb();
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/api/admin/payments")({
           // 3. Auto-sync missing orders into payments ledger if needed
           for (const ord of ordersList) {
             if (!paymentByOrderId[ord.order_id]) {
-              const pId = `pay-${ord.order_id.slice(0, 8)}`;
+              const pId = crypto.randomUUID();
               const transRef = `MPESA-STK-${ord.order_id.slice(0, 6).toUpperCase()}`;
               const amountStr = String(ord.total || "0.00");
               const payStatus = ord.payment_status === "completed" || ord.payment_status === "paid" ? "paid" : "pending";
@@ -102,6 +103,9 @@ export const Route = createFileRoute("/api/admin/payments")({
               p.status as payment_status,
               p.provider,
               p.provider_ref,
+              p.merchant_reference,
+              p.receipt_number,
+              p.result_description,
               p.raw_payload,
               p.created_at as payment_created_at,
               o.total as order_total,
@@ -138,11 +142,15 @@ export const Route = createFileRoute("/api/admin/payments")({
               : "Guest Customer";
 
             const customerPhone = p.phone_number || rawPayload.phone || "+254 700 000000";
-            const isOrphaned = !p.order_id || p.payment_status === "pending";
+            const isOrphaned = !p.order_id || p.payment_status === "pending" || p.payment_status === "failed";
 
             return {
               id: p.payment_id,
-              transactionId: p.provider_ref || `MPESA-${p.payment_id.slice(0, 8)}`,
+              transactionId: p.receipt_number || p.provider_ref || p.merchant_reference || `MPESA-${p.payment_id.slice(0, 8)}`,
+              providerRef: p.provider_ref,
+              merchantReference: p.merchant_reference,
+              receiptNumber: p.receipt_number,
+              resultDescription: p.result_description,
               method: p.provider || p.order_payment_method || "M-Pesa Express",
               customerName,
               customerPhone,
@@ -171,7 +179,7 @@ export const Route = createFileRoute("/api/admin/payments")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "payments.reconcile");
         if ("response" in auth) return auth.response;
         try {
           const body = await request.json();

@@ -3,11 +3,13 @@ import postgres from "postgres";
 import { getServerConfig } from "../lib/config.server";
 import * as schema from "./schema";
 
-let sqlInstance: ReturnType<typeof postgres> | null = null;
-let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
+declare global {
+  var __mq_raw_sql__: ReturnType<typeof postgres> | undefined;
+  var __mq_drizzle_db__: ReturnType<typeof drizzle<typeof schema>> | undefined;
+}
 
 export function getRawSql() {
-  if (!sqlInstance) {
+  if (!globalThis.__mq_raw_sql__) {
     const config = getServerConfig();
     const connectionString = config.DATABASE_URL;
 
@@ -17,7 +19,7 @@ export function getRawSql() {
 
     const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
     const requiresSsl = !isLocal || connectionString.includes("sslmode=require");
-    sqlInstance = postgres(connectionString, {
+    globalThis.__mq_raw_sql__ = postgres(connectionString, {
       max: 10,
       idle_timeout: 20,
       connect_timeout: 15,
@@ -25,15 +27,15 @@ export function getRawSql() {
       onnotice: () => {},
     });
   }
-  return sqlInstance;
+  return globalThis.__mq_raw_sql__;
 }
 
 export function getDb() {
-  if (!dbInstance) {
+  if (!globalThis.__mq_drizzle_db__) {
     const sql = getRawSql();
-    dbInstance = drizzle(sql, { schema });
+    globalThis.__mq_drizzle_db__ = drizzle(sql, { schema });
   }
-  return dbInstance;
+  return globalThis.__mq_drizzle_db__;
 }
 
 export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {

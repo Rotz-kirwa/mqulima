@@ -25,13 +25,15 @@ import {
   Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
-import { type ShopProduct, AGRICULTURE_TAXONOMY, mapToNewTaxonomy } from "@/lib/shop-data";
+import { type ShopProduct, shopProducts, AGRICULTURE_TAXONOMY, mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { useCart } from "@/lib/cart-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProducts as getShopProducts } from "@/lib/api/shop.server";
 import { useAuth } from "@/hooks/useAuth";
 import { submitStockSourcingRequest } from "@/lib/api/contact-partnership.server";
+import { ProductQuickViewModal } from "@/components/shop/ProductQuickViewModal";
+
 
 type ShopSearch = {
   q?: string;
@@ -39,17 +41,33 @@ type ShopSearch = {
   field?: string;
   category?: string;
   subcategory?: string;
+  page?: number;
 };
 
 export const Route = createFileRoute("/shop/")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
+    const pageNum = Number(search.page);
     return {
       q: (search.q as string) || undefined,
       shopType: (search.shopType as string) || undefined,
       field: (search.field as string) || undefined,
       category: (search.category as string) || undefined,
       subcategory: (search.subcategory as string) || undefined,
+      page: !isNaN(pageNum) && pageNum > 0 ? pageNum : 1,
     };
+  },
+  loader: async () => {
+    try {
+      const data = await getShopProducts({
+        data: {
+          limit: 1000,
+        },
+      });
+      return data;
+    } catch (e) {
+      console.error("Failed to load products in shop loader:", e);
+      return { products: [], total: 0, page: 1, totalPages: 1 };
+    }
   },
   head: () => ({
     meta: [
@@ -122,28 +140,78 @@ function ShopPage() {
   // Mobile drawer state
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Quick View Modal state
+  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+
+  const handleOpenQuickView = (p: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setQuickViewProduct(p);
+    setQuickViewOpen(true);
+  };
+
   // Stock Request form state
   const [recommendName, setRecommendName] = useState("");
   const [recommendBrand, setRecommendBrand] = useState("");
 
-  // Fetch products
+
+  // Fetch products with SSR loader initialData and API endpoint fallback
+  const initialData = Route.useLoaderData();
   const { data: allProductsData, isLoading: isProductsLoading } = useQuery({
     queryKey: ["allShopProducts"],
-    queryFn: () => getShopProducts({ data: { limit: 1000 } })
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/products?limit=1000&_t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.products && json.products.length > 0) {
+            return json;
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching /api/products:", e);
+      }
+      return getShopProducts({
+        data: {
+          limit: 1000,
+        }
+      });
+    },
+    initialData
   });
 
   const rawProductsList = useMemo(() => {
-    return allProductsData?.products || [];
-  }, [allProductsData]);
+    if (allProductsData?.products && allProductsData.products.length > 0) {
+      return allProductsData.products;
+    }
+    if (initialData?.products && initialData.products.length > 0) {
+      return initialData.products;
+    }
+    // Never fall back to static shopProducts - return empty to avoid showing mock data
+    return [];
+  }, [allProductsData, initialData]);
 
 
 
-  // Map all products to the new 8-tier taxonomy
+  // Map all products to the new 8-tier taxonomy and ensure sanitized fields
   const productsList = useMemo(() => {
-    return rawProductsList.map((p) => {
+    return rawProductsList.map((p: any) => {
       const taxonomy = mapToNewTaxonomy(p);
+      const cleanDesc = cleanDescriptionText(p.description || "");
+      const cleanBrief = cleanDescriptionText(p.briefDescription || cleanDesc);
+      const rawStock = Number(p.stock_qty ?? p.stockQty ?? p.stock ?? 0);
+      const stock = isNaN(rawStock) || rawStock < 0 ? 0 : rawStock;
+      const rawPrice = Number(p.price || 0);
+      const price = isNaN(rawPrice) || rawPrice < 0 ? 0 : rawPrice;
+
       return {
         ...p,
+        description: cleanDesc,
+        briefDescription: cleanBrief,
+        stock,
+        price,
         category: p.category || taxonomy.category,
         subcategory: p.subcategory || taxonomy.subcategory
       };
@@ -168,12 +236,13 @@ function ShopPage() {
     const newQ = searchParams.q || "";
     const newCat = searchParams.category || "All";
     const newSub = searchParams.subcategory || "All";
+    const newPage = searchParams.page || 1;
 
     setSearchText((prev) => (prev !== newQ ? newQ : prev));
     setSelectedCategory((prev) => (prev !== newCat ? newCat : prev));
     setSelectedSubcategory((prev) => (prev !== newSub ? newSub : prev));
-    setCurrentPage((prev) => (prev !== 1 ? 1 : prev));
-  }, [searchParams.q, searchParams.category, searchParams.subcategory]);
+    setCurrentPage(newPage);
+  }, [searchParams.q, searchParams.category, searchParams.subcategory, searchParams.page]);
 
   // Close autocomplete on click outside
   useEffect(() => {
@@ -189,7 +258,7 @@ function ShopPage() {
   // Get brands dynamically from mapped products
   const allBrands = useMemo(() => {
     const brandsSet = new Set<string>();
-    productsList.forEach((p) => {
+    productsList.forEach((p: any) => {
       if (p.brand) brandsSet.add(p.brand);
     });
     return Array.from(brandsSet).sort();
@@ -200,7 +269,7 @@ function ShopPage() {
     if (!searchText.trim()) return [];
     const query = searchText.toLowerCase().trim();
     return productsList.filter(
-      (p) => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)
+      (p: any) => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)
     ).slice(0, 5);
   }, [searchText, productsList]);
 
@@ -216,7 +285,7 @@ function ShopPage() {
 
   // Filter products list
   const filteredProducts = useMemo(() => {
-    return productsList.filter((p) => {
+    return productsList.filter((p: any) => {
       // Category filter
       if (selectedCategory !== "All") {
         if (p.category !== selectedCategory) return false;
@@ -229,9 +298,9 @@ function ShopPage() {
       if (searchText.trim() !== "") {
         const query = searchText.toLowerCase().trim();
         const matches =
-          p.name.toLowerCase().includes(query) ||
-          p.brand.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query);
+          (p.name || "").toLowerCase().includes(query) ||
+          (p.brand || "").toLowerCase().includes(query) ||
+          (p.description || "").toLowerCase().includes(query);
         if (!matches) return false;
       }
       // Brand filter
@@ -265,29 +334,60 @@ function ShopPage() {
   // Sort products
   const sortedProducts = useMemo(() => {
     const sorted = [...filteredProducts];
-    if (sortBy === "Price Low to High") sorted.sort((a, b) => a.price - b.price);
-    else if (sortBy === "Price High to Low") sorted.sort((a, b) => b.price - a.price);
-    else if (sortBy === "Highest Rated") sorted.sort((a, b) => b.rating - a.rating);
-    else if (sortBy === "Category") {
+    if (sortBy === "Price Low to High") {
+      sorted.sort((a, b) => {
+        if (a.price <= 0 && b.price > 0) return 1;
+        if (a.price > 0 && b.price <= 0) return -1;
+        return a.price - b.price;
+      });
+    } else if (sortBy === "Price High to Low") {
+      sorted.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "Highest Rated") {
+      sorted.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === "Category") {
       sorted.sort((a, b) => {
         const catCompare = (a.category || "").localeCompare(b.category || "");
         if (catCompare !== 0) return catCompare;
         return (a.name || "").localeCompare(b.name || "");
       });
+    } else {
+      // Default: In-stock & priced items first, then popularity / reviewsCount
+      sorted.sort((a, b) => {
+        const aAvailable = a.stock > 0 && a.price > 0 ? 1 : 0;
+        const bAvailable = b.stock > 0 && b.price > 0 ? 1 : 0;
+        if (aAvailable !== bAvailable) return bAvailable - aAvailable;
+        return (b.reviewsCount || 0) - (a.reviewsCount || 0);
+      });
     }
-    else sorted.sort((a, b) => b.reviewsCount - a.reviewsCount); // Popularity fallback
     return sorted;
   }, [filteredProducts, sortBy]);
 
   // Paginated products
+  const totalCount = sortedProducts.length;
+  const totalPages = Math.ceil(totalCount / itemsPerPage) || 1;
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedProducts, currentPage]);
+  }, [sortedProducts, currentPage, itemsPerPage]);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(sortedProducts.length / itemsPerPage) || 1;
-  }, [sortedProducts]);
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    navigate({
+      to: "/shop",
+      search: (prev: any) => ({
+        ...prev,
+        page: newPage,
+      }),
+      replace: true,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Taxonomy dynamic count helper
   const taxonomyCounts = useMemo(() => {
@@ -309,7 +409,7 @@ function ShopPage() {
     });
 
     // Populate counts
-    productsList.forEach((p) => {
+    productsList.forEach((p: any) => {
       if (counts[p.category]) {
         counts[p.category].total += 1;
         if (counts[p.category].subs[p.subcategory] !== undefined) {
@@ -336,12 +436,14 @@ function ShopPage() {
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
     setSelectedSubcategory("All");
+    setCurrentPage(1);
     navigate({
       to: "/shop",
       search: (prev: any) => ({
         ...prev,
         category: category === "All" ? undefined : category,
-        subcategory: undefined
+        subcategory: undefined,
+        page: 1
       })
     });
     setMobileFiltersOpen(false);
@@ -349,11 +451,13 @@ function ShopPage() {
 
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
+    setCurrentPage(1);
     navigate({
       to: "/shop",
       search: (prev: any) => ({
         ...prev,
-        subcategory: subcategory === "All" ? undefined : subcategory
+        subcategory: subcategory === "All" ? undefined : subcategory,
+        page: 1
       })
     });
     setMobileFiltersOpen(false);
@@ -362,11 +466,13 @@ function ShopPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchFocused(false);
+    setCurrentPage(1);
     navigate({
       to: "/shop",
       search: (prev: any) => ({
         ...prev,
-        q: searchText.trim() || undefined
+        q: searchText.trim() || undefined,
+        page: 1
       })
     });
   };
@@ -816,7 +922,8 @@ function ShopPage() {
               )}
 
               {/* Grid / List view implementation */}
-              {isProductsLoading ? (
+              {isProductsLoading && rawProductsList.length === 0 ? (
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="aspect-[3/4] bg-white border border-gray-200 rounded-2xl p-4 flex flex-col justify-between animate-pulse">
@@ -895,8 +1002,25 @@ function ShopPage() {
                           <img
                             src={p.image}
                             alt={p.name}
-                            className="w-full h-full object-cover transition duration-300"
-                            onError={(e) => { e.currentTarget.src = '/placeholder-product.png'; }}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover transition duration-300 bg-gray-50"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              // Fallback to category-specific placeholder, then generic
+                              const cat = (p.category || "").toLowerCase();
+                              if (cat.includes("animal")) {
+                                e.currentTarget.src = '/images/placeholders/livestock.png';
+                              } else if (cat.includes("fertilizer") || cat.includes("growth")) {
+                                e.currentTarget.src = '/images/placeholders/fertilizer.png';
+                              } else if (cat.includes("seed")) {
+                                e.currentTarget.src = '/images/placeholders/seeds.png';
+                              } else if (cat.includes("equipment") || cat.includes("tools")) {
+                                e.currentTarget.src = '/images/placeholders/equipment.png';
+                              } else {
+                                e.currentTarget.src = '/images/placeholders/agrochemical.png';
+                              }
+                            }}
                           />
 
                           {/* Hover View Button Overlay */}
@@ -923,7 +1047,21 @@ function ShopPage() {
                                 {p.badge}
                               </span>
                             )}
+                            {p.externalProductId && (
+                              <span className="bg-sky-700 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-none shadow-sm flex items-center gap-1">
+                                ⚡ POS Synced
+                              </span>
+                            )}
                           </div>
+
+                          {/* Quick View Button */}
+                          <button
+                            onClick={(e) => handleOpenQuickView(p, e)}
+                            className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 hover:text-[#2D6A4F] p-1.5 rounded-full shadow-md transition duration-200 border border-gray-100 z-10 cursor-pointer flex items-center gap-1 text-[10px] font-bold px-2"
+                            title="Quick View Variations & Stock"
+                          >
+                            <Eye size={12} /> Quick View
+                          </button>
 
                           {/* Wishlist Button */}
                           <button
@@ -935,6 +1073,7 @@ function ShopPage() {
                               className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"}
                             />
                           </button>
+
 
                           {/* Compare Button */}
                           <button
@@ -966,8 +1105,8 @@ function ShopPage() {
                               {p.name}
                             </h3>
 
-                            <p className="text-xs text-gray-500">
-                              {p.briefDescription || ""}
+                            <p className="text-xs text-gray-500 line-clamp-2 min-h-[32px]">
+                              {p.briefDescription || p.description || ""}
                             </p>
 
                             <div className="flex items-center gap-1.5 py-1">
@@ -992,13 +1131,21 @@ function ShopPage() {
                               </span>
                             </div>
 
-                            <div className="flex items-baseline gap-2 pt-1.5">
-                              <span className="text-sm sm:text-base font-black text-gray-900">
-                                KSh {p.price.toLocaleString()}
-                              </span>
-                              {hasDiscount && (
-                                <span className="text-xs text-gray-400 line-through">
-                                  KSh {p.originalPrice!.toLocaleString()}
+                            <div className="flex items-baseline gap-2 pt-1.5 min-h-[28px]">
+                              {p.price > 0 ? (
+                                <>
+                                  <span className="text-sm sm:text-base font-black text-gray-900">
+                                    KSh {p.price.toLocaleString()}
+                                  </span>
+                                  {hasDiscount && (
+                                    <span className="text-xs text-gray-400 line-through">
+                                      KSh {p.originalPrice!.toLocaleString()}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                  Price on Request
                                 </span>
                               )}
                             </div>
@@ -1007,35 +1154,56 @@ function ShopPage() {
 
                            {/* Quick Purchase actions block */}
                           <div className="mt-3.5 flex gap-2 w-full pt-1.5 border-t border-gray-100">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addToCart(p, 1);
-                              }}
-                              disabled={p.stock <= 0}
-                              className={`flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer ${
-                                p.stock <= 0
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "border border-[#2D6A4F] text-[#2D6A4F] hover:bg-[#2D6A4F]/5"
-                              }`}
-                            >
-                              Add to Cart
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const slug = p.slug || p.id;
-                                navigate({ to: "/shop/product/$slug", params: { slug } });
-                              }}
-                              disabled={p.stock <= 0}
-                              className={`flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer ${
-                                p.stock <= 0
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-[#2D6A4F] hover:bg-[#1A5438] text-white"
-                              }`}
-                            >
-                              {p.stock <= 0 ? "Out of Stock" : "Buy Now"}
-                            </button>
+                            {p.price > 0 && p.stock > 0 ? (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    addToCart(p, 1);
+                                  }}
+                                  className="flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer border border-[#2D6A4F] text-[#2D6A4F] hover:bg-[#2D6A4F]/5"
+                                >
+                                  Add to Cart
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const slug = p.slug || p.id;
+                                    navigate({ to: "/shop/product/$slug", params: { slug } });
+                                  }}
+                                  className="flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer bg-[#2D6A4F] hover:bg-[#1A5438] text-white"
+                                >
+                                  Buy Now
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const slug = p.slug || p.id;
+                                    navigate({ to: "/shop/product/$slug", params: { slug } });
+                                  }}
+                                  className="flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                >
+                                  View Details
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(
+                                      `https://wa.me/254723346134?text=${encodeURIComponent(
+                                        `Hi Mqulima, I want to inquire about ${p.name}`
+                                      )}`,
+                                      "_blank"
+                                    );
+                                  }}
+                                  className="flex-1 text-[10px] font-extrabold py-2 px-1 rounded-none transition-colors uppercase tracking-wider text-center flex items-center justify-center gap-1 cursor-pointer bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                  Inquire
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1048,45 +1216,49 @@ function ShopPage() {
               {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 border-t border-gray-200 pt-6">
                   <div className="text-xs text-gray-500 font-bold">
-                    Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} items
+                    Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} items
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap justify-center">
                     <button
-                      onClick={() => {
-                        setCurrentPage((p) => Math.max(1, p - 1));
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
                       className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-xs font-bold disabled:opacity-40 hover:bg-gray-50 bg-white transition cursor-pointer"
+                      title="Previous Page"
                     >
                       <ChevronLeft size={14} />
                     </button>
-                    {Array.from({ length: totalPages }).map((_, idx) => {
-                      const page = idx + 1;
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => {
-                            setCurrentPage(page);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className={`w-8 h-8 rounded-lg border text-xs font-extrabold flex items-center justify-center transition-colors cursor-pointer ${
-                            currentPage === page
-                              ? "bg-[#2D6A4F] border-[#2D6A4F] text-white"
-                              : "border-gray-200 hover:bg-gray-50 text-gray-800 bg-white"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
+                    {Array.from({ length: totalPages }, (_, idx) => idx + 1)
+                      .filter((page) => {
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 2
+                        );
+                      })
+                      .map((page, idx, arr) => {
+                        const prevPage = arr[idx - 1];
+                        const showEllipsis = prevPage && page - prevPage > 1;
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-1 text-gray-400 text-xs select-none">...</span>}
+                            <button
+                              onClick={() => handlePageChange(page)}
+                              className={`w-8 h-8 rounded-lg border text-xs font-extrabold flex items-center justify-center transition-colors cursor-pointer ${
+                                currentPage === page
+                                  ? "bg-[#2D6A4F] border-[#2D6A4F] text-white"
+                                  : "border-gray-200 hover:bg-gray-50 text-gray-800 bg-white"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
                     <button
-                      onClick={() => {
-                        setCurrentPage((p) => Math.min(totalPages, p + 1));
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
                       className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-xs font-bold disabled:opacity-40 hover:bg-gray-50 bg-white transition cursor-pointer"
+                      title="Next Page"
                     >
                       <ChevronRight size={14} />
                     </button>
@@ -1380,8 +1552,13 @@ function ShopPage() {
         )}
       </AnimatePresence>
 
-
-
+      {/* Product Quick View Modal */}
+      <ProductQuickViewModal
+        isOpen={quickViewOpen}
+        onClose={() => setQuickViewOpen(false)}
+        product={quickViewProduct}
+      />
     </AppLayout>
   );
 }
+

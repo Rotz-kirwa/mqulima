@@ -7,12 +7,11 @@ import { getDb } from "../db.server";
 
 const COOKIE_NAME = "mq_session";
 
+import { getServerConfig } from "../config.server";
+
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required");
-  }
-  return new TextEncoder().encode(secret);
+  const env = getServerConfig();
+  return new TextEncoder().encode(env.JWT_SECRET);
 }
 
 import { SignUpSchema, SignInSchema } from "../auth-shop-shared";
@@ -164,7 +163,7 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   // Fire Welcome SMS asynchronously (non-blocking)
   const appUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mqulima.co.ke";
   const firstName = data.firstName.trim();
-  const welcomeMsg = `Welcome to Mqulima, ${firstName}! Your account is set up. Phone: ${cleanPhone}, Password: ${data.password}. Login at ${appUrl}. Need help? Call +254707559080. - Mqulima`;
+  const welcomeMsg = `Welcome to Mkulima, ${firstName}! Your account has been created successfully. Never share your password with anyone. Login at ${appUrl}. Need help? Call +254707559080. - Mkulima`;
 
   sendSms({
     phoneNumber: cleanPhone,

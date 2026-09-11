@@ -8,6 +8,8 @@ const ProductsInputSchema = z.object({
   limit: z.number().int().positive().optional().default(20)
 });
 
+import { resolveFastProductImage } from "./shop.server";
+
 function mapDbProduct(p: any): ShopProduct {
   return {
     id: p.id,
@@ -18,7 +20,7 @@ function mapDbProduct(p: any): ShopProduct {
     price: Number(p.base_price || 0),
     originalPrice: p.original_price ? Number(p.original_price) : null,
     stock: p.status === 'draft' ? (p.stock_qty || 0) : 9999,
-    image: (Array.isArray(p.image_urls) && p.image_urls.length > 0) ? p.image_urls[0] : "/placeholder-product.png",
+    image: resolveFastProductImage(p),
     imageUrls: Array.isArray(p.image_urls) ? p.image_urls : [],
     category: p.category_name || p.old_category_name || "",
     badge: p.badge || "",

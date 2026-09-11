@@ -6,17 +6,10 @@ export const Route = createFileRoute("/api/admin/news")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "content.read");
         if ("response" in auth) return auth.response;
         try {
           const sql = getDb();
-
-          // Ensure media_type and media_url columns exist in agritech_news table
-          await sql`
-            ALTER TABLE agritech_news 
-            ADD COLUMN IF NOT EXISTS media_type varchar(20) DEFAULT 'image',
-            ADD COLUMN IF NOT EXISTS media_url text;
-          `;
 
           const list = await sql`
             SELECT 
@@ -50,7 +43,7 @@ export const Route = createFileRoute("/api/admin/news")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "content.create");
         if ("response" in auth) return auth.response;
         try {
           const body = await request.json();
@@ -146,7 +139,7 @@ export const Route = createFileRoute("/api/admin/news")({
       },
 
       DELETE: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "content.delete");
         if ("response" in auth) return auth.response;
         try {
           let articleId: string | null = null;

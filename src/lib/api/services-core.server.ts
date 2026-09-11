@@ -45,14 +45,13 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     csrfToken,
   } = data;
 
-  // 1. CSRF Token Validation if provided
-  if (csrfToken) {
-    try {
-      const { validateCsrfToken } = await import("../csrf-verify.server");
-      validateCsrfToken(csrfToken);
-    } catch (e) {
-      // Safe fallback outside HTTP request context
+  // 1. Mandatory CSRF Token Validation for website requests
+  if (channel === "website") {
+    if (!csrfToken) {
+      throw new Error("CSRF token is required for service booking requests.");
     }
+    const { validateCsrfToken } = await import("../csrf-verify.server");
+    validateCsrfToken(csrfToken);
   }
 
   // 2. Resolve User Authentication Context

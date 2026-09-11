@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/mqulima/AppLayout";
-import { type ShopProduct, mapToNewTaxonomy } from "@/lib/shop-data";
+import { type ShopProduct, mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
 import { useCart } from "@/lib/cart-context";
 import { useQuery } from "@tanstack/react-query";
 import { getProductBySlug, getProducts } from "@/lib/api/products.server";
@@ -79,14 +79,15 @@ function ProductDetailPage() {
     return data?.product;
   }, [data]);
 
-  const { data: allProductsData } = useQuery({
-    queryKey: ["products"],
-    queryFn: () => getProducts({ data: { limit: 100 } })
+  const { data: relatedProductsData } = useQuery({
+    queryKey: ["relatedProducts", product?.category],
+    queryFn: () => getProducts({ data: { category: product?.category, limit: 6 } }),
+    enabled: !!product
   });
 
   const allProductsList = useMemo(() => {
-    return allProductsData?.products || [];
-  }, [allProductsData]);
+    return relatedProductsData?.products || [];
+  }, [relatedProductsData]);
 
   const [quantity, setQuantity] = useState(1);
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
@@ -164,46 +165,19 @@ function ProductDetailPage() {
     return { discountPercentage: pct, savingsAmount: diff };
   }, [activePrice, activeOriginalPrice]);
 
-  // Generate dynamic, high-quality images based on category or default to main
+  // Generate product gallery images
   const productImages = useMemo(() => {
     if (!product) return [];
 
-    // Use multiple image urls if populated
-    if (product.imageUrls && product.imageUrls.length > 0) {
+    if (product.imageUrls && product.imageUrls.length > 0 && !product.imageUrls[0].includes("default.png")) {
       return product.imageUrls;
     }
     
-    // Default fallback image list
-    const mainImg = product.image || "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800";
-    
-    // Custom images for visual delight depending on category
-    let secondaryImages = [
-      "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=800", // Soil / planting
-      "https://images.unsplash.com/photo-1563514220-ea97928b4988?w=800", // Agronomy detail
-      "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=800"  // Warehouse stack
-    ];
-
-    if (product.category?.toLowerCase().includes("fertilizer")) {
-      secondaryImages = [
-        "https://images.unsplash.com/photo-1574943320219-553dd213f725?w=800", // crop harvesting
-        "https://images.unsplash.com/photo-1599889958507-aa97de339943?w=800", // crop closeup
-        "https://images.unsplash.com/photo-1605001011156-cbf0b0f67a51?w=800"  // green fields
-      ];
-    } else if (product.category?.toLowerCase().includes("seed")) {
-      secondaryImages = [
-        "https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=800&q=80", // certified hybrid seeds
-        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800", // garden bed
-        "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=800"  // farmer holding soil
-      ];
-    } else if (product.category?.toLowerCase().includes("protect") || product.category?.toLowerCase().includes("pest")) {
-      secondaryImages = [
-        "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800", // crop protection spraying
-        "https://images.unsplash.com/photo-1563514220-ea97928b4988?w=800", // green leaf inspect
-        "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=800"  // verified packaging
-      ];
-    }
-
-    return [mainImg, ...secondaryImages];
+    const mainImg = (product.image && !product.image.includes("default.png"))
+      ? product.image 
+      : "/placeholder-product.png";
+      
+    return [mainImg];
   }, [product]);
 
   // ══════════════════════════════════════════
@@ -600,13 +574,21 @@ function ProductDetailPage() {
                 {/* Price block */}
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-2.5">
-                    <span className="text-3xl font-black text-[#2D6A4F] tracking-tight">
-                      KSh {activePrice.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-stone-400 font-bold">per {activeUnit}</span>
-                    {activeOriginalPrice && (
-                      <span className="text-base text-stone-400 line-through font-medium">
-                        KSh {activeOriginalPrice.toLocaleString()}
+                    {activePrice > 0 ? (
+                      <>
+                        <span className="text-3xl font-black text-[#2D6A4F] tracking-tight">
+                          KSh {activePrice.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-stone-400 font-bold">per {activeUnit}</span>
+                        {activeOriginalPrice && (
+                          <span className="text-base text-stone-400 line-through font-medium">
+                            KSh {activeOriginalPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-2xl font-black text-amber-700 tracking-tight">
+                        Price on Request
                       </span>
                     )}
                   </div>
@@ -666,7 +648,7 @@ function ProductDetailPage() {
 
                 {/* Description Excerpt */}
                 <p className="text-xs text-stone-500 leading-relaxed font-normal pt-1.5">
-                  {product.briefDescription || ""}
+                  {cleanDescriptionText(product.briefDescription || product.description || "")}
                 </p>
 
                 {/* Quantity & core CTAs */}
@@ -690,26 +672,40 @@ function ProductDetailPage() {
                       </button>
                     </div>
 
-                    {/* Add to Cart */}
-                    <button
-                      onClick={() => {
-                        addToCart(product, quantity, selectedSize || undefined);
-                        toast.success(`Added ${quantity} units of ${product.name} to cart!`);
-                      }}
-                      className="flex-1 min-w-[130px] flex items-center justify-center gap-2 rounded-xl border border-[#2D6A4F] bg-white h-12 text-xs font-extrabold text-[#2D6A4F] transition hover:bg-[#2D6A4F] hover:text-white uppercase tracking-wider cursor-pointer"
-                    >
-                      <ShoppingCart size={15} /> Add to Cart
-                    </button>
+                    {/* Add to Cart / Buy Now or Inquire */}
+                    {activePrice > 0 && product.stock > 0 ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            addToCart(product, quantity, selectedSize || undefined);
+                            toast.success(`Added ${quantity} units of ${product.name} to cart!`);
+                          }}
+                          className="flex-1 min-w-[130px] flex items-center justify-center gap-2 rounded-xl border border-[#2D6A4F] bg-white h-12 text-xs font-extrabold text-[#2D6A4F] transition hover:bg-[#2D6A4F] hover:text-white uppercase tracking-wider cursor-pointer"
+                        >
+                          <ShoppingCart size={15} /> Add to Cart
+                        </button>
 
-                    {/* Buy Now */}
-                    <button
-                      onClick={() => {
-                        buyNow(product, quantity, selectedSize || undefined);
-                      }}
-                      className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 rounded-xl bg-[#2D6A4F] h-12 text-xs font-extrabold text-white hover:bg-[#1A5438] transition uppercase tracking-wider shadow-sm cursor-pointer"
-                    >
-                      Buy Now
-                    </button>
+                        <button
+                          onClick={() => {
+                            buyNow(product, quantity, selectedSize || undefined);
+                          }}
+                          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 rounded-xl bg-[#2D6A4F] h-12 text-xs font-extrabold text-white hover:bg-[#1A5438] transition uppercase tracking-wider shadow-sm cursor-pointer"
+                        >
+                          Buy Now
+                        </button>
+                      </>
+                    ) : (
+                      <a
+                        href={`https://wa.me/254723346134?text=${encodeURIComponent(
+                          `Hi Mqulima, I want to inquire about ${product.name} (SKU: ${product.sku || product.id})`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 min-w-[200px] flex items-center justify-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 h-12 text-xs font-extrabold text-white transition uppercase tracking-wider shadow-sm cursor-pointer"
+                      >
+                        <MessageSquare size={16} /> Inquire Price & Availability
+                      </a>
+                    )}
                   </div>
 
                   {/* WhatsApp checkout & Invoice */}
@@ -778,7 +774,7 @@ function ProductDetailPage() {
               <FileText size={16} className="text-[#2D6A4F]" /> Detailed Product Description
             </h3>
             <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-4xl font-normal whitespace-pre-wrap">
-              {product.description || "High quality certified agricultural input provided directly by verified distributors."}
+              {cleanDescriptionText(product.description || "High quality certified agricultural input provided directly by verified distributors.")}
             </p>
           </div>
 

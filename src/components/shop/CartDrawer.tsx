@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/hooks/useAuth";
 
-type PaymentMethod = "mpesa" | "bank" | "card" | "gpay";
+type PaymentMethod = "mpesa" | "ncba" | "bank" | "card" | "gpay";
 type ShippingMethod = "standard" | "express" | "pickup";
 
 export function CartDrawer() {
@@ -54,7 +54,7 @@ export function CartDrawer() {
   const [shippingOption, setShippingOption] = useState<ShippingMethod>("standard");
 
   // Payment details
-  const [paymentOption, setPaymentOption] = useState<PaymentMethod>("mpesa");
+  const [paymentOption, setPaymentOption] = useState<PaymentMethod>("ncba");
   const [mpesaNumber, setMpesaNumber] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -79,6 +79,7 @@ export function CartDrawer() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [pollCountdown, setPollCountdown] = useState(120);
   const [paymentStatusState, setPaymentStatusState] = useState<"pending" | "success" | "failed" | "timeout">("pending");
+  const [receiptNumber, setReceiptNumber] = useState<string | null>(null);
   const pollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // STK simulation processing countdown
@@ -120,6 +121,7 @@ export function CartDrawer() {
         const parsed = JSON.parse(stored);
         setFullName(parsed.name || "");
         setPhoneNumber(parsed.phone || "");
+        setMpesaNumber(parsed.phone || "");
         setNationalId(parsed.idNumber || "");
         setCounty(parsed.county || "");
         setTown(parsed.town || "");
@@ -145,11 +147,11 @@ export function CartDrawer() {
   // Simulated Card/Bank countdown
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (processing && paymentOption !== "mpesa" && countdown > 0) {
+    if (processing && (paymentOption === "card" || paymentOption === "bank") && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown((c) => c - 1);
       }, 1000);
-    } else if (processing && paymentOption !== "mpesa" && countdown === 0) {
+    } else if (processing && (paymentOption === "card" || paymentOption === "bank") && countdown === 0) {
       setProcessing(false);
       setStep(5);
       clearCart();
@@ -205,7 +207,7 @@ export function CartDrawer() {
     return true;
   };
 
-  const startPaymentPolling = (orderId: string) => {
+  const startPaymentPolling = (orderId: string, isNcba = false) => {
     if (pollTimerRef.current) {
       clearInterval(pollTimerRef.current);
     }
@@ -220,25 +222,35 @@ export function CartDrawer() {
         if (pollTimerRef.current) clearInterval(pollTimerRef.current);
         setProcessing(false);
         setPaymentStatusState("timeout");
-        toast.error("M-Pesa payment query timed out.");
+        toast.error("Payment confirmation query timed out.");
         return;
       }
 
       try {
-        const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
-        const statusRes = await getPaymentStatus({ data: { orderId } });
+        let statusRes: any;
+        if (isNcba) {
+          const { getNcbaPaymentStatus } = await import("@/lib/api/ncba.server");
+          statusRes = await getNcbaPaymentStatus({ data: { orderId } });
+        } else {
+          const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
+          statusRes = await getPaymentStatus({ data: { orderId } });
+        }
+
         if (statusRes.status === "paid") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           setProcessing(false);
           setPaymentStatusState("success");
+          if (statusRes.receiptNumber) {
+            setReceiptNumber(statusRes.receiptNumber);
+          }
           setStep(5);
           clearCart();
-          toast.success("M-Pesa Payment Received & Confirmed!");
+          toast.success(`${isNcba ? "NCBA " : ""}M-Pesa Payment Received & Confirmed!`);
         } else if (statusRes.status === "failed") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           setProcessing(false);
           setPaymentStatusState("failed");
-          toast.error("M-Pesa payment failed or was cancelled.");
+          toast.error("Payment failed or was cancelled by user.");
         }
       } catch (err) {
         console.error("Polling error:", err);
@@ -252,24 +264,20 @@ export function CartDrawer() {
       return;
     }
 
-    if (paymentOption === "mpesa") {
+    if (paymentOption === "mpesa" || paymentOption === "ncba") {
       if (!mpesaNumber.trim()) {
-        toast.error("Please enter M-Pesa number for query trigger");
+        toast.error("Please enter phone number for M-Pesa STK push prompt");
         return;
       }
-      if (!/^(07|01|254)\d{8}$/.test(mpesaNumber.trim())) {
+      if (!/^(07|01|254|\+254)\d{8}$/.test(mpesaNumber.trim().replace(/\s+/g, ""))) {
         toast.error("Please enter a valid Kenyan phone number (e.g. 0712345678)");
-        return;
-      }
-    } else if (paymentOption === "card") {
-      if (!cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) {
-        toast.error("Please fill out complete Visa details");
         return;
       }
     }
 
     setProcessing(true);
     setPaymentStatusState("pending");
+    setReceiptNumber(null);
 
     try {
       // 1. Create order in DB via server function
@@ -287,6 +295,7 @@ export function CartDrawer() {
       const res = await createShopOrder({
         data: {
           items: orderItems,
+          couponCode: activeCoupon || undefined,
           subtotal,
           total: grandTotal,
           fullName,
@@ -305,8 +314,25 @@ export function CartDrawer() {
       if (res.success && res.orderId) {
         setCreatedOrderId(res.orderId);
 
-        if (paymentOption === "mpesa") {
-          // 2. Trigger M-Pesa STK Push
+        if (paymentOption === "ncba") {
+          // 2. Trigger NCBA STK Push
+          const { initiateNcbaStkPush } = await import("@/lib/api/ncba.server");
+          const pushRes = await initiateNcbaStkPush({
+            data: {
+              phone: mpesaNumber.trim(),
+              orderId: res.orderId
+            }
+          });
+
+          if (pushRes.success) {
+            toast.success("NCBA Bank M-Pesa STK Prompt Sent! Enter PIN on your phone.");
+            // 3. Start Polling for NCBA status
+            startPaymentPolling(res.orderId, true);
+          } else {
+            throw new Error((pushRes as any).message || (pushRes as any).error || "Failed to initiate NCBA payment prompt.");
+          }
+        } else if (paymentOption === "mpesa") {
+          // Trigger Safaricom Direct M-Pesa STK Push
           const { initiateStkPush } = await import("@/lib/api/mpesa.server");
           const pushRes = await initiateStkPush({
             data: {
@@ -319,13 +345,32 @@ export function CartDrawer() {
 
           if (pushRes.success) {
             toast.success("M-Pesa STK Push Prompt Sent!");
-            // 3. Start Polling
-            startPaymentPolling(res.orderId);
+            startPaymentPolling(res.orderId, false);
           } else {
             throw new Error(pushRes.error || "Failed to initiate payment prompt");
           }
+        } else if (paymentOption === "card") {
+          // Trigger Paystack Card Payment Redirect Flow
+          const { initiatePaystackCheckout } = await import("@/lib/api/paystack.server");
+          const customerEmail = user.email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, ".")}@mqulima.com`;
+          
+          const payRes = await initiatePaystackCheckout({
+            data: {
+              orderId: res.orderId,
+              email: customerEmail
+            }
+          });
+
+          if (payRes.success && payRes.authorizationUrl) {
+            toast.success("Order initialized! Redirecting to Paystack payment gateway...");
+            clearCart();
+            window.location.href = payRes.authorizationUrl;
+            return;
+          } else {
+            throw new Error((payRes as any).error || "Failed to initialize Paystack payment gateway.");
+          }
         } else {
-          // Simulated Card/Bank flow countdown
+          // Simulated Bank flow countdown
           setCountdown(5);
         }
       } else {
@@ -362,8 +407,9 @@ Please assist in processing my order!`;
   const stepsLabels = ["Cart", "Address", "Delivery", "Payment", "Review"];
 
   return (
-    <AnimatePresence>
-      {cartOpen && (
+    <>
+      <AnimatePresence>
+        {cartOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden font-sans">
           {/* Backdrop */}
           <div
@@ -668,6 +714,22 @@ Please assist in processing my order!`;
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
+                        onClick={() => setPaymentOption("ncba")}
+                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
+                          paymentOption === "ncba"
+                            ? "border-[#2D6A4F] bg-[#E8F5E9]/20 text-[#2D6A4F]"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700"
+                        }`}
+                      >
+                        <div className="h-6 w-6 rounded-full bg-[#1A5438] text-white flex items-center justify-center font-bold text-[9px]">NCBA</div>
+                        <div className="text-left leading-none">
+                          <strong className="text-xs font-bold block">NCBA STK Push</strong>
+                          <span className="text-[9px] text-gray-400">NCBA Bank M-Pesa</span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => setPaymentOption("mpesa")}
                         className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
                           paymentOption === "mpesa"
@@ -677,8 +739,8 @@ Please assist in processing my order!`;
                       >
                         <span className="text-lg">🟢</span>
                         <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">M-Pesa</strong>
-                          <span className="text-[9px] text-gray-400">STK Push query</span>
+                          <strong className="text-xs font-bold block">Direct M-Pesa</strong>
+                          <span className="text-[9px] text-gray-400">Safaricom Daraja</span>
                         </div>
                       </button>
 
@@ -709,21 +771,23 @@ Please assist in processing my order!`;
                       >
                         <Landmark size={18} className="text-gray-500" />
                         <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">Bank Deposit</strong>
-                          <span className="text-[9px] text-gray-400">Bank wire transfer</span>
+                          <strong className="text-xs font-bold block">Bank Wire</strong>
+                          <span className="text-[9px] text-gray-400">KCB Bank Transfer</span>
                         </div>
                       </button>
                     </div>
 
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-3">
-                      {paymentOption === "mpesa" && (
+                      {(paymentOption === "ncba" || paymentOption === "mpesa") && (
                         <div className="space-y-3 text-xs">
-                          <strong className="font-bold text-[#2D6A4F] block">🟢 Safaricom M-Pesa STK push Query</strong>
-                          <p className="text-[10px] text-gray-400 leading-normal">
-                            We trigger an automated push querying for your Lipa Na Mpesa PIN on your screen.
+                          <strong className="font-bold text-[#2D6A4F] block">
+                            {paymentOption === "ncba" ? "🏦 NCBA Bank M-Pesa STK Push Gateway" : "🟢 Safaricom Direct M-Pesa STK Push"}
+                          </strong>
+                          <p className="text-[10px] text-gray-500 leading-normal">
+                            An automated M-Pesa payment prompt will be sent directly to your mobile phone. Enter your PIN when prompted.
                           </p>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-gray-500 uppercase">M-Pesa phone number</label>
+                            <label className="text-[9px] font-bold text-gray-500 uppercase">M-Pesa Phone Number</label>
                             <input
                               type="tel"
                               value={mpesaNumber}
@@ -737,33 +801,28 @@ Please assist in processing my order!`;
 
                       {paymentOption === "card" && (
                         <div className="space-y-3 text-xs">
-                          <strong className="font-bold text-gray-700 block">💳 Visa & Mastercard Payment Gateway</strong>
-                          <div className="space-y-2">
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-gray-500 uppercase">Card Number</label>
-                              <input
-                                type="text"
-                                placeholder="4111 2222 3333 4444"
-                                value={cardNumber}
-                                onChange={(e) => setCardNumber(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#2D6A4F]"
-                              />
+                          <div className="flex items-center justify-between">
+                            <strong className="font-extrabold text-gray-900 flex items-center gap-1.5">
+                              <ShieldCheck size={14} className="text-[#2D6A4F]" />
+                              <span>Paystack Secure Card Gateway</span>
+                            </strong>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                              PCI-DSS Compliant
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-gray-600 leading-relaxed">
+                            Clicking <strong>Place Order</strong> will redirect you to Paystack's encrypted payment gateway to securely complete your Visa or Mastercard payment.
+                          </p>
+
+                          <div className="p-3 bg-white rounded-lg border border-gray-200 space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px] text-gray-500">
+                              <span>Accepted Cards:</span>
+                              <span className="font-bold text-gray-800">Visa, Mastercard, Verve</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input
-                                type="text"
-                                placeholder="MM/YY"
-                                value={cardExpiry}
-                                onChange={(e) => setCardExpiry(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#2D6A4F]"
-                              />
-                              <input
-                                type="password"
-                                placeholder="CVV"
-                                value={cardCvv}
-                                onChange={(e) => setCardCvv(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#2D6A4F]"
-                              />
+                            <div className="flex items-center justify-between text-[10px] text-gray-500">
+                              <span>Security Level:</span>
+                              <span className="font-bold text-emerald-600">256-Bit SSL Encrypted</span>
                             </div>
                           </div>
                         </div>
@@ -771,7 +830,7 @@ Please assist in processing my order!`;
 
                       {paymentOption === "bank" && (
                         <div className="space-y-2.5 text-xs">
-                          <strong className="font-bold text-blue-600 block">🏢 KCB Bank Kenya Direct wire</strong>
+                          <strong className="font-bold text-blue-600 block">🏢 KCB Bank Kenya Direct Wire</strong>
                           <div className="bg-white border border-gray-150 p-3 rounded-lg text-[10px] space-y-1 text-gray-600 font-mono">
                             <div>Bank: KCB Bank Kenya</div>
                             <div>Account: MQULIMA ECOSYSTEM LTD</div>
@@ -804,7 +863,7 @@ Please assist in processing my order!`;
 
                       <div className="border-t border-gray-150 pt-2.5 space-y-1">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Payment Choice:</span>
-                        <div className="font-bold text-gray-800 capitalize">{paymentOption} gateway</div>
+                        <div className="font-bold text-gray-800 uppercase">{paymentOption} gateway</div>
                       </div>
                     </div>
 
@@ -827,14 +886,16 @@ Please assist in processing my order!`;
                     <div className="relative flex items-center justify-center">
                       <div className="h-16 w-16 rounded-full border-4 border-[#2D6A4F]/20 border-t-[#2D6A4F] animate-spin" />
                       <span className="absolute text-xs font-bold text-[#2D6A4F]">
-                        {paymentOption === "mpesa" ? `${pollCountdown}s` : `${countdown}s`}
+                        {paymentOption === "ncba" || paymentOption === "mpesa" ? `${pollCountdown}s` : `${countdown}s`}
                       </span>
                     </div>
                     <h3 className="mt-6 text-sm font-extrabold text-gray-800 uppercase tracking-wider">
-                      {paymentOption === "mpesa" ? "Waiting for M-Pesa PIN..." : "Verifying payment..."}
+                      {paymentOption === "ncba" ? "NCBA Bank M-Pesa STK Push Prompt Sent..." : paymentOption === "mpesa" ? "Waiting for M-Pesa PIN..." : "Verifying payment..."}
                     </h3>
                     <p className="mt-2 text-xs text-gray-400 max-w-xs leading-normal">
-                      {paymentOption === "mpesa" 
+                      {paymentOption === "ncba"
+                        ? "An automated NCBA Bank M-Pesa STK Push prompt has been sent to your mobile phone. Please check your screen, enter your M-Pesa PIN, and authorize."
+                        : paymentOption === "mpesa" 
                         ? "An STK PIN prompt has been sent to your phone. Please check your screen, enter your M-Pesa PIN, and authorize to complete the payment."
                         : "Push query dispatched. Complete authentication on your device."}
                     </p>
@@ -853,6 +914,9 @@ Please assist in processing my order!`;
                       <span className="text-[9px] font-extrabold text-[#2D6A4F] uppercase tracking-wide block">Order receipt invoice:</span>
                       {createdOrderId && (
                         <div><strong>Order ID:</strong> <span className="font-mono text-gray-600">{createdOrderId}</span></div>
+                      )}
+                      {receiptNumber && (
+                        <div><strong>M-Pesa Receipt:</strong> <span className="font-mono font-bold text-[#2D6A4F]">{receiptNumber}</span></div>
                       )}
                       <div><strong>Buyer:</strong> {fullName}</div>
                       <div><strong>Location:</strong> {county} &middot; {town}</div>
@@ -1018,6 +1082,7 @@ Please assist in processing my order!`;
           </div>
         </div>
       )}
+    </AnimatePresence>
 
       {/* Cart Proforma Invoice Modal */}
       {invoiceModalOpen && (
@@ -1174,6 +1239,6 @@ Please assist in processing my order!`;
           </div>
         </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

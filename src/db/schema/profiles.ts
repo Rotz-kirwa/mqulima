@@ -22,6 +22,8 @@ export const profiles = pgTable("profiles", {
   idNumber: text("id_number"),
   deliveryAddress: text("delivery_address"),
   natureOfAgriculture: text("nature_of_agriculture"),
+  status: text("status").default("active"),
+  isVerified: boolean("is_verified").default(false),
   isRetailer: boolean("is_retailer").default(false),
   retailerDiscountPct: numeric("retailer_discount_pct", { precision: 5, scale: 2 }).default("0"),
   bio: text("bio"),

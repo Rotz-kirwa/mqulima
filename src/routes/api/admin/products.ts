@@ -3,14 +3,14 @@ import { db } from "@/lib/db.server";
 import { products } from "@/db/schema/products";
 import { eq, desc } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
-import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
 import crypto from "crypto";
 
 export const Route = createFileRoute("/api/admin/products")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const auth = await requireAdminAuth(request);
+        const auth = await requireAdminAuth(request, "products.read");
         if ("response" in auth) return auth.response;
         try {
           const productList = await db
@@ -31,8 +31,8 @@ export const Route = createFileRoute("/api/admin/products")({
                 description: p.description || "High quality agricultural input for maximum yield.",
                 imageUrl: (p.imageUrls && p.imageUrls[0]) || "",
                 isFeatured: p.isFeatured || false,
-                rating: Number(p.avgRating) || 5.0,
-                status: p.status === "draft" ? "draft" : "published",
+                status: p.status === "draft" ? "draft" : p.status === "archived" ? "archived" : "published",
+                deletedAt: p.deletedAt,
                 createdAt: p.createdAt,
               })),
             }),
@@ -70,6 +70,13 @@ export const Route = createFileRoute("/api/admin/products")({
           const ratingNum = Math.min(5, Math.max(1, Number(rating) || 5));
 
           if (action === "create_product") {
+            if (!hasPermission(auth.user.role, "products.create")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot create products.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             const prodId = crypto.randomUUID();
             const slug = (name || "product").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Math.floor(Math.random() * 1000);
             
@@ -77,19 +84,16 @@ export const Route = createFileRoute("/api/admin/products")({
               id: prodId,
               name,
               slug,
+              description,
               basePrice: (price || 0).toString(),
               unit,
               subcategory: category,
               shopType: category,
-              description,
               imageUrls: imageUrl ? [imageUrl] : [],
               isFeatured: !!isFeatured,
               avgRating: ratingNum.toFixed(1),
-              ratingCount: 14,
               status: dbStatus,
-              stockQty: 999,
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              stockQty: 100,
             });
 
             await logAdminAction({
@@ -101,12 +105,19 @@ export const Route = createFileRoute("/api/admin/products")({
             });
 
             return new Response(
-              JSON.stringify({ success: true, message: "Product created successfully and published to shop", id: prodId }),
+              JSON.stringify({ success: true, message: "Product created successfully", productId: prodId }),
               { headers: { "Content-Type": "application/json" } }
             );
           }
 
           if (action === "update_product") {
+            if (!hasPermission(auth.user.role, "products.update")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot update products.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             if (!id) {
               return new Response(JSON.stringify({ success: false, error: "Product ID required" }), { status: 400 });
             }
@@ -143,6 +154,13 @@ export const Route = createFileRoute("/api/admin/products")({
           }
 
           if (action === "toggle_status") {
+            if (!hasPermission(auth.user.role, "products.update")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot update product status.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             if (!id) {
               return new Response(JSON.stringify({ success: false, error: "Product ID required" }), { status: 400 });
             }
@@ -168,21 +186,40 @@ export const Route = createFileRoute("/api/admin/products")({
           }
 
           if (action === "delete_product") {
+            if (!hasPermission(auth.user.role, "products.archive")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot archive products.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
             if (!id) {
               return new Response(JSON.stringify({ success: false, error: "Product ID required" }), { status: 400 });
             }
 
-            await db.delete(products).where(eq(products.id, id));
+            const updated = await db
+              .update(products)
+              .set({
+                status: "archived",
+                deletedAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(products.id, id))
+              .returning({ id: products.id });
+
+            if (updated.length === 0) {
+              return new Response(JSON.stringify({ success: false, error: "Product not found" }), { status: 404 });
+            }
 
             await logAdminAction({
-              actorId,
-              action: "PRODUCT_DELETED",
+              actorId: (auth as any).user?.id || actorId,
+              action: "PRODUCT_ARCHIVED",
               entity: "products",
               entityId: id,
+              diff: { status: "archived", deletedAt: new Date().toISOString() },
             });
 
             return new Response(
-              JSON.stringify({ success: true, message: "Product deleted from shop catalog" }),
+              JSON.stringify({ success: true, message: "Product safely archived from shop catalog" }),
               { headers: { "Content-Type": "application/json" } }
             );
           }

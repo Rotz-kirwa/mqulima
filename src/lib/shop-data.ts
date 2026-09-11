@@ -27,21 +27,42 @@ export const AGRICULTURE_TAXONOMY: Record<string, string[] | Record<string, stri
   ]
 };
 
+export function cleanDescriptionText(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return raw
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function mapToNewTaxonomy(p: any) {
-  let cat = (p.category || "").trim();
-  let sub = (p.subcategory || "").trim();
+  let cat = (typeof p.category === "string" ? p.category : "").trim();
+  let sub = (typeof p.subcategory === "string" ? p.subcategory : "").trim();
   
   const nameLower = (p.name || "").toLowerCase();
   const descLower = (p.description || "").toLowerCase();
   const catLower = cat.toLowerCase();
   const subLower = sub.toLowerCase();
 
+  // Strip unhelpful POS generic keywords or bad stringified objects
+  if (catLower === "single" || catLower === "combo" || catLower === "general" || catLower.includes("[object")) cat = "";
+  if (subLower === "single" || subLower === "combo" || subLower === "general" || subLower.includes("[object")) sub = "";
+
   // 1. Seeds & Seedlings
-  if (catLower.includes("seed") || subLower.includes("seed") || nameLower.includes("seed")) {
+  if (catLower.includes("seed") || subLower.includes("seed") || nameLower.includes("seed") ||
+      nameLower.includes("spinach") || nameLower.includes("fordhook") || nameLower.includes("rio grande") ||
+      nameLower.includes("tomato") || nameLower.includes("cabbage") || nameLower.includes("onion") ||
+      nameLower.includes("kale") || nameLower.includes("sukuma") || nameLower.includes("carrot")) {
     let subcat = "Vegetables";
     if (nameLower.includes("maize")) subcat = "Maize";
     else if (nameLower.includes("bean")) subcat = "Beans";
-    else if (nameLower.includes("tomato")) subcat = "Tomatoes";
+    else if (nameLower.includes("tomato") || nameLower.includes("rio grande")) subcat = "Tomatoes";
     else if (nameLower.includes("potato")) subcat = "Potatoes";
     else if (nameLower.includes("onion")) subcat = "Onions";
     else if (nameLower.includes("watermelon")) subcat = "Watermelon";
@@ -52,109 +73,88 @@ export function mapToNewTaxonomy(p: any) {
     return { category: "Seeds & Seedlings", subcategory: subcat };
   }
 
-  // 2. Crop Protection
+  // 2. Crop Protection (Agrochemicals)
   if (catLower.includes("pesticide") || subLower.includes("pesticide") || 
       subLower.includes("fungicide") || subLower.includes("insecticide") || 
       subLower.includes("herbicide") || subLower.includes("nematicide") || 
       subLower.includes("bactericide") || subLower.includes("rodenticide") ||
       nameLower.includes("fungicide") || nameLower.includes("insecticide") || 
       nameLower.includes("herbicide") || nameLower.includes("nematicide") ||
-      nameLower.includes("ridomil") || nameLower.includes("actara") || nameLower.includes("roundup")) {
+      nameLower.includes("weedal") || nameLower.includes("zetanil") || nameLower.includes("tajiri") ||
+      nameLower.includes("alphasumu") || nameLower.includes("coopers") || nameLower.includes("acoster") ||
+      nameLower.includes("vectoclor") || nameLower.includes("mistress") || nameLower.includes("macarena") ||
+      nameLower.includes("hispeid") || nameLower.includes("aquawet") || nameLower.includes("ridomil") ||
+      nameLower.includes("actara") || nameLower.includes("roundup") || nameLower.includes("dudu")) {
     let subcat = "Insecticides";
-    if (subLower.includes("fungi") || nameLower.includes("fungi") || nameLower.includes("ridomil")) subcat = "Fungicides";
-    else if (subLower.includes("herbi") || nameLower.includes("herbi") || nameLower.includes("roundup")) subcat = "Herbicides";
+    if (subLower.includes("fungi") || nameLower.includes("fungi") || nameLower.includes("zetanil") || nameLower.includes("tajiri") || nameLower.includes("mistress") || nameLower.includes("ridomil")) subcat = "Fungicides";
+    else if (subLower.includes("herbi") || nameLower.includes("herbi") || nameLower.includes("weedal") || nameLower.includes("roundup")) subcat = "Herbicides";
     else if (subLower.includes("nemati") || nameLower.includes("nemati")) subcat = "Nematicides";
     else if (subLower.includes("bacteri") || nameLower.includes("bacteri")) subcat = "Bactericides";
     else if (subLower.includes("rodent") || nameLower.includes("rodent")) subcat = "Rodenticides";
     return { category: "Crop Protection", subcategory: subcat };
   }
 
-  // 3. Fertilizers
-  if (catLower.includes("fertilizer") || subLower.includes("fertilizer") || nameLower.includes("fertilizer")) {
+  // 3. Fertilizers & Plant Growth Boosters
+  if (catLower.includes("fertilizer") || subLower.includes("fertilizer") || nameLower.includes("fertilizer") ||
+      nameLower.includes("npk") || nameLower.includes("dap") || nameLower.includes("can") || nameLower.includes("urea") ||
+      nameLower.includes("foliar") || nameLower.includes("biosol") || nameLower.includes("algreen") ||
+      nameLower.includes("diamond") || nameLower.includes("unizyme") || nameLower.includes("cytomone") ||
+      nameLower.includes("unigrow") || nameLower.includes("blosol")) {
     let subcat = "Specialized";
     if (subLower.includes("planting") || nameLower.includes("planting") || nameLower.includes("dap")) subcat = "Planting";
     else if (subLower.includes("dressing") || nameLower.includes("dressing") || nameLower.includes("can") || nameLower.includes("urea")) subcat = "Top Dressing";
-    else if (subLower.includes("foliar") || nameLower.includes("foliar")) subcat = "Foliar";
+    else if (subLower.includes("foliar") || nameLower.includes("foliar") || nameLower.includes("algreen") || nameLower.includes("diamond") || nameLower.includes("biosol")) subcat = "Foliar";
     else if (subLower.includes("organic") || nameLower.includes("organic") || subLower.includes("manure") || nameLower.includes("manure")) subcat = "Organic";
     else if (subLower.includes("blend") || nameLower.includes("blend")) subcat = "Blended";
     return { category: "Fertilizers", subcategory: subcat };
   }
 
-  // 4. Plant Growth & Boosters
-  if (catLower.includes("growth") || subLower.includes("growth") || 
-      catLower.includes("biostimulant") || subLower.includes("microbe") ||
-      nameLower.includes("hormone") || nameLower.includes("booster")) {
-    let subcat = "Biostimulants";
-    if (nameLower.includes("hormone") || subLower.includes("hormone")) subcat = "Plant Hormones";
-    else if (nameLower.includes("microb") || subLower.includes("microb") || nameLower.includes("trichoderma")) subcat = "Microbial Solutions";
-    return { category: "Plant Growth & Boosters", subcategory: subcat };
-  }
-
-  // 5. Harvest & Storage
-  if (catLower.includes("harvest") || subLower.includes("harvest") || 
-      catLower.includes("storage") || nameLower.includes("bag") || nameLower.includes("preserv")) {
-    let subcat = "Storage Solutions";
-    if (nameLower.includes("preserv") || descLower.includes("preserv")) subcat = "Crop Preservation";
-    else if (catLower.includes("post") || descLower.includes("post-harvest")) subcat = "Post Harvest Products";
-    return { category: "Harvest & Storage", subcategory: subcat };
-  }
-
-  // 6. Animal Farming (Feed, Health, Supplements)
+  // 4. Animal Farming (Feeds, Dewormers, Health, Supplements)
   if (catLower.includes("animal") || catLower.includes("feed") || subLower.includes("feed") || 
       catLower.includes("vet") || subLower.includes("vet") || catLower.includes("supplement") || 
       subLower.includes("supplement") || nameLower.includes("dewormer") || nameLower.includes("dairy") ||
       nameLower.includes("poultry") || nameLower.includes("pig") || nameLower.includes("fish") ||
-      nameLower.includes("sheep") || nameLower.includes("goat") || nameLower.includes("cow") || nameLower.includes("vet")) {
+      nameLower.includes("sheep") || nameLower.includes("goat") || nameLower.includes("cow") ||
+      nameLower.includes("vet") || nameLower.includes("nilzan") || nameLower.includes("kupe") ||
+      nameLower.includes("twigalick") || nameLower.includes("norbrook") || nameLower.includes("dabendozole") ||
+      nameLower.includes("afya bora") || nameLower.includes("milking salve") || nameLower.includes("sidai") ||
+      nameLower.includes("ultradip") || nameLower.includes("block")) {
     
-    // Determine category layer
-    if (catLower.includes("feed") || subLower.includes("feed") || nameLower.includes("feed") || nameLower.includes("meal")) {
+    if (catLower.includes("feed") || subLower.includes("feed") || nameLower.includes("feed") || nameLower.includes("meal") || nameLower.includes("mash") || nameLower.includes("afya bora")) {
       let leaf = "Dairy";
       if (nameLower.includes("poultry") || nameLower.includes("chick") || nameLower.includes("grower") || nameLower.includes("layer")) leaf = "Poultry";
       else if (nameLower.includes("pig") || nameLower.includes("sow")) leaf = "Pig";
       else if (nameLower.includes("fish")) leaf = "Fish";
       else if (nameLower.includes("sheep") || nameLower.includes("goat")) leaf = "Sheep";
       else if (nameLower.includes("beef") || nameLower.includes("feedlot")) leaf = "Beef Feedlot";
-      else if (nameLower.includes("pasture") || nameLower.includes("grass")) leaf = "Pasture";
-      else if (nameLower.includes("dog") || nameLower.includes("cat") || nameLower.includes("pet")) leaf = "Pet";
       return { category: "Animal Farming", subcategory: "Animal Feed", leafCategory: leaf };
     }
     
-    if (catLower.includes("supplement") || subLower.includes("supplement") || nameLower.includes("salt") || nameLower.includes("block")) {
+    if (catLower.includes("supplement") || subLower.includes("supplement") || nameLower.includes("salt") || nameLower.includes("block") || nameLower.includes("twigalick") || nameLower.includes("lick")) {
       let leaf = "Mineral Salts";
       if (nameLower.includes("additive")) leaf = "Feed Additives";
       else if (nameLower.includes("vitamin") || nameLower.includes("booster")) leaf = "Multivitamins";
       return { category: "Animal Farming", subcategory: "Supplements", leafCategory: leaf };
     }
 
-    // Health
     let leaf = "Veterinary Medicines";
-    if (nameLower.includes("dewormer") || subLower.includes("dewormer")) leaf = "Dewormers";
-    else if (nameLower.includes("vaccine")) leaf = "Vaccines";
-    else if (nameLower.includes("pesticide") || nameLower.includes("acaricide") || nameLower.includes("tick")) leaf = "Animal Pesticides";
-    else if (nameLower.includes("vitamin") || nameLower.includes("multivit")) leaf = "Vitamins";
+    if (nameLower.includes("dewormer") || nameLower.includes("nilzan") || nameLower.includes("dabendozole")) leaf = "Dewormers";
+    else if (nameLower.includes("kupe") || nameLower.includes("tick")) leaf = "Animal Pesticides";
     return { category: "Animal Farming", subcategory: "Animal Health", leafCategory: leaf };
   }
 
-  // 7. Farm Equipment
+  // 5. Farm Tools & Equipment
   if (catLower.includes("tool") || catLower.includes("machinery") || catLower.includes("implement") ||
       subLower.includes("tool") || subLower.includes("machinery") || subLower.includes("implement") ||
       nameLower.includes("pump") || nameLower.includes("sprayer") || nameLower.includes("shovel") ||
-      nameLower.includes("hoe") || nameLower.includes("plough") || nameLower.includes("tractor")) {
+      nameLower.includes("hoe") || nameLower.includes("plough") || nameLower.includes("panga") ||
+      nameLower.includes("trigger") || nameLower.includes("pipe") || nameLower.includes("nozzle") || nameLower.includes("nozle")) {
     let subcat = "Hand Tools";
-    if (nameLower.includes("pump") || nameLower.includes("sprayer") || nameLower.includes("machin") || nameLower.includes("generator")) subcat = "Machinery";
-    else if (nameLower.includes("plough") || nameLower.includes("harrow") || nameLower.includes("planter")) subcat = "Implements";
+    if (nameLower.includes("pump") || nameLower.includes("sprayer") || nameLower.includes("trigger") || nameLower.includes("pipe") || nameLower.includes("nozzle") || nameLower.includes("nozle")) subcat = "Machinery";
     return { category: "Farm Equipment", subcategory: subcat };
   }
 
-  // 8. Water & Sanitation
-  if (catLower.includes("water") || catLower.includes("sanitation") || catLower.includes("sewage") ||
-      nameLower.includes("chlorine") || nameLower.includes("bio-digester")) {
-    let subcat = "Environmental Solutions";
-    if (nameLower.includes("water") || nameLower.includes("chlorin") || nameLower.includes("purif")) subcat = "Water Treatment";
-    return { category: "Water & Sanitation", subcategory: subcat };
-  }
-
-  return { category: cat || "Seeds & Seedlings", subcategory: sub || "General" };
+  return { category: cat || "Crop Protection", subcategory: sub || "General" };
 }
 
 export type ProductSizeOption = {
@@ -193,6 +193,8 @@ export type ShopProduct = {
   condition: "Fresh" | "Certified Organic" | "Bulk Available" | "Pre-Order";
   sizes?: ProductSizeOption[];
   isFeatured?: boolean;
+  externalProductId?: string;
+  sku?: string;
 };
 
 export const shopProducts: ShopProduct[] = [

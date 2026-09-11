@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, timestamp, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { profiles } from "./profiles";
 import { showPostTypeEnum } from "./enums";
@@ -33,7 +33,9 @@ export const showLikes = pgTable("show_likes", {
   id: uuid("id").primaryKey().defaultRandom(),
   postId: uuid("post_id").notNull().references(() => showPosts.id, { onDelete: "cascade" }),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
-});
+}, (table) => [
+  unique("show_likes_post_id_user_id_key").on(table.postId, table.userId)
+]);
 
 export const pulsePosts = pgTable("pulse_posts", {
   id: uuid("id").primaryKey().defaultRandom(),

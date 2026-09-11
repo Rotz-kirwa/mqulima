@@ -3,11 +3,21 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
+import { initProductSyncJob } from "./jobs/productSync.job";
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+// Initialize Smooth Sale POS 30-minute background sync job
+try {
+  initProductSyncJob();
+} catch (e) {
+  console.error("[SERVER] Failed to initialize product sync background job:", e);
+}
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -50,6 +60,17 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+    if (url.pathname === "/favicon.ico") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Content-Type": "image/x-icon",
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
+    }
+
     const origin = request.headers.get("origin") || "";
     const normalizedOrigin = origin.replace(/\/$/, "");
     const isAllowed = ALLOWED_ORIGINS.includes(normalizedOrigin);

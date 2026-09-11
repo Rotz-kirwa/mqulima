@@ -29,8 +29,11 @@ export class S3SignerService {
     contentType: string,
     expiresInSeconds = 900
   ): string {
-    const accessKeyId = config.accessKeyId || "demo-access-key";
-    const secretAccessKey = config.secretAccessKey || "demo-secret-key";
+    const accessKeyId = config.accessKeyId;
+    const secretAccessKey = config.secretAccessKey;
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error("[S3Signer] S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY must be configured for presigned URL generation.");
+    }
     const region = config.region || "auto";
     const bucket = config.bucket;
 

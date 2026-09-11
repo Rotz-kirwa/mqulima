@@ -14,18 +14,20 @@ BEGIN
         RETURN COALESCE(NEW, OLD);
     END IF;
 
-    -- Format sync address with landmark if present
-    IF NEW.landmark IS NOT NULL AND NEW.landmark <> '' THEN
-        sync_address := NEW.delivery_location || ' (Landmark: ' || NEW.landmark || ')';
-    ELSE
-        sync_address := NEW.delivery_location;
-    END IF;
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+        -- Format sync address with landmark if present
+        IF NEW.landmark IS NOT NULL AND NEW.landmark <> '' THEN
+            sync_address := NEW.delivery_location || ' (Landmark: ' || NEW.landmark || ')';
+        ELSE
+            sync_address := NEW.delivery_location;
+        END IF;
 
-    -- Format sync farming type
-    IF NEW.farming_type = 'Other' AND NEW.specify_farming_type IS NOT NULL AND NEW.specify_farming_type <> '' THEN
-        sync_farming := NEW.specify_farming_type;
-    ELSE
-        sync_farming := NEW.farming_type;
+        -- Format sync farming type
+        IF NEW.farming_type = 'Other' AND NEW.specify_farming_type IS NOT NULL AND NEW.specify_farming_type <> '' THEN
+            sync_farming := NEW.specify_farming_type;
+        ELSE
+            sync_farming := NEW.farming_type;
+        END IF;
     END IF;
 
     IF (TG_OP = 'INSERT') THEN

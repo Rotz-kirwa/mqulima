@@ -183,8 +183,8 @@ function Dashboard() {
 
             {/* Quick Stats Pill Ribbon */}
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
-              <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} />
-              <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} />
+              <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} color="lime" />
+              <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} color="yellow" />
             </div>
           </div>
 
@@ -215,10 +215,10 @@ function Dashboard() {
                   : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
               }`}
             >
-              <Wrench className={`h-4 w-4 ${activeTab === "services" ? "text-[#16A34A]" : "text-white/60"}`} />
-              <span>Booked Services</span>
+              <Wrench className={`h-4 w-4 ${activeTab === "services" ? "text-[#F5A623]" : "text-amber-400/80"}`} />
+              <span className={activeTab === "services" ? "text-[#0F291E]" : "text-amber-300/90"}>Booked Services</span>
               {bookings && bookings.length > 0 && (
-                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "services" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/20 text-white"}`}>
+                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "services" ? "bg-[#F5A623] text-white" : "bg-amber-400/20 text-amber-300"}`}>
                   {bookings.length}
                 </span>
               )}
@@ -721,14 +721,18 @@ function Dashboard() {
   );
 }
 
-function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
+function Stat({ label, value, icon: Icon, color = "lime" }: { label: string; value: string; icon: LucideIcon; color?: "lime" | "yellow" }) {
+  const isYellow = color === "yellow";
+  const textColor = isYellow ? "text-[#F5A623]" : "text-[#85CC14]";
+  const iconBg = isYellow ? "bg-[#F5A623]/20 text-[#F5A623]" : "bg-[#85CC14]/20 text-[#85CC14]";
+
   return (
     <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-white/10 px-3.5 sm:px-5 py-3 border border-white/15 backdrop-blur-md min-w-0">
-      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-[#85CC14]/20 text-[#85CC14] shrink-0">
+      <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl ${iconBg} shrink-0`}>
         <Icon className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
       </div>
       <div className="text-left min-w-0">
-        <div className="text-lg sm:text-xl font-black text-[#85CC14] font-['Outfit',sans-serif] leading-none">{value}</div>
+        <div className={`text-lg sm:text-xl font-black ${textColor} font-['Outfit',sans-serif] leading-none`}>{value}</div>
         <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/80 mt-1 truncate">
           {label}
         </div>

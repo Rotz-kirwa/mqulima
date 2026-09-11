@@ -24,9 +24,9 @@ import {
 type DiagnosisResult = {
   id: string | null;
   crop: string;
-  scientificName: string;
-  growthStage: string;
-  healthStatus: string;
+  scientificName?: string;
+  growthStage?: string;
+  healthStatus?: string;
   disease: string;
   scientificDisease: string;
   confidence: number;

@@ -42,10 +42,19 @@ export const payments = pgTable("payments", {
   orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(),
   providerRef: text("provider_ref"),
+  merchantReference: text("merchant_reference"),
+  phoneNumber: text("phone_number"),
+  currency: text("currency").default("KES"),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   status: paymentStatusEnum("status").notNull().default("pending"),
+  resultCode: text("result_code"),
+  resultDescription: text("result_description"),
+  receiptNumber: text("receipt_number"),
+  failureReason: text("failure_reason"),
   rawPayload: jsonb("raw_payload"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
 });
 
 export const quotations = pgTable("quotations", {

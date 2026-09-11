@@ -11,13 +11,12 @@ export function clearMpesaTokenCache() {
 }
 
 export async function getMpesaToken(_forceRefresh = false): Promise<string> {
-
   const isProduction = process.env.MPESA_ENVIRONMENT !== "sandbox";
-  const consumerKey = (process.env.MPESA_CONSUMER_KEY || "oFYpGDBzrkgneWSqqHITGZuhBCJW3Cr7ATdfnRAV7yQDzdIA").trim();
-  const consumerSecret = (process.env.MPESA_CONSUMER_SECRET || "gth7Zf6mkZXOvGl7mq0wa5c53KMdY1o4SYfWFh0KtqOe231zVh8KYejUe5Ii6dgY").trim();
+  const consumerKey = (process.env.MPESA_CONSUMER_KEY || "").trim();
+  const consumerSecret = (process.env.MPESA_CONSUMER_SECRET || "").trim();
 
   if (!consumerKey || !consumerSecret) {
-    throw new Error("M-Pesa Consumer Key or Secret not configured.");
+    throw new Error("M-Pesa Consumer Key or Secret not configured. Set MPESA_CONSUMER_KEY and MPESA_CONSUMER_SECRET environment variables.");
   }
 
   try {
@@ -58,26 +57,34 @@ export function getMpesaWebhookSecret(): string {
   if (process.env.MPESA_WEBHOOK_SECRET) {
     return process.env.MPESA_WEBHOOK_SECRET;
   }
-  // Fallback: generate deterministic secret from JWT_SECRET or default fallback
-  const base = process.env.JWT_SECRET || process.env.MPESA_PASSKEY || "mqulima-mpesa-secret-key-2026";
+  const isProduction = process.env.NODE_ENV === "production";
+  const base = process.env.JWT_SECRET || process.env.MPESA_PASSKEY;
+  if (!base) {
+    if (isProduction) {
+      throw new Error("[FATAL SECURITY ERROR] Missing MPESA_WEBHOOK_SECRET, JWT_SECRET, or MPESA_PASSKEY in production environment.");
+    }
+    console.warn("[M-PESA WEBHOOK SECURITY WARNING] Webhook secrets unconfigured in development. Using dev fallback.");
+    return createHash("sha256").update("mqulima-mpesa-webhook-secure-key-dev").digest("hex").slice(0, 32);
+  }
   return createHash("sha256").update(base).digest("hex").slice(0, 32);
 }
 
 export async function handleMpesaCallback(payload: any, request?: Request) {
-  // Security Token Verification
+  // Enforce Security Token Verification on all incoming callback requests
   if (request) {
     const url = new URL(request.url);
     const tokenQuery = url.searchParams.get("token");
     const tokenHeader = request.headers.get("x-mpesa-secret");
     const expectedSecret = getMpesaWebhookSecret();
 
-    // Enforce token check in production, or if token query parameter is passed
-    const isProduction = process.env.MPESA_ENVIRONMENT === "production";
-    if (isProduction || tokenQuery || tokenHeader) {
-      if (tokenQuery !== expectedSecret && tokenHeader !== expectedSecret) {
-        console.error("[M-PESA] Webhook security token mismatch. Rejected unauthorized callback.");
-        throw new Error("Unauthorized M-Pesa callback: security token validation failed");
-      }
+    if (!tokenQuery && !tokenHeader) {
+      console.error("[M-PESA] Webhook request missing security token. Callback rejected.");
+      throw new Error("Unauthorized M-Pesa callback: security token missing");
+    }
+
+    if (tokenQuery !== expectedSecret && tokenHeader !== expectedSecret) {
+      console.error("[M-PESA] Webhook security token mismatch. Rejected unauthorized callback.");
+      throw new Error("Unauthorized M-Pesa callback: security token validation failed");
     }
   }
 
@@ -106,12 +113,34 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
 
   // Atomic database transaction for payment state reconciliation
   await sql.begin(async (tx: any) => {
+    // Lock payment record for concurrent callback safety
+    const [currentPayment] = await tx`
+      SELECT id, order_id, amount, status
+      FROM payments
+      WHERE id = ${payment.id}
+      FOR UPDATE
+    `;
+
+    if (!currentPayment) {
+      throw new Error(`Payment record lock failed for CheckoutRequestID: ${CheckoutRequestID}`);
+    }
+
+    // IDEMPOTENCY GUARD 1: If payment is already marked paid, reject duplicate state changes & dispatches
+    if (currentPayment.status === "paid" || currentPayment.status === "completed") {
+      if (ResultCode === 0) {
+        console.log(`[M-PESA IDEMPOTENCY] Duplicate success callback received for already paid payment #${currentPayment.id}. Skipping duplicate processing.`);
+      } else {
+        console.warn(`[M-PESA IDEMPOTENCY] Late failure callback received for already paid payment #${currentPayment.id}. Ignoring failure update.`);
+      }
+      return;
+    }
+
     if (ResultCode === 0) {
       const items = stkCallback.CallbackMetadata?.Item || [];
       const receiptNumber = items.find((item: any) => item.Name === "MpesaReceiptNumber")?.Value;
       const paidAmount = items.find((item: any) => item.Name === "Amount")?.Value;
 
-      const expectedAmount = Number(payment.amount) || 0;
+      const expectedAmount = Number(currentPayment.amount) || 0;
       const actualPaid = Number(paidAmount) || 0;
 
       let paymentState = "paid";
@@ -119,7 +148,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
 
       // Verification: Check if paid amount matches expected order total
       if (actualPaid > 0 && actualPaid < expectedAmount) {
-        console.warn(`[M-PESA SECURITY WARNING] Payment amount mismatch for Order #${payment.order_id}. Expected KSh ${expectedAmount}, received KSh ${actualPaid}.`);
+        console.warn(`[M-PESA SECURITY WARNING] Payment amount mismatch for Order #${currentPayment.order_id}. Expected KSh ${expectedAmount}, received KSh ${actualPaid}.`);
         paymentState = "partial_paid";
         orderPaymentState = "partial_payment";
       }
@@ -128,14 +157,14 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
       await tx`
         UPDATE payments
         SET status = ${paymentState}, provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${tx.json(payload)}
-        WHERE id = ${payment.id}
+        WHERE id = ${currentPayment.id}
       `;
 
       // Update orders table status
       await tx`
         UPDATE orders
         SET payment_status = ${orderPaymentState}
-        WHERE id = ${payment.order_id}
+        WHERE id = ${currentPayment.order_id}
       `;
 
       // Write audit log
@@ -143,9 +172,9 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
         action: "payment.confirmed",
         actorId: null,
         entityType: "payment",
-        entityId: payment.id,
+        entityId: currentPayment.id,
         diff: {
-          orderId: payment.order_id,
+          orderId: currentPayment.order_id,
           checkoutRequestId: CheckoutRequestID,
           receiptNumber,
           expectedAmount,
@@ -154,7 +183,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
         }
       });
 
-      console.log(`[M-PESA] Successfully processed payment for order: ${payment.order_id} (Status: ${paymentState})`);
+      console.log(`[M-PESA] Successfully processed payment for order: ${currentPayment.order_id} (Status: ${paymentState})`);
 
       // Fire Payment Confirmation SMS asynchronously (non-blocking)
       try {
@@ -162,7 +191,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
           SELECT o.delivery_address, u.phone_number
           FROM orders o
           LEFT JOIN users u ON u.id = o.user_id
-          WHERE o.id = ${payment.order_id}
+          WHERE o.id = ${currentPayment.order_id}
         `;
 
         let customerPhone: string | null = orderUser?.phone_number || null;
@@ -172,7 +201,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
         }
 
         if (customerPhone) {
-          const shortOrderId = String(payment.order_id).slice(0, 8).toUpperCase();
+          const shortOrderId = String(currentPayment.order_id).slice(0, 8).toUpperCase();
           const refCode = receiptNumber || CheckoutRequestID;
           const paySms = `Payment confirmed for Order #${shortOrderId}! KES ${actualPaid.toLocaleString()} received (Ref: ${refCode}). We are preparing your order. - Mqulima`;
 
@@ -186,26 +215,33 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
         console.error("[M-PESA CALLBACK] Failed to resolve customer phone for SMS:", smsErr);
       }
     } else {
+      // IDEMPOTENCY GUARD 2: If payment is already marked failed, prevent duplicate stock restoration
+      if (currentPayment.status === "failed") {
+        console.warn(`[M-PESA IDEMPOTENCY] Duplicate failure callback received for payment #${currentPayment.id}. Skipping duplicate stock restoration.`);
+        return;
+      }
+
       // Payment failed or cancelled by user
       await tx`
         UPDATE payments
         SET status = 'failed', raw_payload = ${tx.json(payload)}
-        WHERE id = ${payment.id}
+        WHERE id = ${currentPayment.id}
       `;
 
-      // Fetch order details for inventory restoration
+      // Fetch order details with FOR UPDATE lock for inventory restoration
       const [orderRecord] = await tx`
         SELECT id, items, status, payment_status
         FROM orders
-        WHERE id = ${payment.order_id}
+        WHERE id = ${currentPayment.order_id}
+        FOR UPDATE
       `;
 
-      if (orderRecord && orderRecord.status !== "cancelled") {
+      if (orderRecord && orderRecord.status !== "cancelled" && orderRecord.payment_status !== "failed") {
         // Mark order as cancelled due to payment failure
         await tx`
           UPDATE orders
           SET status = 'cancelled', payment_status = 'failed'
-          WHERE id = ${payment.order_id}
+          WHERE id = ${currentPayment.order_id}
         `;
 
         // Restore inventory stock for each order item

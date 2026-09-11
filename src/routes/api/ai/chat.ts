@@ -94,6 +94,7 @@ function runLocalSimulation(
   weatherContext: string,
   diagnosesContext: string,
   marketContext: string,
+  catalogMatches: any[],
   developerNote: string,
   saveMessage: any
 ) {
@@ -104,7 +105,31 @@ Here is the data relevant to your inquiry:
 
 `;
 
-  if (userMsgLower.includes("weather") || userMsgLower.includes("forecast") || userMsgLower.includes("hali ya hewa") || userMsgLower.includes("mvua")) {
+  if (userMsgLower.includes("product") || userMsgLower.includes("fertilizer") || userMsgLower.includes("spray") || userMsgLower.includes("seed") || userMsgLower.includes("chemical") || userMsgLower.includes("dawa") || userMsgLower.includes("pembejeo")) {
+    if (catalogMatches && catalogMatches.length > 0) {
+      mockResponse += `### 🌾 Recommended Mkulima Catalog Products
+Based on your inquiry, here are verified in-stock products from our catalog:
+${catalogMatches.map((p) => `- **${p.name}** (${p.category}): KES ${p.price.toLocaleString()} (${p.stockQty} in stock)`).join("\n")}
+
+<!--MKULIMA_RECOMMENDATIONS_START-->
+${JSON.stringify(catalogMatches.map((p) => ({
+  productId: p.productId,
+  slug: p.slug,
+  name: p.name,
+  price: p.price,
+  imageUrl: p.imageUrl,
+  category: p.category,
+  inStock: p.inStock,
+  reason: `Authoritative verified agricultural input for ${p.category}`,
+  relevanceScore: 0.95
+})), null, 2)}
+<!--MKULIMA_RECOMMENDATIONS_END-->`;
+    } else {
+      mockResponse += `### 🌾 Product Availability Notice
+Mkulima does not currently have this specific product in stock in our online catalog.
+We recommend checking back soon or consulting a registered agrovet for generic active ingredients suitable for ${user.crops || "your crops"}.`;
+    }
+  } else if (userMsgLower.includes("weather") || userMsgLower.includes("forecast") || userMsgLower.includes("hali ya hewa") || userMsgLower.includes("mvua")) {
     mockResponse += `### 🌤️ Weather Report for ${user.county || "your region"}
 - **Current Conditions**: ${weatherContext}
 - **Agronomic Advice**: The current conditions suggest regular scouting. If high humidity is reported, be alert for fungal pathogens. If rain probability is high, avoid spraying inputs to prevent wash-off.`;
@@ -234,6 +259,43 @@ export const Route = createFileRoute("/api/ai/chat")({
             ? `${parsedInput.weather.temperature ?? "Unknown"}°C, ${parsedInput.weather.description || "conditions unavailable"}`
             : "Weather data not available.";
 
+          const { searchProductsCatalog } = await import("@/lib/api/product-catalog.server");
+          const catalogMatches = await searchProductsCatalog({
+            query: parsedInput.message,
+            crop: user.crops || undefined,
+            problem: parsedInput.message,
+            activeOnly: true,
+            inStockOnly: true,
+            limit: 4,
+          });
+
+          const catalogGroundingInstruction = catalogMatches.length > 0
+            ? `AVAILABLE MKULIMA STORE PRODUCTS (PostgreSQL Authoritative):\n` +
+              catalogMatches.map(p => `- ID: "${p.productId}" | Slug: "${p.slug}" | Name: "${p.name}" | Price: KES ${p.price} | Stock: ${p.stockQty} in stock | Category: "${p.category}" | Image: "${p.imageUrl}"`).join("\n") +
+              `\n\nCRITICAL PRODUCT RECOMMENDATION RULES:\n` +
+              `1. The AI MUST NOT invent products, product IDs, prices, or claim that an unlisted product is sold by Mkulima.\n` +
+              `2. If recommending any of the available products above, explain WHY it is recommended for the farmer's problem.\n` +
+              `3. When you recommend any of the products above, append this exact structured JSON block at the very end of your response:\n` +
+              `<!--MKULIMA_RECOMMENDATIONS_START-->\n` +
+              JSON.stringify(catalogMatches.map(p => ({
+                productId: p.productId,
+                slug: p.slug,
+                name: p.name,
+                price: p.price,
+                imageUrl: p.imageUrl,
+                category: p.category,
+                inStock: p.inStock,
+                reason: `Recommended active input for ${p.category}`,
+                relevanceScore: 0.95
+              })), null, 2) + "\n" +
+              `<!--MKULIMA_RECOMMENDATIONS_END-->`
+            : `AVAILABLE MKULIMA STORE PRODUCTS: None matching this specific query in the store database.\n` +
+              `CRITICAL PRODUCT RECOMMENDATION RULES:\n` +
+              `1. Do NOT invent products, prices, or store links.\n` +
+              `2. If the user asks for purchasable products or specific branded items, state clearly: "Mkulima does not currently have this specific product in stock in our catalog."\n` +
+              `3. Recommend generic active ingredients, IPM cultural practices, or organic alternatives without pretending Mkulima sells them.\n` +
+              `4. DO NOT output any recommendation JSON block. Never substitute unrelated featured products.`;
+
           const systemPrompt = `You are Mqulima AI, a premium agricultural assistant for farmers across Kenya and East Africa.
 
 You combine the roles of senior agronomist, livestock advisor, soil scientist, irrigation planner, climate-smart agriculture analyst, and agribusiness advisor.
@@ -259,7 +321,9 @@ Recent crop diagnosis history:
 ${diagnosesContext}
 
 Latest market prices:
-${marketContext}`;
+${marketContext}
+
+${catalogGroundingInstruction}`;
 
           const apiKey = process.env.GEMINI_API_KEY;
           if (!apiKey) {
@@ -269,6 +333,7 @@ ${marketContext}`;
               weatherContext,
               diagnosesContext,
               marketContext,
+              catalogMatches,
               "The `GEMINI_API_KEY` environment variable is not configured on this server. Running in simulated fallback mode. Set the key in your `.env` file and restart the server to enable the real Gemini 2.5 Flash model.",
               saveMessage
             );
@@ -361,6 +426,7 @@ ${marketContext}`;
               weatherContext,
               diagnosesContext,
               marketContext,
+              catalogMatches,
               reason,
               saveMessage
             );

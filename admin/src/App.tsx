@@ -36,9 +36,8 @@ const ModuleLoadingFallback: React.FC = () => (
 export const App: React.FC = () => {
   const [adminSession, setAdminSession] = useState<AdminUserSession | null>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("mqulima_admin_session") || sessionStorage.getItem("mqulima_admin_session");
-      const token = localStorage.getItem("mqulima_admin_token") || sessionStorage.getItem("mqulima_admin_token");
-      if (stored && token) {
+      const stored = sessionStorage.getItem("mqulima_admin_user") || localStorage.getItem("mqulima_admin_user");
+      if (stored) {
         try {
           return JSON.parse(stored);
         } catch (_) {}
@@ -52,10 +51,14 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     setAdminSession(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("mqulima_admin_session");
-      sessionStorage.removeItem("mqulima_admin_session");
+      sessionStorage.removeItem("mqulima_admin_user");
+      localStorage.removeItem("mqulima_admin_user");
       localStorage.removeItem("mqulima_admin_token");
       sessionStorage.removeItem("mqulima_admin_token");
+      localStorage.removeItem("mqulima_admin_session");
+      sessionStorage.removeItem("mqulima_admin_session");
+      // Fire document cookie expiration for mq_session
+      document.cookie = "mq_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;";
     }
     toast.info("Logged out of Mqulima Admin Console.");
   };
@@ -72,8 +75,7 @@ export const App: React.FC = () => {
   const handleLoginSuccess = (user: AdminUserSession) => {
     setAdminSession(user);
     if (typeof window !== "undefined") {
-      localStorage.setItem("mqulima_admin_session", JSON.stringify(user));
-      sessionStorage.setItem("mqulima_admin_session", JSON.stringify(user));
+      sessionStorage.setItem("mqulima_admin_user", JSON.stringify(user));
     }
     toast.success(`Welcome back, ${user.name}!`);
   };

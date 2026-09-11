@@ -36,7 +36,7 @@ async function run() {
   const isLocal = parsedDbUrl.includes("localhost") || parsedDbUrl.includes("127.0.0.1") || parsedDbUrl.includes("::1");
   const sql = postgres(parsedDbUrl, { 
     max: 1,
-    ssl: isLocal ? false : "require"
+    ssl: isLocal ? false : { rejectUnauthorized: false }
   });
 
   try {

@@ -64,6 +64,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    if (targetPrice <= 0) {
+      toast.error("Pricing for this product is on request. Please inquire via WhatsApp.");
+      return;
+    }
+
+    if (product.stock !== undefined && product.stock <= 0) {
+      toast.error("This product is currently out of stock.");
+      return;
+    }
+
     const cartProduct: ShopProduct = {
       ...product,
       id: targetId,
@@ -121,6 +131,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         targetPrice = selected.price;
         targetUnit = `/${selected.name}`;
       }
+    }
+
+    if (targetPrice <= 0) {
+      toast.error("Pricing for this product is on request. Please inquire via WhatsApp.");
+      return;
+    }
+
+    if (product.stock !== undefined && product.stock <= 0) {
+      toast.error("This product is currently out of stock.");
+      return;
     }
 
     const cartProduct: ShopProduct = {

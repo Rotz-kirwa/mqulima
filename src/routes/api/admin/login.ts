@@ -2,13 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getDb } from "@/lib/db.server";
 import bcrypt from "bcryptjs";
 import * as jose from "jose";
+import { getClientIp, checkLoginRateLimit, checkBruteForceAccountLockout } from "@/lib/rate-limit.server";
+
+import { getServerConfig } from "@/lib/config.server";
 
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required");
-  }
-  return new TextEncoder().encode(secret);
+  const env = getServerConfig();
+  return new TextEncoder().encode(env.JWT_SECRET);
 }
 
 export const Route = createFileRoute("/api/admin/login")({
@@ -16,6 +16,10 @@ export const Route = createFileRoute("/api/admin/login")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          // 1. Enforce IP and Account Rate Limiting
+          const ip = getClientIp();
+          await checkLoginRateLimit(ip);
+
           const body = await request.json();
           const { identifier, password } = body || {};
 
@@ -25,6 +29,8 @@ export const Route = createFileRoute("/api/admin/login")({
               { status: 400, headers: { "Content-Type": "application/json" } }
             );
           }
+
+          await checkBruteForceAccountLockout(identifier);
 
           const sql = getDb();
           const cleanIdent = identifier.trim().toLowerCase();
@@ -86,9 +92,10 @@ export const Route = createFileRoute("/api/admin/login")({
           );
         } catch (error: any) {
           console.error("Admin login API error:", error);
+          const isRateLimit = error?.message?.includes("Too many") || error?.message?.includes("locked");
           return new Response(
             JSON.stringify({ success: false, error: error.message || "Authentication failed" }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
+            { status: isRateLimit ? 429 : 500, headers: { "Content-Type": "application/json" } }
           );
         }
       },

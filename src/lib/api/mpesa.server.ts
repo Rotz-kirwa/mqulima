@@ -2,19 +2,79 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const StkPushInput = z.object({
-  phone: z.string(),
-  amount: z.number().positive(),
-  orderId: z.string().uuid(),
-  description: z.string()
+  phone: z.string().min(1, "Phone number is required"),
+  orderId: z.string().uuid("Invalid order ID format"),
+  amount: z.number().positive().optional(), // Advisory only - overridden by server order total
+  description: z.string().optional()
 });
 
 export const initiateStkPush = createServerFn({ method: "POST" })
   .inputValidator(StkPushInput)
   .handler(async ({ data }) => {
     try {
-      const { phone, amount, orderId, description } = data;
+      const { phone, orderId, description } = data;
 
-      // 1. Phone number normalisation
+      // 1. Authenticate caller and load order authoritatively from DB
+      const { getCurrentUser, getCurrentAdminUser } = await import("../auth-server");
+      const user = (await getCurrentUser()) || (await getCurrentAdminUser());
+      if (!user) {
+        return {
+          success: false,
+          error: "Authentication required to initiate payment."
+        };
+      }
+
+      const { getDb } = await import("../db.server");
+      const sql = getDb();
+
+      // Fetch order from DB and verify ownership & status
+      const [order] = await sql`
+        SELECT id, user_id, total, status, payment_status
+        FROM orders
+        WHERE id = ${orderId} AND deleted_at IS NULL
+        LIMIT 1
+      `;
+
+      if (!order) {
+        return { success: false, error: `Order ${orderId} not found.` };
+      }
+
+      const isAdmin = user.role === "admin" || user.role === "super_admin";
+      if (!isAdmin && order.user_id !== user.id) {
+        return { success: false, error: "Unauthorized: You do not have permission to pay for this order." };
+      }
+
+      if (order.payment_status === "paid" || order.status === "paid") {
+        return { success: false, error: "This order has already been paid and completed." };
+      }
+
+      const serverAmount = Math.ceil(parseFloat(order.total));
+      if (isNaN(serverAmount) || serverAmount <= 0) {
+        return { success: false, error: "Invalid order total amount calculated on server." };
+      }
+
+      // Idempotency check: check if active pending payment was initiated in last 60 seconds
+      const [existingPending] = await sql`
+        SELECT id, provider_ref, created_at
+        FROM payments
+        WHERE order_id = ${orderId}
+          AND provider = 'mpesa'
+          AND status = 'pending'
+          AND created_at > NOW() - INTERVAL '60 seconds'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      if (existingPending) {
+        return {
+          success: true,
+          checkoutRequestId: existingPending.provider_ref,
+          paymentId: existingPending.id,
+          message: "A payment prompt was recently sent. Please check your phone."
+        };
+      }
+
+      // 2. Phone number normalisation
       let cleanPhone = phone.replace(/[^0-9]/g, "");
       if (cleanPhone.startsWith("0")) {
         cleanPhone = "254" + cleanPhone.slice(1);
@@ -31,14 +91,18 @@ export const initiateStkPush = createServerFn({ method: "POST" })
         };
       }
 
-      // 2. Fetch OAuth Token via helper
+      // 3. Fetch OAuth Token via helper
       const { getMpesaToken, clearMpesaTokenCache } = await import("../mpesa-helpers.server");
       let token = await getMpesaToken();
       const isProduction = process.env.MPESA_ENVIRONMENT !== "sandbox";
 
-      // 3. Setup credentials
-      const shortcode = (process.env.MPESA_SHORTCODE || "4183765").trim();
-      const passkey = (process.env.MPESA_PASSKEY || "3fa9c7374620831d9c3d34a5279fd8ce4d51edbb067886b0c5b5f15bd27b47f4").trim();
+      // 4. Setup credentials
+      const shortcode = (process.env.MPESA_SHORTCODE || "").trim();
+      const passkey = (process.env.MPESA_PASSKEY || "").trim();
+
+      if (!shortcode || !passkey) {
+        throw new Error("M-Pesa Shortcode or Passkey is not configured in environment variables.");
+      }
       const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
       const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
 
@@ -52,13 +116,13 @@ export const initiateStkPush = createServerFn({ method: "POST" })
         Password: password,
         Timestamp: timestamp,
         TransactionType: "CustomerPayBillOnline",
-        Amount: Math.ceil(amount),
+        Amount: serverAmount,
         PartyA: cleanPhone,
         PartyB: shortcode,
         PhoneNumber: cleanPhone,
         CallBackURL: callbackUrl,
         AccountReference: ("MQ" + orderId.replace(/-/g, "")).slice(0, 12),
-        TransactionDesc: "ShopOrder".slice(0, 13)
+        TransactionDesc: (description || "ShopOrder").slice(0, 13)
       };
 
       const baseUrl = isProduction ? "https://api.safaricom.co.ke" : "https://sandbox.safaricom.co.ke";
@@ -116,12 +180,9 @@ export const initiateStkPush = createServerFn({ method: "POST" })
       const checkoutRequestId = responseData.CheckoutRequestID;
 
       // 5. Save pending record in payments
-      const { getDb } = await import("../db.server");
-      const sql = getDb();
-
       const [insertedPayment] = await sql`
         INSERT INTO payments (order_id, provider, amount, status, provider_ref, raw_payload)
-        VALUES (${orderId}, 'mpesa', ${Math.ceil(amount)}, 'pending', ${checkoutRequestId}, ${JSON.stringify(responseData)}::jsonb)
+        VALUES (${orderId}, 'mpesa', ${serverAmount}, 'pending', ${checkoutRequestId}, ${JSON.stringify(responseData)}::jsonb)
         RETURNING id
       `;
 
@@ -145,14 +206,26 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }) => {
     const { orderId } = data;
+
+    const { getCurrentUser, getCurrentAdminUser } = await import("../auth-server");
+    const user = (await getCurrentUser()) || (await getCurrentAdminUser());
+
+    if (!user) {
+      throw new Error("Unauthorized: Authentication required to view payment status.");
+    }
+
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
+    // Verify order ownership or admin role (IDOR Protection)
     const [payment] = await sql`
-      SELECT status, provider_ref
-      FROM payments
-      WHERE order_id = ${orderId} AND provider = 'mpesa'
-      ORDER BY created_at DESC
+      SELECT p.status, p.provider_ref
+      FROM payments p
+      JOIN orders o ON o.id = p.order_id
+      WHERE p.order_id = ${orderId} 
+        AND p.provider = 'mpesa'
+        AND (o.user_id = ${user.id} OR ${user.role} IN ('admin', 'super_admin'))
+      ORDER BY p.created_at DESC
       LIMIT 1
     `;
 

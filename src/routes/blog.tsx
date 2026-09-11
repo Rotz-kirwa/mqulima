@@ -19,6 +19,7 @@ import {
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { toast } from "sonner";
 import { getPublishedBlogPosts, incrementBlogViewCount } from "@/lib/api/blog.server";
+import { sanitizeHtml } from "@/lib/sanitization";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
@@ -597,7 +598,7 @@ function BlogPage() {
                     </div>
                     <div 
                       className="text-xs text-[#3E4C3D] leading-relaxed mt-3 space-y-2.5 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h2]:mt-3 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-2 [&_p]:mb-1.5 font-medium"
-                      dangerouslySetInnerHTML={{ __html: p.body }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(p.body) }}
                     />
                   </div>
                 ))}
@@ -700,7 +701,7 @@ function BlogPage() {
               {/* Article Content with Rich Text HTML rendering */}
               <div 
                 className="text-xs sm:text-sm text-[#3E4C3D] space-y-3 font-['Open_Sans'] leading-relaxed [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/60 [&_blockquote]:py-2 [&_a]:text-[#0F766E] [&_a]:underline font-medium"
-                dangerouslySetInnerHTML={{ __html: activeReadingPost.body }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeReadingPost.body) }}
               />
 
             </div>

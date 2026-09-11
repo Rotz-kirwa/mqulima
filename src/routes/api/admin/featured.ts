@@ -8,47 +8,48 @@ import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 const DEFAULT_FEATURED_SEEDS = [
   {
     id: "feat-seed-1",
-    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6ef23a28?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "Organic Maize Seed Vector",
     linkUrl: "/shop",
     position: 0,
   },
   {
     id: "feat-seed-2",
-    imageUrl: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "Solar Water Pump Kit",
     linkUrl: "/shop",
     position: 1,
   },
   {
     id: "feat-seed-3",
-    imageUrl: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "NPK Premium Booster Fertilizer",
     linkUrl: "/shop",
     position: 2,
   },
   {
     id: "feat-seed-4",
-    imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "Smart Irrigation Drip Lines",
     linkUrl: "/shop",
     position: 3,
   },
   {
     id: "feat-seed-5",
-    imageUrl: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "High-Yield Tomato Seedling",
     linkUrl: "/shop",
     position: 4,
   },
   {
     id: "feat-seed-6",
-    imageUrl: "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/placeholder-product.png",
     title: "Veterinary Feed Supplement",
     linkUrl: "/shop",
     position: 5,
   },
 ];
+
 
 export const Route = createFileRoute("/api/admin/featured")({
   server: {

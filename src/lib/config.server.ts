@@ -28,6 +28,10 @@ const ServerEnvSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().optional().or(z.literal("")),
   S3_SECRET_ACCESS_KEY: z.string().optional().or(z.literal("")),
   CDN_PUBLIC_URL: z.string().default("https://cdn.mqulima.com"),
+  PAYSTACK_SECRET_KEY: z.string().optional().or(z.literal("")),
+  PAYSTACK_PUBLIC_KEY: z.string().optional().or(z.literal("")),
+  PAYSTACK_CALLBACK_URL: z.string().optional().or(z.literal("")),
+  PAYSTACK_WEBHOOK_URL: z.string().optional().or(z.literal("")),
 });
 
 export type ServerEnv = z.infer<typeof ServerEnvSchema>;
@@ -43,8 +47,8 @@ export function getServerConfig(): ServerEnv {
 
   const rawEnv = {
     NODE_ENV: process.env.NODE_ENV || "development",
-    DATABASE_URL: process.env.DATABASE_URL || "postgresql://mqulima:password@localhost:5432/mqulima_dev",
-    JWT_SECRET: process.env.JWT_SECRET || (isProd ? "" : "mqulima-jwt-secret-key-production-2026-secure"),
+    DATABASE_URL: process.env.DATABASE_URL || (isProd ? "" : "postgresql://mqulima:password@localhost:5432/mqulima_dev"),
+    JWT_SECRET: process.env.JWT_SECRET || (isProd ? "" : "dev-only-secret-key-32chars-minimum!"),
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || "",
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || "",
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
@@ -61,7 +65,15 @@ export function getServerConfig(): ServerEnv {
     S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "",
     S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "",
     CDN_PUBLIC_URL: process.env.CDN_PUBLIC_URL || "https://cdn.mqulima.com",
+    PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || "",
+    PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || "",
+    PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || "",
+    PAYSTACK_WEBHOOK_URL: process.env.PAYSTACK_WEBHOOK_URL || "",
   };
+
+  if (isProd && (rawEnv.JWT_SECRET.includes("dev-only") || rawEnv.JWT_SECRET.includes("mqulima-dev-secret") || rawEnv.JWT_SECRET.includes("change-in-production"))) {
+    throw new Error("[FATAL SECURITY ERROR] JWT_SECRET must not use the insecure default placeholder in production.");
+  }
 
   const result = ServerEnvSchema.safeParse(rawEnv);
 
@@ -81,4 +93,13 @@ export function getServerConfig(): ServerEnv {
   }
 
   return validatedEnv;
+}
+
+export function resetServerConfigCache() {
+  validatedEnv = null;
+}
+
+export function validateServerConfig(): ServerEnv {
+  resetServerConfigCache();
+  return getServerConfig();
 }

@@ -12,7 +12,7 @@ export const adminAuditLogs = pgTable("admin_audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const adminQuotations = pgTable("quotations", {
+export const adminQuotations = pgTable("admin_quotations", {
   id: varchar("id", { length: 255 }).primaryKey(),
   customerId: varchar("customer_id", { length: 255 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -74,6 +74,8 @@ export const agritechNews = pgTable("agritech_news", {
   slug: varchar("slug", { length: 255 }).notNull(),
   summary: text("summary"),
   content: text("content").notNull(),
+  mediaType: varchar("media_type", { length: 20 }).default("image"),
+  mediaUrl: text("media_url"),
   category: varchar("category", { length: 100 }).default("Agri-News").notNull(),
   sourceAttribution: varchar("source_attribution", { length: 255 }),
   authorId: varchar("author_id", { length: 255 }),

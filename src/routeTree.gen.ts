@@ -27,8 +27,13 @@ import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as ApiProductsRouteImport } from './routes/api/products'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
+import { Route as PaymentsPaystackCallbackRouteImport } from './routes/payments.paystack.callback'
 import { Route as ApiUploadPresignRouteImport } from './routes/api/upload/presign'
+import { Route as ApiShopPosSyncRouteImport } from './routes/api/shop/pos-sync'
+import { Route as ApiProductsIdRouteImport } from './routes/api/products/$id'
+import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiMpesaCallbackRouteImport } from './routes/api/mpesa/callback'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 import { Route as ApiAdminServicesRouteImport } from './routes/api/admin/services'
@@ -48,6 +53,10 @@ import { Route as ApiAdminCommodityTrendsRouteImport } from './routes/api/admin/
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAdminAiForecastsRouteImport } from './routes/api/admin/ai-forecasts'
 import { Route as ApiAdminAcademyRouteImport } from './routes/api/admin/academy'
+import { Route as ApiPaymentsPaystackWebhookRouteImport } from './routes/api/payments/paystack/webhook'
+import { Route as ApiPaymentsNcbaStkPushRouteImport } from './routes/api/payments/ncba/stk-push'
+import { Route as ApiPaymentsNcbaCallbackRouteImport } from './routes/api/payments/ncba/callback'
+import { Route as ApiAdminProductsSyncRouteImport } from './routes/api/admin/products/sync'
 
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
@@ -139,14 +148,40 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
 } as any)
+const ApiProductsRoute = ApiProductsRouteImport.update({
+  id: '/api/products',
+  path: '/api/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/product/$slug',
   path: '/shop/product/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentsPaystackCallbackRoute =
+  PaymentsPaystackCallbackRouteImport.update({
+    id: '/payments/paystack/callback',
+    path: '/payments/paystack/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiUploadPresignRoute = ApiUploadPresignRouteImport.update({
   id: '/api/upload/presign',
   path: '/api/upload/presign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiShopPosSyncRoute = ApiShopPosSyncRouteImport.update({
+  id: '/api/shop/pos-sync',
+  path: '/api/shop/pos-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProductsIdRoute = ApiProductsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiProductsRoute,
+} as any)
+const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
+  id: '/api/payments/status',
+  path: '/api/payments/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMpesaCallbackRoute = ApiMpesaCallbackRouteImport.update({
@@ -244,6 +279,27 @@ const ApiAdminAcademyRoute = ApiAdminAcademyRouteImport.update({
   path: '/api/admin/academy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentsPaystackWebhookRoute =
+  ApiPaymentsPaystackWebhookRouteImport.update({
+    id: '/api/payments/paystack/webhook',
+    path: '/api/payments/paystack/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPaymentsNcbaStkPushRoute = ApiPaymentsNcbaStkPushRouteImport.update({
+  id: '/api/payments/ncba/stk-push',
+  path: '/api/payments/ncba/stk-push',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsNcbaCallbackRoute = ApiPaymentsNcbaCallbackRouteImport.update({
+  id: '/api/payments/ncba/callback',
+  path: '/api/payments/ncba/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminProductsSyncRoute = ApiAdminProductsSyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => ApiAdminProductsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -259,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -278,13 +335,21 @@ export interface FileRoutesByFullPath {
   '/api/admin/news': typeof ApiAdminNewsRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/payments': typeof ApiAdminPaymentsRoute
-  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/products/$id': typeof ApiProductsIdRoute
+  '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
+  '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
+  '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
+  '/api/payments/ncba/callback': typeof ApiPaymentsNcbaCallbackRoute
+  '/api/payments/ncba/stk-push': typeof ApiPaymentsNcbaStkPushRoute
+  '/api/payments/paystack/webhook': typeof ApiPaymentsPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -300,6 +365,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -319,13 +385,21 @@ export interface FileRoutesByTo {
   '/api/admin/news': typeof ApiAdminNewsRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/payments': typeof ApiAdminPaymentsRoute
-  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/products/$id': typeof ApiProductsIdRoute
+  '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
+  '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
+  '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
+  '/api/payments/ncba/callback': typeof ApiPaymentsNcbaCallbackRoute
+  '/api/payments/ncba/stk-push': typeof ApiPaymentsNcbaStkPushRoute
+  '/api/payments/paystack/webhook': typeof ApiPaymentsPaystackWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -342,6 +416,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -361,13 +436,21 @@ export interface FileRoutesById {
   '/api/admin/news': typeof ApiAdminNewsRoute
   '/api/admin/orders': typeof ApiAdminOrdersRoute
   '/api/admin/payments': typeof ApiAdminPaymentsRoute
-  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/products/$id': typeof ApiProductsIdRoute
+  '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
+  '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
+  '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
+  '/api/payments/ncba/callback': typeof ApiPaymentsNcbaCallbackRoute
+  '/api/payments/ncba/stk-push': typeof ApiPaymentsNcbaStkPushRoute
+  '/api/payments/paystack/webhook': typeof ApiPaymentsPaystackWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -385,6 +468,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
@@ -409,8 +493,16 @@ export interface FileRouteTypes {
     | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/payments/status'
+    | '/api/products/$id'
+    | '/api/shop/pos-sync'
     | '/api/upload/presign'
+    | '/payments/paystack/callback'
     | '/shop/product/$slug'
+    | '/api/admin/products/sync'
+    | '/api/payments/ncba/callback'
+    | '/api/payments/ncba/stk-push'
+    | '/api/payments/paystack/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -426,6 +518,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
@@ -450,8 +543,16 @@ export interface FileRouteTypes {
     | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/payments/status'
+    | '/api/products/$id'
+    | '/api/shop/pos-sync'
     | '/api/upload/presign'
+    | '/payments/paystack/callback'
     | '/shop/product/$slug'
+    | '/api/admin/products/sync'
+    | '/api/payments/ncba/callback'
+    | '/api/payments/ncba/stk-push'
+    | '/api/payments/paystack/webhook'
   id:
     | '__root__'
     | '/'
@@ -467,6 +568,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
@@ -491,8 +593,16 @@ export interface FileRouteTypes {
     | '/api/admin/services'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
+    | '/api/payments/status'
+    | '/api/products/$id'
+    | '/api/shop/pos-sync'
     | '/api/upload/presign'
+    | '/payments/paystack/callback'
     | '/shop/product/$slug'
+    | '/api/admin/products/sync'
+    | '/api/payments/ncba/callback'
+    | '/api/payments/ncba/stk-push'
+    | '/api/payments/paystack/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -509,6 +619,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   TermsRoute: typeof TermsRoute
   ToolsRoute: typeof ToolsRoute
+  ApiProductsRoute: typeof ApiProductsRouteWithChildren
   ShopProductIdRoute: typeof ShopProductIdRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiAdminAcademyRoute: typeof ApiAdminAcademyRoute
@@ -525,13 +636,19 @@ export interface RootRouteChildren {
   ApiAdminNewsRoute: typeof ApiAdminNewsRoute
   ApiAdminOrdersRoute: typeof ApiAdminOrdersRoute
   ApiAdminPaymentsRoute: typeof ApiAdminPaymentsRoute
-  ApiAdminProductsRoute: typeof ApiAdminProductsRoute
+  ApiAdminProductsRoute: typeof ApiAdminProductsRouteWithChildren
   ApiAdminQuotationsRoute: typeof ApiAdminQuotationsRoute
   ApiAdminServicesRoute: typeof ApiAdminServicesRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiMpesaCallbackRoute: typeof ApiMpesaCallbackRoute
+  ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
+  ApiShopPosSyncRoute: typeof ApiShopPosSyncRoute
   ApiUploadPresignRoute: typeof ApiUploadPresignRoute
+  PaymentsPaystackCallbackRoute: typeof PaymentsPaystackCallbackRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
+  ApiPaymentsNcbaCallbackRoute: typeof ApiPaymentsNcbaCallbackRoute
+  ApiPaymentsNcbaStkPushRoute: typeof ApiPaymentsNcbaStkPushRoute
+  ApiPaymentsPaystackWebhookRoute: typeof ApiPaymentsPaystackWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -662,6 +779,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/api/products': {
+      id: '/api/products'
+      path: '/api/products'
+      fullPath: '/api/products'
+      preLoaderRoute: typeof ApiProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop/product/$slug': {
       id: '/shop/product/$slug'
       path: '/shop/product/$slug'
@@ -669,11 +793,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payments/paystack/callback': {
+      id: '/payments/paystack/callback'
+      path: '/payments/paystack/callback'
+      fullPath: '/payments/paystack/callback'
+      preLoaderRoute: typeof PaymentsPaystackCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/upload/presign': {
       id: '/api/upload/presign'
       path: '/api/upload/presign'
       fullPath: '/api/upload/presign'
       preLoaderRoute: typeof ApiUploadPresignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/shop/pos-sync': {
+      id: '/api/shop/pos-sync'
+      path: '/api/shop/pos-sync'
+      fullPath: '/api/shop/pos-sync'
+      preLoaderRoute: typeof ApiShopPosSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/products/$id': {
+      id: '/api/products/$id'
+      path: '/$id'
+      fullPath: '/api/products/$id'
+      preLoaderRoute: typeof ApiProductsIdRouteImport
+      parentRoute: typeof ApiProductsRoute
+    }
+    '/api/payments/status': {
+      id: '/api/payments/status'
+      path: '/api/payments/status'
+      fullPath: '/api/payments/status'
+      preLoaderRoute: typeof ApiPaymentsStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mpesa/callback': {
@@ -809,6 +961,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAcademyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/payments/paystack/webhook': {
+      id: '/api/payments/paystack/webhook'
+      path: '/api/payments/paystack/webhook'
+      fullPath: '/api/payments/paystack/webhook'
+      preLoaderRoute: typeof ApiPaymentsPaystackWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/ncba/stk-push': {
+      id: '/api/payments/ncba/stk-push'
+      path: '/api/payments/ncba/stk-push'
+      fullPath: '/api/payments/ncba/stk-push'
+      preLoaderRoute: typeof ApiPaymentsNcbaStkPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/ncba/callback': {
+      id: '/api/payments/ncba/callback'
+      path: '/api/payments/ncba/callback'
+      fullPath: '/api/payments/ncba/callback'
+      preLoaderRoute: typeof ApiPaymentsNcbaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/products/sync': {
+      id: '/api/admin/products/sync'
+      path: '/sync'
+      fullPath: '/api/admin/products/sync'
+      preLoaderRoute: typeof ApiAdminProductsSyncRouteImport
+      parentRoute: typeof ApiAdminProductsRoute
+    }
   }
 }
 
@@ -826,6 +1006,29 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface ApiProductsRouteChildren {
+  ApiProductsIdRoute: typeof ApiProductsIdRoute
+}
+
+const ApiProductsRouteChildren: ApiProductsRouteChildren = {
+  ApiProductsIdRoute: ApiProductsIdRoute,
+}
+
+const ApiProductsRouteWithChildren = ApiProductsRoute._addFileChildren(
+  ApiProductsRouteChildren,
+)
+
+interface ApiAdminProductsRouteChildren {
+  ApiAdminProductsSyncRoute: typeof ApiAdminProductsSyncRoute
+}
+
+const ApiAdminProductsRouteChildren: ApiAdminProductsRouteChildren = {
+  ApiAdminProductsSyncRoute: ApiAdminProductsSyncRoute,
+}
+
+const ApiAdminProductsRouteWithChildren =
+  ApiAdminProductsRoute._addFileChildren(ApiAdminProductsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -840,6 +1043,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   TermsRoute: TermsRoute,
   ToolsRoute: ToolsRoute,
+  ApiProductsRoute: ApiProductsRouteWithChildren,
   ShopProductIdRoute: ShopProductIdRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiAdminAcademyRoute: ApiAdminAcademyRoute,
@@ -856,13 +1060,19 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminNewsRoute: ApiAdminNewsRoute,
   ApiAdminOrdersRoute: ApiAdminOrdersRoute,
   ApiAdminPaymentsRoute: ApiAdminPaymentsRoute,
-  ApiAdminProductsRoute: ApiAdminProductsRoute,
+  ApiAdminProductsRoute: ApiAdminProductsRouteWithChildren,
   ApiAdminQuotationsRoute: ApiAdminQuotationsRoute,
   ApiAdminServicesRoute: ApiAdminServicesRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiMpesaCallbackRoute: ApiMpesaCallbackRoute,
+  ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
+  ApiShopPosSyncRoute: ApiShopPosSyncRoute,
   ApiUploadPresignRoute: ApiUploadPresignRoute,
+  PaymentsPaystackCallbackRoute: PaymentsPaystackCallbackRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
+  ApiPaymentsNcbaCallbackRoute: ApiPaymentsNcbaCallbackRoute,
+  ApiPaymentsNcbaStkPushRoute: ApiPaymentsNcbaStkPushRoute,
+  ApiPaymentsPaystackWebhookRoute: ApiPaymentsPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

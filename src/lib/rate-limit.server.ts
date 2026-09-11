@@ -2,16 +2,62 @@ import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 
-export function getClientIp(): string {
+/**
+ * Validate that an IP string is a valid IPv4 or IPv6 address to prevent header injection
+ */
+function isValidIp(ip: string): boolean {
+  if (!ip || typeof ip !== "string") return false;
+  const clean = ip.trim();
+  // IPv4 validation
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipv4Regex.test(clean)) {
+    return clean.split(".").every((octet) => {
+      const num = parseInt(octet, 10);
+      return num >= 0 && num <= 255 && String(num) === octet;
+    });
+  }
+  // IPv6 validation
+  const ipv6Regex = /^([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}$|^::$|^::1$/;
+  return ipv6Regex.test(clean);
+}
+
+/**
+ * Resolves the client IP address using trusted proxy infrastructure rules.
+ * Deployment assumption:
+ * - When TRUST_PROXY is enabled (default in production environments like Render, Cloudflare, or AWS ALB),
+ *   we prioritize CF-Connecting-IP, X-Real-IP, and validated X-Forwarded-For hops.
+ * - When TRUST_PROXY=false, forwarded headers are ignored to prevent spoofing.
+ */
+export function getClientIp(customRequest?: Request): string {
   try {
-    const headers = getRequestHeaders();
-    const forwardedFor = headers.get("x-forwarded-for");
-    if (forwardedFor) {
-      return forwardedFor.split(",")[0].trim();
-    }
-    const realIp = headers.get("x-real-ip");
-    if (realIp) {
-      return realIp.trim();
+    const headers = customRequest ? customRequest.headers : getRequestHeaders();
+    const trustProxy = process.env.TRUST_PROXY !== "false";
+
+    if (trustProxy && headers) {
+      // 1. Cloudflare edge header (cryptographically asserted by Cloudflare infrastructure)
+      const cfConnectingIp = headers.get("cf-connecting-ip");
+      if (cfConnectingIp && isValidIp(cfConnectingIp)) {
+        return cfConnectingIp.trim();
+      }
+
+      // 2. Direct reverse proxy header set by Nginx / Caddy / Render
+      const realIp = headers.get("x-real-ip");
+      if (realIp && isValidIp(realIp)) {
+        return realIp.trim();
+      }
+
+      // 3. X-Forwarded-For header: parse and validate entries
+      const forwardedFor = headers.get("x-forwarded-for");
+      if (forwardedFor) {
+        const ips = forwardedFor
+          .split(",")
+          .map((ip: string) => ip.trim())
+          .filter(isValidIp);
+
+        if (ips.length > 0) {
+          return ips[0];
+        }
+      }
     }
   } catch (err) {
     // getRequestHeaders may throw if called outside server request context

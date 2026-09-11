@@ -70,12 +70,17 @@ export const PaymentsModule: React.FC = () => {
 
   // Filtered payments list
   const filteredPayments = payments.filter((p) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      p.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.transactionId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.id?.toLowerCase().includes(q) ||
+      p.transactionId?.toLowerCase().includes(q) ||
+      p.receiptNumber?.toLowerCase().includes(q) ||
+      p.merchantReference?.toLowerCase().includes(q) ||
+      p.providerRef?.toLowerCase().includes(q) ||
+      p.customerName?.toLowerCase().includes(q) ||
       p.customerPhone?.includes(searchQuery) ||
-      p.orderId?.toLowerCase().includes(searchQuery.toLowerCase());
+      p.orderId?.toLowerCase().includes(q) ||
+      p.method?.toLowerCase().includes(q);
 
     if (filterStatus === "matched") return matchesSearch && p.reconciliationStatus === "matched";
     if (filterStatus === "orphaned") return matchesSearch && p.reconciliationStatus === "orphaned";

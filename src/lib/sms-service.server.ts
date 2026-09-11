@@ -44,6 +44,13 @@ export function normalizeKenyanPhone(phone: string): string {
   return cleaned;
 }
 
+export function redactSensitiveMessage(msg: string): string {
+  if (!msg) return "";
+  return msg
+    .replace(/(["']?(?:password|passwd|pwd)["']?\s*[:=]\s*["']?)([^"',;}\s]+)(["']?)/gi, "$1[REDACTED]$3")
+    .replace(/(["']?(?:token|secret|pin)["']?\s*[:=]\s*["']?)([^"',;}\s]+)(["']?)/gi, "$1[REDACTED]$3");
+}
+
 /**
  * Helper to log SMS attempt asynchronously to sms_logs table without throwing errors.
  */
@@ -56,12 +63,13 @@ async function logSmsAttempt(
 ): Promise<void> {
   try {
     const sql = getDb();
+    const sanitizedMsg = redactSensitiveMessage(message);
     const payloadStr = typeof responsePayload === "string" ? responsePayload : JSON.stringify(responsePayload || {});
     await sql`
       INSERT INTO sms_logs (recipient, message, trigger_type, status, response_payload)
       VALUES (
         ${recipient},
-        ${message},
+        ${sanitizedMsg},
         ${triggerType},
         ${status},
         ${payloadStr}

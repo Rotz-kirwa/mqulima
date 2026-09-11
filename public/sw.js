@@ -1,4 +1,4 @@
-const CACHE_NAME = "mqulima-cache-v2";
+const CACHE_NAME = "mqulima-cache-v3";
 const ASSETS_TO_CACHE = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 // Install Event
@@ -50,7 +50,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_server/") ||
     url.pathname.startsWith("/auth/") ||
-    url.pathname.startsWith("/admin/")
+    url.pathname.startsWith("/admin/") ||
+    url.searchParams.has("_t")
   ) {
     return;
   }

@@ -34,6 +34,8 @@ export const paymentStatusEnum = pgEnum("payment_status_enum", [
 
 export const paymentMethodEnum = pgEnum("payment_method_enum", [
   "mpesa",
+  "ncba",
+  "paystack",
   "airtel_money",
   "bank_transfer",
   "card",
