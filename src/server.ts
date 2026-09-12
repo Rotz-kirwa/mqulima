@@ -48,7 +48,14 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 const DEFAULT_ALLOWED_ORIGINS = [
+  "https://www.mqulimaadmin.org",
+  "https://mqulimaadmin.org",
   "https://www.mqulima.com",
+  "https://mqulima.com",
+  "https://www.mqulima.co.ke",
+  "https://mqulima.co.ke",
+  "https://admin.mqulima.com",
+  "https://admin.mqulima.co.ke",
   "https://mqulima.vercel.app",
   "https://mqulima-admin-tawny.vercel.app",
   "http://localhost:3000",
@@ -66,6 +73,8 @@ function isOriginAllowed(origin: string): boolean {
   if (!origin) return false;
   const normalized = origin.replace(/\/$/, "");
   if (ALLOWED_ORIGINS.includes(normalized)) return true;
+  // Allow any mqulimaadmin or mqulima domain (e.g. www.mqulimaadmin.org, admin.mqulima.com, etc.)
+  if (/^https?:\/\/([a-zA-Z0-9_-]+\.)*(mqulimaadmin\.org|mqulimaadmin\.[a-z]{2,}|mqulima\.com|mqulima\.co.ke|mqulima\.org)$/i.test(normalized)) return true;
   // Allow any Render or Vercel preview/production deployment
   if (/^https:\/\/[a-zA-Z0-9_-]+\.onrender\.com$/.test(normalized)) return true;
   if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(normalized)) return true;
