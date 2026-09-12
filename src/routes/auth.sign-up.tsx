@@ -641,21 +641,23 @@ function SignUp() {
             <p className="text-[10px] font-bold text-red-300 text-left px-1">{errors.terms}</p>
           )}
 
-          {/* SIGN UP BUTTON (VIBRANT YELLOW PILL) */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-3 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-4 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-75 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
-                <span>Creating Account...</span>
-              </>
-            ) : (
-              <span>Sign Up</span>
-            )}
-          </button>
+          {/* SIGN UP BUTTON (VIBRANT YELLOW PILL - CENTERED & REDUCED SIZE) */}
+          <div className="flex justify-center pt-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-auto min-w-[220px] px-12 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-75 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <span>Sign Up</span>
+              )}
+            </button>
+          </div>
         </form>
 
         {/* FOOTER SWITCH LINK */}

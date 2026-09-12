@@ -173,21 +173,23 @@ function SignIn() {
             </button>
           </div>
 
-          {/* LOG IN BUTTON (VIBRANT YELLOW PILL) */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-4 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
-                <span>Logging In...</span>
-              </>
-            ) : (
-              <span>Log In</span>
-            )}
-          </button>
+          {/* LOG IN BUTTON (VIBRANT YELLOW PILL - CENTERED & COMPACT) */}
+          <div className="flex justify-center pt-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-auto min-w-[200px] px-10 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-75 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
+                  <span>Logging In...</span>
+                </>
+              ) : (
+                <span>Log In</span>
+              )}
+            </button>
+          </div>
         </form>
 
         {/* FOOTER SWITCH LINK */}
