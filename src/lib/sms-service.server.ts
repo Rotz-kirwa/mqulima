@@ -47,7 +47,7 @@ export function normalizeKenyanPhone(phone: string): string {
 export function redactSensitiveMessage(msg: string): string {
   if (!msg) return "";
   return msg
-    .replace(/(["']?(?:password|passwd|pwd)["']?\s*[:=]\s*["']?)([^"',;}\s]+)(["']?)/gi, "$1[REDACTED]$3")
+    .replace(/(["']?(?:your password is|password|passwd|pwd)["']?\s*[:=]?\s*["']?)([^"',;}\s]+)(["']?)/gi, "$1[REDACTED]$3")
     .replace(/(["']?(?:token|secret|pin)["']?\s*[:=]\s*["']?)([^"',;}\s]+)(["']?)/gi, "$1[REDACTED]$3");
 }
 
