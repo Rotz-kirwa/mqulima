@@ -144,14 +144,14 @@ export function CartDrawer() {
     }
   }, [cartOpen]);
 
-  // Simulated Card/Bank countdown
+  // Simulated Bank wire countdown
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (processing && (paymentOption === "card" || paymentOption === "bank") && countdown > 0) {
+    if (processing && paymentOption === "bank" && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown((c) => c - 1);
       }, 1000);
-    } else if (processing && (paymentOption === "card" || paymentOption === "bank") && countdown === 0) {
+    } else if (processing && paymentOption === "bank" && countdown === 0) {
       setProcessing(false);
       setStep(5);
       clearCart();
@@ -352,7 +352,9 @@ export function CartDrawer() {
         } else if (paymentOption === "card") {
           // Trigger Paystack Card Payment Redirect Flow
           const { initiatePaystackCheckout } = await import("@/lib/api/paystack.server");
-          const customerEmail = user.email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, ".")}@mqulima.com`;
+          const customerEmail = (user?.email && user.email.includes("@"))
+            ? user.email.trim().toLowerCase()
+            : `${(phoneNumber || user?.phone || fullName || "customer").toLowerCase().replace(/[^a-z0-9]/g, "") || "shopper"}@mqulima.com`;
           
           const payRes = await initiatePaystackCheckout({
             data: {

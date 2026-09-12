@@ -67,8 +67,8 @@ export function getServerConfig(): ServerEnv {
     CDN_PUBLIC_URL: process.env.CDN_PUBLIC_URL || "https://cdn.mqulima.com",
     PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || "",
     PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || "",
-    PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || "",
-    PAYSTACK_WEBHOOK_URL: process.env.PAYSTACK_WEBHOOK_URL || "",
+    PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || "https://mqulima.com/payments/paystack/callback",
+    PAYSTACK_WEBHOOK_URL: process.env.PAYSTACK_WEBHOOK_URL || "https://mqulima.com/api/payments/paystack/webhook",
   };
 
   if (isProd && (rawEnv.JWT_SECRET.includes("dev-only") || rawEnv.JWT_SECRET.includes("mqulima-dev-secret") || rawEnv.JWT_SECRET.includes("change-in-production"))) {

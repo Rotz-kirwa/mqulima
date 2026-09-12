@@ -60,7 +60,7 @@ export async function initializePaystackTransaction(params: InitializePaystackPa
   const secretKey = getSecretKey();
   const config = getServerConfig();
 
-  const callbackUrl = params.callbackUrl || config.PAYSTACK_CALLBACK_URL || "http://localhost:3000/payments/paystack/callback";
+  const callbackUrl = params.callbackUrl || config.PAYSTACK_CALLBACK_URL || process.env.PAYSTACK_CALLBACK_URL || "https://mqulima.com/payments/paystack/callback";
 
   // Convert amount to Paystack subunit (KES amount * 100 in cents/pesewas integer)
   const amountInSubunits = Math.round(params.amount * 100);
