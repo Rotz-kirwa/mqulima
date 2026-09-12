@@ -4,6 +4,8 @@ import { products } from "@/db/schema/products";
 import { eq, desc } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
+import { resolveFastProductImage } from "@/lib/api/shop.server";
+import { cleanDescriptionText, mapToNewTaxonomy } from "@/lib/shop-data";
 import crypto from "crypto";
 
 export const Route = createFileRoute("/api/admin/products")({
@@ -13,28 +15,41 @@ export const Route = createFileRoute("/api/admin/products")({
         const auth = await requireAdminAuth(request, "products.read");
         if ("response" in auth) return auth.response;
         try {
+          const url = new URL(request.url);
+          const limitParam = url.searchParams.get("limit");
+          const limit = limitParam ? Math.min(2000, Math.max(1, Number(limitParam) || 1000)) : 1000;
+
           const productList = await db
             .select()
             .from(products)
             .orderBy(desc(products.createdAt))
-            .limit(200);
+            .limit(limit);
 
           return new Response(
             JSON.stringify({
               success: true,
-              products: productList.map((p) => ({
-                id: p.id,
-                name: p.name,
-                price: Number(p.basePrice) || 0,
-                unit: p.unit || "50kg bag",
-                category: p.subcategory || p.shopType || "Inputs & Agrochemicals",
-                description: p.description || "High quality agricultural input for maximum yield.",
-                imageUrl: (p.imageUrls && p.imageUrls[0]) || "",
-                isFeatured: p.isFeatured || false,
-                status: p.status === "draft" ? "draft" : p.status === "archived" ? "archived" : "published",
-                deletedAt: p.deletedAt,
-                createdAt: p.createdAt,
-              })),
+              total: productList.length,
+              products: productList.map((p) => {
+                const img = (p.imageUrls && p.imageUrls[0] && !p.imageUrls[0].includes("default.png"))
+                  ? p.imageUrls[0]
+                  : resolveFastProductImage(p);
+                const tax = mapToNewTaxonomy(p);
+                const cleanUnit = (p.unit && !p.unit.includes("[object")) ? p.unit : "Piece";
+                return {
+                  id: p.id,
+                  name: p.name,
+                  price: Number(p.basePrice) || 0,
+                  unit: cleanUnit,
+                  category: tax.category || p.subcategory || p.shopType || "Inputs & Agrochemicals",
+                  subcategory: tax.subcategory || p.subcategory || "",
+                  description: cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.",
+                  imageUrl: img,
+                  isFeatured: p.isFeatured || false,
+                  status: p.status === "draft" ? "draft" : p.status === "archived" ? "archived" : "published",
+                  deletedAt: p.deletedAt,
+                  createdAt: p.createdAt,
+                };
+              }),
             }),
             { headers: { "Content-Type": "application/json" } }
           );

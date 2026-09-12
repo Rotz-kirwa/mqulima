@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { cleanDescriptionText } from "@/lib/shop-data";
 
 const PosProductSchema = z.object({
   pos_id: z.union([z.string(), z.number()]).optional(),
@@ -168,7 +169,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
             const basePrice = item.price;
             const stockQty = item.stock_quantity ?? item.stockQty ?? 0;
             const status = stockQty > 0 ? "active" : "out_of_stock";
-            const description = item.description || `Certified product directly synced from POS inventory. SKU: ${item.sku || item.pos_id || "N/A"}`;
+            const description = cleanDescriptionText(item.description || "") || "Certified genuine agricultural input for farm use.";
             
             let imageUrls: string[] = [];
             if (item.image_urls && item.image_urls.length > 0) imageUrls = item.image_urls.filter((u) => u && !u.includes("default.png"));
@@ -180,7 +181,10 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
             }
 
             const categoryName = item.category || "Seeds & Seedlings";
-            const brand = item.brand || "POS Direct";
+            const rawBrand = item.brand;
+            const brand = (rawBrand && !rawBrand.toLowerCase().includes("pos") && !rawBrand.toLowerCase().includes("smooth sale"))
+              ? rawBrand
+              : (categoryName || "Verified Input");
             const unit = item.unit || "Unit";
 
             // Check if product already exists by slug or name
@@ -240,7 +244,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
                   ${description},
                   ${imageUrls},
                   ${brand},
-                  'POS Verified Dealer',
+                  'Certified Agrovet Partner',
                   'Kenya',
                   ${unit},
                   'Agrovet',

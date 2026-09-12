@@ -199,17 +199,24 @@ function ShopPage() {
   const productsList = useMemo(() => {
     return rawProductsList.map((p: any) => {
       const taxonomy = mapToNewTaxonomy(p);
-      const cleanDesc = cleanDescriptionText(p.description || "");
-      const cleanBrief = cleanDescriptionText(p.briefDescription || cleanDesc);
+      const cleanDesc = cleanDescriptionText(p.description || "") || "Certified genuine agricultural input for farm use.";
+      const cleanBrief = cleanDescriptionText(p.briefDescription || "") || cleanDesc;
       const rawStock = Number(p.stock_qty ?? p.stockQty ?? p.stock ?? 0);
       const stock = isNaN(rawStock) || rawStock < 0 ? 0 : rawStock;
       const rawPrice = Number(p.price || 0);
       const price = isNaN(rawPrice) || rawPrice < 0 ? 0 : rawPrice;
 
+      const rawBrand = p.brand || "";
+      const isBadBrand = !rawBrand || /smooth\s*sale|pos\s*direct/i.test(rawBrand);
+      const brand = isBadBrand ? (p.subcategory || taxonomy.subcategory || "Verified Input") : rawBrand;
+      const badge = (p.badge && !/pos\s*sync/i.test(p.badge)) ? p.badge : "";
+
       return {
         ...p,
         description: cleanDesc,
         briefDescription: cleanBrief,
+        brand,
+        badge,
         stock,
         price,
         category: p.category || taxonomy.category,
@@ -1045,11 +1052,6 @@ function ShopPage() {
                             {p.badge && (
                               <span className="bg-stone-900 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-none shadow-sm">
                                 {p.badge}
-                              </span>
-                            )}
-                            {p.externalProductId && (
-                              <span className="bg-sky-700 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-none shadow-sm flex items-center gap-1">
-                                ⚡ POS Synced
                               </span>
                             )}
                           </div>

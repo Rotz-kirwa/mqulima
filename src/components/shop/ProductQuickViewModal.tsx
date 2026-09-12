@@ -29,7 +29,9 @@ export interface ProductDetailModalProps {
     stockQuantity: number;
     availability?: string;
     category?: string;
+    subcategory?: string;
     brand?: string;
+    badge?: string;
     unit?: string;
     imageUrl?: string;
     images?: string[];
@@ -59,9 +61,12 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
 
   if (!isOpen || !product) return null;
 
+  const rawBrand = product.brand || "";
+  const cleanBrand = (!rawBrand || /smooth\s*sale|pos\s*direct/i.test(rawBrand)) ? (product.subcategory || product.category || "Verified Input") : rawBrand;
+
   const currentPrice = selectedVariation ? selectedVariation.price : (product.price || product.basePrice || 0);
   const currentStock = selectedVariation ? selectedVariation.stockQuantity : product.stockQuantity;
-  const currentSku = selectedVariation ? selectedVariation.sku : (product.externalProductId ? `POS-${product.externalProductId}` : "N/A");
+  const currentSku = selectedVariation ? selectedVariation.sku : (product.externalProductId ? `SKU-${product.externalProductId}` : "N/A");
   const currentLocation = selectedVariation?.location || "Main Agrovet Store";
   const isOutOfStock = currentStock <= 0;
 
@@ -77,13 +82,13 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
       id: selectedVariation ? `${product.id}_${selectedVariation.id}` : product.id,
       name: itemLabel,
       slug: product.slug || product.id,
-      description: product.description || "",
+      description: cleanDescriptionText(product.description || "") || "Certified genuine agricultural input for farm use.",
       price: currentPrice,
       stock: currentStock,
       image: selectedImage || product.imageUrl || "/placeholder-product.png",
       category: product.category || "General Inputs",
-      badge: (product.externalProductId ? "POS Synced" : "") as any,
-      brand: product.brand || "Smooth Sale POS",
+      badge: (product.badge && !/pos\s*sync/i.test(product.badge) ? product.badge : "") as any,
+      brand: cleanBrand,
       seller: "Mqulima Verified",
       county: "Kenya",
       organic: false,
@@ -134,11 +139,6 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
-                  {product.externalProductId && (
-                    <span className="absolute top-3 left-3 bg-[#2D6A4F] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                      <Sparkles size={10} /> POS Synced
-                    </span>
-                  )}
                 </div>
 
                 {/* Additional Thumbnails */}
@@ -159,7 +159,7 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
                 )}
               </div>
 
-              {/* Right Column: Product Telemetry & POS Details */}
+              {/* Right Column: Product Telemetry & Details */}
               <div className="space-y-5">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -167,7 +167,7 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
                       {product.category || "General Inputs"}
                     </span>
                     <span className="text-gray-300">•</span>
-                    <span className="text-xs font-semibold text-gray-500">{product.brand || "Smooth Sale POS"}</span>
+                    <span className="text-xs font-semibold text-gray-500">{cleanBrand}</span>
                   </div>
 
                   <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-snug">
@@ -272,7 +272,7 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1">Description</h4>
                   <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                    {cleanDescriptionText(product.description || "")}
+                    {cleanDescriptionText(product.description || "") || "Certified genuine agricultural input for farm use."}
                   </p>
                 </div>
 
@@ -325,7 +325,7 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
 
                 <div className="flex items-center justify-center gap-4 text-[11px] text-gray-400 pt-1">
                   <span className="flex items-center gap-1">
-                    <ShieldCheck size={13} className="text-emerald-600" /> Smooth Sale POS Authenticated
+                    <ShieldCheck size={13} className="text-emerald-600" /> Certified Quality Verified
                   </span>
                   <span>•</span>
                   <span>Instant Dispatch</span>

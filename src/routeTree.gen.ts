@@ -28,6 +28,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
 import { Route as PaymentsPaystackCallbackRouteImport } from './routes/payments.paystack.callback'
 import { Route as ApiUploadPresignRouteImport } from './routes/api/upload/presign'
@@ -151,6 +152,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 const ApiProductsRoute = ApiProductsRouteImport.update({
   id: '/api/products',
   path: '/api/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
@@ -315,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -365,6 +372,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/health'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/health'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/terms'
     | '/tools'
+    | '/api/health'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -619,6 +631,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   TermsRoute: typeof TermsRoute
   ToolsRoute: typeof ToolsRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiProductsRoute: typeof ApiProductsRouteWithChildren
   ShopProductIdRoute: typeof ShopProductIdRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -784,6 +797,13 @@ declare module '@tanstack/react-router' {
       path: '/api/products'
       fullPath: '/api/products'
       preLoaderRoute: typeof ApiProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop/product/$slug': {
@@ -1043,6 +1063,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   TermsRoute: TermsRoute,
   ToolsRoute: ToolsRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiProductsRoute: ApiProductsRouteWithChildren,
   ShopProductIdRoute: ShopProductIdRoute,
   ShopIndexRoute: ShopIndexRoute,

@@ -54,7 +54,7 @@ function slugify(text: string): string {
 
 export function cleanDescriptionText(raw: string | null | undefined): string {
   if (!raw) return "";
-  return raw
+  let text = raw
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
@@ -64,6 +64,17 @@ export function cleanDescriptionText(raw: string | null | undefined): string {
     .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strip automatic POS sync boilerplates
+  text = text
+    .replace(/Certified product directly (synchronized|synced) from Smooth Sale POS\.?\s*(SKU:?\s*[\w-]+)?/gi, "")
+    .replace(/Certified product directly (synchronized|synced) from POS inventory\.?\s*(SKU:?\s*[\w-]+)?/gi, "")
+    .replace(/Certified product directly (synchronized|synced) from[^\.]*\.?/gi, "")
+    .replace(/\bSmooth Sale POS\b/gi, "")
+    .replace(/SKU:\s*[\w-]+\s*$/gi, "")
+    .trim();
+
+  return text;
 }
 
 export class SmoothSaleService {
@@ -280,7 +291,7 @@ export class SmoothSaleService {
 
         const rawSlug = posProduct.sku ? slugify(posProduct.sku) : slugify(productName);
         const rawDesc = posProduct.product_description || posProduct.description || "";
-        const description = cleanDescriptionText(rawDesc) || `Certified product directly synchronized from Smooth Sale POS. SKU: ${posProduct.sku || extProductId || "N/A"}`;
+        const description = cleanDescriptionText(rawDesc) || "Certified genuine agricultural input for farm use.";
         
         let imageUrls: string[] = [];
         if (posProduct.image_url && typeof posProduct.image_url === "string" && !posProduct.image_url.includes("default.png")) {
@@ -305,7 +316,8 @@ export class SmoothSaleService {
           categoryName = posProduct.type;
         }
 
-        const brand = posProduct.brand || posProduct.brand_name || "Smooth Sale POS";
+        const rawBrand = posProduct.brand || posProduct.brand_name;
+        const brand = (rawBrand && !rawBrand.toLowerCase().includes("smooth sale")) ? rawBrand : (categoryName || "Verified Input");
 
         let unit = "Piece";
         if (posProduct.unit && typeof posProduct.unit === "object") {
@@ -359,7 +371,7 @@ export class SmoothSaleService {
             description,
             imageUrls,
             brand,
-            seller: "Smooth Sale POS Certified Dealer",
+            seller: "Certified Agrovet Partner",
             county: "Kenya",
             unit,
             shopType: categoryName,

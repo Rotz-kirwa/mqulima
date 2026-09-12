@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: mqulima-web
+    runtime: node
+    plan: starter
+    region: ohio
+    buildCommand: npm install && NITRO_PRESET=node-server npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NITRO_PRESET
+        value: node-server
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: NCBA_CLIENT_ID
+        sync: false
+      - key: NCBA_CLIENT_SECRET
+        sync: false
+      - key: NCBA_MERCHANT_CODE
+        sync: false
+      - key: NCBA_CALLBACK_SECRET
+        sync: false

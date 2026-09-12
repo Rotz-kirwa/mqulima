@@ -52,14 +52,14 @@ export const Route = createFileRoute("/api/products")({
                   externalProductId: p.externalProductId,
                   name: p.name,
                   slug: p.slug,
-                  description: p.description || "High quality agricultural input.",
+                  description: cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.",
                   basePrice: Number(p.basePrice) || 0,
                   stockQuantity: p.stockQty || 0,
                   status: p.status,
                   category: p.subcategory || p.shopType || "General",
                   subcategory: p.subcategory,
-                  brand: p.brand || "Smooth Sale POS",
-                  seller: p.seller || "Certified Agrovet Dealer",
+                  brand: (p.brand && !/smooth\s*sale/i.test(p.brand)) ? p.brand : (p.subcategory || "Verified Input"),
+                  seller: (p.seller && !/smooth\s*sale/i.test(p.seller)) ? p.seller : "Certified Agrovet Partner",
                   county: p.county || "Kenya",
                   unit: p.unit || "Unit",
                   images: p.imageUrls && p.imageUrls.length > 0 && !p.imageUrls[0].includes("default.png") ? p.imageUrls : [resolveFastProductImage(p)],
@@ -135,7 +135,7 @@ export const Route = createFileRoute("/api/products")({
                 .where(eq(productVariants.productId, p.id));
 
               const tax = mapToNewTaxonomy(p);
-              const cleanDesc = cleanDescriptionText(p.description) || "";
+              const cleanDesc = cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.";
               const cleanUnit = (p.unit && !p.unit.includes("[object")) ? p.unit : "Piece";
               const realStock = Math.max(0, Number(p.stockQty ?? 0));
               return {
@@ -153,8 +153,8 @@ export const Route = createFileRoute("/api/products")({
                 status: p.status,
                 category: tax.category,
                 subcategory: tax.subcategory,
-                brand: p.brand || "Smooth Sale POS",
-                seller: p.seller || "Certified Agrovet Dealer",
+                brand: (p.brand && !/smooth\s*sale/i.test(p.brand)) ? p.brand : (tax.subcategory || "Verified Input"),
+                seller: (p.seller && !/smooth\s*sale/i.test(p.seller)) ? p.seller : "Certified Agrovet Partner",
                 county: p.county || "Kenya",
                 verifiedSeller: true,
                 unit: cleanUnit,

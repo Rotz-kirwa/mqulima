@@ -29,7 +29,7 @@ export const AGRICULTURE_TAXONOMY: Record<string, string[] | Record<string, stri
 
 export function cleanDescriptionText(raw: string | null | undefined): string {
   if (!raw) return "";
-  return raw
+  let text = raw
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
@@ -39,6 +39,17 @@ export function cleanDescriptionText(raw: string | null | undefined): string {
     .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strip automatic POS sync boilerplates
+  text = text
+    .replace(/Certified product directly (synchronized|synced) from Smooth Sale POS\.?\s*(SKU:?\s*[\w-]+)?/gi, "")
+    .replace(/Certified product directly (synchronized|synced) from POS inventory\.?\s*(SKU:?\s*[\w-]+)?/gi, "")
+    .replace(/Certified product directly (synchronized|synced) from[^\.]*\.?/gi, "")
+    .replace(/\bSmooth Sale POS\b/gi, "")
+    .replace(/SKU:\s*[\w-]+\s*$/gi, "")
+    .trim();
+
+  return text;
 }
 
 export function mapToNewTaxonomy(p: any) {

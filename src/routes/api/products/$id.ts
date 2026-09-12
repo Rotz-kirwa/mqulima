@@ -3,6 +3,7 @@ import { getDrizzleDb } from "@/lib/db.server";
 import { products, productVariants } from "@/db/schema/products";
 import { eq } from "drizzle-orm";
 import { resolveFastProductImage } from "@/lib/api/shop.server";
+import { cleanDescriptionText } from "@/lib/shop-data";
 
 export const Route = createFileRoute("/api/products/$id")({
   server: {
@@ -46,15 +47,15 @@ export const Route = createFileRoute("/api/products/$id")({
                 externalProductId: p.externalProductId,
                 name: p.name,
                 slug: p.slug,
-                description: p.description || "High quality agricultural input for maximum yield.",
+                description: cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.",
                 basePrice: Number(p.basePrice) || 0,
                 stockQuantity: p.stockQty || 0,
                 availability: (p.stockQty || 0) > 0 ? "In Stock" : "Out of Stock",
                 status: p.status,
                 category: p.subcategory || p.shopType || "General Inputs",
                 subcategory: p.subcategory,
-                brand: p.brand || "Smooth Sale POS",
-                seller: p.seller || "Certified Agrovet",
+                brand: (p.brand && !/smooth\s*sale/i.test(p.brand)) ? p.brand : (p.subcategory || "Verified Input"),
+                seller: (p.seller && !/smooth\s*sale/i.test(p.seller)) ? p.seller : "Certified Agrovet Partner",
                 county: p.county || "Kenya",
                 unit: p.unit || "Unit",
                 images: p.imageUrls && p.imageUrls.length > 0 && !p.imageUrls[0].includes("default.png") ? p.imageUrls : [resolveFastProductImage(p)],
