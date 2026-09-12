@@ -47,16 +47,31 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://www.mqulima.com",
+  "https://mqulima.vercel.app",
+  "https://mqulima-admin-tawny.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://localhost:8081",
+];
+
+const envOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim().replace(/\/$/, ""))
-  : [
-      "https://www.mqulima.com",
-      "https://mqulima.vercel.app",
-      "https://mqulima-admin-tawny.vercel.app",
-      "http://localhost:3000",
-      "http://localhost:8080",
-      "http://localhost:8081",
-    ];
+  : [];
+
+const ALLOWED_ORIGINS = [...new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins])];
+
+function isOriginAllowed(origin: string): boolean {
+  if (!origin) return false;
+  const normalized = origin.replace(/\/$/, "");
+  if (ALLOWED_ORIGINS.includes(normalized)) return true;
+  // Allow any Render or Vercel preview/production deployment
+  if (/^https:\/\/[a-zA-Z0-9_-]+\.onrender\.com$/.test(normalized)) return true;
+  if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(normalized)) return true;
+  if (/^http:\/\/localhost(:[0-9]+)?$/.test(normalized)) return true;
+  return false;
+}
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
@@ -73,7 +88,7 @@ export default {
 
     const origin = request.headers.get("origin") || "";
     const normalizedOrigin = origin.replace(/\/$/, "");
-    const isAllowed = ALLOWED_ORIGINS.includes(normalizedOrigin);
+    const isAllowed = isOriginAllowed(normalizedOrigin);
 
     if (request.method === "OPTIONS") {
       if (isAllowed) {
