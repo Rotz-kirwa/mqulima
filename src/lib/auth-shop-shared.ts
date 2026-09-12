@@ -3,24 +3,34 @@ import { z } from "zod";
 export const SignUpSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().regex(/^\+254 \d{3} \d{3} \d{3}$/, "Phone number must be in +254 7XX XXX XXX format"),
   email: z.string().email("Invalid email address"),
-  password: z.string()
-    .min(6, "Password must be at least 6 characters long"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-  phoneNumber: z.string().optional().or(z.literal("")),
-  nationalId: z.string().optional().or(z.literal("")),
-  county: z.string().optional().or(z.literal("")),
-  deliveryLocation: z.string().optional().or(z.literal("")),
+  nationalId: z.string().regex(/^\d{7,8}$/, "National ID must be 7 or 8 digits"),
+  county: z.string().min(1, "County is required"),
+  deliveryLocation: z.string().min(1, "Area of delivery is required"),
   landmark: z.string().optional().or(z.literal("")),
-  farmingType: z.string().optional().or(z.literal("")),
+  farmingType: z.string().min(1, "Nature of Farming is required"),
   specifyFarmingType: z.string().optional().or(z.literal("")),
-  terms: z.boolean().optional(),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+  terms: z.boolean().refine(val => val === true, "You must accept the terms & conditions")
 }).superRefine((data, ctx) => {
   if (data.password !== data.confirmPassword) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Passwords do not match",
       path: ["confirmPassword"],
+    });
+  }
+  
+  if (data.farmingType === "Other" && (!data.specifyFarmingType || data.specifyFarmingType.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please specify your farming type",
+      path: ["specifyFarmingType"],
     });
   }
 });
