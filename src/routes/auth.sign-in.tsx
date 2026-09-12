@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { SproutLogo, WaveDivider, FacebookIcon, GoogleIcon, AppleIcon } from "@/components/auth/AuthMockupAssets";
+import { SproutLogo, WaveDivider } from "@/components/auth/AuthMockupAssets";
 
 export const Route = createFileRoute("/auth/sign-in")({
   head: () => ({
@@ -68,10 +68,6 @@ function SignIn() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSocialClick = (provider: string) => {
-    toast.info(`${provider} sign-in will be enabled in the upcoming update!`);
   };
 
   const handleForgotPassword = () => {
@@ -177,15 +173,15 @@ function SignIn() {
             </button>
           </div>
 
-          {/* LOG IN BUTTON (ESPRESSO JET-BLACK PILL) */}
+          {/* LOG IN BUTTON (VIBRANT YELLOW PILL) */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-[#14120F] hover:bg-[#221F1A] active:scale-[0.99] text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+            className="w-full mt-4 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
                 <span>Logging In...</span>
               </>
             ) : (
@@ -194,47 +190,8 @@ function SignIn() {
           </button>
         </form>
 
-        {/* SOCIAL SIGN IN SECTION */}
-        <div className="pt-4 space-y-2.5 text-center">
-          <p className="text-[11px] font-medium text-emerald-100/90 tracking-wide">
-            Or Sign In with
-          </p>
-
-          <div className="flex items-center justify-center gap-3 pt-0.5">
-            {/* Facebook */}
-            <button
-              type="button"
-              onClick={() => handleSocialClick("Facebook")}
-              className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white shadow hover:scale-108 active:scale-95 transition-transform cursor-pointer"
-              aria-label="Sign in with Facebook"
-            >
-              <FacebookIcon className="w-3.5 h-3.5 fill-white" />
-            </button>
-
-            {/* Google */}
-            <button
-              type="button"
-              onClick={() => handleSocialClick("Google")}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow hover:scale-108 active:scale-95 transition-transform cursor-pointer"
-              aria-label="Sign in with Google"
-            >
-              <GoogleIcon className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Apple */}
-            <button
-              type="button"
-              onClick={() => handleSocialClick("Apple")}
-              className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white shadow hover:scale-108 active:scale-95 transition-transform cursor-pointer"
-              aria-label="Sign in with Apple"
-            >
-              <AppleIcon className="w-3.5 h-3.5 fill-white" />
-            </button>
-          </div>
-        </div>
-
         {/* FOOTER SWITCH LINK */}
-        <p className="text-center text-xs text-white/90 pt-5 font-normal">
+        <p className="text-center text-xs text-white/90 pt-6 font-normal">
           Don't have an account?{" "}
           <Link
             to="/auth/sign-up"

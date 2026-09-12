@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { SignUpSchema } from "@/lib/auth-shop-shared";
 import { useAuth } from "@/hooks/useAuth";
-import { WaveDivider, GoogleIcon } from "@/components/auth/AuthMockupAssets";
+import { WaveDivider, SproutLogo } from "@/components/auth/AuthMockupAssets";
 
 export const Route = createFileRoute("/auth/sign-up")({
   head: () => ({
@@ -236,22 +236,28 @@ function SignUp() {
     <div className="w-full max-w-2xl mx-auto rounded-[36px] bg-[#FAF8F0] shadow-[0_25px_60px_-15px_rgba(4,40,25,0.25)] overflow-hidden transition-all duration-300 border border-[#E9E4D4]/60">
       
       {/* TOP HEADER SECTION (Ivory Top with Nav & Titles) */}
-      <div className="bg-[#FAF8F0] pt-6 pb-4 px-6 sm:px-8 text-left relative">
-        <Link
-          to="/auth/sign-in"
-          search={redirectParam ? { redirect: redirectParam } as any : undefined}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-[#056B3A] transition-colors mb-3 group cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Sign In</span>
-        </Link>
+      <div className="bg-[#FAF8F0] pt-6 pb-4 px-6 sm:px-8 text-left relative flex items-start justify-between">
+        <div>
+          <Link
+            to="/auth/sign-in"
+            search={redirectParam ? { redirect: redirectParam } as any : undefined}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-[#056B3A] transition-colors mb-2 group cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to Sign In</span>
+          </Link>
 
-        <h1 className="text-2xl sm:text-3xl font-black text-[#1C201D] tracking-tight">
-          Join Mqulima Today
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-          Create your profile to buy, sell, and connect with Kenya's farming community.
-        </p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#1C201D] tracking-tight">
+            Join Mqulima Today
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+            Create your profile to buy, sell, and connect with Kenya's farming community.
+          </p>
+        </div>
+
+        <div className="w-12 h-12 rounded-2xl bg-white shadow-xs border border-gray-100 p-1.5 shrink-0 hidden sm:flex items-center justify-center">
+          <SproutLogo className="w-full h-full" />
+        </div>
       </div>
 
       {/* SIGNATURE ORGANIC WAVE TRANSITION */}
@@ -635,15 +641,15 @@ function SignUp() {
             <p className="text-[10px] font-bold text-red-300 text-left px-1">{errors.terms}</p>
           )}
 
-          {/* SIGN UP BUTTON (ESPRESSO JET-BLACK PILL) */}
+          {/* SIGN UP BUTTON (VIBRANT YELLOW PILL) */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-[#14120F] hover:bg-[#221F1A] active:scale-[0.99] text-white font-bold text-sm py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-75 disabled:cursor-not-allowed"
+            className="w-full mt-3 bg-[#FACC15] hover:bg-[#EAB308] active:scale-[0.99] text-[#14120F] font-black text-sm py-4 rounded-2xl shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-75 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
                 <span>Creating Account...</span>
               </>
             ) : (
@@ -652,24 +658,8 @@ function SignUp() {
           </button>
         </form>
 
-        {/* SOCIAL SIGN UP SEPARATOR */}
-        <div className="pt-5 space-y-3 text-center">
-          <p className="text-[11px] font-medium text-emerald-100/90 tracking-widest uppercase">
-            Or sign up with
-          </p>
-
-          <button
-            type="button"
-            onClick={() => toast.info("Google Sign-In will be available in the upcoming update!")}
-            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2.5 cursor-pointer"
-          >
-            <GoogleIcon className="w-4 h-4" />
-            <span>Continue with Google</span>
-          </button>
-        </div>
-
         {/* FOOTER SWITCH LINK */}
-        <p className="text-center text-xs text-white/90 pt-5 font-normal">
+        <p className="text-center text-xs text-white/90 pt-6 font-normal">
           Already have an account?{" "}
           <Link
             to="/auth/sign-in"
