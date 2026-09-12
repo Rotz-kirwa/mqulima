@@ -152,7 +152,7 @@ export async function sendSms(options: SendSmsOptions): Promise<SendSmsResult> {
     return mockResult;
   }
 
-  const apiKey = process.env.TEXTSMS_API_KEY;
+  const apiKey = process.env.TEXTSMS_API_KEY || "82b5401f7d2d708f19d78f405cb4acab";
   const partnerId = process.env.TEXTSMS_PARTNER_ID || "16948";
   const senderId = process.env.TEXTSMS_SENDER_ID || "KIRGIT_AGRI";
   const apiUrl = process.env.TEXTSMS_API_URL || "https://sms.textsms.co.ke/api/services/sendsms/";
