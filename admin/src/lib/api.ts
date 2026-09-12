@@ -1,3 +1,12 @@
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || "").replace(/\/$/, "");
+
+export function getApiUrl(path: string): string {
+  if (!API_BASE || path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("mqulima_admin_token") || sessionStorage.getItem("mqulima_admin_token");
@@ -9,7 +18,13 @@ export async function adminFetch(input: RequestInfo | URL, init?: RequestInit): 
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  const response = await fetch(input, {
+
+  let finalUrl = input;
+  if (typeof input === "string") {
+    finalUrl = getApiUrl(input);
+  }
+
+  const response = await fetch(finalUrl, {
     ...init,
     headers,
     credentials: "include",

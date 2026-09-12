@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ShieldCheck, Lock, Mail, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
+import { getApiUrl } from "../../lib/api";
 
 interface AdminLoginScreenProps {
   onLoginSuccess: (user: { id: string; name: string; email: string; role: string }) => void;
@@ -24,7 +25,7 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onLoginSucce
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch(getApiUrl("/api/admin/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
