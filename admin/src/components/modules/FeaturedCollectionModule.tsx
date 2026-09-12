@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Star, ArrowUp, ArrowDown, Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Upload, Check, AlertCircle } from "lucide-react";
+import { Star, ArrowUp, ArrowDown, Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Upload, Check, AlertCircle, Pencil, X } from "lucide-react";
 import { adminFetch } from "../../lib/api";
 
 export const FeaturedCollectionModule: React.FC = () => {
@@ -15,7 +15,16 @@ export const FeaturedCollectionModule: React.FC = () => {
   const [linkUrl, setLinkUrl] = useState("/shop");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Edit modal state
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editLinkUrl, setEditLinkUrl] = useState("/shop");
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFeatured = () => {
     setLoading(true);
@@ -122,6 +131,77 @@ export const FeaturedCollectionModule: React.FC = () => {
       }
     } catch (e) {
       console.error("Delete error:", e);
+    }
+  };
+
+  // Start Editing Item
+  const handleStartEdit = (item: any) => {
+    setEditingItem(item);
+    setEditTitle(item.title || "");
+    setEditImageUrl(item.imageUrl || "");
+    setEditLinkUrl(item.linkUrl || "/shop");
+    setEditImagePreview(item.imageUrl || null);
+    setError(null);
+  };
+
+  // Handle Edit File Upload to Data URL
+  const handleEditFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image file size should be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setEditImageUrl(dataUrl);
+      setEditImagePreview(dataUrl);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save Edit Item
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setError(null);
+    setSuccessMsg(null);
+
+    if (!editImageUrl.trim()) {
+      setError("Please provide an Image URL or upload an image file.");
+      return;
+    }
+
+    setEditSaving(true);
+    try {
+      const res = await adminFetch("/api/admin/featured", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          id: editingItem.id,
+          title: editTitle.trim() || "Farm Essential",
+          imageUrl: editImageUrl.trim(),
+          linkUrl: editLinkUrl.trim() || "/shop",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg("Featured item updated successfully!");
+        setEditingItem(null);
+        fetchFeatured();
+      } else {
+        setError(data.error || "Failed to update featured item");
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred while updating.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -349,6 +429,14 @@ export const FeaturedCollectionModule: React.FC = () => {
                   </button>
 
                   <button
+                    onClick={() => handleStartEdit(item)}
+                    className="p-1.5 bg-white border border-[#CCE5E1] text-[#278C7B] hover:bg-[#E8F4F1] rounded-[4px] cursor-pointer"
+                    title="Edit Item"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
                     onClick={() => handleDeleteItem(item.id)}
                     className="p-1.5 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 rounded-[4px] cursor-pointer ml-1"
                     title="Delete Item"
@@ -361,6 +449,138 @@ export const FeaturedCollectionModule: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Featured Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-[#CCE5E1] rounded-[8px] p-6 max-w-lg w-full text-left space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#CCE5E1] pb-3">
+              <h2 className="text-base font-serif font-bold text-[#0F3D3C] flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-[#278C7B]" />
+                Edit Featured Item
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              {/* Image Selection */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#0F3D3C]">
+                  Image Source (Upload File OR Paste URL)
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={editFileInputRef}
+                    onChange={handleEditFileUpload}
+                    className="hidden"
+                    id="edit-featured-file-upload"
+                  />
+                  <label
+                    htmlFor="edit-featured-file-upload"
+                    className="flex-1 py-2 px-3 bg-[#E8F4F1] hover:bg-[#D4ECE6] border border-[#278C7B] text-[#0F3D3C] font-semibold text-xs rounded-[4px] cursor-pointer flex items-center justify-center gap-2 transition"
+                  >
+                    <Upload className="h-4 w-4 text-[#278C7B]" />
+                    <span>Upload New Image</span>
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <ImageIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-[#4A7C79]" />
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/... or CDN image URL"
+                    value={editImageUrl}
+                    onChange={(e) => {
+                      setEditImageUrl(e.target.value);
+                      setEditImagePreview(e.target.value || null);
+                    }}
+                    className="w-full pl-9 pr-3 py-2 border border-[#CCE5E1] rounded-[4px] text-xs focus:outline-none focus:border-[#278C7B] bg-[#FAFBF9]"
+                  />
+                </div>
+              </div>
+
+              {/* Title Input */}
+              <div>
+                <label className="block text-xs font-bold text-[#0F3D3C] mb-1">
+                  Title / Caption
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Organic Maize Seed Vector"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#CCE5E1] rounded-[4px] text-xs focus:outline-none focus:border-[#278C7B] bg-[#FAFBF9]"
+                />
+              </div>
+
+              {/* Link Input */}
+              <div>
+                <label className="block text-xs font-bold text-[#0F3D3C] mb-1">
+                  Link Destination
+                </label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-[#4A7C79]" />
+                  <input
+                    type="text"
+                    placeholder="/shop or /shop/product/slug"
+                    value={editLinkUrl}
+                    onChange={(e) => setEditLinkUrl(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 border border-[#CCE5E1] rounded-[4px] text-xs focus:outline-none focus:border-[#278C7B] bg-[#FAFBF9]"
+                  />
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              {editImagePreview && (
+                <div className="p-3 bg-[#FAFBF9] border border-[#CCE5E1] rounded-[6px] flex items-center gap-4">
+                  <div className="h-16 w-16 shrink-0 bg-slate-200 border border-slate-300 rounded-[2px] overflow-hidden">
+                    <img
+                      src={editImagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/placeholder-product.png";
+                      }}
+                    />
+                  </div>
+                  <div className="text-xs text-[#0F3D3C] min-w-0">
+                    <span className="font-bold block">Current Image Preview</span>
+                    <span className="text-[10px] text-[#4A7C79] block truncate max-w-xs">{editImageUrl}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#CCE5E1]">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 bg-[#E8F4F1] hover:bg-[#D4ECE6] text-[#0F3D3C] text-xs font-semibold rounded-[4px] cursor-pointer transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="px-5 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-[4px] cursor-pointer transition flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {editSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

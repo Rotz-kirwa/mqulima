@@ -161,6 +161,36 @@ export const Route = createFileRoute("/api/admin/featured")({
             );
           }
 
+          if (action === "update" || action === "edit") {
+            if (!id) {
+              return new Response(
+                JSON.stringify({ success: false, error: "Item ID is required for update" }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
+            const updates: any = {};
+            if (imageUrl !== undefined && imageUrl.trim()) updates.imageUrl = imageUrl.trim();
+            if (title !== undefined) updates.title = title.trim();
+            if (linkUrl !== undefined) updates.linkUrl = linkUrl.trim();
+            if (displayOrder !== undefined) updates.position = Number(displayOrder);
+
+            await db.update(featuredItems).set(updates).where(eq(featuredItems.id, id));
+
+            await logAdminAction({
+              actorId,
+              action: "FEATURED_UPDATED",
+              entity: "featured_items",
+              entityId: id,
+              diff: updates,
+            });
+
+            return new Response(
+              JSON.stringify({ success: true, message: "Featured item updated successfully" }),
+              { headers: { "Content-Type": "application/json" } }
+            );
+          }
+
           // Default fallback: Reorder action
           const targetPos = displayOrder !== undefined ? Number(displayOrder) : 0;
           await db.update(featuredItems).set({ position: targetPos }).where(eq(featuredItems.id, id));
