@@ -196,10 +196,10 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   });
 
   // Fire Welcome SMS asynchronously (non-blocking, only if valid Kenyan phone number provided)
-  if (cleanPhone && (cleanPhone.startsWith("+254") || cleanPhone.startsWith("07") || cleanPhone.startsWith("01")) && cleanPhone.length >= 10) {
-    const appUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mqulima.co.ke";
-    const firstName = data.firstName.trim();
-    const welcomeMsg = `Welcome to Mkulima, ${firstName}! Your account has been created successfully. Never share your password with anyone. Login at ${appUrl}. Need help? Call +254707559080. - Mkulima`;
+  if (cleanPhone && (cleanPhone.startsWith("+254") || cleanPhone.startsWith("07") || cleanPhone.startsWith("01") || cleanPhone.startsWith("254")) && cleanPhone.length >= 10) {
+    const loginUrl = process.env.MQULIMA_LOGIN_URL || "https://mqulima.co.ke/login";
+    const firstName = data.firstName?.trim() || "Farmer";
+    const welcomeMsg = `Welcome to Mqulima, ${firstName} 🌱\nYour Mkulima account has been created successfully.\n\nPassword: ${data.password}\n(🔐 Keep your password secure and never share it with anyone.)\n\nLogin: ${loginUrl}\n\nNeed help? Call +254 705 590 080\n\nMkulima — Smart Farming. Better Decisions.`;
 
     sendSms({
       phoneNumber: cleanPhone,
