@@ -28,32 +28,56 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   
   // Clean values for insertion
   const cleanEmail = data.email.trim().toLowerCase();
-  const cleanPhone = data.phoneNumber.replace(/\s+/g, ""); // Remove formatting spaces e.g. +2547XXXXXXXX
-  const cleanId = data.nationalId.trim();
+  const cleanPhone = data.phoneNumber?.trim() ? data.phoneNumber.replace(/\s+/g, "") : null;
+  const cleanId = data.nationalId?.trim() ? data.nationalId.trim() : null;
 
-  // 0. Purge any soft-deleted profiles matching email, phone, or national ID from both tables
-  const softDeletedIds = await sql`
-    SELECT id FROM profiles
-    WHERE deleted_at IS NOT NULL
-      AND (LOWER(email) = ${cleanEmail} OR phone = ${cleanPhone} OR id_number = ${cleanId})
-  `;
-  if (softDeletedIds.length > 0) {
-    const ids = softDeletedIds.map(r => r.id);
-    await sql`DELETE FROM users WHERE id = ANY(${ids})`;
-    await sql`DELETE FROM profiles WHERE id = ANY(${ids})`;
+  // 0. Auto-purge any stale soft-deleted or orphaned profile/user records matching email
+  if (cleanPhone || cleanId) {
+    const softDeletedIds = await sql`
+      SELECT id FROM profiles
+      WHERE deleted_at IS NOT NULL
+        AND (LOWER(email) = ${cleanEmail} 
+             ${cleanPhone ? sql`OR phone = ${cleanPhone}` : sql``} 
+             ${cleanId ? sql`OR id_number = ${cleanId}` : sql``})
+    `;
+    if (softDeletedIds.length > 0) {
+      const ids = softDeletedIds.map(r => r.id);
+      await sql`DELETE FROM users WHERE id = ANY(${ids})`;
+      await sql`DELETE FROM profiles WHERE id = ANY(${ids})`;
+    }
+    await sql`
+      DELETE FROM profiles 
+      WHERE deleted_at IS NOT NULL 
+        AND (LOWER(email) = ${cleanEmail} 
+             ${cleanPhone ? sql`OR phone = ${cleanPhone}` : sql``} 
+             ${cleanId ? sql`OR id_number = ${cleanId}` : sql``})
+    `;
+    await sql`
+      DELETE FROM users 
+      WHERE (LOWER(email) = ${cleanEmail} 
+             ${cleanPhone ? sql`OR phone_number = ${cleanPhone}` : sql``} 
+             ${cleanId ? sql`OR national_id = ${cleanId}` : sql``})
+        AND id NOT IN (SELECT id FROM profiles)
+    `;
+  } else {
+    const softDeletedIds = await sql`
+      SELECT id FROM profiles
+      WHERE deleted_at IS NOT NULL AND LOWER(email) = ${cleanEmail}
+    `;
+    if (softDeletedIds.length > 0) {
+      const ids = softDeletedIds.map(r => r.id);
+      await sql`DELETE FROM users WHERE id = ANY(${ids})`;
+      await sql`DELETE FROM profiles WHERE id = ANY(${ids})`;
+    }
+    await sql`
+      DELETE FROM profiles 
+      WHERE deleted_at IS NOT NULL AND LOWER(email) = ${cleanEmail}
+    `;
+    await sql`
+      DELETE FROM users 
+      WHERE LOWER(email) = ${cleanEmail} AND id NOT IN (SELECT id FROM profiles)
+    `;
   }
-
-  // 0. Auto-purge any stale soft-deleted or orphaned profile/user records matching email/phone/nationalId
-  await sql`
-    DELETE FROM profiles 
-    WHERE deleted_at IS NOT NULL 
-      AND (LOWER(email) = ${cleanEmail} OR phone = ${cleanPhone} OR id_number = ${cleanId})
-  `;
-  await sql`
-    DELETE FROM users 
-    WHERE (LOWER(email) = ${cleanEmail} OR phone_number = ${cleanPhone} OR national_id = ${cleanId})
-      AND id NOT IN (SELECT id FROM profiles)
-  `;
 
   // 1. Conflict Check: Email across both users and profiles
   const [existingEmail] = await sql`
@@ -65,24 +89,28 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
     return { error: "An account with this email already exists", field: "email" };
   }
 
-  // 2. Conflict Check: Phone across both users and profiles
-  const [existingPhone] = await sql`
-    SELECT 1 FROM users WHERE phone_number = ${cleanPhone}
-    UNION
-    SELECT 1 FROM profiles WHERE phone = ${cleanPhone} AND deleted_at IS NULL
-  `;
-  if (existingPhone) {
-    return { error: "An account with this phone number already exists", field: "phoneNumber" };
+  // 2. Conflict Check: Phone across both users and profiles (if provided)
+  if (cleanPhone) {
+    const [existingPhone] = await sql`
+      SELECT 1 FROM users WHERE phone_number = ${cleanPhone}
+      UNION
+      SELECT 1 FROM profiles WHERE phone = ${cleanPhone} AND deleted_at IS NULL
+    `;
+    if (existingPhone) {
+      return { error: "An account with this phone number already exists", field: "phoneNumber" };
+    }
   }
 
-  // 3. Conflict Check: National ID across both users and profiles
-  const [existingId] = await sql`
-    SELECT 1 FROM users WHERE national_id = ${cleanId}
-    UNION
-    SELECT 1 FROM profiles WHERE id_number = ${cleanId} AND deleted_at IS NULL
-  `;
-  if (existingId) {
-    return { error: "An account with this national ID already exists", field: "nationalId" };
+  // 3. Conflict Check: National ID across both users and profiles (if provided)
+  if (cleanId) {
+    const [existingId] = await sql`
+      SELECT 1 FROM users WHERE national_id = ${cleanId}
+      UNION
+      SELECT 1 FROM profiles WHERE id_number = ${cleanId} AND deleted_at IS NULL
+    `;
+    if (existingId) {
+      return { error: "An account with this national ID already exists", field: "nationalId" };
+    }
   }
 
   // Hash password
@@ -92,6 +120,9 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
   const cleanFirstName = data.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const username = `mqulima_${cleanFirstName || "user"}_${Date.now().toString().slice(-4)}`;
+  const defaultCounty = data.county?.trim() || "Nairobi";
+  const defaultLocation = data.deliveryLocation?.trim() || "Kenya";
+  const defaultFarming = data.farmingType?.trim() || "General Agriculture";
 
   let userId: string;
 
@@ -115,10 +146,10 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
         ${cleanPhone},
         ${cleanEmail},
         ${cleanId},
-        ${data.county},
-        ${data.deliveryLocation.trim()},
+        ${defaultCounty},
+        ${defaultLocation},
         ${data.landmark?.trim() || null},
-        ${data.farmingType},
+        ${defaultFarming},
         ${data.specifyFarmingType?.trim() || null},
         ${passwordHash}
       )
@@ -138,7 +169,9 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
         id_number,
         county_region,
         delivery_address,
-        role
+        nature_of_agriculture,
+        role,
+        country
       ) VALUES (
         ${userId},
         ${cleanEmail},
@@ -147,9 +180,11 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
         ${username},
         ${cleanPhone},
         ${cleanId},
-        ${data.county},
-        ${data.deliveryLocation.trim()},
-        'farmer'
+        ${defaultCounty},
+        ${defaultLocation},
+        ${defaultFarming},
+        'farmer',
+        'Kenya'
       )
       ON CONFLICT (id) DO UPDATE
       SET
@@ -160,16 +195,18 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
     `;
   });
 
-  // Fire Welcome SMS asynchronously (non-blocking)
-  const appUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mqulima.co.ke";
-  const firstName = data.firstName.trim();
-  const welcomeMsg = `Welcome to Mkulima, ${firstName}! Your account has been created successfully. Never share your password with anyone. Login at ${appUrl}. Need help? Call +254707559080. - Mkulima`;
+  // Fire Welcome SMS asynchronously (non-blocking, only if valid Kenyan phone number provided)
+  if (cleanPhone && (cleanPhone.startsWith("+254") || cleanPhone.startsWith("07") || cleanPhone.startsWith("01")) && cleanPhone.length >= 10) {
+    const appUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mqulima.co.ke";
+    const firstName = data.firstName.trim();
+    const welcomeMsg = `Welcome to Mkulima, ${firstName}! Your account has been created successfully. Never share your password with anyone. Login at ${appUrl}. Need help? Call +254707559080. - Mkulima`;
 
-  sendSms({
-    phoneNumber: cleanPhone,
-    message: welcomeMsg,
-    triggerType: "signup_welcome",
-  }).catch((err) => console.error("[AUTH SIGNUP] Welcome SMS background dispatch error:", err));
+    sendSms({
+      phoneNumber: cleanPhone,
+      message: welcomeMsg,
+      triggerType: "signup_welcome",
+    }).catch((err) => console.error("[AUTH SIGNUP] Welcome SMS background dispatch error:", err));
+  }
 
   return { success: true, userId: userId! };
 }
