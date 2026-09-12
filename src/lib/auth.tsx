@@ -4,7 +4,15 @@ import { type User } from "./auth-types";
 import { loginUser, logoutUser, getCurrentUser, registerUser } from "./auth-server";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("mqulima_user_account");
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Check current session and initialize CSRF token on mount
@@ -14,9 +22,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { ensureCsrfToken } = await import("./csrf-client");
         await ensureCsrfToken();
         const currentUser = await getCurrentUser();
-        setUser(currentUser);
+        if (currentUser) {
+          setUser(currentUser);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("mqulima_user_account", JSON.stringify(currentUser));
+          }
+        } else {
+          setUser(null);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("mqulima_user_account");
+          }
+        }
       } catch (error) {
-        setUser(null);
+        // Keep cached user on transient network failure
       } finally {
         setIsLoading(false);
       }
@@ -29,9 +47,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const csrfToken = await ensureCsrfToken();
     const response = await loginUser({ data: { identifier, password, csrfToken, rememberMe } });
     if (response && response.success) {
-      // Fetch full user profile details to ensure consistency
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      let currentUser: User | null = null;
+      try {
+        currentUser = await getCurrentUser();
+      } catch (e) {}
+
+      const finalUser: User = currentUser || {
+        id: response.user?.id || "user",
+        name: response.user?.name || "Farmer",
+        email: response.user?.email || identifier,
+        county: "",
+        farmSize: "",
+        crops: "",
+        livestock: "",
+        role: (response.user?.role as any) || "farmer",
+      };
+
+      setUser(finalUser);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("mqulima_user_account", JSON.stringify(finalUser));
+      }
       return true;
     }
     return false;
@@ -47,8 +82,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
     if (response && response.success) {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      let currentUser: User | null = null;
+      try {
+        currentUser = await getCurrentUser();
+      } catch (e) {}
+
+      const finalUser: User = currentUser || (response.user as User) || {
+        id: response.userId || "user",
+        name: `${signUpData.firstName || ""} ${signUpData.lastName || ""}`.trim(),
+        email: signUpData.email?.toLowerCase() || "",
+        county: signUpData.county || "",
+        farmSize: "",
+        crops: "",
+        livestock: "",
+        role: "farmer",
+      };
+
+      setUser(finalUser);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("mqulima_user_account", JSON.stringify(finalUser));
+      }
       return true;
     }
     return false;

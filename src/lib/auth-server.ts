@@ -50,12 +50,19 @@ export const loginUser = createServerFn({ method: "POST" })
         WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
       `;
     } else {
-      // Standardize phone number by removing spaces
+      // Standardize phone number across all Kenyan formats (07..., +254..., 254..., 7...)
       const cleanPhone = ident.replace(/\s+/g, "");
+      const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
       [dbUser] = await sql`
         SELECT id, email, password_hash, full_name, role
         FROM profiles
-        WHERE (phone = ${cleanPhone} OR phone = ${'+254' + cleanPhone} OR phone = ${'0' + cleanPhone}) AND deleted_at IS NULL
+        WHERE (
+          phone = ${cleanPhone}
+          OR phone = ${'+254' + basePhone}
+          OR phone = ${'254' + basePhone}
+          OR phone = ${'0' + basePhone}
+          OR phone = ${basePhone}
+        ) AND deleted_at IS NULL
       `;
     }
 
@@ -168,9 +175,22 @@ export const registerUser = createServerFn({ method: "POST" })
       maxAge: 7 * 24 * 60 * 60,
     });
 
+    const fullName = `${signUpData.firstName.trim()} ${signUpData.lastName.trim()}`;
+    const cleanEmail = signUpData.email.trim().toLowerCase();
+
     return {
       success: true,
       userId: res.userId,
+      user: {
+        id: res.userId!,
+        name: fullName,
+        email: cleanEmail,
+        role: "farmer",
+        county: signUpData.county || "",
+        farmSize: "",
+        crops: "",
+        livestock: ""
+      }
     };
   });
 
@@ -216,9 +236,18 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       try {
         const { getRequestHeaders } = await import("@tanstack/react-start/server");
         const headers = getRequestHeaders();
-        const authHeader = headers?.get("authorization");
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-          token = authHeader.slice(7).trim();
+        const cookieHeader = headers?.get("cookie") || (headers as any)?.cookie;
+        if (cookieHeader) {
+          const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+          if (match) {
+            token = decodeURIComponent(match[1].trim());
+          }
+        }
+        if (!token) {
+          const authHeader = headers?.get("authorization");
+          if (authHeader && authHeader.startsWith("Bearer ")) {
+            token = authHeader.slice(7).trim();
+          }
         }
       } catch (e) {
         // Safe fallback outside request context
@@ -236,11 +265,31 @@ export const getCurrentUser = createServerFn({ method: "GET" })
 
       const { getDb } = await import("./db.server");
       const sql = getDb();
-      const [dbUser] = await sql`
+      let [dbUser] = await sql`
         SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
         FROM profiles
         WHERE id = ${userId} AND deleted_at IS NULL
       `;
+
+      if (!dbUser) {
+        const [rawUser] = await sql`
+          SELECT id, email, first_name, last_name, county
+          FROM users
+          WHERE id = ${userId}
+        `;
+        if (rawUser) {
+          dbUser = {
+            id: rawUser.id,
+            email: rawUser.email,
+            full_name: `${rawUser.first_name || "User"} ${rawUser.last_name || ""}`.trim(),
+            county_region: rawUser.county || "",
+            years_farming: 0,
+            crops: [],
+            livestock: [],
+            role: "farmer"
+          };
+        }
+      }
 
       if (!dbUser) {
         return null;

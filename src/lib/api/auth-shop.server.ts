@@ -227,12 +227,17 @@ export async function performSignIn(data: z.infer<typeof SignInSchema>): Promise
       WHERE LOWER(email) = ${cleanEmail}
     `;
   } else {
-    // Standardize phone number by removing spaces
+    // Standardize phone number across all Kenyan formats (07..., +254..., 254..., 7...)
     const cleanPhone = ident.replace(/\s+/g, "");
+    const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
     [dbUser] = await sql`
       SELECT id, first_name, last_name, email, phone_number, password_hash
       FROM users
-      WHERE phone_number = ${cleanPhone} OR phone_number = ${'+254' + cleanPhone} OR phone_number = ${'0' + cleanPhone}
+      WHERE phone_number = ${cleanPhone}
+         OR phone_number = ${'+254' + basePhone}
+         OR phone_number = ${'254' + basePhone}
+         OR phone_number = ${'0' + basePhone}
+         OR phone_number = ${basePhone}
     `;
   }
 
@@ -251,10 +256,17 @@ export async function performSignIn(data: z.infer<typeof SignInSchema>): Promise
       }
     } else {
       const cleanPhone = ident.replace(/\s+/g, "");
+      const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
       const [prof] = await sql`
         SELECT id, full_name, email, phone as phone_number, password_hash
         FROM profiles
-        WHERE (phone = ${cleanPhone} OR phone = ${'+254' + cleanPhone} OR phone = ${'0' + cleanPhone}) AND deleted_at IS NULL
+        WHERE (
+          phone = ${cleanPhone}
+          OR phone = ${'+254' + basePhone}
+          OR phone = ${'254' + basePhone}
+          OR phone = ${'0' + basePhone}
+          OR phone = ${basePhone}
+        ) AND deleted_at IS NULL
       `;
       if (prof) {
         const names = (prof.full_name || "User").split(" ");
@@ -285,7 +297,7 @@ export async function performSignIn(data: z.infer<typeof SignInSchema>): Promise
   setCookie(COOKIE_NAME, jwt, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge: data.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
   });

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { motion, Variants } from "framer-motion";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import heroCinematic from "@/assets/hero-cinematic.png";
+import { useAuth } from "@/hooks/useAuth";
 
 const containerVariants = {
   hidden: {},
@@ -14,6 +15,8 @@ const itemVariants: Variants = {
 };
 
 export function HomeHero() {
+  const { user } = useAuth();
+
   return (
     <section className="relative h-[95svh] min-h-[650px] w-full overflow-hidden bg-[#F4F8F5]">
       {/* ── Cinematic Static Background ── */}
@@ -75,13 +78,23 @@ export function HomeHero() {
                 variants={itemVariants}
                 className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-4 pt-2 w-full max-w-lg sm:max-w-none"
               >
-                <Link
-                  to="/auth/sign-up"
-                  className="group inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#F5A623] px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition-all duration-300 hover:bg-[#e09520] hover:scale-[1.02] active:scale-100 text-center"
-                >
-                  <span>Join Us</span>
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
+                {user ? (
+                  <Link
+                    to="/shop"
+                    className="group inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#F5A623] px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition-all duration-300 hover:bg-[#e09520] hover:scale-[1.02] active:scale-100 text-center"
+                  >
+                    <span>Shop Now</span>
+                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/auth/sign-up"
+                    className="group inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#F5A623] px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#F5A623]/25 transition-all duration-300 hover:bg-[#e09520] hover:scale-[1.02] active:scale-100 text-center"
+                  >
+                    <span>Join Us</span>
+                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                )}
                 <Link
                   to="/tools"
                   className="inline-flex items-center justify-center gap-1.5 sm:gap-2.5 rounded-xl bg-[#15803D] hover:bg-[#166534] border border-[#4ADE80]/40 px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-950/50 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-100 text-center"
