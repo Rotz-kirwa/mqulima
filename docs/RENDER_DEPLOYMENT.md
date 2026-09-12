@@ -26,7 +26,7 @@ If you prefer to configure a standard Web Service manually on Render:
    - **Language / Runtime**: `Node`
    - **Region**: `Ohio (US East)` (or your preferred region)
    - **Branch**: `main`
-   - **Build Command**: `npm install && NITRO_PRESET=node-server npm run build`
+   - **Build Command**: `npm install --include=dev && NITRO_PRESET=node-server npm run build`
    - **Start Command**: `npm run start`
    - **Health Check Path**: `/api/health`
    - **Plan**: `Starter` (or higher)
