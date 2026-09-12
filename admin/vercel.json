@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://www.mqulima.com/api/$1"
+      "destination": "https://mqulima-web.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
