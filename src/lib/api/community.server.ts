@@ -1372,7 +1372,7 @@ export const submitForumConsultation = createServerFn({ method: "POST" })
     const formattedSubject = `[Consultation - ${data.urgency.toUpperCase()}] ${data.specialty} (${data.county})`;
     const formattedUserType = `Farmer Client (${data.channel.toUpperCase()} Desk)`;
     const formattedPhone = data.phone;
-    const formattedEmail = data.email && data.email.trim() ? data.email.trim() : "farmer@mqulima.co.ke";
+    const formattedEmail = data.email && data.email.trim() ? data.email.trim() : "farmer@mqulima.com";
 
     const formattedMessage = `Subject: ${formattedSubject}\nUser Type: ${formattedUserType}\nPhone: ${formattedPhone}\n\nMessage:\nSpecialty: ${data.specialty}\nCounty: ${data.county}\nUrgency: ${data.urgency.toUpperCase()}\nPreferred Contact Method: ${data.channel}\n\nFarmer Inquiry Details:\n${data.message}`;
 

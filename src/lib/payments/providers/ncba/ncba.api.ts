@@ -62,7 +62,7 @@ export function getNcbaConfig(): NcbaConfig {
   const shortcode = (process.env.NCBA_SHORTCODE || process.env.NCBA_MERCHANT_ID || "").trim();
   const passkey = (process.env.NCBA_PASSKEY || "").trim();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.co.ke";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.com";
   const defaultCallback = `${appUrl.replace(/\/$/, "")}/api/payments/ncba/callback`;
   const callbackUrl = (process.env.NCBA_CALLBACK_URL || defaultCallback).trim();
 

@@ -197,7 +197,7 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
 
   // Fire Welcome SMS asynchronously (non-blocking, only if valid Kenyan phone number provided)
   if (cleanPhone && (cleanPhone.startsWith("+254") || cleanPhone.startsWith("07") || cleanPhone.startsWith("01") || cleanPhone.startsWith("254")) && cleanPhone.length >= 10) {
-    const loginUrl = process.env.MQULIMA_LOGIN_URL || "https://mqulima.co.ke/login";
+    const loginUrl = process.env.MQULIMA_LOGIN_URL || "https://mqulima.com/login";
     const firstName = data.firstName?.trim() || "Farmer";
     const welcomeMsg = `Welcome to Mqulima, ${firstName} 🌱\nYour Mqulima account has been created successfully.\n\nPassword: ${data.password}\n(🔐 Keep your password secure and never share it with anyone.)\n\nLogin: ${loginUrl}\n\nNeed help? Call Us: +254 723 346 134\n\nMqulima — Smart Farming. Better Decisions.`;
 
