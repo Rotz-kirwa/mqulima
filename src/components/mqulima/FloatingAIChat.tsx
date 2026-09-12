@@ -54,15 +54,6 @@ export function FloatingAIChat() {
   const handleSend = async (messageText: string) => {
     if (!messageText.trim() || isGenerating) return;
 
-    if (!user) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: messageText },
-        { role: "model", content: "Please sign in to access Mqulima AI. You can sign in via the button above." },
-      ]);
-      return;
-    }
-
     const userMsg: Message = { role: "user", content: messageText };
     setMessages((prev) => [...prev, userMsg]);
     setPrompt("");
@@ -84,6 +75,7 @@ export function FloatingAIChat() {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         signal: controller.signal,
         body: JSON.stringify({
           message: messageText,
@@ -260,35 +252,23 @@ export function FloatingAIChat() {
 
             {/* Footer Input Area */}
             <div className="p-4 border-t border-[#0A1E0C]/10 bg-white">
-              {!user ? (
-                <div className="text-center py-1">
-                  <Link
-                    to="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full inline-block text-center bg-[#C83F1B] hover:bg-[#b03415] text-white font-black text-xs uppercase tracking-widest py-3 px-6 rounded-full transition shadow-sm"
-                  >
-                    Sign In to use Mqulima AI
-                  </Link>
-                </div>
-              ) : (
-                <form onSubmit={handleFormSubmit} className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Ask in English or Swahili..."
-                    disabled={isGenerating}
-                    className="flex-1 rounded-full border border-[#C83F1B]/40 focus:border-[#C83F1B] bg-[#F9F9F9] px-5 py-3 text-xs text-[#0A1E0C] placeholder-gray-400 outline-none transition"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!prompt.trim() || isGenerating}
-                    className="h-10 w-10 shrink-0 rounded-full bg-[#C83F1B] hover:bg-[#b03415] disabled:opacity-50 text-white flex items-center justify-center shadow-md transition cursor-pointer"
-                  >
-                    <Send className="h-4.5 w-4.5 transform rotate-0" />
-                  </button>
-                </form>
-              )}
+              <form onSubmit={handleFormSubmit} className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Ask about crops, pests, market prices, weather..."
+                  disabled={isGenerating}
+                  className="flex-1 rounded-full border border-[#C83F1B]/40 focus:border-[#C83F1B] bg-[#F9F9F9] px-5 py-3 text-xs text-[#0A1E0C] placeholder-gray-400 outline-none transition"
+                />
+                <button
+                  type="submit"
+                  disabled={!prompt.trim() || isGenerating}
+                  className="h-10 w-10 shrink-0 rounded-full bg-[#C83F1B] hover:bg-[#b03415] disabled:opacity-50 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                >
+                  <Send className="h-4.5 w-4.5 transform rotate-0" />
+                </button>
+              </form>
             </div>
           </motion.div>
         )}

@@ -45,6 +45,15 @@ export function getServerConfig(): ServerEnv {
 
   const isProd = process.env.NODE_ENV === "production";
 
+  if (isProd) {
+    if (!process.env.JWT_SECRET) {
+      throw new Error("[FATAL SECURITY ERROR] JWT_SECRET environment variable is required in production!");
+    }
+    if (process.env.JWT_SECRET === "mqulima-dev-secret-change-in-production-2025") {
+      throw new Error("[FATAL SECURITY ERROR] JWT_SECRET must not use the insecure default placeholder in production!");
+    }
+  }
+
   const rawEnv = {
     NODE_ENV: process.env.NODE_ENV || "development",
     DATABASE_URL: process.env.DATABASE_URL || (isProd ? "" : "postgresql://mqulima:password@localhost:5432/mqulima_dev"),
@@ -70,10 +79,6 @@ export function getServerConfig(): ServerEnv {
     PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || "https://mqulima.com/payments/paystack/callback",
     PAYSTACK_WEBHOOK_URL: process.env.PAYSTACK_WEBHOOK_URL || "https://mqulima.com/api/payments/paystack/webhook",
   };
-
-  if (isProd && (rawEnv.JWT_SECRET.includes("dev-only") || rawEnv.JWT_SECRET.includes("mqulima-dev-secret") || rawEnv.JWT_SECRET.includes("change-in-production"))) {
-    throw new Error("[FATAL SECURITY ERROR] JWT_SECRET must not use the insecure default placeholder in production.");
-  }
 
   const result = ServerEnvSchema.safeParse(rawEnv);
 

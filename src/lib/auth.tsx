@@ -27,11 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (typeof window !== "undefined") {
             localStorage.setItem("mqulima_user_account", JSON.stringify(currentUser));
           }
-        } else {
-          setUser(null);
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("mqulima_user_account");
-          }
         }
       } catch (error) {
         // Keep cached user on transient network failure

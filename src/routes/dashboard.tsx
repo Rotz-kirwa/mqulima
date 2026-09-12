@@ -83,22 +83,34 @@ function Dashboard() {
 
   const queryClient = useQueryClient();
 
+  const cachedUser = (() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("mqulima_user_account");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return null;
+  })();
+
+  const activeUser = user || cachedUser;
+
   const { data: orders, isLoading: ordersLoading } = useQuery({
-    queryKey: ["userOrders", user?.id],
-    queryFn: () => getUserOrders({ data: { userId: user!.id } }),
-    enabled: !!user?.id
+    queryKey: ["userOrders", activeUser?.id],
+    queryFn: () => getUserOrders({ data: { userId: activeUser!.id } }),
+    enabled: !!activeUser?.id
   });
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["userBookings", user?.id],
-    queryFn: () => getUserServiceBookings({ data: user!.id }),
-    enabled: !!user?.id
+    queryKey: ["userBookings", activeUser?.id],
+    queryFn: () => getUserServiceBookings({ data: activeUser!.id }),
+    enabled: !!activeUser?.id
   });
 
   const { data: notifications, isLoading: notificationsLoading } = useQuery({
-    queryKey: ["userNotifications", user?.id],
-    queryFn: () => getUserNotifications({ data: user!.id }),
-    enabled: !!user?.id
+    queryKey: ["userNotifications", activeUser?.id],
+    queryFn: () => getUserNotifications({ data: activeUser!.id }),
+    enabled: !!activeUser?.id
   });
 
   const markReadMutation = useMutation({
@@ -107,29 +119,29 @@ function Dashboard() {
       return markNotificationRead({
         data: {
           notificationId,
-          userId: user!.id,
+          userId: activeUser!.id,
           csrfToken: getCsrfTokenFromCookie()
         }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userNotifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["userNotifications", activeUser?.id] });
     }
   });
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-    if (user && (user.role === "admin" || user.role === "super_admin")) {
+    if (activeUser && (activeUser.role === "admin" || activeUser.role === "super_admin")) {
       const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
       if (link) {
         link.href = "https://i.pinimg.com/1200x/40/27/8b/40278bca7c2df2276814acc0ae7b8afe.jpg";
         link.type = "image/jpeg";
       }
     }
-  }, [user]);
+  }, [activeUser]);
 
-  if (!mounted || isLoading) {
+  if (!mounted || (isLoading && !activeUser)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FCFBF4]">
         <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
@@ -137,7 +149,7 @@ function Dashboard() {
     );
   }
 
-  if (!user) {
+  if (!activeUser) {
     return <Navigate to="/auth/sign-in" />;
   }
 
@@ -173,11 +185,11 @@ function Dashboard() {
                 </span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
-                Karibu, {user.name.split(" ")[0]} 👋
+                Karibu, {activeUser.name.split(" ")[0]} 👋
               </h1>
               <p className="flex items-center gap-2 text-xs sm:text-sm text-white/80 font-normal">
                 <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" /> 
-                <span>{user.county || "Uasin Gishu"} · {user.farmSize || "Farmer"} · {user.crops || "AgroShop Customer"}</span>
+                <span>{activeUser.county || "Uasin Gishu"} · {activeUser.farmSize || "Farmer"} · {activeUser.crops || "AgroShop Customer"}</span>
               </p>
             </div>
 
@@ -507,19 +519,19 @@ function Dashboard() {
               <ul className="space-y-3 text-xs sm:text-sm text-left">
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Name</span>
-                  <span className="font-bold text-[#0F291E]">{user.name}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.name}</span>
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Email</span>
-                  <span className="font-bold text-[#0F291E]">{user.email}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.email}</span>
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">County</span>
-                  <span className="font-bold text-[#0F291E]">{user.county || "Uasin Gishu"}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.county || "Uasin Gishu"}</span>
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Farm size</span>
-                  <span className="font-bold text-[#0F291E]">{user.farmSize || "4 acres"}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.farmSize || "4 acres"}</span>
                 </li>
               </ul>
             </Card>

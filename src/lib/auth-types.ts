@@ -7,4 +7,5 @@ export type User = {
   crops: string;
   livestock: string;
   role?: string;
+  phone?: string;
 };

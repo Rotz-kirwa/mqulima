@@ -915,13 +915,24 @@ export function Navbar() {
                 {user ? (
                   <>
                     <div className="text-xs text-white/60">Logged in as <strong className="text-white font-extrabold">{user.name}</strong></div>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="flex flex-col gap-2 mt-2">
                       <Link
                         to="/dashboard"
+                        search={{ tab: "orders" }}
                         onClick={() => setOpen(false)}
-                        className="block text-center rounded-2xl bg-[#16382B] py-3 text-xs font-black text-white shadow-md hover:bg-[#1C4636] transition-colors border border-[#85CC14]/30"
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
                       >
-                        Dashboard
+                        <ShoppingBag className="h-4 w-4 text-[#85CC14]" />
+                        <span>Shop Orders</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "services" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <Briefcase className="h-4 w-4 text-[#85CC14]" />
+                        <span>Booked Services</span>
                       </Link>
                       <button
                         onClick={async () => {
@@ -930,9 +941,10 @@ export function Navbar() {
                           toast.success("Successfully logged out");
                           navigate({ to: "/" });
                         }}
-                        className="block text-center rounded-2xl bg-red-600/90 py-3 text-xs font-black text-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
+                        className="flex items-center justify-center gap-2 rounded-2xl bg-red-600/80 hover:bg-red-600 py-3 text-xs font-bold text-white shadow-md transition-colors cursor-pointer"
                       >
-                        Sign Out
+                        <LogOut className="h-4 w-4" />
+                        <span>Sign Out</span>
                       </button>
                     </div>
                   </>
