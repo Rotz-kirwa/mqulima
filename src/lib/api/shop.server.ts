@@ -374,8 +374,10 @@ export const createShopOrder = createServerFn({ method: "POST" })
       const deliveryAddress = `Name: ${fullName}\nPhone: ${phone}\nID: ${nationalId}\nCounty: ${county}\nTown: ${town}${village ? `\nVillage: ${village}` : ""}`;
 
       // Map paymentMethod to payment_method_enum
-      let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" | "ncba" | "paystack" = "mpesa";
-      if (paymentMethod === "paystack" || paymentMethod === "card") dbPaymentMethod = "paystack";
+      let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" | "ncba" | "paystack" | "airtel_money" = "mpesa";
+      if (paymentMethod === "card") dbPaymentMethod = "card";
+      else if (paymentMethod === "airtel" || paymentMethod === "airtel_money") dbPaymentMethod = "airtel_money";
+      else if (paymentMethod === "paystack") dbPaymentMethod = "paystack";
       else if (paymentMethod === "ncba") dbPaymentMethod = "ncba";
       else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
       else if (paymentMethod === "gpay") dbPaymentMethod = "gpay";

@@ -219,7 +219,7 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
 
     // Verify order ownership or admin role (IDOR Protection)
     const [payment] = await sql`
-      SELECT p.status, p.provider_ref
+      SELECT p.status, p.provider_ref, p.receipt_number
       FROM payments p
       JOIN orders o ON o.id = p.order_id
       WHERE p.order_id = ${orderId} 
@@ -231,6 +231,7 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
 
     return {
       status: payment?.status || "pending",
-      reference: payment?.provider_ref || null
+      reference: payment?.provider_ref || null,
+      receiptNumber: (payment?.receipt_number as string) || null
     };
   });

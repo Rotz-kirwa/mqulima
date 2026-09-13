@@ -18,13 +18,15 @@ import {
   Truck,
   Check,
   AlertCircle,
-  Tag
+  Tag,
+  Smartphone,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/hooks/useAuth";
 
-type PaymentMethod = "mpesa" | "ncba" | "bank" | "card" | "gpay";
+type PaymentMethod = "mpesa" | "card" | "airtel" | "paystack";
 type ShippingMethod = "standard" | "express" | "pickup";
 
 export function CartDrawer() {
@@ -54,8 +56,9 @@ export function CartDrawer() {
   const [shippingOption, setShippingOption] = useState<ShippingMethod>("standard");
 
   // Payment details
-  const [paymentOption, setPaymentOption] = useState<PaymentMethod>("ncba");
+  const [paymentOption, setPaymentOption] = useState<PaymentMethod>("mpesa");
   const [mpesaNumber, setMpesaNumber] = useState("");
+  const [airtelNumber, setAirtelNumber] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
@@ -122,6 +125,7 @@ export function CartDrawer() {
         setFullName(parsed.name || "");
         setPhoneNumber(parsed.phone || "");
         setMpesaNumber(parsed.phone || "");
+        setAirtelNumber(parsed.phone || "");
         setNationalId(parsed.idNumber || "");
         setCounty(parsed.county || "");
         setTown(parsed.town || "");
@@ -143,22 +147,6 @@ export function CartDrawer() {
       }
     }
   }, [cartOpen]);
-
-  // Simulated Bank wire countdown
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (processing && paymentOption === "bank" && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown((c) => c - 1);
-      }, 1000);
-    } else if (processing && paymentOption === "bank" && countdown === 0) {
-      setProcessing(false);
-      setStep(5);
-      clearCart();
-      toast.success("Order Placed Successfully!");
-    }
-    return () => clearTimeout(timer);
-  }, [processing, countdown, paymentOption, clearCart]);
 
   // Coupon application handler
   const handleApplyCoupon = (e: React.FormEvent) => {
@@ -190,6 +178,12 @@ export function CartDrawer() {
       toast.error("Please fill in all required address fields.");
       return false;
     }
+    if (!mpesaNumber.trim() && phoneNumber.trim()) {
+      setMpesaNumber(phoneNumber.trim());
+    }
+    if (!airtelNumber.trim() && phoneNumber.trim()) {
+      setAirtelNumber(phoneNumber.trim());
+    }
     // Save to local storage
     try {
       localStorage.setItem("mqulima_user_account", JSON.stringify({
@@ -207,7 +201,7 @@ export function CartDrawer() {
     return true;
   };
 
-  const startPaymentPolling = (orderId: string, isNcba = false) => {
+  const startPaymentPolling = (orderId: string) => {
     if (pollTimerRef.current) {
       clearInterval(pollTimerRef.current);
     }
@@ -227,14 +221,8 @@ export function CartDrawer() {
       }
 
       try {
-        let statusRes: any;
-        if (isNcba) {
-          const { getNcbaPaymentStatus } = await import("@/lib/api/ncba.server");
-          statusRes = await getNcbaPaymentStatus({ data: { orderId } });
-        } else {
-          const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
-          statusRes = await getPaymentStatus({ data: { orderId } });
-        }
+        const { getPaymentStatus } = await import("@/lib/api/mpesa.server");
+        const statusRes = await getPaymentStatus({ data: { orderId } });
 
         if (statusRes.status === "paid") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
@@ -245,7 +233,7 @@ export function CartDrawer() {
           }
           setStep(5);
           clearCart();
-          toast.success(`${isNcba ? "NCBA " : ""}M-Pesa Payment Received & Confirmed!`);
+          toast.success("M-Pesa Payment Received & Confirmed!");
         } else if (statusRes.status === "failed") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           setProcessing(false);
@@ -264,13 +252,23 @@ export function CartDrawer() {
       return;
     }
 
-    if (paymentOption === "mpesa" || paymentOption === "ncba") {
+    if (paymentOption === "mpesa") {
       if (!mpesaNumber.trim()) {
         toast.error("Please enter phone number for M-Pesa STK push prompt");
         return;
       }
       if (!/^(07|01|254|\+254)\d{8}$/.test(mpesaNumber.trim().replace(/\s+/g, ""))) {
         toast.error("Please enter a valid Kenyan phone number (e.g. 0712345678)");
+        return;
+      }
+    } else if (paymentOption === "airtel") {
+      const airtelToValidate = airtelNumber.trim() || phoneNumber.trim();
+      if (!airtelToValidate) {
+        toast.error("Please enter phone number for Airtel Money");
+        return;
+      }
+      if (!/^(07|01|254|\+254)\d{8}$/.test(airtelToValidate.replace(/\s+/g, ""))) {
+        toast.error("Please enter a valid Kenyan Airtel number (e.g. 0733123456)");
         return;
       }
     }
@@ -314,24 +312,7 @@ export function CartDrawer() {
       if (res.success && res.orderId) {
         setCreatedOrderId(res.orderId);
 
-        if (paymentOption === "ncba") {
-          // 2. Trigger NCBA STK Push
-          const { initiateNcbaStkPush } = await import("@/lib/api/ncba.server");
-          const pushRes = await initiateNcbaStkPush({
-            data: {
-              phone: mpesaNumber.trim(),
-              orderId: res.orderId
-            }
-          });
-
-          if (pushRes.success) {
-            toast.success("NCBA Bank M-Pesa STK Prompt Sent! Enter PIN on your phone.");
-            // 3. Start Polling for NCBA status
-            startPaymentPolling(res.orderId, true);
-          } else {
-            throw new Error((pushRes as any).message || (pushRes as any).error || "Failed to initiate NCBA payment prompt.");
-          }
-        } else if (paymentOption === "mpesa") {
+        if (paymentOption === "mpesa") {
           // Trigger Safaricom Direct M-Pesa STK Push
           const { initiateStkPush } = await import("@/lib/api/mpesa.server");
           const pushRes = await initiateStkPush({
@@ -344,22 +325,30 @@ export function CartDrawer() {
           });
 
           if (pushRes.success) {
-            toast.success("M-Pesa STK Push Prompt Sent!");
-            startPaymentPolling(res.orderId, false);
+            toast.success("M-Pesa STK Push Prompt Sent! Check your phone.");
+            startPaymentPolling(res.orderId);
           } else {
             throw new Error(pushRes.error || "Failed to initiate payment prompt");
           }
-        } else if (paymentOption === "card") {
-          // Trigger Paystack Card Payment Redirect Flow
+        } else {
+          // Paystack channels: card, airtel, or paystack multi
           const { initiatePaystackCheckout } = await import("@/lib/api/paystack.server");
           const customerEmail = (user?.email && user.email.includes("@"))
             ? user.email.trim().toLowerCase()
             : `${(phoneNumber || user?.phone || fullName || "customer").toLowerCase().replace(/[^a-z0-9]/g, "") || "shopper"}@mqulima.com`;
           
+          let paystackChannels: string[] | undefined = undefined;
+          if (paymentOption === "card") {
+            paystackChannels = ["card"];
+          } else if (paymentOption === "airtel") {
+            paystackChannels = ["mobile_money"];
+          }
+
           const payRes = await initiatePaystackCheckout({
             data: {
               orderId: res.orderId,
-              email: customerEmail
+              email: customerEmail,
+              channels: paystackChannels
             }
           });
 
@@ -371,9 +360,6 @@ export function CartDrawer() {
           } else {
             throw new Error((payRes as any).error || "Failed to initialize Paystack payment gateway.");
           }
-        } else {
-          // Simulated Bank flow countdown
-          setCountdown(5);
         }
       } else {
         throw new Error(res.error || "Failed to create order");
@@ -711,134 +697,311 @@ Please assist in processing my order!`;
                 {/* STEP 3: PAYMENT GATEWAY SELECTION */}
                 {step === 3 && (
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Payment Channels</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Payment Channels</h3>
+                      <span className="text-[10px] text-gray-400 font-mono">Select preferred gateway</span>
+                    </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentOption("ncba")}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
-                          paymentOption === "ncba"
-                            ? "border-[#2D6A4F] bg-[#E8F5E9]/20 text-[#2D6A4F]"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
-                        }`}
-                      >
-                        <div className="h-6 w-6 rounded-full bg-[#1A5438] text-white flex items-center justify-center font-bold text-[9px]">NCBA</div>
-                        <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">NCBA STK Push</strong>
-                          <span className="text-[9px] text-gray-400">NCBA Bank M-Pesa</span>
-                        </div>
-                      </button>
-
+                    {/* 4 Brand-Colored Payment Options in 2x2 Grid */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* 1. Safaricom Direct M-Pesa (Green) */}
                       <button
                         type="button"
                         onClick={() => setPaymentOption("mpesa")}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
                           paymentOption === "mpesa"
-                            ? "border-[#2D6A4F] bg-[#E8F5E9]/20 text-[#2D6A4F]"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            ? "border-[#00A34E] bg-emerald-50/80 shadow-xs ring-2 ring-[#00A34E]/30"
+                            : "border-gray-200 bg-white hover:border-[#00A34E]/60 hover:bg-emerald-50/20"
                         }`}
                       >
-                        <span className="text-lg">🟢</span>
-                        <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">Direct M-Pesa</strong>
-                          <span className="text-[9px] text-gray-400">Safaricom Daraja</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-lg bg-[#00A34E] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 tracking-tighter">
+                            M
+                          </div>
+                          <div className="text-left leading-none">
+                            <strong className="text-xs font-bold block text-gray-900">Direct M-Pesa</strong>
+                            <span className="text-[10px] text-gray-500 block mt-0.5">Safaricom Daraja</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#00A34E] text-white">
+                            STK
+                          </span>
+                          {paymentOption === "mpesa" && (
+                            <span className="h-2 w-2 rounded-full bg-[#00A34E] animate-pulse" />
+                          )}
                         </div>
                       </button>
 
+                      {/* 2. Paystack Card Pay (Navy Blue) */}
                       <button
                         type="button"
                         onClick={() => setPaymentOption("card")}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
                           paymentOption === "card"
-                            ? "border-[#2D6A4F] bg-[#E8F5E9]/20 text-[#2D6A4F]"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            ? "border-[#2563EB] bg-blue-50/80 shadow-xs ring-2 ring-[#2563EB]/30"
+                            : "border-gray-200 bg-white hover:border-[#2563EB]/60 hover:bg-blue-50/20"
                         }`}
                       >
-                        <CreditCard size={18} className="text-gray-500" />
-                        <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">Card Pay</strong>
-                          <span className="text-[9px] text-gray-400">Visa, Mastercard</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-lg bg-[#1A1F71] text-white flex items-center justify-center shadow-xs shrink-0">
+                            <CreditCard size={16} className="text-white" />
+                          </div>
+                          <div className="text-left leading-none">
+                            <strong className="text-xs font-bold block text-gray-900">Card Pay</strong>
+                            <span className="text-[10px] text-gray-500 block mt-0.5">Visa, Mastercard</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1A1F71] text-white">
+                            Cards
+                          </span>
+                          {paymentOption === "card" && (
+                            <span className="h-2 w-2 rounded-full bg-[#2563EB] animate-pulse" />
+                          )}
                         </div>
                       </button>
 
+                      {/* 3. Airtel Money (Red) */}
                       <button
                         type="button"
-                        onClick={() => setPaymentOption("bank")}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
-                          paymentOption === "bank"
-                            ? "border-[#2D6A4F] bg-[#E8F5E9]/20 text-[#2D6A4F]"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
+                        onClick={() => setPaymentOption("airtel")}
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
+                          paymentOption === "airtel"
+                            ? "border-[#DC2626] bg-red-50/80 shadow-xs ring-2 ring-[#DC2626]/30"
+                            : "border-gray-200 bg-white hover:border-[#DC2626]/60 hover:bg-red-50/20"
                         }`}
                       >
-                        <Landmark size={18} className="text-gray-500" />
-                        <div className="text-left leading-none">
-                          <strong className="text-xs font-bold block">Bank Wire</strong>
-                          <span className="text-[9px] text-gray-400">KCB Bank Transfer</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-lg bg-[#ED1C24] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0 tracking-tighter">
+                            A
+                          </div>
+                          <div className="text-left leading-none">
+                            <strong className="text-xs font-bold block text-gray-900">Airtel Money</strong>
+                            <span className="text-[10px] text-gray-500 block mt-0.5">Airtel Wallet</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#ED1C24] text-white">
+                            Airtel
+                          </span>
+                          {paymentOption === "airtel" && (
+                            <span className="h-2 w-2 rounded-full bg-[#DC2626] animate-pulse" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* 4. Paystack Multi-Option (Cyan/Teal) */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentOption("paystack")}
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
+                          paymentOption === "paystack"
+                            ? "border-[#0284C7] bg-sky-50/80 shadow-xs ring-2 ring-[#0284C7]/30"
+                            : "border-gray-200 bg-white hover:border-[#0284C7]/60 hover:bg-sky-50/20"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-lg bg-[#0AA5DB] text-white flex items-center justify-center shadow-xs shrink-0 font-black text-xs">
+                            <Zap size={16} className="text-white fill-white" />
+                          </div>
+                          <div className="text-left leading-none">
+                            <strong className="text-xs font-bold block text-gray-900">Paystack Multi</strong>
+                            <span className="text-[10px] text-gray-500 block mt-0.5">Till, Bank & More</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#0AA5DB] text-white">
+                            All
+                          </span>
+                          {paymentOption === "paystack" && (
+                            <span className="h-2 w-2 rounded-full bg-[#0284C7] animate-pulse" />
+                          )}
                         </div>
                       </button>
                     </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-3">
-                      {(paymentOption === "ncba" || paymentOption === "mpesa") && (
-                        <div className="space-y-3 text-xs">
-                          <strong className="font-bold text-[#2D6A4F] block">
-                            {paymentOption === "ncba" ? "🏦 NCBA Bank M-Pesa STK Push Gateway" : "🟢 Safaricom Direct M-Pesa STK Push"}
-                          </strong>
-                          <p className="text-[10px] text-gray-500 leading-normal">
-                            An automated M-Pesa payment prompt will be sent directly to your mobile phone. Enter your PIN when prompted.
-                          </p>
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-gray-500 uppercase">M-Pesa Phone Number</label>
-                            <input
-                              type="tel"
-                              value={mpesaNumber}
-                              onChange={(e) => setMpesaNumber(e.target.value)}
-                              placeholder="0712345678"
-                              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#2D6A4F]"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {paymentOption === "card" && (
-                        <div className="space-y-3 text-xs">
-                          <div className="flex items-center justify-between">
-                            <strong className="font-extrabold text-gray-900 flex items-center gap-1.5">
-                              <ShieldCheck size={14} className="text-[#2D6A4F]" />
-                              <span>Paystack Secure Card Gateway</span>
-                            </strong>
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
-                              PCI-DSS Compliant
+                    {/* DEDICATED PAYMENT INTERFACE PANELS */}
+                    <div className="mt-3">
+                      {/* INTERFACE 1: Direct M-Pesa */}
+                      {paymentOption === "mpesa" && (
+                        <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-300/80 rounded-xl p-4 space-y-3 text-xs shadow-xs animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between border-b border-emerald-200/70 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-5 w-5 rounded-full bg-[#00A34E] text-white flex items-center justify-center text-[10px] font-black">
+                                M
+                              </div>
+                              <div>
+                                <strong className="font-bold text-[#00A34E] block">Safaricom Direct M-Pesa STK Push</strong>
+                                <span className="text-[10px] text-gray-500">Instant on-screen PIN authorization</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-[#00A34E]/15 text-[#00843D] rounded-full border border-[#00A34E]/30">
+                              Daraja 2.0 Live
                             </span>
                           </div>
 
                           <p className="text-[11px] text-gray-600 leading-relaxed">
-                            Clicking <strong>Place Order</strong> will redirect you to Paystack's encrypted payment gateway to securely complete your Visa or Mastercard payment.
+                            An automated M-Pesa prompt will be sent immediately to your phone. Check your screen and enter your M-Pesa PIN when prompted.
                           </p>
 
-                          <div className="p-3 bg-white rounded-lg border border-gray-200 space-y-1.5">
-                            <div className="flex items-center justify-between text-[10px] text-gray-500">
-                              <span>Accepted Cards:</span>
-                              <span className="font-bold text-gray-800">Visa, Mastercard, Verve</span>
+                          <div className="space-y-1.5 pt-1">
+                            <label className="text-[10px] font-bold text-gray-600 uppercase flex items-center justify-between">
+                              <span>M-Pesa Mobile Number</span>
+                              <span className="text-[10px] font-normal text-gray-400">Safaricom (07XX / 01XX)</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute left-3 top-2.5 flex items-center gap-1 text-xs text-gray-400 select-none">
+                                <span className="text-sm">🇰🇪</span>
+                                <span className="font-bold text-gray-600">+254</span>
+                              </div>
+                              <input
+                                type="tel"
+                                value={mpesaNumber}
+                                onChange={(e) => setMpesaNumber(e.target.value)}
+                                placeholder="0712 345 678"
+                                className="w-full bg-white border border-emerald-300 rounded-lg pl-20 pr-3 py-2 text-xs font-mono font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#00A34E]/30 focus:border-[#00A34E] shadow-2xs"
+                              />
                             </div>
-                            <div className="flex items-center justify-between text-[10px] text-gray-500">
-                              <span>Security Level:</span>
-                              <span className="font-bold text-emerald-600">256-Bit SSL Encrypted</span>
-                            </div>
+                            <span className="text-[10px] text-gray-400 block">
+                              Prompt appears instantly on your Safaricom SIM. Standard carrier rates apply.
+                            </span>
                           </div>
                         </div>
                       )}
 
-                      {paymentOption === "bank" && (
-                        <div className="space-y-2.5 text-xs">
-                          <strong className="font-bold text-blue-600 block">🏢 KCB Bank Kenya Direct Wire</strong>
-                          <div className="bg-white border border-gray-150 p-3 rounded-lg text-[10px] space-y-1 text-gray-600 font-mono">
-                            <div>Bank: KCB Bank Kenya</div>
-                            <div>Account: MQULIMA ECOSYSTEM LTD</div>
-                            <div>Number: 1209 8837 9901</div>
-                            <div>Reference: Phone Number: {phoneNumber}</div>
+                      {/* INTERFACE 2: Card Pay via Paystack */}
+                      {paymentOption === "card" && (
+                        <div className="bg-gradient-to-b from-blue-50/60 to-white border border-blue-300/80 rounded-xl p-4 space-y-3 text-xs shadow-xs animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between border-b border-blue-200/70 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-5 w-5 rounded-full bg-[#1A1F71] text-white flex items-center justify-center">
+                                <CreditCard size={12} className="text-white" />
+                              </div>
+                              <div>
+                                <strong className="font-bold text-[#1A1F71] block">Paystack Card Gateway</strong>
+                                <span className="text-[10px] text-gray-500">Local & International Debit / Credit Cards</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full border border-blue-300">
+                              PCI-DSS Level 1
+                            </span>
                           </div>
+
+                          <p className="text-[11px] text-gray-600 leading-relaxed">
+                            Pay securely using your Visa, Mastercard, or Verve card. Clicking <strong>Place Order</strong> will connect to Paystack's 256-bit encrypted card checkout with 3D Secure OTP verification.
+                          </p>
+
+                          <div className="p-3 bg-white rounded-lg border border-blue-200 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-gray-500 font-medium">Accepted Networks:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-black bg-[#1A1F71] text-white px-2 py-0.5 rounded italic">VISA</span>
+                                <span className="text-[9px] font-black bg-[#EB001B] text-white px-2 py-0.5 rounded">mastercard</span>
+                                <span className="text-[9px] font-black bg-[#00425F] text-white px-2 py-0.5 rounded">Verve</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-gray-500 pt-1.5 border-t border-gray-100">
+                              <span>Digital Receipt To:</span>
+                              <span className="font-bold text-gray-800 font-mono truncate max-w-[180px]">
+                                {user?.email || phoneNumber || "customer@mqulima.com"}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-gray-400 block">
+                            Bank-level 256-bit SSL encryption. Zero card credentials stored on Mqulima servers.
+                          </span>
+                        </div>
+                      )}
+
+                      {/* INTERFACE 3: Airtel Money via Paystack */}
+                      {paymentOption === "airtel" && (
+                        <div className="bg-gradient-to-b from-red-50/60 to-white border border-red-300/80 rounded-xl p-4 space-y-3 text-xs shadow-xs animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between border-b border-red-200/70 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-5 w-5 rounded-full bg-[#ED1C24] text-white flex items-center justify-center text-[10px] font-black">
+                                A
+                              </div>
+                              <div>
+                                <strong className="font-bold text-[#ED1C24] block">Airtel Money (via Paystack)</strong>
+                                <span className="text-[10px] text-gray-500">Airtel Kenya Mobile Wallet</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-red-100 text-red-800 rounded-full border border-red-300">
+                              Mobile Money
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-gray-600 leading-relaxed">
+                            Pay directly from your Airtel Money balance. An authorization prompt will be dispatched to your Airtel phone through Paystack's mobile payment rails.
+                          </p>
+
+                          <div className="space-y-1.5 pt-1">
+                            <label className="text-[10px] font-bold text-gray-600 uppercase flex items-center justify-between">
+                              <span>Airtel Mobile Number</span>
+                              <span className="text-[10px] font-normal text-gray-400">Airtel (073X / 075X / 078X)</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute left-3 top-2.5 flex items-center gap-1 text-xs text-gray-400 select-none">
+                                <span className="text-sm">🇰🇪</span>
+                                <span className="font-bold text-gray-600">+254</span>
+                              </div>
+                              <input
+                                type="tel"
+                                value={airtelNumber}
+                                onChange={(e) => setAirtelNumber(e.target.value)}
+                                placeholder="0733 123 456"
+                                className="w-full bg-white border border-red-300 rounded-lg pl-20 pr-3 py-2 text-xs font-mono font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#ED1C24]/30 focus:border-[#ED1C24] shadow-2xs"
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-400 block">
+                              Available for all registered Airtel Kenya mobile wallets.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* INTERFACE 4: Paystack Multi-Option */}
+                      {paymentOption === "paystack" && (
+                        <div className="bg-gradient-to-b from-sky-50/60 to-white border border-sky-300/80 rounded-xl p-4 space-y-3 text-xs shadow-xs animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between border-b border-sky-200/70 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-5 w-5 rounded-full bg-[#0AA5DB] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                <Zap size={12} className="text-white fill-white" />
+                              </div>
+                              <div>
+                                <strong className="font-bold text-[#0284C7] block">Paystack Multi-Payment Portal</strong>
+                                <span className="text-[10px] text-gray-500">Till, Bank, Card & Multi-Channel</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full border border-sky-300">
+                              All Channels
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-gray-600 leading-relaxed">
+                            Access all alternative payment rails on Paystack's hosted modal. You can switch between M-Pesa Till / Buy Goods, Bank Transfer, Apple/Google Pay, and Cards inside the Paystack interface.
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <div className="p-2.5 bg-white rounded-lg border border-sky-200 flex items-center gap-2">
+                              <span className="text-base">🛒</span>
+                              <div>
+                                <strong className="text-[11px] text-gray-800 block leading-tight">M-Pesa Till</strong>
+                                <span className="text-[9px] text-gray-400">Buy Goods number</span>
+                              </div>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-sky-200 flex items-center gap-2">
+                              <span className="text-base">🏦</span>
+                              <div>
+                                <strong className="text-[11px] text-gray-800 block leading-tight">Bank EFT</strong>
+                                <span className="text-[9px] text-gray-400">Direct Bank Transfer</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-gray-400 block">
+                            Redirects to Paystack's official hosted portal. Instant reconciliation upon completion.
+                          </span>
                         </div>
                       )}
                     </div>
@@ -865,7 +1028,15 @@ Please assist in processing my order!`;
 
                       <div className="border-t border-gray-150 pt-2.5 space-y-1">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Payment Choice:</span>
-                        <div className="font-bold text-gray-800 uppercase">{paymentOption} gateway</div>
+                        <div className="font-bold text-gray-800 uppercase">
+                          {paymentOption === "mpesa"
+                            ? "Safaricom Direct M-Pesa"
+                            : paymentOption === "card"
+                            ? "Card Payment (Paystack)"
+                            : paymentOption === "airtel"
+                            ? "Airtel Money (Paystack)"
+                            : "Paystack Multi-Payment"}
+                        </div>
                       </div>
                     </div>
 
@@ -888,18 +1059,18 @@ Please assist in processing my order!`;
                     <div className="relative flex items-center justify-center">
                       <div className="h-16 w-16 rounded-full border-4 border-[#2D6A4F]/20 border-t-[#2D6A4F] animate-spin" />
                       <span className="absolute text-xs font-bold text-[#2D6A4F]">
-                        {paymentOption === "ncba" || paymentOption === "mpesa" ? `${pollCountdown}s` : `${countdown}s`}
+                        {paymentOption === "mpesa" ? `${pollCountdown}s` : "..."}
                       </span>
                     </div>
                     <h3 className="mt-6 text-sm font-extrabold text-gray-800 uppercase tracking-wider">
-                      {paymentOption === "ncba" ? "NCBA Bank M-Pesa STK Push Prompt Sent..." : paymentOption === "mpesa" ? "Waiting for M-Pesa PIN..." : "Verifying payment..."}
+                      {paymentOption === "mpesa"
+                        ? "Waiting for M-Pesa PIN..."
+                        : "Connecting to Paystack Secure Checkout..."}
                     </h3>
-                    <p className="mt-2 text-xs text-gray-400 max-w-xs leading-normal">
-                      {paymentOption === "ncba"
-                        ? "An automated NCBA Bank M-Pesa STK Push prompt has been sent to your mobile phone. Please check your screen, enter your M-Pesa PIN, and authorize."
-                        : paymentOption === "mpesa" 
+                    <p className="mt-2 text-xs text-gray-500 max-w-xs leading-normal">
+                      {paymentOption === "mpesa"
                         ? "An STK PIN prompt has been sent to your phone. Please check your screen, enter your M-Pesa PIN, and authorize to complete the payment."
-                        : "Push query dispatched. Complete authentication on your device."}
+                        : "Redirecting you to the encrypted Paystack payment portal to complete your transaction..."}
                     </p>
                   </div>
                 )}

@@ -24,6 +24,7 @@ export interface InitiatePaystackParams {
   email: string;
   isAdmin?: boolean;
   callbackUrl?: string;
+  channels?: string[];
 }
 
 export interface PaymentStatusDTO {
@@ -392,6 +393,7 @@ export class PaymentService {
       currency: "KES",
       reference,
       callbackUrl,
+      channels: params.channels,
       metadata: {
         order_id: orderId,
         user_id: userId

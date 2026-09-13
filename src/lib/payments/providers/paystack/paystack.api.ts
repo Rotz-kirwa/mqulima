@@ -14,6 +14,7 @@ export interface InitializePaystackParams {
   reference: string;
   callbackUrl?: string;
   metadata?: Record<string, any>;
+  channels?: string[];
 }
 
 export interface PaystackInitResponse {
@@ -66,7 +67,7 @@ export async function initializePaystackTransaction(params: InitializePaystackPa
   // Convert amount to Paystack subunit (KES amount * 100 in cents/pesewas integer)
   const amountInSubunits = Math.round(params.amount * 100);
 
-  const payload = {
+  const payload: any = {
     email: params.email.trim().toLowerCase(),
     amount: amountInSubunits,
     currency: params.currency || "KES",
@@ -74,6 +75,10 @@ export async function initializePaystackTransaction(params: InitializePaystackPa
     callback_url: callbackUrl,
     metadata: params.metadata || {}
   };
+
+  if (params.channels && params.channels.length > 0) {
+    payload.channels = params.channels;
+  }
 
   console.log(`[PAYSTACK API] Initializing transaction for Ref: ${params.reference}, Email: ${params.email}, Amount: KES ${params.amount}`);
 

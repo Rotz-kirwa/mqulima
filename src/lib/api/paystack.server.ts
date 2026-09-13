@@ -6,7 +6,8 @@ import { getCurrentUser } from "@/lib/auth-server";
 const InitiatePaystackInputSchema = z.object({
   orderId: z.string().uuid("Invalid order ID format"),
   email: z.string().email("Invalid customer email address"),
-  callbackUrl: z.string().url().optional()
+  callbackUrl: z.string().url().optional(),
+  channels: z.array(z.string()).optional()
 });
 
 /**
@@ -31,7 +32,8 @@ export const initiatePaystackCheckout = createServerFn({ method: "POST" })
         userId: user.id,
         email: data.email || user.email,
         isAdmin,
-        callbackUrl: data.callbackUrl
+        callbackUrl: data.callbackUrl,
+        channels: data.channels
       });
 
       return result;
