@@ -377,6 +377,7 @@ export const createShopOrder = createServerFn({ method: "POST" })
       let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" | "ncba" | "paystack" | "airtel_money" = "mpesa";
       if (paymentMethod === "card") dbPaymentMethod = "card";
       else if (paymentMethod === "airtel" || paymentMethod === "airtel_money") dbPaymentMethod = "airtel_money";
+      else if (paymentMethod === "mpesa" || paymentMethod === "mpesa_till") dbPaymentMethod = "mpesa";
       else if (paymentMethod === "paystack") dbPaymentMethod = "paystack";
       else if (paymentMethod === "ncba") dbPaymentMethod = "ncba";
       else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
