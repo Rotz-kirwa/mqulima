@@ -553,7 +553,9 @@ Please assist in processing my order!`;
 
                     <div className="space-y-3.5">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Full Name *</label>
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                          Full Name <span className="text-[#2D6A4F]">*</span>
+                        </label>
                         <input
                           type="text"
                           required
@@ -564,7 +566,9 @@ Please assist in processing my order!`;
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Phone Number *</label>
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                          Phone Number <span className="text-[#2D6A4F]">*</span>
+                        </label>
                         <input
                           type="tel"
                           required
@@ -575,7 +579,9 @@ Please assist in processing my order!`;
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">National ID *</label>
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                          National ID <span className="text-[#2D6A4F]">*</span>
+                        </label>
                         <input
                           type="text"
                           required
@@ -587,7 +593,9 @@ Please assist in processing my order!`;
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">County *</label>
+                          <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                            County <span className="text-[#2D6A4F]">*</span>
+                          </label>
                           <input
                             type="text"
                             required
@@ -598,7 +606,9 @@ Please assist in processing my order!`;
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Town/Center *</label>
+                          <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                            Town/Center <span className="text-[#2D6A4F]">*</span>
+                          </label>
                           <input
                             type="text"
                             required
@@ -610,7 +620,9 @@ Please assist in processing my order!`;
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Village / Estate Name</label>
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                          Village / Estate Name
+                        </label>
                         <input
                           type="text"
                           value={village}
@@ -620,7 +632,9 @@ Please assist in processing my order!`;
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Landmark / Delivery Instructions</label>
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#2D6A4F] block">
+                          Landmark / Delivery Instructions
+                        </label>
                         <textarea
                           rows={2}
                           value={instructions}
@@ -636,7 +650,7 @@ Please assist in processing my order!`;
                 {/* STEP 2: SHIPPING PREFERENCES */}
                 {step === 2 && (
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Choose Shipping Speed</h3>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#2D6A4F]">Choose Shipping Speed</h3>
                     
                     <div className="space-y-3">
                       {/* Standard */}
@@ -698,7 +712,7 @@ Please assist in processing my order!`;
                 {step === 3 && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Payment Channels</h3>
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#2D6A4F]">Payment Channels</h3>
                       <span className="text-[10px] text-gray-400 font-mono">Select preferred gateway</span>
                     </div>
                     
@@ -1011,23 +1025,23 @@ Please assist in processing my order!`;
                 {/* STEP 4: ORDER SUMMARY & REVIEW */}
                 {step === 4 && (
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Order Verification</h3>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#2D6A4F]">Order Verification</h3>
 
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3 text-xs leading-normal">
                       <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Ship To address:</span>
+                        <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase tracking-wide">Ship To address:</span>
                         <div className="font-extrabold text-gray-800">{fullName} ({phoneNumber})</div>
                         <div className="text-gray-500">{county} County &middot; {town} &middot; {village}</div>
                         {instructions && <div className="text-gray-400 italic">"* {instructions}"</div>}
                       </div>
 
                       <div className="border-t border-gray-150 pt-2.5 space-y-1">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Shipping method:</span>
+                        <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase tracking-wide">Shipping method:</span>
                         <div className="font-bold text-gray-800 capitalize">{shippingOption} delivery</div>
                       </div>
 
                       <div className="border-t border-gray-150 pt-2.5 space-y-1">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Payment Choice:</span>
+                        <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase tracking-wide">Payment Choice:</span>
                         <div className="font-bold text-gray-800 uppercase">
                           {paymentOption === "mpesa"
                             ? "Safaricom Direct M-Pesa"
@@ -1042,7 +1056,7 @@ Please assist in processing my order!`;
 
                     {/* Compact Item list review */}
                     <div className="space-y-2">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Order Items ({cartItems.length}):</span>
+                      <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase tracking-wide">Order Items ({cartItems.length}):</span>
                       {cartItems.map((item) => (
                         <div key={item.product.id} className="flex justify-between text-xs text-gray-600">
                           <span className="truncate max-w-[240px]">{item.product.name} (x{item.quantity})</span>
@@ -1277,10 +1291,10 @@ Please assist in processing my order!`;
 
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 grid grid-cols-2 gap-3 text-xs mt-4">
               <div className="col-span-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fill Buyer Details</span>
+                <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase tracking-wider">Fill Buyer Details</span>
               </div>
               <div className="space-y-1 col-span-2 sm:col-span-1">
-                <span className="text-[9px] font-bold text-gray-500 uppercase">Customer Full Name</span>
+                <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase">Customer Full Name</span>
                 <input
                   type="text"
                   placeholder="Timothy Kiprono"
@@ -1290,7 +1304,7 @@ Please assist in processing my order!`;
                 />
               </div>
               <div className="space-y-1 col-span-2 sm:col-span-1">
-                <span className="text-[9px] font-bold text-gray-500 uppercase">ID Number</span>
+                <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase">ID Number</span>
                 <input
                   type="text"
                   placeholder="34567890"
@@ -1300,7 +1314,7 @@ Please assist in processing my order!`;
                 />
               </div>
               <div className="space-y-1 col-span-2 sm:col-span-1">
-                <span className="text-[9px] font-bold text-gray-500 uppercase">County Destination</span>
+                <span className="text-[10px] font-extrabold text-[#2D6A4F] uppercase">County Destination</span>
                 <input
                   type="text"
                   placeholder="Uasin Gishu"
