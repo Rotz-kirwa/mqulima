@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Users,
   ShoppingCart,
@@ -41,51 +41,30 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
   const [currentDate, setCurrentDate] = useState(() => new Date()); // Dynamic current date
   const [selectedDay, setSelectedDay] = useState<number>(() => new Date().getDate());
 
-  const fetchAnalytics = () => {
-    setLoading(true);
+  const fetchAnalytics = async (silent = false) => {
+    if (!silent && (!kpi.totalRevenueKsh && !kpi.activeCustomers)) {
+      setLoading(true);
+    }
 
-    // 1. Fetch Live Production Analytics KPI & Platform Activities
-    adminFetch("/api/admin/analytics")
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Response was not JSON");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success) {
-          if (data.kpis) setKpi(data.kpis);
-          if (data.liveActivities) setActivities(data.liveActivities);
-        }
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.error("Analytics fetch error:", e);
-        setLoading(false);
-      });
+    try {
+      const [analyticsRes, marketRes] = await Promise.allSettled([
+        adminFetch("/api/admin/analytics").then((r) => r.json()),
+        adminFetch("/api/admin/market-prices").then((r) => r.json()),
+      ]);
 
-    // 2. Fetch Live Market Commodities
-    adminFetch("/api/admin/market-prices")
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Response was not JSON");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && data.commodities) {
-          setCommodities(data.commodities);
-        }
-      })
-      .catch((e) => console.error("Market prices fetch error:", e));
+      if (analyticsRes.status === "fulfilled" && analyticsRes.value?.success) {
+        if (analyticsRes.value.kpis) setKpi(analyticsRes.value.kpis);
+        if (analyticsRes.value.liveActivities) setActivities(analyticsRes.value.liveActivities);
+      }
+
+      if (marketRes.status === "fulfilled" && marketRes.value?.success && marketRes.value.commodities) {
+        setCommodities(marketRes.value.commodities);
+      }
+    } catch (e) {
+      console.error("Dashboard fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -93,34 +72,41 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
   }, []);
 
   // Compute dynamic SVG coordinates for Monthly Gross Revenue Area Chart
-  const monthlyData: { month: string; revenue: number }[] =
-    kpi.monthlyTrend && kpi.monthlyTrend.length > 0
-      ? kpi.monthlyTrend
-      : [
-          { month: "Jan", revenue: 0 },
-          { month: "Feb", revenue: 0 },
-          { month: "Mar", revenue: 0 },
-          { month: "Apr", revenue: 0 },
-          { month: "May", revenue: 0 },
-          { month: "Jun", revenue: 0 },
-        ];
+  const { monthlyData, maxRevenue, linePoints, polygonPoints } = useMemo(() => {
+    const data: { month: string; revenue: number }[] =
+      kpi.monthlyTrend && kpi.monthlyTrend.length > 0
+        ? kpi.monthlyTrend
+        : [
+            { month: "Jan", revenue: 0 },
+            { month: "Feb", revenue: 0 },
+            { month: "Mar", revenue: 0 },
+            { month: "Apr", revenue: 0 },
+            { month: "May", revenue: 0 },
+            { month: "Jun", revenue: 0 },
+          ];
 
-  const maxRevenue = Math.max(...monthlyData.map((m) => m.revenue), 1);
-  const stepX = 100 / Math.max(monthlyData.length - 1, 1);
+    const maxRev = Math.max(...data.map((m) => m.revenue), 1);
+    const stepX = 100 / Math.max(data.length - 1, 1);
 
-  const linePoints = monthlyData
-    .map((m, i) => {
-      const x = i * stepX;
-      const y = 90 - (m.revenue / maxRevenue) * 75;
-      return `${x},${y}`;
-    })
-    .join(" ");
+    const line = data
+      .map((m, i) => {
+        const x = i * stepX;
+        const y = 90 - (m.revenue / maxRev) * 75;
+        return `${x},${y}`;
+      })
+      .join(" ");
 
-  const polygonPoints = `0,100 ${linePoints} 100,100`;
+    return {
+      monthlyData: data,
+      maxRevenue: maxRev,
+      linePoints: line,
+      polygonPoints: `0,100 ${line} 100,100`,
+    };
+  }, [kpi.monthlyTrend]);
 
   // Compute dynamic bar chart heights for Weekly Order Volume
-  const weeklyData: { day: string; count: number }[] =
-    kpi.weeklyVolume && kpi.weeklyVolume.length > 0
+  const weeklyData: { day: string; count: number }[] = useMemo(() => {
+    return kpi.weeklyVolume && kpi.weeklyVolume.length > 0
       ? kpi.weeklyVolume
       : [
           { day: "Mon", count: 0 },
@@ -131,8 +117,9 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
           { day: "Sat", count: 0 },
           { day: "Sun", count: 0 },
         ];
+  }, [kpi.weeklyVolume]);
 
-  const maxWeeklyCount = Math.max(...weeklyData.map((w) => w.count), 1);
+  const maxWeeklyCount = useMemo(() => Math.max(...weeklyData.map((w) => w.count), 1), [weeklyData]);
 
   // Calendar calculations
   const year = currentDate.getFullYear();
@@ -427,7 +414,7 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
             </p>
           </div>
           <button
-            onClick={fetchAnalytics}
+            onClick={() => fetchAnalytics()}
             className="flex items-center gap-1.5 px-3 py-1 text-xs rounded-[4px] bg-[#E8F4F1] border border-[#CCE5E1] text-[#0F3D3C] hover:text-[#278C7B] font-bold cursor-pointer transition"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-[#278C7B] ${loading ? "animate-spin" : ""}`} />

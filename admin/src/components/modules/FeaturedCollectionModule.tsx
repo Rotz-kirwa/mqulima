@@ -26,8 +26,8 @@ export const FeaturedCollectionModule: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchFeatured = () => {
-    setLoading(true);
+  const fetchFeatured = (silent = false) => {
+    if (!silent && items.length === 0) setLoading(true);
     adminFetch("/api/admin/featured")
       .then((res) => res.json())
       .then((data) => {

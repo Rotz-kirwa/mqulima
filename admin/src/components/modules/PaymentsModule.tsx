@@ -17,7 +17,6 @@ import {
   X,
   FileSpreadsheet
 } from "lucide-react";
-import { jsPDF } from "jspdf";
 import { adminFetch } from "../../lib/api";
 
 export const PaymentsModule: React.FC = () => {
@@ -96,8 +95,9 @@ export const PaymentsModule: React.FC = () => {
   const orphanedCount = payments.filter((p) => p.reconciliationStatus === "orphaned").length;
 
   // Export PDF Statement for entire payment reconciliation table
-  const handleExportPDFStatement = () => {
+  const handleExportPDFStatement = async () => {
     try {
+      const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
       const dateStr = new Date().toLocaleDateString("en-KE", { dateStyle: "medium" });
 
@@ -177,8 +177,9 @@ export const PaymentsModule: React.FC = () => {
   };
 
   // Download Individual Payment Receipt PDF
-  const handleDownloadSingleReceipt = (item: any) => {
+  const handleDownloadSingleReceipt = async (item: any) => {
     try {
+      const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
       doc.setFillColor(15, 61, 60);
       doc.rect(0, 0, 210, 32, "F");

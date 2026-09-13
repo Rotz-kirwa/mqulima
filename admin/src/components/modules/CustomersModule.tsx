@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Users, 
   Search, 
@@ -33,9 +33,11 @@ export const CustomersModule: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<any | null>(null);
 
-  const fetchCustomers = () => {
-    setLoading(true);
-    adminFetch(`/api/admin/customers?t=${Date.now()}`)
+  const fetchCustomers = (silent = false) => {
+    if (!silent && customers.length === 0) {
+      setLoading(true);
+    }
+    adminFetch("/api/admin/customers")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.customers)) {
@@ -96,18 +98,34 @@ export const CustomersModule: React.FC = () => {
     }
   };
 
-  const filtered = customers.filter((c) => {
-    const q = search.toLowerCase();
-    return (
-      (c.name || "").toLowerCase().includes(q) ||
-      (c.email || "").toLowerCase().includes(q) ||
-      (c.phone || "").includes(q) ||
-      (c.nationalId || "").includes(q) ||
-      (c.county || "").toLowerCase().includes(q) ||
-      (c.deliveryLocation || "").toLowerCase().includes(q) ||
-      (c.farmingType || "").toLowerCase().includes(q)
-    );
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return customers;
+    return customers.filter((c) => {
+      return (
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.phone || "").includes(q) ||
+        (c.nationalId || "").includes(q) ||
+        (c.county || "").toLowerCase().includes(q) ||
+        (c.deliveryLocation || "").toLowerCase().includes(q) ||
+        (c.farmingType || "").toLowerCase().includes(q)
+      );
+    });
+  }, [customers, search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
@@ -141,7 +159,7 @@ export const CustomersModule: React.FC = () => {
             Registered Profiles: <strong className="text-[#278C7B]">{customers.length}</strong>
           </span>
           <button
-            onClick={fetchCustomers}
+            onClick={() => fetchCustomers()}
             disabled={loading}
             className="p-1.5 bg-[#E8F4F1] hover:bg-[#d6ece7] text-[#0F3D3C] rounded-[6px] border border-[#CCE5E1] transition cursor-pointer"
             title="Refresh Database"
@@ -195,7 +213,7 @@ export const CustomersModule: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              filtered.map((customer) => {
+              paginatedCustomers.map((customer) => {
                 const displayId = customer.nationalId || customer.idNumber || "Not Recorded";
                 const displayFarmingType = customer.farmingType || customer.natureOfAgriculture || "General Agriculture";
                 const displayDelivery = customer.deliveryLocation || customer.deliveryAddress || "Standard County Delivery";
@@ -286,6 +304,34 @@ export const CustomersModule: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {filtered.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between px-4 py-3 bg-[#E8F4F1]/60 border-t border-[#CCE5E1] text-xs font-mono">
+            <span className="text-[#2C5E5B]">
+              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filtered.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} customers
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="text-[#0F3D3C] font-bold">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* COMPREHENSIVE CUSTOMER REGISTRATION DRAWER MODAL */}

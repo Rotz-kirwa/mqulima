@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Newspaper,
 } from "lucide-react";
+import { prefetchAdminData } from "../../lib/api";
 
 export type AdminTab =
   | "dashboard"
@@ -47,7 +48,46 @@ interface NavGroup {
   items: NavItem[];
 }
 
+const MODULE_LOADERS: Record<AdminTab, () => Promise<any>> = {
+  dashboard: () => Promise.resolve(),
+  customers: () => import("../modules/CustomersModule"),
+  products: () => import("../modules/ProductsStockModule"),
+  featured: () => import("../modules/FeaturedCollectionModule"),
+  orders: () => import("../modules/OrdersQuotationsModule"),
+  payments: () => import("../modules/PaymentsModule"),
+  services: () => import("../modules/ServiceRequestsModule"),
+  "commodity-trends": () => import("../modules/CommodityTrendsModule"),
+  inquiries: () => import("../modules/InquiriesModule"),
+  forum: () => import("../modules/ForumModerationModule"),
+  academy: () => import("../modules/AcademyExtensionModule"),
+  news: () => import("../modules/NewsCMSModule"),
+};
+
+const TAB_DATA_ENDPOINTS: Record<AdminTab, string[]> = {
+  dashboard: ["/api/admin/analytics", "/api/admin/market-prices"],
+  customers: ["/api/admin/customers"],
+  products: ["/api/admin/products"],
+  featured: ["/api/admin/featured"],
+  orders: ["/api/admin/orders", "/api/admin/quotations"],
+  payments: ["/api/admin/payments"],
+  services: ["/api/admin/services"],
+  "commodity-trends": ["/api/admin/commodity-trends"],
+  inquiries: ["/api/admin/inquiries"],
+  forum: ["/api/admin/forum-moderation"],
+  academy: ["/api/admin/academy"],
+  news: ["/api/admin/news"],
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const handlePreload = (tabId: AdminTab) => {
+    try {
+      MODULE_LOADERS[tabId]?.();
+    } catch (_) {}
+
+    TAB_DATA_ENDPOINTS[tabId]?.forEach((endpoint) => {
+      prefetchAdminData(endpoint);
+    });
+  };
   const groups: NavGroup[] = [
     {
       groupName: "OPERATIONS HOME",
@@ -162,7 +202,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-[13px] font-extrabold transition cursor-pointer text-left ${
+                  onMouseEnter={() => handlePreload(item.id)}
+                  onFocus={() => handlePreload(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-[13px] font-extrabold transition duration-150 cursor-pointer text-left active:scale-[0.98] ${
                     isActive
                       ? "bg-[#145248] text-white shadow-sm font-black border-l-4 border-[#031514]"
                       : "text-[#041E1C] hover:bg-[#1D6C60] hover:text-white"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   ShoppingCart, 
   FileText, 
@@ -107,8 +107,11 @@ export const OrdersQuotationsModule: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const fetchData = () => {
-    setLoading(true);
+  const fetchData = (silent = false) => {
+    if (!silent) {
+      if (activeSubTab === "orders" && orders.length === 0) setLoading(true);
+      if (activeSubTab === "quotations" && quotations.length === 0) setLoading(true);
+    }
     if (activeSubTab === "orders") {
       adminFetch("/api/admin/orders")
         .then((res) => res.json())
@@ -228,30 +231,75 @@ export const OrdersQuotationsModule: React.FC = () => {
 
   // Counts calculation for orders
   const totalCount = orders.length;
-  const pendingCount = orders.filter((o) => o.status === "pending" || o.status === "processing" || o.status === "shipped").length;
-  const deliveredCount = orders.filter((o) => o.status === "delivered" || o.status === "completed").length;
-  const cancelledCount = orders.filter((o) => o.status === "cancelled").length;
+  const { pendingCount, deliveredCount, cancelledCount } = useMemo(() => {
+    let p = 0, d = 0, c = 0;
+    for (const o of orders) {
+      if (o.status === "pending" || o.status === "processing" || o.status === "shipped") p++;
+      else if (o.status === "delivered" || o.status === "completed") d++;
+      else if (o.status === "cancelled") c++;
+    }
+    return { pendingCount: p, deliveredCount: d, cancelledCount: c };
+  }, [orders]);
+
+  const [orderPage, setOrderPage] = useState(1);
+  const [quotePage, setQuotePage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   // Filtered orders list
-  const filteredOrders = orders.filter((o) => {
-    const q = searchTerm.toLowerCase();
-    const name = (o.customerName || "").toLowerCase();
-    const email = (o.customerEmail || "").toLowerCase();
-    const phone = (o.customerPhone || "").toLowerCase();
-    const id = (o.id || "").toLowerCase();
-    const matchesSearch = name.includes(q) || email.includes(q) || phone.includes(q) || id.includes(q);
+  const filteredOrders = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    return orders.filter((o) => {
+      const name = (o.customerName || "").toLowerCase();
+      const email = (o.customerEmail || "").toLowerCase();
+      const phone = (o.customerPhone || "").toLowerCase();
+      const id = (o.id || "").toLowerCase();
+      const matchesSearch = !q || name.includes(q) || email.includes(q) || phone.includes(q) || id.includes(q);
 
-    let matchesTab = true;
-    if (activeTab === "pending") {
-      matchesTab = o.status === "pending" || o.status === "processing" || o.status === "shipped";
-    } else if (activeTab === "delivered") {
-      matchesTab = o.status === "delivered" || o.status === "completed";
-    } else if (activeTab === "cancelled") {
-      matchesTab = o.status === "cancelled";
-    }
+      let matchesTab = true;
+      if (activeTab === "pending") {
+        matchesTab = o.status === "pending" || o.status === "processing" || o.status === "shipped";
+      } else if (activeTab === "delivered") {
+        matchesTab = o.status === "delivered" || o.status === "completed";
+      } else if (activeTab === "cancelled") {
+        matchesTab = o.status === "cancelled";
+      }
 
-    return matchesSearch && matchesTab;
-  });
+      return matchesSearch && matchesTab;
+    });
+  }, [orders, searchTerm, activeTab]);
+
+  useEffect(() => {
+    setOrderPage(1);
+  }, [searchTerm, activeTab]);
+
+  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / ITEMS_PER_PAGE));
+  const paginatedOrders = useMemo(() => {
+    const start = (orderPage - 1) * ITEMS_PER_PAGE;
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredOrders, orderPage]);
+
+  // Filtered quotations list
+  const filteredQuotations = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return quotations;
+    return quotations.filter((item) => {
+      const name = (item.customerName || "").toLowerCase();
+      const email = (item.customerEmail || "").toLowerCase();
+      const title = (item.title || "").toLowerCase();
+      const id = (item.id || "").toLowerCase();
+      return name.includes(q) || email.includes(q) || title.includes(q) || id.includes(q);
+    });
+  }, [quotations, searchTerm]);
+
+  useEffect(() => {
+    setQuotePage(1);
+  }, [searchTerm]);
+
+  const totalQuotePages = Math.max(1, Math.ceil(filteredQuotations.length / ITEMS_PER_PAGE));
+  const paginatedQuotations = useMemo(() => {
+    const start = (quotePage - 1) * ITEMS_PER_PAGE;
+    return filteredQuotations.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredQuotations, quotePage]);
 
   return (
     <div className="space-y-6 text-left font-sans">
@@ -299,7 +347,7 @@ export const OrdersQuotationsModule: React.FC = () => {
           </div>
 
           <button
-            onClick={fetchData}
+            onClick={() => fetchData()}
             disabled={loading}
             className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#E8F4F1] hover:bg-[#d6ece7] text-[#0F3D3C] text-xs font-bold rounded-[6px] border border-[#CCE5E1] transition cursor-pointer"
           >
@@ -403,7 +451,7 @@ export const OrdersQuotationsModule: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => {
+                  paginatedOrders.map((order) => {
                     const itemsList = parseItems(order.items);
                     const { date, time } = formatDateTime(order.createdAt);
                     const displayTotal = parseFloat(order.total?.toString() || "0");
@@ -557,6 +605,34 @@ export const OrdersQuotationsModule: React.FC = () => {
                 )}
               </tbody>
             </table>
+
+            {/* Orders Pagination Bar */}
+            {filteredOrders.length > ITEMS_PER_PAGE && (
+              <div className="flex items-center justify-between px-4 py-3 bg-[#E8F4F1]/60 border-t border-[#CCE5E1] text-xs font-mono">
+                <span className="text-[#2C5E5B]">
+                  Showing {Math.min((orderPage - 1) * ITEMS_PER_PAGE + 1, filteredOrders.length)} - {Math.min(orderPage * ITEMS_PER_PAGE, filteredOrders.length)} of {filteredOrders.length} orders
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
+                    disabled={orderPage === 1}
+                    className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-[#0F3D3C] font-bold">
+                    Page {orderPage} of {totalOrderPages}
+                  </span>
+                  <button
+                    onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
+                    disabled={orderPage === totalOrderPages}
+                    className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -586,7 +662,7 @@ export const OrdersQuotationsModule: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                quotations.map((q) => (
+                paginatedQuotations.map((q) => (
                   <tr key={q.id} className="hover:bg-[#E8F4F1]/50 transition">
                     <td className="p-3.5">
                       <span className="font-mono font-bold text-[#0F3D3C] block">#{q.id.slice(0, 8)}</span>
@@ -625,6 +701,34 @@ export const OrdersQuotationsModule: React.FC = () => {
               )}
             </tbody>
           </table>
+
+          {/* Quotations Pagination Bar */}
+          {filteredQuotations.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-between px-4 py-3 bg-[#E8F4F1]/60 border-t border-[#CCE5E1] text-xs font-mono">
+              <span className="text-[#2C5E5B]">
+                Showing {Math.min((quotePage - 1) * ITEMS_PER_PAGE + 1, filteredQuotations.length)} - {Math.min(quotePage * ITEMS_PER_PAGE, filteredQuotations.length)} of {filteredQuotations.length} quotes
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQuotePage((p) => Math.max(1, p - 1))}
+                  disabled={quotePage === 1}
+                  className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Previous
+                </button>
+                <span className="text-[#0F3D3C] font-bold">
+                  Page {quotePage} of {totalQuotePages}
+                </span>
+                <button
+                  onClick={() => setQuotePage((p) => Math.min(totalQuotePages, p + 1))}
+                  disabled={quotePage === totalQuotePages}
+                  className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

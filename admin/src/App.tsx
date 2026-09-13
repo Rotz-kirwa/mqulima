@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Topbar } from "./components/layout/Topbar";
 import { Sidebar, AdminTab } from "./components/layout/Sidebar";
 import { AdminLoginScreen } from "./components/auth/AdminLoginScreen";
+import { clearAdminCache } from "./lib/api";
 
 import { DashboardHomeModule } from "./components/modules/DashboardHomeModule";
 
@@ -26,10 +27,47 @@ interface AdminUserSession {
   role: string;
 }
 
-const ModuleLoadingFallback: React.FC = () => (
-  <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-    <div className="w-8 h-8 border-3 border-[#278C7B] border-t-transparent rounded-full animate-spin" />
-    <span className="text-xs font-mono text-[#2C5E5B] font-bold">Loading Module...</span>
+/**
+ * Lightweight, elegant skeleton fallback matching Mqulima's design palette.
+ * Avoids layout shifting and dark flashes.
+ */
+const ModuleLoadingSkeleton: React.FC = () => (
+  <div className="space-y-6 animate-pulse text-left">
+    {/* Header Skeleton */}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#CCE5E1] pb-4">
+      <div className="space-y-2">
+        <div className="h-7 w-48 bg-[#d2e8e3] rounded-[6px]" />
+        <div className="h-3 w-72 bg-[#d2e8e3]/70 rounded-[4px]" />
+      </div>
+      <div className="h-9 w-36 bg-[#278C7B]/20 rounded-[6px]" />
+    </div>
+
+    {/* Metrics / Cards Row Skeleton */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="h-20 bg-white/70 border border-[#CCE5E1] rounded-[6px] p-4 space-y-2">
+        <div className="h-3 w-20 bg-[#d2e8e3] rounded-[4px]" />
+        <div className="h-6 w-16 bg-[#278C7B]/30 rounded-[4px]" />
+      </div>
+      <div className="h-20 bg-white/70 border border-[#CCE5E1] rounded-[6px] p-4 space-y-2">
+        <div className="h-3 w-24 bg-[#d2e8e3] rounded-[4px]" />
+        <div className="h-6 w-20 bg-[#278C7B]/30 rounded-[4px]" />
+      </div>
+      <div className="h-20 bg-white/70 border border-[#CCE5E1] rounded-[6px] p-4 space-y-2">
+        <div className="h-3 w-28 bg-[#d2e8e3] rounded-[4px]" />
+        <div className="h-6 w-14 bg-[#278C7B]/30 rounded-[4px]" />
+      </div>
+    </div>
+
+    {/* Table / Content Skeleton */}
+    <div className="bg-white border border-[#CCE5E1] rounded-[6px] p-4 space-y-3">
+      <div className="h-8 bg-[#E8F4F1] rounded-[6px]" />
+      <div className="space-y-2 pt-2">
+        <div className="h-10 bg-[#f4faf9] rounded-[4px]" />
+        <div className="h-10 bg-[#f4faf9] rounded-[4px]" />
+        <div className="h-10 bg-[#f4faf9] rounded-[4px]" />
+        <div className="h-10 bg-[#f4faf9] rounded-[4px]" />
+      </div>
+    </div>
   </div>
 );
 
@@ -47,9 +85,21 @@ export const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTab>>(() => new Set<AdminTab>(["dashboard"]));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
 
   const handleLogout = () => {
     setAdminSession(null);
+    setVisitedTabs(new Set(["dashboard"]));
+    clearAdminCache();
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("mqulima_admin_user");
       localStorage.removeItem("mqulima_admin_user");
@@ -89,8 +139,8 @@ export const App: React.FC = () => {
     );
   }
 
-  const renderModule = () => {
-    switch (activeTab) {
+  const renderModuleTab = (tab: AdminTab) => {
+    switch (tab) {
       case "dashboard":
         return <DashboardHomeModule onNavigateTab={setActiveTab} />;
       case "customers":
@@ -132,9 +182,17 @@ export const App: React.FC = () => {
       <div className="flex flex-1 pt-16">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <main className="flex-1 ml-60 p-6 overflow-y-auto min-h-[calc(100vh-4rem)] text-left">
-          <React.Suspense fallback={<ModuleLoadingFallback />}>
-            {renderModule()}
-          </React.Suspense>
+          {Array.from(visitedTabs).map((tab) => (
+            <div
+              key={tab}
+              style={{ display: tab === activeTab ? "block" : "none" }}
+              className="w-full"
+            >
+              <React.Suspense fallback={<ModuleLoadingSkeleton />}>
+                {renderModuleTab(tab)}
+              </React.Suspense>
+            </div>
+          ))}
         </main>
       </div>
     </div>

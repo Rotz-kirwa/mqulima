@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Package, 
   Plus, 
@@ -55,9 +55,11 @@ export const ProductsStockModule: React.FC = () => {
     "Irrigation & Greenhouse"
   ];
 
-  const fetchProducts = () => {
-    setLoading(true);
-    adminFetch(`/api/admin/products?t=${Date.now()}`)
+  const fetchProducts = (silent = false) => {
+    if (!silent && products.length === 0) {
+      setLoading(true);
+    }
+    adminFetch("/api/admin/products")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.products)) {
@@ -213,19 +215,38 @@ export const ProductsStockModule: React.FC = () => {
     }
   };
 
-  const filtered = products.filter((p) => {
-    const matchesSearch =
-      (p.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (p.category || "").toLowerCase().includes(search.toLowerCase()) ||
-      (p.description || "").toLowerCase().includes(search.toLowerCase());
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
-    const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
-    const matchesStatus = selectedStatus === "All" || p.status === selectedStatus;
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return products.filter((p) => {
+      const matchesSearch =
+        !q ||
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+      const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+      const matchesStatus = selectedStatus === "All" || p.status === selectedStatus;
 
-  const publishedCount = products.filter((p) => p.status === "published").length;
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [products, search, selectedCategory, selectedStatus]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategory, selectedStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
+  const publishedCount = useMemo(() => {
+    return products.filter((p) => p.status === "published").length;
+  }, [products]);
 
   const defaultImages: Record<string, string> = {
     "Seeds & Seedlings": "https://images.unsplash.com/photo-1592417817098-8f3d6eb231fc?w=300&auto=format&fit=crop&q=80",
@@ -319,7 +340,7 @@ export const ProductsStockModule: React.FC = () => {
           </select>
 
           <button
-            onClick={fetchProducts}
+            onClick={() => fetchProducts()}
             disabled={loading}
             className="p-2 bg-[#E8F4F1] hover:bg-[#d6ece7] text-[#0F3D3C] rounded-[6px] border border-[#CCE5E1] transition cursor-pointer"
             title="Refresh Products"
@@ -356,7 +377,7 @@ export const ProductsStockModule: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              filtered.map((product) => {
+              paginatedProducts.map((product) => {
                 const img = product.imageUrl || defaultImages[product.category] || "https://images.unsplash.com/photo-1592417817098-8f3d6eb231fc?w=300&auto=format&fit=crop&q=80";
                 const isLive = product.status === "published";
                 const starVal = Math.round(Number(product.rating) || 5);
@@ -369,6 +390,8 @@ export const ProductsStockModule: React.FC = () => {
                         <img
                           src={img}
                           alt={product.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-11 h-11 object-cover rounded-[6px] border border-[#CCE5E1] shrink-0 bg-gray-100"
                         />
                         <div>
@@ -463,6 +486,34 @@ export const ProductsStockModule: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Bar */}
+        {filtered.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between px-4 py-3 bg-[#E8F4F1]/60 border-t border-[#CCE5E1] text-xs font-mono">
+            <span className="text-[#2C5E5B]">
+              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filtered.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} products
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="text-[#0F3D3C] font-bold">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 bg-white border border-[#CCE5E1] rounded text-[#0F3D3C] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ADD / EDIT PRODUCT MODAL WITH STAR RATING SELECTOR */}
