@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ShieldCheck, Lock, Mail, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import { getApiUrl } from "../../lib/api";
+import loginBg from "../../assets/admin-login-bg.webp";
 
 interface AdminLoginScreenProps {
   onLoginSuccess: (user: { id: string; name: string; email: string; role: string }) => void;
@@ -51,7 +52,15 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onLoginSucce
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A1E1C] via-[#0F3D3C] to-[#145248] flex items-center justify-center p-4 selection:bg-[#278C7B] selection:text-white">
+    <div className="relative min-h-screen flex items-center justify-center p-4 selection:bg-[#278C7B] selection:text-white overflow-hidden">
+      {/* Background Image (WebP) */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
+        style={{ backgroundImage: `url(${loginBg})` }}
+      />
+      {/* Dark Overlay for High Contrast & Brand Consistency */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#061513]/88 via-[#0B2A27]/82 to-[#103D37]/88 backdrop-blur-[2px]" />
+
       {/* Glow Effects */}
       <div className="absolute top-10 left-10 w-96 h-96 bg-[#278C7B]/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#F59E0B]/15 rounded-full blur-3xl pointer-events-none" />
