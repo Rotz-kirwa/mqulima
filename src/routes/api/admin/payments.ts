@@ -33,6 +33,7 @@ export const Route = createFileRoute("/api/admin/payments")({
               u.county
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
+            WHERE o.payment_status = 'paid' OR o.checkout_channel = 'whatsapp'
             ORDER BY o.created_at DESC
           `;
 
@@ -198,6 +199,16 @@ export const Route = createFileRoute("/api/admin/payments")({
               SET payment_status = 'paid'
               WHERE id = ${orderId}
             `;
+
+            // Fire payment confirmation SMS asynchronously
+            try {
+              const { sendOrderPaymentConfirmedSmsById } = await import("@/lib/order-sms.server");
+              sendOrderPaymentConfirmedSmsById(orderId, paymentId).catch((err) =>
+                console.error("[ADMIN RECONCILE SMS ERROR]:", err)
+              );
+            } catch (err) {
+              console.error("[ADMIN RECONCILE SMS IMPORT ERROR]:", err);
+            }
 
             await logAdminAction({
               actorId,

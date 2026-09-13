@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { orders } from "@/db/schema/orders";
 import { profiles } from "@/db/schema/profiles";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/api/admin/orders")({
               paymentMethod: orders.paymentMethod,
               paymentStatus: orders.paymentStatus,
               deliveryAddress: orders.deliveryAddress,
+              checkoutChannel: orders.checkoutChannel,
               createdAt: orders.createdAt,
               updatedAt: orders.updatedAt,
               customerName: profiles.fullName,
@@ -35,6 +36,12 @@ export const Route = createFileRoute("/api/admin/orders")({
             })
             .from(orders)
             .leftJoin(profiles, eq(orders.userId, profiles.id))
+            .where(
+              or(
+                eq(orders.paymentStatus, "paid"),
+                eq(orders.checkoutChannel, "whatsapp")
+              )
+            )
             .orderBy(desc(orders.createdAt))
             .limit(100);
 

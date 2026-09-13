@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { type ShopProduct, mapToNewTaxonomy, cleanDescriptionText } from "../shop-data";
-import { sendSms } from "../sms-service.server";
+import { sendOrderConfirmedSms } from "../order-sms.server";
 
 /**
  * Determines the category-specific Mqulima placeholder image for a product.
@@ -331,6 +331,7 @@ const CreateShopOrderSchema = z.object({
   instructions: z.string().optional(),
   paymentMethod: z.string(),
   shippingOption: z.string().optional().default("standard"),
+  checkoutChannel: z.enum(["website", "whatsapp"]).optional().default("website"),
   csrfToken: z.string().min(1, "CSRF token is required")
 });
 
@@ -350,6 +351,7 @@ export const createShopOrder = createServerFn({ method: "POST" })
         instructions,
         paymentMethod,
         shippingOption = "standard",
+        checkoutChannel = "website",
         csrfToken
       } = data;
 
@@ -470,7 +472,7 @@ export const createShopOrder = createServerFn({ method: "POST" })
             ${dbPaymentMethod},
             'pending',
             ${deliveryAddress},
-            'website',
+            ${checkoutChannel === "whatsapp" ? "whatsapp" : "website"},
             ${instructions || null}
           )
           RETURNING id
@@ -538,16 +540,18 @@ export const createShopOrder = createServerFn({ method: "POST" })
         diff: { subtotal: finalSubtotal, total: finalTotal, paymentMethod, shippingOption }
       });
 
-      // 6. Fire Order Confirmation SMS asynchronously (non-blocking)
-      const shortOrderId = orderId.slice(0, 8).toUpperCase();
-      const itemCount = savedItems.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-      const orderSms = `Order #${shortOrderId} confirmed! Total: KES ${finalTotal.toLocaleString()} (${itemCount} item${itemCount > 1 ? "s" : ""}). We'll notify you once dispatched. - Mqulima`;
-
-      sendSms({
-        phoneNumber: phone,
-        message: orderSms,
-        triggerType: "order_confirmation",
-      }).catch((err) => console.error("[SHOP ORDER] Order SMS background dispatch error:", err));
+      // 6. Fire Order Confirmation SMS for WhatsApp orders ONLY (non-blocking)
+      // Website orders receive confirmation SMS exclusively after payment confirmation is recorded.
+      if (checkoutChannel === "whatsapp") {
+        sendOrderConfirmedSms({
+          orderId,
+          total: finalTotal,
+          items: savedItems,
+          customerName: fullName,
+          phoneNumber: phone,
+          channel: "whatsapp"
+        }).catch((err) => console.error("[SHOP ORDER] WhatsApp Order SMS background dispatch error:", err));
+      }
 
       return {
         success: true,

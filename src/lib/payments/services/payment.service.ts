@@ -513,6 +513,7 @@ export class PaymentService {
       throw new Error(`Order ${targetOrderId} not found.`);
     }
 
+    const wasAlreadyPaid = order.payment_status === "paid";
     const expectedAmount = parseFloat(order.total);
     const paidAmount = verifyRes.amount;
 
@@ -609,6 +610,17 @@ export class PaymentService {
         console.warn(`[PAYSTACK VERIFY FAILED] Order ${targetOrderId} payment marked as failed. Reason: ${verifyRes.gatewayResponse || verifyRes.error}`);
       }
     });
+
+    if (isSuccess && !wasAlreadyPaid) {
+      try {
+        const { sendOrderPaymentConfirmedSmsById } = await import("@/lib/order-sms.server");
+        sendOrderPaymentConfirmedSmsById(targetOrderId, reference).catch((err) =>
+          console.error("[PAYSTACK CONFIRMED SMS ERROR]:", err)
+        );
+      } catch (smsErr) {
+        console.error("[PAYSTACK SMS IMPORT ERROR]:", smsErr);
+      }
+    }
 
     return {
       success: true,

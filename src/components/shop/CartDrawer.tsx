@@ -358,18 +358,64 @@ export function CartDrawer() {
   };
 
   // WhatsApp Checkout direct from cart
-  const handleWhatsAppCheckout = () => {
+  const handleWhatsAppCheckout = async () => {
     let itemRows = "";
     cartItems.forEach((item, index) => {
       itemRows += `${index + 1}. ${item.product.name} x${item.quantity} - KSh ${(item.product.price * item.quantity).toLocaleString()}\n`;
     });
 
     const deliveryDetails = fullName
-      ? `\n*Delivery details:*\nName: ${fullName}\nPhone: ${phoneNumber}\nLocation: ${county}, ${town}, ${village}\n`
+      ? `\n*Delivery details:*\nName: ${fullName}\nPhone: ${phoneNumber}\nLocation: ${county}, ${town}${village ? `, ${village}` : ""}\n`
       : "";
 
+    let assignedOrderId = "";
+
+    // If user has provided at least basic details and is logged in, register the order as a WhatsApp checkout
+    if (user && fullName.trim() && phoneNumber.trim()) {
+      try {
+        const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
+        const { createShopOrder } = await import("@/lib/api/shop.server");
+        const orderItems = cartItems.map((item) => ({
+          id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          image: item.product.image || item.product.imageUrls?.[0] || "/placeholder-product.png"
+        }));
+
+        const res = await createShopOrder({
+          data: {
+            items: orderItems,
+            couponCode: activeCoupon || undefined,
+            subtotal,
+            total: grandTotal,
+            fullName: fullName.trim(),
+            phone: phoneNumber.trim(),
+            nationalId: nationalId.trim() || "N/A",
+            county: county.trim() || "N/A",
+            town: town.trim() || "N/A",
+            village: village.trim() || "",
+            instructions: instructions.trim() || undefined,
+            paymentMethod: "mpesa",
+            shippingOption,
+            checkoutChannel: "whatsapp",
+            csrfToken: getCsrfTokenFromCookie()
+          }
+        });
+
+        if (res.success && res.orderId) {
+          assignedOrderId = res.orderId.slice(0, 8).toUpperCase();
+          toast.success("WhatsApp order recorded! Confirmation SMS dispatched.");
+          clearCart();
+        }
+      } catch (e) {
+        console.warn("Could not pre-record WhatsApp order in DB:", e);
+      }
+    }
+
+    const orderRefText = assignedOrderId ? `*Order Reference:* #${assignedOrderId}\n` : "";
     const message = `Hello Mqulima agent, I'd like to place an order via WhatsApp:\n
-*Items:*\n${itemRows}
+${orderRefText}*Items:*\n${itemRows}
 *Coupon Discount:* KSh ${discountAmount.toLocaleString()}
 *Shipping Mode:* ${shippingOption.toUpperCase()}
 *Total Amount:* KSh ${grandTotal.toLocaleString()}${deliveryDetails}

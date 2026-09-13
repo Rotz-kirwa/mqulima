@@ -47,8 +47,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               profileIsRetailer: profiles.isRetailer,
               profileRetailerDiscountPct: profiles.retailerDiscountPct,
               profileBio: profiles.bio,
-              lifetimeValue: sql<number>`COALESCE(SUM(CAST(${orders.total} AS NUMERIC)), 0)`,
-              ordersCount: sql<number>`COUNT(DISTINCT ${orders.id})`,
+              lifetimeValue: sql<number>`COALESCE(SUM(CASE WHEN ${orders.paymentStatus} = 'paid' OR ${orders.checkoutChannel} = 'whatsapp' THEN CAST(${orders.total} AS NUMERIC) ELSE 0 END), 0)`,
+              ordersCount: sql<number>`COUNT(DISTINCT CASE WHEN ${orders.paymentStatus} = 'paid' OR ${orders.checkoutChannel} = 'whatsapp' THEN ${orders.id} ELSE NULL END)`,
             })
             .from(users)
             .leftJoin(profiles, eq(users.id, profiles.id))

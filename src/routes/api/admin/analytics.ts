@@ -4,7 +4,7 @@ import { users } from "@/db/schema/users";
 import { orders } from "@/db/schema/orders";
 import { products } from "@/db/schema/products";
 import { serviceRequests } from "@/db/schema/services";
-import { count, eq, sql, desc } from "drizzle-orm";
+import { count, eq, sql, desc, or, and } from "drizzle-orm";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 
 export const Route = createFileRoute("/api/admin/analytics")({
@@ -14,11 +14,20 @@ export const Route = createFileRoute("/api/admin/analytics")({
         const auth = await requireAdminAuth(request);
         if ("response" in auth) return auth.response;
         try {
+          // Gating filter: Admin only records and analyses confirmed paid orders OR WhatsApp orders
+          const confirmedOrderFilter = or(
+            eq(orders.paymentStatus, "paid"),
+            eq(orders.checkoutChannel, "whatsapp")
+          );
+
           // 1. Ensure baseline users & products exist
           const userList = await db.select().from(users).limit(5);
           const productList = await db.select().from(products).limit(5);
 
-          let totalOrdersRes = await db.select({ count: count() }).from(orders);
+          let totalOrdersRes = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(confirmedOrderFilter);
 
           const [totalUsersRes] = await db.select({ count: count() }).from(users);
           const [totalProductsRes] = await db.select({ count: count() }).from(products);
@@ -31,14 +40,30 @@ export const Route = createFileRoute("/api/admin/analytics")({
             .select({
               totalRevenue: sql<number>`COALESCE(SUM(CAST(${orders.total} AS NUMERIC)), 0)`,
             })
-            .from(orders);
+            .from(orders)
+            .where(confirmedOrderFilter);
 
-          // Real Order Breakdown by status from PostgreSQL
-          const [fulfilledRes] = await db.select({ count: count() }).from(orders).where(eq(orders.status, "delivered"));
-          const [shippedRes] = await db.select({ count: count() }).from(orders).where(eq(orders.status, "shipped"));
-          const [pendingRes] = await db.select({ count: count() }).from(orders).where(eq(orders.status, "pending"));
-          const [processingRes] = await db.select({ count: count() }).from(orders).where(eq(orders.status, "processing"));
-          const [cancelledRes] = await db.select({ count: count() }).from(orders).where(eq(orders.status, "cancelled"));
+          // Real Order Breakdown by status from PostgreSQL for confirmed orders
+          const [fulfilledRes] = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(and(eq(orders.status, "delivered"), confirmedOrderFilter));
+          const [shippedRes] = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(and(eq(orders.status, "shipped"), confirmedOrderFilter));
+          const [pendingRes] = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(and(eq(orders.status, "pending"), confirmedOrderFilter));
+          const [processingRes] = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(and(eq(orders.status, "processing"), confirmedOrderFilter));
+          const [cancelledRes] = await db
+            .select({ count: count() })
+            .from(orders)
+            .where(and(eq(orders.status, "cancelled"), confirmedOrderFilter));
 
           const totalOrdersCount = totalOrdersRes[0]?.count || 0;
           const fulfilledCount = (fulfilledRes?.count || 0) + (shippedRes?.count || 0);
@@ -54,6 +79,7 @@ export const Route = createFileRoute("/api/admin/analytics")({
               revenue: sql<number>`COALESCE(SUM(CAST(${orders.total} AS NUMERIC)), 0)`,
             })
             .from(orders)
+            .where(confirmedOrderFilter)
             .groupBy(sql`TO_CHAR(${orders.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${orders.createdAt})`)
             .orderBy(sql`EXTRACT(MONTH FROM ${orders.createdAt})`);
 
@@ -69,6 +95,7 @@ export const Route = createFileRoute("/api/admin/analytics")({
               orderCount: count(),
             })
             .from(orders)
+            .where(confirmedOrderFilter)
             .groupBy(sql`EXTRACT(DOW FROM ${orders.createdAt})`)
             .orderBy(sql`EXTRACT(DOW FROM ${orders.createdAt})`);
 
@@ -91,8 +118,13 @@ export const Route = createFileRoute("/api/admin/analytics")({
             };
           });
 
-          // Fetch Recent Orders & Service Requests for Live Activity Feed
-          const recentOrders = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(5);
+          // Fetch Recent Orders & Service Requests for Live Activity Feed (Confirmed orders only)
+          const recentOrders = await db
+            .select()
+            .from(orders)
+            .where(confirmedOrderFilter)
+            .orderBy(desc(orders.createdAt))
+            .limit(5);
 
           const liveActivities = [
             ...recentOrders.map((o) => ({

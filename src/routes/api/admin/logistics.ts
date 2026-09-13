@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { logisticsRecords } from "@/db/schema/admin";
 import { orders } from "@/db/schema/orders";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 
@@ -20,7 +20,11 @@ export const Route = createFileRoute("/api/admin/logistics")({
             .limit(100);
 
           if (list.length === 0) {
-            const sampleOrders = await db.select().from(orders).limit(5);
+            const sampleOrders = await db
+              .select()
+              .from(orders)
+              .where(or(eq(orders.paymentStatus, "paid"), eq(orders.checkoutChannel, "whatsapp")))
+              .limit(5);
 
             for (let i = 0; i < sampleOrders.length; i++) {
               const ord = sampleOrders[i];
