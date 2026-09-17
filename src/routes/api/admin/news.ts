@@ -24,6 +24,7 @@ export const Route = createFileRoute("/api/admin/news")({
               source_attribution AS "sourceAttribution",
               author_id AS "authorId",
               status,
+              view_count AS "viewCount",
               published_at AS "publishedAt",
               created_at AS "createdAt"
             FROM agritech_news
@@ -77,6 +78,17 @@ export const Route = createFileRoute("/api/admin/news")({
             return new Response(
               JSON.stringify({ success: false, error: "Invalid media type. Must be image or video" }),
               { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          // 4. Validation: Media Payload Gating (Prevent performance degradation / network timeouts)
+          if (mediaUrl && typeof mediaUrl === "string" && mediaUrl.startsWith("data:") && mediaUrl.length > 500_000) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "Uploaded image payload is too large (exceeds 500KB limit). Please compress the image or use an image URL.",
+              }),
+              { status: 413, headers: { "Content-Type": "application/json" } }
             );
           }
 

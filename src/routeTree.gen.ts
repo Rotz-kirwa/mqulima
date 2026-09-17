@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as NewsRouteImport } from './routes/news'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -28,6 +29,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
+import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
 import { Route as PaymentsPaystackCallbackRouteImport } from './routes/payments.paystack.callback'
@@ -72,6 +74,11 @@ const TermsRoute = TermsRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -152,6 +159,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 const ApiProductsRoute = ApiProductsRouteImport.update({
   id: '/api/products',
   path: '/api/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNewsRoute = ApiNewsRouteImport.update({
+  id: '/api/news',
+  path: '/api/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -318,10 +330,12 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/news': typeof NewsRoute
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/news': typeof ApiNewsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -369,10 +383,12 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/news': typeof NewsRoute
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/news': typeof ApiNewsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -421,10 +437,12 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/news': typeof NewsRoute
   '/services': typeof ServicesRoute
   '/terms': typeof TermsRoute
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/news': typeof ApiNewsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -474,10 +492,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/news'
     | '/services'
     | '/terms'
     | '/tools'
     | '/api/health'
+    | '/api/news'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -525,10 +545,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/news'
     | '/services'
     | '/terms'
     | '/tools'
     | '/api/health'
+    | '/api/news'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -576,10 +598,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/news'
     | '/services'
     | '/terms'
     | '/tools'
     | '/api/health'
+    | '/api/news'
     | '/api/products'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -628,10 +652,12 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  NewsRoute: typeof NewsRoute
   ServicesRoute: typeof ServicesRoute
   TermsRoute: typeof TermsRoute
   ToolsRoute: typeof ToolsRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiNewsRoute: typeof ApiNewsRoute
   ApiProductsRoute: typeof ApiProductsRouteWithChildren
   ShopProductIdRoute: typeof ShopProductIdRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -685,6 +711,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -797,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/api/products'
       fullPath: '/api/products'
       preLoaderRoute: typeof ApiProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/news': {
+      id: '/api/news'
+      path: '/api/news'
+      fullPath: '/api/news'
+      preLoaderRoute: typeof ApiNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -1060,10 +1100,12 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  NewsRoute: NewsRoute,
   ServicesRoute: ServicesRoute,
   TermsRoute: TermsRoute,
   ToolsRoute: ToolsRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiNewsRoute: ApiNewsRoute,
   ApiProductsRoute: ApiProductsRouteWithChildren,
   ShopProductIdRoute: ShopProductIdRoute,
   ShopIndexRoute: ShopIndexRoute,

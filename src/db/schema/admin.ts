@@ -80,6 +80,7 @@ export const agritechNews = pgTable("agritech_news", {
   sourceAttribution: varchar("source_attribution", { length: 255 }),
   authorId: varchar("author_id", { length: 255 }),
   status: varchar("status", { length: 50 }).default("draft").notNull(),
+  viewCount: integer("view_count").default(0),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -43,6 +43,20 @@ import { getPublishedBlogPosts } from "@/lib/api/blog.server";
 import heroFarmerWoman from "@/assets/hero-farmer-woman.png";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    try {
+      const [featProducts, pubArticles] = await Promise.all([
+        getFeaturedProducts().catch(() => []),
+        getPublishedBlogPosts().catch(() => []),
+      ]);
+      return {
+        featuredProducts: featProducts || [],
+        publishedArticles: pubArticles || [],
+      };
+    } catch (e) {
+      return { featuredProducts: [], publishedArticles: [] };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Mqulima — Agriculture for the Future" },
@@ -196,18 +210,26 @@ const HOMEPAGE_CATEGORIES = [
 ];
 
 function Index() {
+  const loaderData = Route.useLoaderData();
+
   const { data: dbFeaturedProducts } = useQuery({
     queryKey: ["featuredProducts"],
-    queryFn: () => getFeaturedProducts()
+    queryFn: () => getFeaturedProducts(),
+    initialData: loaderData?.featuredProducts,
   });
 
   const { data: dbArticles } = useQuery({
     queryKey: ["publishedArticles"],
-    queryFn: () => getPublishedBlogPosts()
+    queryFn: () => getPublishedBlogPosts(),
+    initialData: loaderData?.publishedArticles,
   });
 
-  const featuredProducts = dbFeaturedProducts || [];
-  const featuredArticles = dbArticles?.slice(0, 3) || articles.slice(0, 3);
+  const featuredProducts = dbFeaturedProducts || loaderData?.featuredProducts || [];
+  const featuredArticles = (dbArticles && dbArticles.length > 0)
+    ? dbArticles.slice(0, 3)
+    : (loaderData?.publishedArticles && loaderData.publishedArticles.length > 0)
+      ? loaderData.publishedArticles.slice(0, 3)
+      : [];
 
   // Auto-sliding showcase carousel state (2 products on mobile, 3 on desktop, 3s interval)
   const [featuredPageIndex, setFeaturedPageIndex] = useState(0);

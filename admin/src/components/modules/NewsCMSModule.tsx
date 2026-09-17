@@ -131,10 +131,54 @@ export const NewsCMSModule: React.FC = () => {
         setMediaError("Invalid file type. Please upload an image (PNG, JPG, WEBP, GIF).");
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setMediaError("Image size exceeds limit. Maximum allowed size is 5MB.");
+      if (file.size > 15 * 1024 * 1024) {
+        setMediaError("Image size exceeds limit. Maximum allowed size is 15MB.");
         return;
       }
+
+      // Automatic client-side canvas compression to max 1200px and 82% quality
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawResult = event.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressed = canvas.toDataURL("image/jpeg", 0.82);
+              setMediaUrl(compressed);
+              toast.success("Image optimized and loaded successfully!");
+              return;
+            }
+          } catch (err) {
+            console.warn("Canvas compression fallback:", err);
+          }
+          setMediaUrl(rawResult);
+          toast.success("Image loaded successfully!");
+        };
+        img.onerror = () => {
+          setMediaUrl(rawResult);
+          toast.success("Image loaded!");
+        };
+        img.src = rawResult;
+      };
+      reader.readAsDataURL(file);
     } else {
       if (!file.type.startsWith("video/")) {
         setMediaError("Invalid file type. Please upload a video (MP4, WEBM, MOV).");
@@ -144,16 +188,16 @@ export const NewsCMSModule: React.FC = () => {
         setMediaError("Video size exceeds limit. Maximum allowed size is 50MB.");
         return;
       }
-    }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setMediaUrl(event.target.result as string);
-        toast.success(`${mediaType === "image" ? "Image" : "Video"} loaded successfully!`);
-      }
-    };
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setMediaUrl(event.target.result as string);
+          toast.success("Video loaded successfully!");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   useEffect(() => {

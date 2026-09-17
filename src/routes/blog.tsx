@@ -22,6 +22,15 @@ import { getPublishedBlogPosts, incrementBlogViewCount } from "@/lib/api/blog.se
 import { sanitizeHtml } from "@/lib/sanitization";
 
 export const Route = createFileRoute("/blog")({
+  loader: async () => {
+    try {
+      const posts = await getPublishedBlogPosts();
+      return { posts: posts || [] };
+    } catch (e) {
+      console.error("Failed to load blog posts in loader:", e);
+      return { posts: [] };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Mqulima News — Farmers' Voice & Insights" },
@@ -64,8 +73,10 @@ type BlogPost = {
 
 
 function BlogPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
+  const loaderData = Route.useLoaderData();
+  const initialPosts = (loaderData?.posts && loaderData.posts.length > 0) ? (loaderData.posts as BlogPost[]) : [];
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
+  const [postsLoading, setPostsLoading] = useState(initialPosts.length === 0);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -78,19 +89,21 @@ function BlogPage() {
   // Active Reading Post Modal State
   const [activeReadingPost, setActiveReadingPost] = useState<BlogPost | null>(null);
 
-  // Load posts from the database
+  // Fallback / refresh loader
   useEffect(() => {
-    setPostsLoading(true);
-    getPublishedBlogPosts()
-      .then((data) => {
-        setPosts(data);
-      })
-      .catch((err) => {
-        console.error("Failed to load blog posts:", err);
-        toast.error("Could not load news articles.");
-      })
-      .finally(() => setPostsLoading(false));
-  }, []);
+    if (posts.length === 0) {
+      setPostsLoading(true);
+      getPublishedBlogPosts()
+        .then((data) => {
+          setPosts(data as BlogPost[]);
+        })
+        .catch((err) => {
+          console.error("Failed to load blog posts:", err);
+          toast.error("Could not load news articles.");
+        })
+        .finally(() => setPostsLoading(false));
+    }
+  }, [posts.length]);
 
   // Fetch registered user name
   useEffect(() => {
