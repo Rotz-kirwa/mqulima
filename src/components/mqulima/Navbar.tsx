@@ -87,6 +87,22 @@ export function Navbar() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState<number>(isShopPage ? 195 : 78);
+
+  // Dynamically sync spacer height to header element
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const updateHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, [isShopPage]);
 
   const { isInstallable, triggerInstall } = usePWA();
   const { user, logout } = useAuth();
@@ -250,12 +266,13 @@ export function Navbar() {
   return (
     <>
       {/* =========================================================================
-         STATIC NAVBAR CONTAINER (Scrolls away / disappears with page scrolling)
+         FIXED NAVBAR CONTAINER (Permanently pinned to top of viewport - never moves)
          ========================================================================= */}
       <header
-        className="relative z-50 w-full select-none py-3.5 bg-white dark:bg-[#0B2117] border-b border-black/[0.04] dark:border-white/10 shadow-xs"
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-40 w-full select-none bg-white dark:bg-[#0B2117] border-b border-black/[0.06] dark:border-white/10 shadow-xs transition-colors"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-3.5">
           
           {/* =========================================================================
              LEFT SECTION: Logo, Brand Name & Tagline
@@ -752,6 +769,13 @@ export function Navbar() {
           );
         })()}
       </header>
+
+      {/* Spacer to preserve document layout height for fixed navbar */}
+      <div
+        style={{ height: `${headerHeight}px` }}
+        aria-hidden="true"
+        className="w-full shrink-0 select-none pointer-events-none"
+      />
 
       {/* =========================================================================
          SPOTLIGHT SEARCH MODAL OVERLAY (Triggered via ⌘K or Search Pill)
