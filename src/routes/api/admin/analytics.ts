@@ -1,11 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { db } from "@/lib/db.server";
+import { db, getDb } from "@/lib/db.server";
 import { users } from "@/db/schema/users";
+import { profiles } from "@/db/schema/profiles";
 import { orders } from "@/db/schema/orders";
 import { products } from "@/db/schema/products";
 import { serviceRequests } from "@/db/schema/services";
 import { count, eq, sql, desc, or, and } from "drizzle-orm";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+
+function formatRelativeTime(date: Date | string | null | undefined): string {
+  if (!date) return "Recently";
+  const now = Date.now();
+  const time = new Date(date).getTime();
+  const diffSec = Math.floor((now - time) / 1000);
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} mins ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export const Route = createFileRoute("/api/admin/analytics")({
   server: {
@@ -24,12 +41,18 @@ export const Route = createFileRoute("/api/admin/analytics")({
           const userList = await db.select().from(users).limit(5);
           const productList = await db.select().from(products).limit(5);
 
-          let totalOrdersRes = await db
+          const [totalOrdersRes] = await db
             .select({ count: count() })
             .from(orders)
             .where(confirmedOrderFilter);
 
           const [totalUsersRes] = await db.select({ count: count() }).from(users);
+          const [totalProfilesRes] = await db.select({ count: count() }).from(profiles);
+          const [totalFarmersRes] = await db
+            .select({ count: count() })
+            .from(profiles)
+            .where(eq(profiles.role, "farmer"));
+
           const [totalProductsRes] = await db.select({ count: count() }).from(products);
           const [pendingServicesRes] = await db
             .select({ count: count() })
@@ -65,7 +88,7 @@ export const Route = createFileRoute("/api/admin/analytics")({
             .from(orders)
             .where(and(eq(orders.status, "cancelled"), confirmedOrderFilter));
 
-          const totalOrdersCount = totalOrdersRes[0]?.count || 0;
+          const totalOrdersCount = totalOrdersRes?.count || 0;
           const fulfilledCount = (fulfilledRes?.count || 0) + (shippedRes?.count || 0);
           const pendingCount = (pendingRes?.count || 0) + (processingRes?.count || 0);
           const cancelledCount = cancelledRes?.count || 0;
@@ -118,59 +141,191 @@ export const Route = createFileRoute("/api/admin/analytics")({
             };
           });
 
-          // Fetch Recent Orders & Service Requests for Live Activity Feed (Confirmed orders only)
-          const recentOrders = await db
-            .select()
-            .from(orders)
-            .where(confirmedOrderFilter)
-            .orderBy(desc(orders.createdAt))
-            .limit(5);
+          // Fetch 100% Real Live Activities & Audit Feed from Database (Zero Mock Data)
+          const sqlClient = getDb();
 
-          const liveActivities = [
-            ...recentOrders.map((o) => ({
-              id: `order-${o.id}`,
-              type: "Order Purchase",
-              title: `New Marketplace Purchase: Order #${o.id}`,
-              subtitle: `Total: KSh ${Number(o.total || 0).toLocaleString()} • Payment: ${(o.paymentMethod || "mpesa").toUpperCase()} (${o.paymentStatus || "paid"})`,
-              time: o.createdAt ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
-              category: "Commerce",
-              badgeBg: "bg-[#EA580C]", // Orange badge
-            })),
-            {
-              id: "act-admin-1",
-              type: "Admin Action",
-              title: "KAMIS Commodity Market Prices Feed Synced",
-              subtitle: "Automatic daily market index refresh across 18 Kenyan counties",
-              time: "10 mins ago",
+          // A. Real admin and user audit actions
+          const auditRows = await sqlClient`
+            SELECT 
+              l.id, l.action, l.entity_type AS "entityType", l.entity_id AS "entityId", 
+              l.diff, l.created_at AS "createdAt",
+              p.full_name AS "fullName", p.email, p.role
+            FROM admin_audit_logs l
+            LEFT JOIN profiles p ON l.actor_id = p.id
+            ORDER BY l.created_at DESC
+            LIMIT 15
+          `;
+
+          // B. Real published news updates
+          const newsRows = await sqlClient`
+            SELECT id, title, category, source_attribution AS "sourceAttribution", 
+                   published_at AS "publishedAt", created_at AS "createdAt"
+            FROM agritech_news
+            WHERE LOWER(status) = 'published'
+            ORDER BY COALESCE(published_at, created_at) DESC
+            LIMIT 5
+          `;
+
+          // C. Real service inquiries
+          const serviceRows = await sqlClient`
+            SELECT 
+              sr.id, sr.status, sr.contact_name AS "contactName", sr.location, 
+              sr.subservice_name AS "subserviceName", sr.created_at AS "createdAt",
+              s.name AS "serviceName"
+            FROM service_requests sr
+            LEFT JOIN services s ON sr.service_id = s.id
+            ORDER BY sr.created_at DESC
+            LIMIT 5
+          `;
+
+          // D. Real recent orders
+          const orderRows = await sqlClient`
+            SELECT 
+              o.id, o.total, o.payment_method AS "paymentMethod", 
+              o.payment_status AS "paymentStatus", o.checkout_channel AS "checkoutChannel",
+              o.created_at AS "createdAt",
+              p.full_name AS "customerName", p.email AS "customerEmail"
+            FROM orders o
+            LEFT JOIN profiles p ON o.user_id = p.id
+            ORDER BY o.created_at DESC
+            LIMIT 10
+          `;
+
+          const activities: Array<{
+            id: string;
+            type: string;
+            title: string;
+            subtitle: string;
+            time: string;
+            category: string;
+            badgeBg: string;
+            timestamp: number;
+          }> = [];
+
+          // Map real audit logs
+          for (const a of auditRows) {
+            const date = a.createdAt;
+            const diff = (typeof a.diff === "string" ? JSON.parse(a.diff) : a.diff) || {};
+            const actorName = a.fullName || a.email || "Platform User";
+
+            let type = "Admin Audit";
+            let title = `System Action: ${a.action}`;
+            let subtitle = `Executed by ${actorName}`;
+            let category = "Security";
+            let badgeBg = "bg-[#0284C7]"; // Blue badge
+
+            if (a.action === "order.created") {
+              type = "Order Created";
+              const orderNum = a.entityId ? `#${String(a.entityId).slice(0, 8).toUpperCase()}` : "Marketplace Order";
+              title = `${orderNum} Placed by ${actorName}`;
+              const total = diff.total ? `Total: KSh ${Number(diff.total).toLocaleString()} • ` : "";
+              const payment = diff.paymentMethod ? `via ${String(diff.paymentMethod).toUpperCase()}` : "Checkout initiated";
+              subtitle = `${total}${payment}`;
+              category = "Commerce";
+              badgeBg = "bg-[#EA580C]"; // Orange badge
+            } else if (a.action === "auth.login") {
+              type = "User Login";
+              title = `User Authentication: ${actorName}`;
+              subtitle = `Signed in with role: ${diff.role || a.role || "farmer"}`;
+              category = "Auth";
+              badgeBg = "bg-[#0D9488]"; // Teal badge
+            } else if (a.action === "auth.register") {
+              type = "Farmer Onboarding";
+              title = `New Farmer Registration: ${actorName}`;
+              subtitle = "Created a new farm account on Mqulima Platform";
+              category = "CRM";
+              badgeBg = "bg-[#16A34A]"; // Green badge
+            } else if (a.action === "DELETE_CUSTOMER") {
+              type = "Account Moderation";
+              title = "Farmer Account Record Removed";
+              subtitle = `Profile ID ${String(a.entityId || "").slice(0, 8)} deleted by administrator`;
+              category = "CRM";
+              badgeBg = "bg-[#475569]"; // Slate badge
+            } else if (String(a.action).startsWith("ORDER_STATUS_")) {
+              type = "Order Fulfillment";
+              const statusName = String(a.action).replace("ORDER_STATUS_", "");
+              title = `Order #${String(a.entityId || "").slice(0, 8).toUpperCase()} Marked as ${statusName}`;
+              subtitle = `Fulfillment status transition performed by ${actorName}`;
+              category = "Logistics";
+              badgeBg = "bg-[#2563EB]"; // Royal blue
+            }
+
+            activities.push({
+              id: `audit-${a.id}`,
+              type,
+              title,
+              subtitle,
+              time: formatRelativeTime(date),
+              category,
+              badgeBg,
+              timestamp: new Date(date).getTime(),
+            });
+          }
+
+          // Map real agritech news publications
+          for (const n of newsRows) {
+            const date = n.publishedAt || n.createdAt;
+            const shortTitle = n.title.length > 55 ? n.title.slice(0, 52) + "..." : n.title;
+            activities.push({
+              id: `news-${n.id}`,
+              type: "Agritech News",
+              title: `Article Published: "${shortTitle}"`,
+              subtitle: `Category: ${n.category} • Attribution: ${n.sourceAttribution || "Mqulima Editorial Desk"}`,
+              time: formatRelativeTime(date),
               category: "Market Intel",
-              badgeBg: "bg-[#16A34A]", // Green badge
-            },
-            {
-              id: "act-service-1",
+              badgeBg: "bg-[#059669]", // Emerald badge
+              timestamp: new Date(date).getTime(),
+            });
+          }
+
+          // Map real service inquiries
+          for (const s of serviceRows) {
+            const date = s.createdAt;
+            activities.push({
+              id: `service-${s.id}`,
               type: "Service Request",
-              title: "Soil Fertility & Agronomy Consultation Scheduled",
-              subtitle: "Field officer assigned for Nakuru Agri-hub Region",
-              time: "35 mins ago",
+              title: `Agronomy Request: ${s.serviceName || s.subserviceName || "Field Consultation"}`,
+              subtitle: `Farmer: ${s.contactName || "Direct Request"} • Region: ${s.location || "Kenya"} • Status: ${String(s.status).toUpperCase()}`,
+              time: formatRelativeTime(date),
               category: "Agronomy",
               badgeBg: "bg-[#4F46E5]", // Indigo badge
-            },
-            {
-              id: "act-admin-2",
-              type: "Admin Audit",
-              title: "Farmer Profile Verification & CRM Onboarding",
-              subtitle: "Approved 4 new smallholder farmer registrations in Uasin Gishu",
-              time: "1 hour ago",
-              category: "CRM",
-              badgeBg: "bg-[#0284C7]", // Blue badge
-            },
-          ];
+              timestamp: new Date(date).getTime(),
+            });
+          }
+
+          // Merge recent orders that might not have duplicate audit IDs
+          const existingOrderIds = new Set(
+            auditRows.filter((a) => a.action === "order.created").map((a) => a.entityId)
+          );
+
+          for (const o of orderRows) {
+            if (!existingOrderIds.has(o.id)) {
+              const date = o.createdAt;
+              const customer = o.customerName || o.customerEmail || "Farmer";
+              activities.push({
+                id: `order-${o.id}`,
+                type: "Order Purchase",
+                title: `Order #${String(o.id).slice(0, 8).toUpperCase()} Placed`,
+                subtitle: `Customer: ${customer} • Total: KSh ${Number(o.total || 0).toLocaleString()} • ${String(o.checkoutChannel || "web").toUpperCase()} (${String(o.paymentStatus || "pending").toUpperCase()})`,
+                time: formatRelativeTime(date),
+                category: "Commerce",
+                badgeBg: "bg-[#EA580C]",
+                timestamp: new Date(date).getTime(),
+              });
+            }
+          }
+
+          // Sort strictly by timestamp descending (newest live event first)
+          activities.sort((x, y) => y.timestamp - x.timestamp);
+
+          const liveActivities = activities.slice(0, 10);
 
           return new Response(
             JSON.stringify({
               success: true,
               kpis: {
-                activeCustomers: totalUsersRes?.count || 0,
-                totalFarmers: Math.floor((totalUsersRes?.count || 0) * 0.8),
+                activeCustomers: totalProfilesRes?.count || totalUsersRes?.count || 0,
+                totalFarmers: totalFarmersRes?.count || 0,
                 openOrders: totalOrdersCount,
                 totalProducts: totalProductsRes?.count || 0,
                 pendingServices: pendingServicesRes?.count || 0,
@@ -187,6 +342,7 @@ export const Route = createFileRoute("/api/admin/analytics")({
             { headers: { "Content-Type": "application/json" } }
           );
         } catch (error: any) {
+          console.error("Admin analytics fetch error:", error);
           return new Response(
             JSON.stringify({
               success: false,

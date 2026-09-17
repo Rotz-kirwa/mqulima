@@ -426,7 +426,7 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
         <div className="space-y-3">
           {activities.length === 0 ? (
             <div className="text-xs font-mono text-[#4A7C79] p-4 text-center">
-              Loading live platform activity notifications...
+              {loading ? "Loading live platform activity notifications..." : "No recent platform activity notifications recorded yet."}
             </div>
           ) : (
             activities.map((act) => (
