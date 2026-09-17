@@ -67,7 +67,6 @@ export function Navbar() {
 
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   // Search Spotlight Modal State
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -128,11 +127,6 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 15);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Click Outside listeners for dropdowns
@@ -256,14 +250,10 @@ export function Navbar() {
   return (
     <>
       {/* =========================================================================
-         PREMIUM GLASSMORPHISM STICKY NAVBAR CONTAINER
+         STATIC NAVBAR CONTAINER (Scrolls away / disappears with page scrolling)
          ========================================================================= */}
       <header
-        className={`sticky top-0 z-50 w-full transition-all duration-300 ease-out select-none py-3.5 ${
-          scrolled
-            ? "bg-white dark:bg-[#0B2117] backdrop-blur-2xl border-b border-[#0B2117]/10 dark:border-white/10 shadow-[0_8px_32px_rgba(11,33,23,0.08)]"
-            : "bg-white dark:bg-[#0B2117] backdrop-blur-xl border-b border-black/[0.04] dark:border-white/5"
-        }`}
+        className="relative z-50 w-full select-none py-3.5 bg-white dark:bg-[#0B2117] border-b border-black/[0.04] dark:border-white/10 shadow-xs"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           
