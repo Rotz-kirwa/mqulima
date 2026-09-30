@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation, useRouterState } from "@tanstack/react-router";
 import {
   ShoppingCart, Menu, X, User, Download, Search, Bell, ChevronDown,
   Home, ShoppingBag, Briefcase, BookOpen, Users as UsersIcon, FileText, Wrench, Sparkles,
@@ -12,7 +12,7 @@ import { useCart } from "@/lib/cart-context";
 import { type ShopProduct } from "@/lib/shop-data";
 import { searchProducts } from "@/lib/api/products.server";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import {
   getUserNotifications,
@@ -22,10 +22,10 @@ import {
 } from "@/lib/api/user-notifications.server";
 
 // Center Navigation Links
-const navLinks = [
+const navLinks: Array<{ to: string; label: string; badge?: string }> = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "AgroShop" },
-  { to: "/academy", label: "Academy" },
+  { to: "/academy", label: "Academy", badge: "Soon" },
   { to: "/blog", label: "News" },
   { to: "/community", label: "Forum" },
   { to: "/tools", label: "Tools" },
@@ -33,13 +33,13 @@ const navLinks = [
 ];
 
 // Mobile Drawer Navigation Items with Brand Icons
-const navWithIcons = [
+const navWithIcons: Array<{ to: string; label: string; icon: any; color: string; badge?: string }> = [
   { to: "/", label: "Home", icon: Home, color: "text-emerald-400" },
   { to: "/shop", label: "AgroShop", icon: ShoppingBag, color: "text-amber-400" },
-  { to: "/academy", label: "Academy", icon: BookOpen, color: "text-lime-400" },
-  { to: "/blog", label: "Mqulima News", icon: FileText, color: "text-sky-400" },
-  { to: "/community", label: "Mqulima Forum", icon: UsersIcon, color: "text-emerald-400" },
-  { to: "/tools", label: "Mqulima Tools", icon: Wrench, color: "text-orange-400" },
+  { to: "/academy", label: "Academy", icon: BookOpen, color: "text-lime-400", badge: "Soon" },
+  { to: "/blog", label: "News", icon: FileText, color: "text-sky-400" },
+  { to: "/community", label: "Forum", icon: UsersIcon, color: "text-emerald-400" },
+  { to: "/tools", label: "Tools", icon: Wrench, color: "text-orange-400" },
   { to: "/services", label: "Services", icon: Briefcase, color: "text-[#85CC14]" },
 ];
 
@@ -85,6 +85,32 @@ export function Navbar() {
   // Category dropdown state
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  // Locale State (en / sw)
+  const [locale, setLocale] = useState<"en" | "sw">("en");
+
+  useEffect(() => {
+    try {
+      const savedLocale = localStorage.getItem("mqulima_locale") as "en" | "sw" | null;
+      if (savedLocale === "en" || savedLocale === "sw") {
+        setLocale(savedLocale);
+      }
+    } catch {}
+  }, []);
+
+  const toggleLocale = () => {
+    const nextLocale = locale === "en" ? "sw" : "en";
+    setLocale(nextLocale);
+    try {
+      localStorage.setItem("mqulima_locale", nextLocale);
+      window.dispatchEvent(new CustomEvent("mqulima_locale_change", { detail: nextLocale }));
+    } catch {}
+    toast.success(
+      nextLocale === "sw" 
+        ? "Lugha imebadilishwa: Kiswahili (Swahili)" 
+        : "Language switched: English"
+    );
+  };
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -224,9 +250,13 @@ export function Navbar() {
     toast.success("All notifications marked as read");
   };
 
+  const committedPathname = useRouterState({
+    select: (s) => s.location.pathname,
+  });
+
   const isPathActive = (to: string) => {
-    if (to === "/") return location.pathname === "/";
-    return location.pathname.startsWith(to);
+    if (to === "/") return committedPathname === "/";
+    return committedPathname.startsWith(to);
   };
 
   const markAllUserNotificationsRead = async () => {
@@ -306,7 +336,8 @@ export function Navbar() {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="relative px-4 py-2 text-xs font-extrabold tracking-wide uppercase transition-colors duration-200 rounded-full whitespace-nowrap cursor-pointer"
+                  preload="intent"
+                  className="relative px-4 py-2 text-xs font-extrabold tracking-wide uppercase transition-colors duration-200 rounded-full whitespace-nowrap cursor-pointer outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#85CC14] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B2117]"
                 >
                   {/* Floating active pill highlight */}
                   {active && (
@@ -321,13 +352,18 @@ export function Navbar() {
                   <motion.span
                     whileHover={{ y: -1, scale: 1.03 }}
                     transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className={`relative z-10 block font-extrabold ${
+                    className={`relative z-10 flex items-center gap-1 font-extrabold ${
                       active
                         ? "text-[#85CC14]"
                         : "text-[#0B2117]/80 dark:text-white/80 hover:text-[#0B2117] dark:hover:text-white"
                     }`}
                   >
-                    {n.label}
+                    <span>{n.label}</span>
+                    {n.badge && (
+                      <span className="px-1.5 py-0.2 text-[8px] font-black tracking-wider uppercase rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        {n.badge}
+                      </span>
+                    )}
                   </motion.span>
                 </Link>
               );
@@ -351,6 +387,20 @@ export function Navbar() {
               <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold bg-white dark:bg-white/20 text-[#0B2117] dark:text-white rounded border border-gray-200 dark:border-white/20 shadow-2xs">
                 ⌘K
               </kbd>
+            </motion.button>
+
+            {/* Language Switcher Scaffold (EN / SW) */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleLocale}
+              title={locale === "en" ? "Badilisha lugha hadi Kiswahili" : "Switch language to English"}
+              aria-label="Toggle language"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#0B2117]/[0.04] dark:bg-white/10 hover:bg-[#0B2117]/10 dark:hover:bg-white/15 border border-[#0B2117]/10 dark:border-white/10 text-xs font-black cursor-pointer text-[#0B2117] dark:text-white transition-all shadow-xs"
+            >
+              <span className={locale === "en" ? "text-[#16A34A] dark:text-[#85CC14] font-black underline underline-offset-2" : "opacity-60"}>EN</span>
+              <span className="opacity-30 text-[10px]">/</span>
+              <span className={locale === "sw" ? "text-[#16A34A] dark:text-[#85CC14] font-black underline underline-offset-2" : "opacity-60"}>SW</span>
             </motion.button>
 
             {/* Mobile Search Icon button */}
@@ -909,8 +959,9 @@ export function Navbar() {
                       <Link
                         key={n.to}
                         to={n.to}
+                        preload="intent"
                         onClick={() => setOpen(false)}
-                        className={`flex items-center gap-3.5 rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+                        className={`flex items-center gap-3.5 rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-200 whitespace-nowrap outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#85CC14] ${
                           active
                             ? "bg-[#16382B] text-[#85CC14] border-l-4 border-[#85CC14] shadow-md"
                             : "text-white/90 hover:bg-[#16382B]/60 hover:text-[#85CC14]"
@@ -918,6 +969,11 @@ export function Navbar() {
                       >
                         <Icon className={`h-5 w-5 shrink-0 ${n.color}`} />
                         <span>{n.label}</span>
+                        {n.badge && (
+                          <span className="ml-auto px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {n.badge}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
@@ -925,7 +981,29 @@ export function Navbar() {
               </div>
 
               {/* Mobile Drawer Bottom Actions */}
-              <div className="border-t border-white/10 pt-6 space-y-3">
+              <div className="border-t border-white/10 pt-4 space-y-3">
+                {/* Language Switcher Scaffold */}
+                <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-white/5 border border-white/10">
+                  <span className="text-xs text-white/70 font-semibold">Lugha / Language</span>
+                  <div className="flex items-center gap-1 bg-[#16382B] p-1 rounded-xl border border-[#85CC14]/30">
+                    <button
+                      onClick={toggleLocale}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-colors ${
+                        locale === "en" ? "bg-[#85CC14] text-[#0B2117]" : "text-white/70 hover:text-white"
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={toggleLocale}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-colors ${
+                        locale === "sw" ? "bg-[#85CC14] text-[#0B2117]" : "text-white/70 hover:text-white"
+                      }`}
+                    >
+                      Kiswahili
+                    </button>
+                  </div>
+                </div>
                 {user ? (
                   <>
                     <div className="text-xs text-white/60">Logged in as <strong className="text-white font-extrabold">{user.name}</strong></div>
