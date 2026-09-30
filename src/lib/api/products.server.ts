@@ -114,8 +114,16 @@ export const getProducts = createServerFn({ method: "GET" })
     };
   });
 
+const featuredCache = { data: null as any, expiry: 0 };
+const FEATURED_CACHE_TTL = 5 * 60 * 1000;
+
 export const getFeaturedProducts = createServerFn({ method: "GET" })
   .handler(async () => {
+    const now = Date.now();
+    if (featuredCache.data && featuredCache.expiry > now) {
+      return featuredCache.data;
+    }
+
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
@@ -126,7 +134,7 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
     `;
 
     if (featItems.length > 0) {
-      return featItems.map((fi: any) => ({
+      const res = featItems.map((fi: any) => ({
         id: fi.id,
         name: fi.title || "Farm Essential",
         image: fi.image_url || "/placeholder-product.png",
@@ -136,6 +144,9 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
         price: 0,
         slug: "",
       }));
+      featuredCache.data = res;
+      featuredCache.expiry = now + FEATURED_CACHE_TTL;
+      return res;
     }
 
     const products = await sql`
@@ -153,7 +164,10 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
       LIMIT 8
     `;
 
-    return products.map(mapDbProduct);
+    const res = products.map(mapDbProduct);
+    featuredCache.data = res;
+    featuredCache.expiry = now + FEATURED_CACHE_TTL;
+    return res;
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })

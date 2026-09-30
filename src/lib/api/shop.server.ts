@@ -24,7 +24,7 @@ function getCategoryPlaceholder(p: any): string {
     nameLower.includes("norbrook") || nameLower.includes("coopers") ||
     nameLower.includes("ex-kupe")
   ) {
-    return "/images/placeholders/livestock.png";
+    return "/images/placeholders/livestock.webp";
   }
 
   // Fertilizers / Plant Growth
@@ -37,7 +37,7 @@ function getCategoryPlaceholder(p: any): string {
     nameLower.includes("unizyme") || nameLower.includes("cytomone") ||
     nameLower.includes("unigrow") || nameLower.includes("planta")
   ) {
-    return "/images/placeholders/fertilizer.png";
+    return "/images/placeholders/fertilizer.webp";
   }
 
   // Seeds & Seedlings
@@ -49,7 +49,7 @@ function getCategoryPlaceholder(p: any): string {
     nameLower.includes("cabbage") || nameLower.includes("kale") ||
     nameLower.includes("fordhook") || nameLower.includes("rio grande")
   ) {
-    return "/images/placeholders/seeds.png";
+    return "/images/placeholders/seeds.webp";
   }
 
   // Farm Equipment / Tools
@@ -61,11 +61,11 @@ function getCategoryPlaceholder(p: any): string {
     nameLower.includes("pipe") || nameLower.includes("trigger") ||
     nameLower.includes("panga") || nameLower.includes("hand spray")
   ) {
-    return "/images/placeholders/equipment.png";
+    return "/images/placeholders/equipment.webp";
   }
 
   // Crop Protection (Agrochemicals) — default for most POS products
-  return "/images/placeholders/agrochemical.png";
+  return "/images/placeholders/agrochemical.webp";
 }
 
 /**
@@ -103,19 +103,19 @@ export function resolveFastProductImage(p: any): string {
 
   // PRIORITY 2: Exact trade-name verified photos (specific brand-to-image mapping)
   if (nameLower.includes("duduthrin")) {
-    return "https://i.pinimg.com/736x/e6/29/38/e62938172d5b057b027f3de816b373e2.jpg";
+    return "/images/services/crop_production.webp";
   }
   if (nameLower.includes("lambda")) {
-    return "https://www.pomais.com/wp-content/uploads/2024/12/Lambda-cyhalothrin10EC-.webp";
+    return "/images/products/lambda-cyhalothrin.webp";
   }
   if (nameLower.includes("pembe")) {
-    return "https://www.myagrovet.co.ke/images/products/7402/625a8d9a0cb201e96950aaf15ae003a8.png";
+    return "/images/products/actellic-gold-dust.webp";
   }
   if (nameLower.includes("unga feed") || nameLower.includes("unga layer") || nameLower.includes("unga chick")) {
-    return "https://www.myagrovet.co.ke/images/products/7367/thumb_44e1a1ca768bb3add788ec4afd3b0a57.png";
+    return "/images/products/roundup-turbo.webp";
   }
   if (nameLower.includes("knapsack") && !nameLower.includes("hand")) {
-    return "https://i.pinimg.com/1200x/74/d7/66/74d766c45e79615e4028f5d86cb1a63d.jpg";
+    return "/images/services/machinery_rental.webp";
   }
 
   // PRIORITY 3: Category-specific Mqulima internal placeholder
@@ -130,8 +130,8 @@ function mapDbProduct(p: any): ShopProduct {
   const subcategoryName = tax.subcategory;
   const primaryImage = resolveFastProductImage(p);
 
-  const cleanDesc = cleanDescriptionText(p.description) || "Certified agricultural input directly from verified distributors with agronomist support.";
-  const cleanBrief = cleanDescriptionText(p.brief_description) || cleanDesc;
+  const rawDesc = cleanDescriptionText(p.brief_description || p.description) || "Certified genuine agricultural input.";
+  const cleanDesc = rawDesc.length > 80 ? rawDesc.slice(0, 77) + "..." : rawDesc;
   const cleanUnit = (p.unit && !p.unit.includes("[object")) ? p.unit : "Piece";
 
   return {
@@ -139,7 +139,7 @@ function mapDbProduct(p: any): ShopProduct {
     name: p.name,
     slug: p.slug || p.id,
     description: cleanDesc,
-    briefDescription: cleanBrief,
+    briefDescription: cleanDesc,
     price: Number(p.base_price || p.basePrice || 0),
     originalPrice: p.original_price ? Number(p.original_price) : null,
     stock: p.status === 'draft' ? 0 : Math.max(0, Number(p.stock_qty ?? p.stockQty ?? 0)),
@@ -245,8 +245,16 @@ const ProductsInputSchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(1000).optional().default(1000),
   shopType: z.string().optional(),
-  q: z.string().optional()
+  q: z.string().optional(),
+  sort: z.string().optional()
 });
+
+const productsCache = new Map<string, { data: any; expiry: number }>();
+const PRODUCTS_CACHE_TTL = 60 * 1000; // 60s cache
+
+export function invalidateProductsCache() {
+  productsCache.clear();
+}
 
 export const getProducts = createServerFn({ method: "GET" })
   .inputValidator((val: any) => {
@@ -254,7 +262,14 @@ export const getProducts = createServerFn({ method: "GET" })
     return ProductsInputSchema.parse(payload);
   })
   .handler(async ({ data }) => {
-    const { fieldId, categoryId, subcategoryId, page = 1, limit = 1000, shopType, q } = data;
+    const cacheKey = JSON.stringify(data || {});
+    const now = Date.now();
+    const cached = productsCache.get(cacheKey);
+    if (cached && cached.expiry > now) {
+      return cached.data;
+    }
+
+    const { fieldId, categoryId, subcategoryId, page = 1, limit = 1000, shopType, q, sort } = data;
     const { getDb } = await import("../db.server");
     const sql = getDb();
     const offset = (page - 1) * limit;
@@ -266,14 +281,25 @@ export const getProducts = createServerFn({ method: "GET" })
       whereClause = sql`${whereClause} AND p.field_id = ${fieldId}`;
     }
     if (categoryId && categoryId !== "All") {
-      whereClause = sql`${whereClause} AND (p.category_id = ${categoryId} OR sc.name ILIKE ${categoryId} OR pc.name ILIKE ${categoryId} OR p.subcategory ILIKE ${categoryId})`;
+      whereClause = sql`${whereClause} AND (p.field ILIKE ${categoryId} OR p.subcategory ILIKE ${categoryId} OR p.category_id = ${categoryId} OR sc.name ILIKE ${categoryId} OR pc.name ILIKE ${categoryId})`;
     }
     if (subcategoryId && subcategoryId !== "All") {
-      whereClause = sql`${whereClause} AND (p.subcategory_id = ${subcategoryId} OR ss.name ILIKE ${subcategoryId} OR p.subcategory ILIKE ${subcategoryId})`;
+      whereClause = sql`${whereClause} AND (p.subcategory ILIKE ${subcategoryId} OR p.subcategory_id = ${subcategoryId} OR ss.name ILIKE ${subcategoryId})`;
     }
     if (q && q.trim()) {
       const searchTerm = `%${q.trim()}%`;
       whereClause = sql`${whereClause} AND (p.name ILIKE ${searchTerm} OR p.description ILIKE ${searchTerm} OR p.brand ILIKE ${searchTerm})`;
+    }
+
+    let orderByClause = sql`p.is_featured DESC, (p.stock_qty > 0) DESC, p.created_at DESC`;
+    if (sort === "Price Low to High") {
+      orderByClause = sql`CASE WHEN p.base_price > 0 THEN 0 ELSE 1 END, p.base_price ASC, p.id`;
+    } else if (sort === "Price High to Low") {
+      orderByClause = sql`p.base_price DESC, p.id`;
+    } else if (sort === "Highest Rated") {
+      orderByClause = sql`p.avg_rating DESC, p.id`;
+    } else if (sort === "Category") {
+      orderByClause = sql`p.field ASC, p.name ASC`;
     }
 
     const [productsRes, totalCountRes] = await Promise.all([
@@ -288,7 +314,7 @@ export const getProducts = createServerFn({ method: "GET" })
         LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
         LEFT JOIN product_categories pc ON p.category_id = pc.id
         WHERE ${whereClause}
-        ORDER BY p.is_featured DESC, p.created_at DESC
+        ORDER BY ${orderByClause}
         LIMIT ${limit} OFFSET ${offset}
       `,
       sql`
@@ -303,12 +329,20 @@ export const getProducts = createServerFn({ method: "GET" })
     const total = totalCountRes[0]?.count || 0;
     const totalPages = Math.ceil(total / limit) || 1;
 
-    return {
+    const result = {
       products: productsRes.map(mapDbProduct),
       total,
       page,
       totalPages
     };
+
+    productsCache.set(cacheKey, { data: result, expiry: now + PRODUCTS_CACHE_TTL });
+    if (productsCache.size > 150) {
+      const first = productsCache.keys().next().value;
+      if (first) productsCache.delete(first);
+    }
+
+    return result;
   });
 
 const CreateShopOrderSchema = z.object({
@@ -552,6 +586,9 @@ export const createShopOrder = createServerFn({ method: "POST" })
           channel: "whatsapp"
         }).catch((err) => console.error("[SHOP ORDER] WhatsApp Order SMS background dispatch error:", err));
       }
+
+      // Invalidate cache so stock counts and order deductions are fresh
+      invalidateProductsCache();
 
       return {
         success: true,
