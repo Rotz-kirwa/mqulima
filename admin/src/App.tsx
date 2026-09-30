@@ -71,6 +71,39 @@ const ModuleLoadingSkeleton: React.FC = () => (
   </div>
 );
 
+const VALID_TABS: AdminTab[] = [
+  "dashboard",
+  "customers",
+  "products",
+  "featured",
+  "orders",
+  "payments",
+  "services",
+  "commodity-trends",
+  "inquiries",
+  "forum",
+  "academy",
+  "news",
+];
+
+function parseTabFromUrl(): AdminTab {
+  if (typeof window === "undefined") return "dashboard";
+  const rawPath = window.location.pathname.replace(/^\/admin/, "").replace(/^\//, "");
+  const firstSegment = rawPath.split("/")[0]?.toLowerCase();
+  
+  if (firstSegment && VALID_TABS.includes(firstSegment as AdminTab)) {
+    return firstSegment as AdminTab;
+  }
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const tabParam = searchParams.get("tab")?.toLowerCase();
+  if (tabParam && VALID_TABS.includes(tabParam as AdminTab)) {
+    return tabParam as AdminTab;
+  }
+
+  return "dashboard";
+}
+
 export const App: React.FC = () => {
   const [adminSession, setAdminSession] = useState<AdminUserSession | null>(() => {
     if (typeof window !== "undefined") {
@@ -84,8 +117,41 @@ export const App: React.FC = () => {
     return null;
   });
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
-  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTab>>(() => new Set<AdminTab>(["dashboard"]));
+  const [activeTab, setActiveTabState] = useState<AdminTab>(() => parseTabFromUrl());
+  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTab>>(() => new Set<AdminTab>([parseTabFromUrl()]));
+
+  // Sync active tab to URL and browser history
+  const setActiveTab = (tab: AdminTab, replace = false) => {
+    setActiveTabState(tab);
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      // Remove deprecated query param if present
+      searchParams.delete("tab");
+      searchParams.delete("redirect");
+      
+      const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : "";
+      const targetPath = tab === "dashboard" ? `/${queryStr}` : `/${tab}${queryStr}`;
+      const currentFull = window.location.pathname + window.location.search;
+
+      if (currentFull !== targetPath) {
+        if (replace) {
+          window.history.replaceState({ tab }, "", targetPath);
+        } else {
+          window.history.pushState({ tab }, "", targetPath);
+        }
+      }
+    }
+  };
+
+  // Listen for browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const resolved = parseTabFromUrl();
+      setActiveTabState(resolved);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     setVisitedTabs((prev) => {
@@ -96,27 +162,37 @@ export const App: React.FC = () => {
     });
   }, [activeTab]);
 
-  const handleLogout = () => {
-    setAdminSession(null);
-    setVisitedTabs(new Set(["dashboard"]));
-    clearAdminCache();
+  const handleLogout = (isExpired = false) => {
     if (typeof window !== "undefined") {
+      const currentPath = window.location.pathname + window.location.search;
       sessionStorage.removeItem("mqulima_admin_user");
       localStorage.removeItem("mqulima_admin_user");
       localStorage.removeItem("mqulima_admin_token");
       sessionStorage.removeItem("mqulima_admin_token");
       localStorage.removeItem("mqulima_admin_session");
       sessionStorage.removeItem("mqulima_admin_session");
-      // Fire document cookie expiration for mq_session
       document.cookie = "mq_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      if (currentPath && currentPath !== "/" && !currentPath.includes("redirect=")) {
+        const redirectParam = encodeURIComponent(currentPath);
+        window.history.replaceState(null, "", `/?redirect=${redirectParam}`);
+      } else {
+        window.history.replaceState(null, "", "/");
+      }
     }
-    toast.info("Logged out of Mqulima Admin Console.");
+    setAdminSession(null);
+    setVisitedTabs(new Set(["dashboard"]));
+    clearAdminCache();
+    if (isExpired) {
+      toast.error("Session expired. Please log in again to resume.");
+    } else {
+      toast.info("Logged out of Mqulima Admin Console.");
+    }
   };
 
   useEffect(() => {
     const handleUnauthorized = () => {
-      handleLogout();
-      toast.error("Session expired. Please log in again.");
+      handleLogout(true);
     };
     window.addEventListener("admin_unauthorized", handleUnauthorized);
     return () => window.removeEventListener("admin_unauthorized", handleUnauthorized);
@@ -126,6 +202,24 @@ export const App: React.FC = () => {
     setAdminSession(user);
     if (typeof window !== "undefined") {
       sessionStorage.setItem("mqulima_admin_user", JSON.stringify(user));
+      localStorage.setItem("mqulima_admin_user", JSON.stringify(user));
+
+      // Restore deep link / redirect if specified
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      if (redirectUrl) {
+        try {
+          const decoded = decodeURIComponent(redirectUrl);
+          window.history.replaceState(null, "", decoded);
+          const restoredTab = parseTabFromUrl();
+          setActiveTabState(restoredTab);
+        } catch (_) {
+          setActiveTab("dashboard", true);
+        }
+      } else {
+        const initial = parseTabFromUrl();
+        setActiveTab(initial, true);
+      }
     }
     toast.success(`Welcome back, ${user.name}!`);
   };
