@@ -7,17 +7,20 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState, lazy, Suspense } from "react";
 import { WifiOff } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { generateCsrfToken } from "@/lib/csrf.server";
 
 import appCss from "../styles.css?url";
-import { Toaster } from "@/components/ui/sonner";
+const Toaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
+const PWAInstallBanner = lazy(() =>
+  import("@/components/mqulima/PWAInstallBanner").then((m) => ({ default: m.PWAInstallBanner }))
+);
 import { usePWA } from "@/hooks/usePWA";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-context";
-import { PWAInstallBanner } from "@/components/mqulima/PWAInstallBanner";
+import { TopProgressBar } from "@/components/mqulima/TopProgressBar";
 
 function NotFoundComponent() {
   return (
@@ -88,14 +91,12 @@ export const Route = createRootRouteWithContext<{
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
-      { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
-      { rel: "dns-prefetch", href: "https://fonts.gstatic.com" },
-      { rel: "dns-prefetch", href: "https://generativelanguage.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap",
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: "/fonts/plus-jakarta-sans.woff2",
+        crossOrigin: "anonymous",
       },
       { rel: "stylesheet", href: appCss },
     ],
@@ -141,6 +142,7 @@ function RootComponent() {
       <AuthProvider>
         <CartProvider>
           <div className="flex min-h-screen flex-col w-full max-w-full overflow-x-hidden" suppressHydrationWarning>
+            <TopProgressBar />
             {mounted && !isOnline && (
               <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-destructive py-2.5 px-4 text-center text-xs font-semibold text-destructive-foreground animate-pulse shadow-md">
                 <WifiOff className="h-4 w-4" />
@@ -149,10 +151,10 @@ function RootComponent() {
             )}
             <Outlet />
             {mounted && (
-              <>
+              <Suspense fallback={null}>
                 <Toaster richColors position="top-right" />
                 <PWAInstallBanner />
-              </>
+              </Suspense>
             )}
           </div>
         </CartProvider>
