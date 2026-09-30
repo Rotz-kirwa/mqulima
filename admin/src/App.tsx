@@ -4,8 +4,7 @@ import { Sidebar, AdminTab } from "./components/layout/Sidebar";
 import { AdminLoginScreen } from "./components/auth/AdminLoginScreen";
 import { clearAdminCache } from "./lib/api";
 
-import { DashboardHomeModule } from "./components/modules/DashboardHomeModule";
-
+const DashboardHomeModule = React.lazy(() => import("./components/modules/DashboardHomeModule").then(m => ({ default: m.DashboardHomeModule })));
 const CustomersModule = React.lazy(() => import("./components/modules/CustomersModule").then(m => ({ default: m.CustomersModule })));
 const ProductsStockModule = React.lazy(() => import("./components/modules/ProductsStockModule").then(m => ({ default: m.ProductsStockModule })));
 const FeaturedCollectionModule = React.lazy(() => import("./components/modules/FeaturedCollectionModule").then(m => ({ default: m.FeaturedCollectionModule })));

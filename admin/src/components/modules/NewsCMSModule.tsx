@@ -105,7 +105,7 @@ export const NewsCMSModule: React.FC = () => {
     setShowEditor(true);
   };
 
-  const openEditModal = (article: Article) => {
+  const openEditModal = async (article: Article) => {
     setEditingId(article.id);
     setTitle(article.title);
     setCategory(article.category || "Policy & Market");
@@ -118,6 +118,18 @@ export const NewsCMSModule: React.FC = () => {
     setTitleError(null);
     setMediaError(null);
     setShowEditor(true);
+
+    if (!article.content) {
+      try {
+        const res = await adminFetch(`/api/admin/news?id=${article.id}`);
+        const data = await res.json();
+        if (data.success && data.article?.content) {
+          setContent(data.article.content);
+        }
+      } catch (err) {
+        console.error("Failed to load article full content:", err);
+      }
+    }
   };
 
   // Media File Handler with Type and Size Validation

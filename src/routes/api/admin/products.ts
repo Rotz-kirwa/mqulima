@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { products } from "@/db/schema/products";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ilike, and, or } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
 import { resolveFastProductImage } from "@/lib/api/shop.server";
@@ -26,23 +26,75 @@ export const Route = createFileRoute("/api/admin/products")({
         try {
           const url = new URL(request.url);
           const limitParam = url.searchParams.get("limit");
-          const limit = limitParam ? Math.min(2000, Math.max(1, Number(limitParam) || 1000)) : 1000;
+          const pageParam = url.searchParams.get("page");
+          const searchParam = url.searchParams.get("search")?.trim();
+          const categoryParam = url.searchParams.get("category")?.trim();
+          const statusParam = url.searchParams.get("status")?.trim();
+          const minimal = url.searchParams.get("minimal") === "true";
 
-          const productList = await db
-            .select()
-            .from(products)
-            .orderBy(desc(products.createdAt))
-            .limit(limit);
+          const limit = limitParam ? Math.min(500, Math.max(1, Number(limitParam) || 50)) : 100;
+          const page = Math.max(1, Number(pageParam) || 1);
+          const offset = (page - 1) * limit;
+
+          const conditions: any[] = [];
+          if (searchParam) {
+            conditions.push(
+              or(
+                ilike(products.name, `%${searchParam}%`),
+                ilike(products.slug, `%${searchParam}%`),
+                ilike(products.brand, `%${searchParam}%`)
+              )
+            );
+          }
+          if (statusParam && statusParam !== "all") {
+            conditions.push(eq(products.status, statusParam));
+          }
+          if (categoryParam && categoryParam !== "All") {
+            conditions.push(
+              or(
+                eq(products.subcategory, categoryParam),
+                eq(products.shopType, categoryParam)
+              )
+            );
+          }
+
+          const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+          // Select only necessary columns
+          const query = db
+            .select({
+              id: products.id,
+              name: products.name,
+              slug: products.slug,
+              basePrice: products.basePrice,
+              unit: products.unit,
+              subcategory: products.subcategory,
+              shopType: products.shopType,
+              brand: products.brand,
+              imageUrls: products.imageUrls,
+              isFeatured: products.isFeatured,
+              status: products.status,
+              description: products.description,
+              deletedAt: products.deletedAt,
+              createdAt: products.createdAt,
+            })
+            .from(products);
+
+          const productList = whereClause
+            ? await query.where(whereClause).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+            : await query.orderBy(desc(products.createdAt)).limit(limit).offset(offset);
 
           return new Response(
             JSON.stringify({
               success: true,
               total: productList.length,
+              page,
+              limit,
               products: productList.map((p) => {
                 const img = (p.imageUrls && p.imageUrls[0] && !p.imageUrls[0].includes("default.png"))
                   ? p.imageUrls[0]
-                  : resolveFastProductImage(p);
-                const tax = mapToNewTaxonomy(p);
+                  : resolveFastProductImage(p as any);
+                const tax = mapToNewTaxonomy(p as any);
                 const cleanUnit = (p.unit && !p.unit.includes("[object")) ? p.unit : "Piece";
                 return {
                   id: p.id,
@@ -52,7 +104,7 @@ export const Route = createFileRoute("/api/admin/products")({
                   unit: cleanUnit,
                   category: tax.category || p.subcategory || p.shopType || "Inputs & Agrochemicals",
                   subcategory: tax.subcategory || p.subcategory || "",
-                  description: cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.",
+                  ...(minimal ? {} : { description: cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use." }),
                   imageUrl: img,
                   isFeatured: p.isFeatured || false,
                   status: p.status === "draft" ? "draft" : p.status === "archived" ? "archived" : "published",
@@ -61,7 +113,12 @@ export const Route = createFileRoute("/api/admin/products")({
                 };
               }),
             }),
-            { headers: { "Content-Type": "application/json" } }
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+              } 
+            }
           );
         } catch (error: any) {
           console.error("Fetch products error:", error);

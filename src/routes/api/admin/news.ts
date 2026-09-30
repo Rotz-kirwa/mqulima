@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getDb } from "@/lib/db.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import fs from "node:fs";
+import path from "node:path";
 
 export const Route = createFileRoute("/api/admin/news")({
   server: {
@@ -10,14 +12,53 @@ export const Route = createFileRoute("/api/admin/news")({
         if ("response" in auth) return auth.response;
         try {
           const sql = getDb();
+          const url = new URL(request.url);
+          const targetId = url.searchParams.get("id");
 
+          if (targetId) {
+            const [article] = await sql`
+              SELECT 
+                id,
+                title,
+                slug,
+                summary,
+                content,
+                media_type AS "mediaType",
+                media_url AS "mediaUrl",
+                category,
+                source_attribution AS "sourceAttribution",
+                author_id AS "authorId",
+                status,
+                view_count AS "viewCount",
+                published_at AS "publishedAt",
+                created_at AS "createdAt"
+              FROM agritech_news
+              WHERE id = ${targetId}
+              LIMIT 1
+            `;
+
+            if (!article) {
+              return new Response(JSON.stringify({ success: false, error: "Article not found" }), {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            return new Response(JSON.stringify({ success: true, article }), {
+              headers: { 
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+              },
+            });
+          }
+
+          const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 50));
           const list = await sql`
             SELECT 
               id,
               title,
               slug,
               summary,
-              content,
               media_type AS "mediaType",
               media_url AS "mediaUrl",
               category,
@@ -29,10 +70,14 @@ export const Route = createFileRoute("/api/admin/news")({
               created_at AS "createdAt"
             FROM agritech_news
             ORDER BY created_at DESC
+            LIMIT ${limit}
           `;
 
           return new Response(JSON.stringify({ success: true, articles: list }), {
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store, no-cache, must-revalidate",
+            },
           });
         } catch (error: any) {
           console.error("Fetch admin news error:", error);
@@ -81,15 +126,24 @@ export const Route = createFileRoute("/api/admin/news")({
             );
           }
 
-          // 4. Validation: Media Payload Gating (Prevent performance degradation / network timeouts)
-          if (mediaUrl && typeof mediaUrl === "string" && mediaUrl.startsWith("data:") && mediaUrl.length > 500_000) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Uploaded image payload is too large (exceeds 500KB limit). Please compress the image or use an image URL.",
-              }),
-              { status: 413, headers: { "Content-Type": "application/json" } }
-            );
+          let finalMediaUrl = mediaUrl;
+          if (finalMediaUrl && typeof finalMediaUrl === "string" && finalMediaUrl.startsWith("data:image/")) {
+            try {
+              const match = finalMediaUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+              if (match) {
+                const ext = match[1] === "jpeg" ? "jpg" : match[1];
+                const base64Data = match[2];
+                const filename = `news-${Date.now()}.${ext}`;
+                const outDir = path.resolve("public/images/news");
+                if (!fs.existsSync(outDir)) {
+                  fs.mkdirSync(outDir, { recursive: true });
+                }
+                fs.writeFileSync(path.join(outDir, filename), Buffer.from(base64Data, "base64"));
+                finalMediaUrl = `/images/news/${filename}`;
+              }
+            } catch (err) {
+              console.warn("Failed to persist data URI to file:", err);
+            }
           }
 
           const sql = getDb();
@@ -108,7 +162,7 @@ export const Route = createFileRoute("/api/admin/news")({
                 summary = ${summary || cleanTitle},
                 content = ${content},
                 media_type = ${mediaType},
-                media_url = ${mediaUrl},
+                media_url = ${finalMediaUrl},
                 category = ${category || "Agri-News"},
                 source_attribution = ${sourceAttribution || "Mqulima Editorial Desk"},
                 status = ${status},
@@ -128,7 +182,7 @@ export const Route = createFileRoute("/api/admin/news")({
                 ${summary || cleanTitle},
                 ${content},
                 ${mediaType},
-                ${mediaUrl},
+                ${finalMediaUrl},
                 ${category || "Agri-News"},
                 ${sourceAttribution || "Mqulima Editorial Desk"},
                 ${status},

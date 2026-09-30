@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { cleanDescriptionText } from "@/lib/shop-data";
+import crypto from "crypto";
 
 const PosProductSchema = z.object({
   pos_id: z.union([z.string(), z.number()]).optional(),
@@ -157,25 +158,24 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
             );
           }
 
-          // 3. Database Sync Execution
+          // 3. Batched Database Sync Execution (1 atomic check + 1 atomic upsert)
           const { getDb } = await import("@/lib/db.server");
           const sql = getDb();
-          let syncedCount = 0;
-          const syncedItems: Array<{ id: string; name: string; slug: string; price: number; stock: number }> = [];
 
-          for (const item of productList) {
+          // Prepare normalized input rows
+          const preparedItems = productList.map((item) => {
             const name = item.name.trim();
             const rawSlug = item.sku ? slugify(item.sku) : slugify(name);
             const basePrice = item.price;
             const stockQty = item.stock_quantity ?? item.stockQty ?? 0;
             const status = stockQty > 0 ? "active" : "out_of_stock";
             const description = cleanDescriptionText(item.description || "") || "Certified genuine agricultural input for farm use.";
-            
+
             let imageUrls: string[] = [];
             if (item.image_urls && item.image_urls.length > 0) imageUrls = item.image_urls.filter((u) => u && !u.includes("default.png"));
             else if (item.images && item.images.length > 0) imageUrls = item.images.filter((u) => u && !u.includes("default.png"));
             else if (item.image_url && !item.image_url.includes("default.png")) imageUrls = [item.image_url];
-            
+
             if (imageUrls.length === 0) {
               imageUrls = ["https://technolake.net/smooth-sale-pos/public/img/default.png"];
             }
@@ -187,80 +187,143 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
               : (categoryName || "Verified Input");
             const unit = item.unit || "Unit";
 
-            // Check if product already exists by slug or name
-            const existing = await sql`
-              SELECT id, slug FROM products 
-              WHERE slug = ${rawSlug} OR LOWER(name) = LOWER(${name}) 
-              LIMIT 1
-            `;
+            return {
+              name,
+              rawSlug,
+              basePrice,
+              stockQty,
+              status,
+              description,
+              imageUrls,
+              brand,
+              unit,
+              categoryName,
+            };
+          });
 
-            if (existing && existing.length > 0) {
-              const existingId = existing[0].id;
-              const targetSlug = existing[0].slug;
+          // Fetch all existing products matching any incoming slug or name in a single query
+          const rawSlugs = preparedItems.map((p) => p.rawSlug).filter(Boolean);
+          const lowerNames = preparedItems.map((p) => p.name.toLowerCase()).filter(Boolean);
 
-              await sql`
-                UPDATE products
-                SET 
-                  base_price = ${basePrice},
-                  stock_qty = ${stockQty},
-                  status = ${status},
-                  description = ${description},
-                  image_urls = ${imageUrls},
-                  brand = ${brand},
-                  unit = ${unit},
-                  updated_at = NOW()
-                WHERE id = ${existingId}
-              `;
+          const existingRows = (rawSlugs.length > 0 || lowerNames.length > 0)
+            ? await sql`
+                SELECT id, slug, LOWER(name) AS lower_name
+                FROM products
+                WHERE slug = ANY(${rawSlugs}) OR LOWER(name) = ANY(${lowerNames})
+              `
+            : [];
 
-              syncedItems.push({ id: existingId, name, slug: targetSlug, price: basePrice, stock: stockQty });
+          const existingBySlug = new Map<string, { id: string; slug: string }>();
+          const existingByName = new Map<string, { id: string; slug: string }>();
+          for (const row of existingRows) {
+            if (row.slug) existingBySlug.set(row.slug, row);
+            if (row.lower_name) existingByName.set(row.lower_name, row);
+          }
+
+          // Build batch rows with deduplication
+          const seenIds = new Set<string>();
+          const batchRows: any[] = [];
+          const syncedItems: Array<{ id: string; name: string; slug: string; price: number; stock: number }> = [];
+
+          for (const item of preparedItems) {
+            const existing = existingBySlug.get(item.rawSlug) || existingByName.get(item.name.toLowerCase());
+            let id: string;
+            let slug: string;
+
+            if (existing) {
+              id = existing.id;
+              slug = existing.slug;
             } else {
-              // Generate unique slug
-              const targetSlug = `${rawSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-              const [inserted] = await sql`
-                INSERT INTO products (
-                  name,
-                  slug,
-                  base_price,
-                  stock_qty,
-                  status,
-                  description,
-                  image_urls,
-                  brand,
-                  seller,
-                  county,
-                  unit,
-                  shop_type,
-                  subcategory,
-                  is_featured,
-                  created_at,
-                  updated_at
-                ) VALUES (
-                  ${name},
-                  ${targetSlug},
-                  ${basePrice},
-                  ${stockQty},
-                  ${status},
-                  ${description},
-                  ${imageUrls},
-                  ${brand},
-                  'Certified Agrovet Partner',
-                  'Kenya',
-                  ${unit},
-                  'Agrovet',
-                  ${categoryName},
-                  false,
-                  NOW(),
-                  NOW()
-                )
-                RETURNING id
-              `;
-
-              syncedItems.push({ id: inserted.id, name, slug: targetSlug, price: basePrice, stock: stockQty });
+              id = crypto.randomUUID();
+              slug = `${item.rawSlug}-${crypto.randomUUID().slice(0, 6)}`;
             }
 
-            syncedCount++;
+            if (seenIds.has(id)) {
+              continue;
+            }
+            seenIds.add(id);
+
+            batchRows.push({
+              id,
+              name: item.name,
+              slug,
+              base_price: item.basePrice,
+              stock_qty: item.stockQty,
+              status: item.status,
+              description: item.description,
+              image_urls: item.imageUrls,
+              brand: item.brand,
+              seller: "Certified Agrovet Partner",
+              county: "Kenya",
+              unit: item.unit,
+              shop_type: "Agrovet",
+              subcategory: item.categoryName,
+              is_featured: false,
+              created_at: new Date(),
+              updated_at: new Date(),
+            });
+
+            syncedItems.push({
+              id,
+              name: item.name,
+              slug,
+              price: item.basePrice,
+              stock: item.stockQty,
+            });
           }
+
+          // Single atomic batch upsert with WHERE IS DISTINCT FROM
+          if (batchRows.length > 0) {
+            await sql`
+              INSERT INTO products ${sql(
+                batchRows,
+                "id",
+                "name",
+                "slug",
+                "base_price",
+                "stock_qty",
+                "status",
+                "description",
+                "image_urls",
+                "brand",
+                "seller",
+                "county",
+                "unit",
+                "shop_type",
+                "subcategory",
+                "is_featured",
+                "created_at",
+                "updated_at"
+              )}
+              ON CONFLICT (id) DO UPDATE SET
+                base_price = EXCLUDED.base_price,
+                stock_qty = EXCLUDED.stock_qty,
+                status = EXCLUDED.status,
+                description = EXCLUDED.description,
+                image_urls = EXCLUDED.image_urls,
+                brand = EXCLUDED.brand,
+                unit = EXCLUDED.unit,
+                updated_at = NOW()
+              WHERE products.base_price IS DISTINCT FROM EXCLUDED.base_price
+                 OR products.stock_qty IS DISTINCT FROM EXCLUDED.stock_qty
+                 OR products.status IS DISTINCT FROM EXCLUDED.status
+                 OR products.description IS DISTINCT FROM EXCLUDED.description
+                 OR products.brand IS DISTINCT FROM EXCLUDED.brand
+                 OR products.unit IS DISTINCT FROM EXCLUDED.unit
+            `;
+          }
+
+          const syncedCount = batchRows.length;
+
+          // Invalidate both API and server function caches so changes show immediately
+          try {
+            const { invalidateApiProductsCache } = await import("@/routes/api/products");
+            invalidateApiProductsCache();
+          } catch (e) {}
+          try {
+            const { invalidateProductsCache } = await import("@/lib/api/shop.server");
+            invalidateProductsCache();
+          } catch (e) {}
 
           return new Response(
             JSON.stringify({

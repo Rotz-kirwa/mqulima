@@ -43,7 +43,7 @@ export const FeaturedCollectionModule: React.FC = () => {
 
   useEffect(() => {
     fetchFeatured();
-    adminFetch("/api/admin/products?limit=500")
+    adminFetch("/api/admin/products?limit=500&minimal=true")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.products)) {

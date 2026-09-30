@@ -36,35 +36,51 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
   const [commodities, setCommodities] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const [marketLoading, setMarketLoading] = useState(true);
 
   // Calendar State
   const [currentDate, setCurrentDate] = useState(() => new Date()); // Dynamic current date
   const [selectedDay, setSelectedDay] = useState<number>(() => new Date().getDate());
 
-  const fetchAnalytics = async (silent = false) => {
+  const fetchAnalytics = (silent = false, bypassCache = false) => {
     if (!silent && (!kpi.totalRevenueKsh && !kpi.activeCustomers)) {
+      setKpiLoading(true);
+      setLoading(true);
+    }
+    if (bypassCache) {
+      setKpiLoading(true);
+      setMarketLoading(true);
       setLoading(true);
     }
 
-    try {
-      const [analyticsRes, marketRes] = await Promise.allSettled([
-        adminFetch("/api/admin/analytics").then((r) => r.json()),
-        adminFetch("/api/admin/market-prices").then((r) => r.json()),
-      ]);
+    // 1. Fetch KPI & Activities in background
+    adminFetch("/api/admin/analytics", { bypassCache })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success) {
+          if (data.kpis) setKpi(data.kpis);
+          if (data.liveActivities) setActivities(data.liveActivities);
+        }
+      })
+      .catch((e) => console.error("KPI fetch error:", e))
+      .finally(() => {
+        setKpiLoading(false);
+        setLoading(false);
+      });
 
-      if (analyticsRes.status === "fulfilled" && analyticsRes.value?.success) {
-        if (analyticsRes.value.kpis) setKpi(analyticsRes.value.kpis);
-        if (analyticsRes.value.liveActivities) setActivities(analyticsRes.value.liveActivities);
-      }
-
-      if (marketRes.status === "fulfilled" && marketRes.value?.success && marketRes.value.commodities) {
-        setCommodities(marketRes.value.commodities);
-      }
-    } catch (e) {
-      console.error("Dashboard fetch error:", e);
-    } finally {
-      setLoading(false);
-    }
+    // 2. Fetch Market prices independently in parallel
+    adminFetch("/api/admin/market-prices", { bypassCache })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && data.commodities) {
+          setCommodities(data.commodities);
+        }
+      })
+      .catch((e) => console.error("Market prices fetch error:", e))
+      .finally(() => {
+        setMarketLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -147,82 +163,108 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
             Real-time platform metrics across Commerce, Agronomy Services, Logistics, and Market Intelligence.
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs bg-white border border-[#CCE5E1] px-3 py-1.5 rounded-[4px] text-[#0F3D3C] shadow-xs">
-          <span className="h-2 w-2 rounded-full bg-[#278C7B] animate-pulse" />
-          <span>System Status: <strong className="text-[#278C7B]">Optimal (Production DB)</strong></span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 font-mono text-xs bg-white border border-[#CCE5E1] px-3 py-1.5 rounded-[4px] text-[#0F3D3C] shadow-xs">
+            <span className="h-2 w-2 rounded-full bg-[#278C7B] animate-pulse" />
+            <span>System Status: <strong className="text-[#278C7B]">Optimal (Production DB)</strong></span>
+          </div>
+          <button
+            onClick={() => fetchAnalytics(false, true)}
+            disabled={loading}
+            className="p-1.5 bg-[#E8F4F1] hover:bg-[#d6ece7] text-[#0F3D3C] rounded-[4px] border border-[#CCE5E1] transition cursor-pointer"
+            title="Refresh Live Metrics"
+          >
+            <RefreshCw className={`h-4 w-4 text-[#278C7B] ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
       {/* ROW 1: 4 Stat Cards with DEEP SOLID COLORS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Active Customers */}
-        <div className="bg-[#17605E] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white">
+        <div
+          onClick={() => onNavigateTab("customers")}
+          className="bg-[#17605E] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white cursor-pointer group"
+          title="Click to view Customer & Farmer Registration CRM"
+        >
           <div>
             <div className="text-[11px] font-mono uppercase text-[#A8E6CF] font-bold tracking-wider">
               Total Active Customers
             </div>
             <div className="text-2xl font-serif font-bold text-white mt-1">
-              {loading ? "..." : kpi.activeCustomers.toLocaleString()}
+              {kpiLoading ? "..." : (kpi.activeCustomers ?? 0).toLocaleString()}
             </div>
             <div className="text-[10px] font-mono text-[#80E2D0] mt-1 font-bold">
               Live Database Farmers
             </div>
           </div>
-          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner">
+          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
             <Users className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 2: Open Orders */}
-        <div className="bg-[#B45309] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white">
+        <div
+          onClick={() => onNavigateTab("orders")}
+          className="bg-[#B45309] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white cursor-pointer group"
+          title="Click to view Orders & Quotations"
+        >
           <div>
             <div className="text-[11px] font-mono uppercase text-[#FDE68A] font-bold tracking-wider">
               Open Orders & Quotes
             </div>
             <div className="text-2xl font-serif font-bold text-white mt-1">
-              {loading ? "..." : kpi.openOrders.toLocaleString()}
+              {kpiLoading ? "..." : kpi.openOrders.toLocaleString()}
             </div>
             <div className="text-[10px] font-mono text-[#FEF3C7] mt-1 font-bold">
               {kpi.pendingCount} pending fulfillment
             </div>
           </div>
-          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner">
+          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
             <ShoppingCart className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 3: Revenue */}
-        <div className="bg-[#047857] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white">
+        <div
+          onClick={() => onNavigateTab("payments")}
+          className="bg-[#047857] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white cursor-pointer group"
+          title="Click to view Payments Ledger"
+        >
           <div>
             <div className="text-[11px] font-mono uppercase text-[#A7F3D0] font-bold tracking-wider">
               Revenue (Gross Total)
             </div>
             <div className="text-2xl font-serif font-bold text-white mt-1">
-              {loading ? "..." : `KSh ${kpi.totalRevenueKsh.toLocaleString()}`}
+              {kpiLoading ? "..." : `KSh ${kpi.totalRevenueKsh.toLocaleString()}`}
             </div>
             <div className="text-[10px] font-mono text-[#D1FAE5] mt-1 font-bold">
               PostgreSQL Order Ledger
             </div>
           </div>
-          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner">
+          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
             <DollarSign className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 4: Pending Service Requests */}
-        <div className="bg-[#3730A3] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white">
+        <div
+          onClick={() => onNavigateTab("services")}
+          className="bg-[#3730A3] rounded-[8px] p-5 text-left flex items-center justify-between shadow-md hover:brightness-105 transition text-white cursor-pointer group"
+          title="Click to view Service Requests"
+        >
           <div>
             <div className="text-[11px] font-mono uppercase text-[#C7D2FE] font-bold tracking-wider">
               Pending Service Requests
             </div>
             <div className="text-2xl font-serif font-bold text-white mt-1">
-              {loading ? "..." : kpi.pendingServices.toLocaleString()}
+              {kpiLoading ? "..." : kpi.pendingServices.toLocaleString()}
             </div>
             <div className="text-[10px] font-mono text-[#E0E7FF] mt-1 font-bold">
               Agronomy field dispatch
             </div>
           </div>
-          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner">
+          <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
             <Wrench className="h-6 w-6" />
           </div>
         </div>
@@ -426,7 +468,7 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
         <div className="space-y-3">
           {activities.length === 0 ? (
             <div className="text-xs font-mono text-[#4A7C79] p-4 text-center">
-              {loading ? "Loading live platform activity notifications..." : "No recent platform activity notifications recorded yet."}
+              {kpiLoading ? "Loading live platform activity notifications..." : "No recent platform activity notifications recorded yet."}
             </div>
           ) : (
             activities.map((act) => (

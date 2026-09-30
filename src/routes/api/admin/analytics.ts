@@ -37,90 +37,159 @@ export const Route = createFileRoute("/api/admin/analytics")({
             eq(orders.checkoutChannel, "whatsapp")
           );
 
-          // 1. Ensure baseline users & products exist
-          const userList = await db.select().from(users).limit(5);
-          const productList = await db.select().from(products).limit(5);
+          const sqlClient = getDb();
 
-          const [totalOrdersRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(confirmedOrderFilter);
+          // Execute all independent analytics queries concurrently via Promise.all
+          const [
+            [orderStats],
+            [customerCountRes],
+            [farmersCountRes],
+            [productsCountRes],
+            [pendingServicesRes],
+            monthlyRaw,
+            weeklyRaw,
+            auditRows,
+            newsRows,
+            serviceRows,
+            orderRows,
+          ] = await Promise.all([
+            // 1. Single-pass aggregated order metrics
+            sqlClient`
+              SELECT 
+                COUNT(*)::int AS "totalOrdersCount",
+                COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS "totalRevenue",
+                COUNT(*) FILTER (WHERE status = 'delivered')::int AS "deliveredCount",
+                COUNT(*) FILTER (WHERE status = 'shipped')::int AS "shippedCount",
+                COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingCount",
+                COUNT(*) FILTER (WHERE status = 'processing')::int AS "processingCount",
+                COUNT(*) FILTER (WHERE status = 'cancelled')::int AS "cancelledCount"
+              FROM orders
+              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
+            `,
 
-          const [totalUsersRes] = await db.select({ count: count() }).from(users);
-          const [totalProfilesRes] = await db.select({ count: count() }).from(profiles);
-          const [totalFarmersRes] = await db
-            .select({ count: count() })
-            .from(profiles)
-            .where(eq(profiles.role, "farmer"));
+            // 2. Accurate Customer counts
+            sqlClient`
+              SELECT COUNT(DISTINCT LOWER(email))::int AS count
+              FROM (
+                SELECT email FROM users WHERE deleted_at IS NULL
+                UNION
+                SELECT email FROM profiles 
+                WHERE deleted_at IS NULL 
+                  AND role::text NOT IN ('admin', 'super_admin', 'sales_agent', 'content_editor')
+              ) customer_identities
+            `,
 
-          const [totalProductsRes] = await db.select({ count: count() }).from(products);
-          const [pendingServicesRes] = await db
-            .select({ count: count() })
-            .from(serviceRequests)
-            .where(eq(serviceRequests.status, "requested"));
+            // 3. Accurate Farmer counts
+            sqlClient`
+              SELECT COUNT(DISTINCT LOWER(email))::int AS count
+              FROM (
+                SELECT email FROM users 
+                WHERE deleted_at IS NULL 
+                  AND (farming_type IS NULL OR farming_type != 'I''m a Buyer/Consumer Only (no farming)')
+                UNION
+                SELECT email FROM profiles 
+                WHERE deleted_at IS NULL 
+                  AND role::text = 'farmer'
+              ) farmer_identities
+            `,
 
-          const revenueRes = await db
-            .select({
-              totalRevenue: sql<number>`COALESCE(SUM(CAST(${orders.total} AS NUMERIC)), 0)`,
-            })
-            .from(orders)
-            .where(confirmedOrderFilter);
+            // 4. Products count
+            sqlClient`
+              SELECT COUNT(*)::int AS count 
+              FROM products 
+              WHERE deleted_at IS NULL
+            `,
 
-          // Real Order Breakdown by status from PostgreSQL for confirmed orders
-          const [fulfilledRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(and(eq(orders.status, "delivered"), confirmedOrderFilter));
-          const [shippedRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(and(eq(orders.status, "shipped"), confirmedOrderFilter));
-          const [pendingRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(and(eq(orders.status, "pending"), confirmedOrderFilter));
-          const [processingRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(and(eq(orders.status, "processing"), confirmedOrderFilter));
-          const [cancelledRes] = await db
-            .select({ count: count() })
-            .from(orders)
-            .where(and(eq(orders.status, "cancelled"), confirmedOrderFilter));
+            // 5. Pending service requests count
+            sqlClient`
+              SELECT COUNT(*)::int AS count 
+              FROM service_requests 
+              WHERE status = 'requested'
+            `,
 
-          const totalOrdersCount = totalOrdersRes?.count || 0;
-          const fulfilledCount = (fulfilledRes?.count || 0) + (shippedRes?.count || 0);
-          const pendingCount = (pendingRes?.count || 0) + (processingRes?.count || 0);
-          const cancelledCount = cancelledRes?.count || 0;
+            // 6. Monthly Gross Revenue Trend
+            sqlClient`
+              SELECT 
+                TO_CHAR(created_at, 'Mon') AS "monthLabel",
+                EXTRACT(MONTH FROM created_at)::int AS "monthNum",
+                COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS revenue
+              FROM orders
+              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
+              GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
+              ORDER BY "monthNum" ASC
+            `,
+
+            // 7. Weekly Order Volume
+            sqlClient`
+              SELECT 
+                EXTRACT(DOW FROM created_at)::int AS dow,
+                COUNT(*)::int AS "orderCount"
+              FROM orders
+              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
+              GROUP BY EXTRACT(DOW FROM created_at)
+              ORDER BY dow ASC
+            `,
+
+            // 8. Audit logs
+            sqlClient`
+              SELECT 
+                l.id, l.action, l.entity_type AS "entityType", l.entity_id AS "entityId", 
+                l.diff, l.created_at AS "createdAt",
+                p.full_name AS "fullName", p.email, p.role
+              FROM admin_audit_logs l
+              LEFT JOIN profiles p ON l.actor_id = p.id
+              ORDER BY l.created_at DESC
+              LIMIT 15
+            `,
+
+            // 9. Published news updates
+            sqlClient`
+              SELECT id, title, category, source_attribution AS "sourceAttribution", 
+                     published_at AS "publishedAt", created_at AS "createdAt"
+              FROM agritech_news
+              WHERE LOWER(status) = 'published'
+              ORDER BY COALESCE(published_at, created_at) DESC
+              LIMIT 5
+            `,
+
+            // 10. Service inquiries
+            sqlClient`
+              SELECT 
+                sr.id, sr.status, sr.contact_name AS "contactName", sr.location, 
+                sr.subservice_name AS "subserviceName", sr.created_at AS "createdAt",
+                s.name AS "serviceName"
+              FROM service_requests sr
+              LEFT JOIN services s ON sr.service_id = s.id
+              ORDER BY sr.created_at DESC
+              LIMIT 5
+            `,
+
+            // 11. Recent orders
+            sqlClient`
+              SELECT 
+                o.id, o.total, o.payment_method AS "paymentMethod", 
+                o.payment_status AS "paymentStatus", o.checkout_channel AS "checkoutChannel",
+                o.created_at AS "createdAt",
+                p.full_name AS "customerName", p.email AS "customerEmail"
+              FROM orders o
+              LEFT JOIN profiles p ON o.user_id = p.id
+              ORDER BY o.created_at DESC
+              LIMIT 10
+            `,
+          ]);
+
+          const totalCustomersCount = customerCountRes?.count ?? 0;
+          const totalFarmersCount = farmersCountRes?.count ?? totalCustomersCount;
+          const totalOrdersCount = orderStats?.totalOrdersCount ?? 0;
+          const fulfilledCount = (orderStats?.deliveredCount ?? 0) + (orderStats?.shippedCount ?? 0);
+          const pendingCount = (orderStats?.pendingCount ?? 0) + (orderStats?.processingCount ?? 0);
+          const cancelledCount = orderStats?.cancelledCount ?? 0;
           const fulfilledPct = totalOrdersCount > 0 ? Math.round((fulfilledCount / totalOrdersCount) * 100) : 0;
 
-          // Real Monthly Gross Revenue Trend SQL Query
-          const monthlyRaw = await db
-            .select({
-              monthLabel: sql<string>`TO_CHAR(${orders.createdAt}, 'Mon')`,
-              monthNum: sql<number>`EXTRACT(MONTH FROM ${orders.createdAt})`,
-              revenue: sql<number>`COALESCE(SUM(CAST(${orders.total} AS NUMERIC)), 0)`,
-            })
-            .from(orders)
-            .where(confirmedOrderFilter)
-            .groupBy(sql`TO_CHAR(${orders.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${orders.createdAt})`)
-            .orderBy(sql`EXTRACT(MONTH FROM ${orders.createdAt})`);
-
-          const monthlyTrend = monthlyRaw.map((m) => ({
+          const monthlyTrend = (monthlyRaw || []).map((m: any) => ({
             month: m.monthLabel,
             revenue: Number(m.revenue) || 0,
           }));
-
-          // Real Weekly Order Volume SQL Query
-          const weeklyRaw = await db
-            .select({
-              dow: sql<number>`EXTRACT(DOW FROM ${orders.createdAt})`,
-              orderCount: count(),
-            })
-            .from(orders)
-            .where(confirmedOrderFilter)
-            .groupBy(sql`EXTRACT(DOW FROM ${orders.createdAt})`)
-            .orderBy(sql`EXTRACT(DOW FROM ${orders.createdAt})`);
 
           const dowMap: Record<number, string> = {
             1: "Mon",
@@ -134,62 +203,12 @@ export const Route = createFileRoute("/api/admin/analytics")({
 
           const daysOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
           const weeklyVolume = daysOrder.map((day) => {
-            const found = weeklyRaw.find((w) => dowMap[Number(w.dow)] === day);
+            const found = (weeklyRaw || []).find((w: any) => dowMap[Number(w.dow)] === day);
             return {
               day,
               count: found ? Number(found.orderCount) : 0,
             };
           });
-
-          // Fetch 100% Real Live Activities & Audit Feed from Database (Zero Mock Data)
-          const sqlClient = getDb();
-
-          // A. Real admin and user audit actions
-          const auditRows = await sqlClient`
-            SELECT 
-              l.id, l.action, l.entity_type AS "entityType", l.entity_id AS "entityId", 
-              l.diff, l.created_at AS "createdAt",
-              p.full_name AS "fullName", p.email, p.role
-            FROM admin_audit_logs l
-            LEFT JOIN profiles p ON l.actor_id = p.id
-            ORDER BY l.created_at DESC
-            LIMIT 15
-          `;
-
-          // B. Real published news updates
-          const newsRows = await sqlClient`
-            SELECT id, title, category, source_attribution AS "sourceAttribution", 
-                   published_at AS "publishedAt", created_at AS "createdAt"
-            FROM agritech_news
-            WHERE LOWER(status) = 'published'
-            ORDER BY COALESCE(published_at, created_at) DESC
-            LIMIT 5
-          `;
-
-          // C. Real service inquiries
-          const serviceRows = await sqlClient`
-            SELECT 
-              sr.id, sr.status, sr.contact_name AS "contactName", sr.location, 
-              sr.subservice_name AS "subserviceName", sr.created_at AS "createdAt",
-              s.name AS "serviceName"
-            FROM service_requests sr
-            LEFT JOIN services s ON sr.service_id = s.id
-            ORDER BY sr.created_at DESC
-            LIMIT 5
-          `;
-
-          // D. Real recent orders
-          const orderRows = await sqlClient`
-            SELECT 
-              o.id, o.total, o.payment_method AS "paymentMethod", 
-              o.payment_status AS "paymentStatus", o.checkout_channel AS "checkoutChannel",
-              o.created_at AS "createdAt",
-              p.full_name AS "customerName", p.email AS "customerEmail"
-            FROM orders o
-            LEFT JOIN profiles p ON o.user_id = p.id
-            ORDER BY o.created_at DESC
-            LIMIT 10
-          `;
 
           const activities: Array<{
             id: string;
@@ -324,12 +343,12 @@ export const Route = createFileRoute("/api/admin/analytics")({
             JSON.stringify({
               success: true,
               kpis: {
-                activeCustomers: totalProfilesRes?.count || totalUsersRes?.count || 0,
-                totalFarmers: totalFarmersRes?.count || 0,
+                activeCustomers: totalCustomersCount,
+                totalFarmers: totalFarmersCount,
                 openOrders: totalOrdersCount,
-                totalProducts: totalProductsRes?.count || 0,
+                totalProducts: productsCountRes?.count || 0,
                 pendingServices: pendingServicesRes?.count || 0,
-                totalRevenueKsh: Number(revenueRes[0]?.totalRevenue) || 0,
+                totalRevenueKsh: Number(orderStats?.totalRevenue) || 0,
                 fulfilledCount,
                 pendingCount,
                 cancelledCount,
@@ -339,7 +358,13 @@ export const Route = createFileRoute("/api/admin/analytics")({
               },
               liveActivities,
             }),
-            { headers: { "Content-Type": "application/json" } }
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                Pragma: "no-cache",
+              },
+            }
           );
         } catch (error: any) {
           console.error("Admin analytics fetch error:", error);
