@@ -39,6 +39,7 @@ export const ProductsStockModule: React.FC = () => {
   const [prodImageUrl, setProdImageUrl] = useState("");
   const [prodStatus, setProdStatus] = useState("published");
   const [prodRating, setProdRating] = useState<number>(5);
+  const [prodIsFeatured, setProdIsFeatured] = useState(false);
 
   // Image Upload Mode State
   const [uploadMode, setUploadMode] = useState<"file" | "url">("file");
@@ -87,6 +88,7 @@ export const ProductsStockModule: React.FC = () => {
     setProdImageUrl("");
     setProdStatus("published");
     setProdRating(5);
+    setProdIsFeatured(false);
     setUploadMode("file");
     setShowModal(true);
   };
@@ -101,6 +103,7 @@ export const ProductsStockModule: React.FC = () => {
     setProdImageUrl(product.imageUrl || "");
     setProdStatus(product.status || "published");
     setProdRating(Number(product.rating) || 5);
+    setProdIsFeatured(!!product.isFeatured);
     setUploadMode(product.imageUrl ? "url" : "file");
     setShowModal(true);
   };
@@ -159,6 +162,7 @@ export const ProductsStockModule: React.FC = () => {
         imageUrl: prodImageUrl,
         status: prodStatus,
         rating: prodRating,
+        isFeatured: prodIsFeatured,
       };
 
       if (editingProduct) {
@@ -177,6 +181,22 @@ export const ProductsStockModule: React.FC = () => {
       }
     } catch (e) {
       console.error("Save product error:", e);
+    }
+  };
+
+  const handleToggleFeatured = async (id: string) => {
+    try {
+      const res = await adminFetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_featured", id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchProducts(true);
+      }
+    } catch (e) {
+      console.error("Toggle featured error:", e);
     }
   };
 
@@ -359,6 +379,7 @@ export const ProductsStockModule: React.FC = () => {
               <th className="p-3">Category</th>
               <th className="p-3">Price & Unit</th>
               <th className="p-3">Star Rating</th>
+              <th className="p-3">Featured</th>
               <th className="p-3">Shop Status</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
@@ -366,13 +387,13 @@ export const ProductsStockModule: React.FC = () => {
           <tbody className="divide-y divide-[#CCE5E1]/60 font-sans">
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-[#4A7C79] font-mono">
+                <td colSpan={7} className="p-8 text-center text-[#4A7C79] font-mono">
                   Loading product catalog...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-[#4A7C79]">
+                <td colSpan={7} className="p-8 text-center text-[#4A7C79]">
                   No matching products found in shop catalog.
                 </td>
               </tr>
@@ -437,6 +458,23 @@ export const ProductsStockModule: React.FC = () => {
                           {Number(product.rating || 5).toFixed(1)}
                         </span>
                       </div>
+                    </td>
+
+                    {/* Featured Toggle */}
+                    <td className="p-3 font-mono">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFeatured(product.id)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] font-extrabold text-[10px] transition cursor-pointer border ${
+                          product.isFeatured
+                            ? "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100"
+                            : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                        }`}
+                        title="Click to toggle featured status on homepage Farm Essentials"
+                      >
+                        <Star className={`h-3.5 w-3.5 ${product.isFeatured ? "fill-amber-400 text-amber-500" : "text-gray-400"}`} />
+                        {product.isFeatured ? "FEATURED" : "STANDARD"}
+                      </button>
                     </td>
 
                     {/* Shop Status */}
@@ -615,6 +653,21 @@ export const ProductsStockModule: React.FC = () => {
                     <option value="draft">Draft / Hidden from Shop</option>
                   </select>
                 </div>
+              </div>
+
+              {/* FEATURED TOGGLE CHECKBOX */}
+              <div className="flex items-center gap-2.5 p-3 bg-[#E8F4F1] border border-[#CCE5E1] rounded-[8px]">
+                <input
+                  type="checkbox"
+                  id="prod-is-featured"
+                  checked={prodIsFeatured}
+                  onChange={(e) => setProdIsFeatured(e.target.checked)}
+                  className="h-4 w-4 rounded text-[#16A34A] focus:ring-[#16A34A] border-gray-300 cursor-pointer"
+                />
+                <label htmlFor="prod-is-featured" className="text-xs font-bold text-[#0F3D3C] cursor-pointer flex items-center gap-1.5 select-none">
+                  <Star className={`h-4 w-4 ${prodIsFeatured ? "fill-amber-400 text-amber-500" : "text-gray-400"}`} />
+                  Feature on Homepage (Farm Essentials Carousel)
+                </label>
               </div>
 
               {/* 5-STAR RATING SELECTOR */}

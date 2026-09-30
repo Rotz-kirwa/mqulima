@@ -701,40 +701,65 @@ function Index() {
                 className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 md:gap-6 cursor-grab active:cursor-grabbing"
               >
                 {currentGroupProducts.map((p) => {
-                  const targetLink = (p as any).linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop");
+                  const targetLink = (p.slug && (!p.linkUrl || p.linkUrl === "/shop"))
+                    ? `/shop/product/${p.slug}`
+                    : (p.linkUrl || (p.slug ? `/shop/product/${p.slug}` : "/shop"));
+
+                  const isExternal = typeof targetLink === "string" && (targetLink.startsWith("http://") || targetLink.startsWith("https://"));
+
+                  const cardContent = (
+                    <>
+                      <img
+                        src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
+                        alt={p.name || "Farm Essential"}
+                        loading="lazy"
+                        decoding="async"
+                        width={300}
+                        height={400}
+                        className="h-full w-full object-contain object-center p-2.5 sm:p-4 pb-12 sm:pb-14 transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/placeholder-product.png";
+                        }}
+                      />
+                      {p.name && (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-6 pb-2.5 px-3 sm:px-4 text-left pointer-events-none">
+                          <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
+                            {p.name}
+                          </h3>
+                          {p.price > 0 && (
+                            <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5 font-mono">
+                              KSh {Number(p.price).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
 
                   return (
                     <div
                       key={p.uniqueKey || p.id}
                       className="w-full shrink-0 mx-auto"
                     >
-                      <Link
-                        to={targetLink}
-                        className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
-                      >
-                        <img
-                          src={p.image || (p.imageUrls && p.imageUrls[0]) || "/placeholder-product.png"}
-                          alt={p.name || "Farm Essential"}
-                          loading="lazy"
-                          className="h-full w-full object-contain object-center p-2.5 sm:p-4 pb-12 sm:pb-14 transition-transform duration-500 group-hover:scale-105"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = "/placeholder-product.png";
-                          }}
-                        />
-                        {p.name && p.name !== "Farm Essential" && (
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-6 pb-2.5 px-3 sm:px-4 text-left pointer-events-none">
-                            <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
-                              {p.name}
-                            </h3>
-                            {p.price > 0 && (
-                              <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5 font-mono">
-                                KSh {Number(p.price).toLocaleString()}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Link>
+                      {isExternal ? (
+                        <a
+                          href={targetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
+                        >
+                          {cardContent}
+                        </a>
+                      ) : (
+                        <Link
+                          to={targetLink as any}
+                          preload="intent"
+                          className="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] w-full h-full overflow-hidden rounded-none border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:shadow-xl cursor-pointer"
+                        >
+                          {cardContent}
+                        </Link>
+                      )}
                     </div>
                   );
                 })}
@@ -764,6 +789,7 @@ function Index() {
           <div className="mt-4 sm:mt-6 text-center flex justify-center">
             <Link
               to="/shop"
+              preload="intent"
               className="inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-xl md:rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg active:scale-98 cursor-pointer w-full sm:w-auto max-w-xs sm:max-w-none"
             >
               <span>Explore Agroshop</span>

@@ -6,7 +6,16 @@ import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
 import { resolveFastProductImage } from "@/lib/api/shop.server";
 import { cleanDescriptionText, mapToNewTaxonomy } from "@/lib/shop-data";
+import { invalidateProductsCache } from "@/lib/api/shop.server";
+import { invalidateApiProductsCache } from "@/routes/api/products";
+import { invalidateFeaturedCache } from "@/lib/api/products.server";
 import crypto from "crypto";
+
+function flushProductCaches() {
+  try { invalidateProductsCache(); } catch (e) {}
+  try { invalidateApiProductsCache(); } catch (e) {}
+  try { invalidateFeaturedCache(); } catch (e) {}
+}
 
 export const Route = createFileRoute("/api/admin/products")({
   server: {
@@ -38,6 +47,7 @@ export const Route = createFileRoute("/api/admin/products")({
                 return {
                   id: p.id,
                   name: p.name,
+                  slug: p.slug,
                   price: Number(p.basePrice) || 0,
                   unit: cleanUnit,
                   category: tax.category || p.subcategory || p.shopType || "Inputs & Agrochemicals",
@@ -119,6 +129,7 @@ export const Route = createFileRoute("/api/admin/products")({
               diff: { name, price, category, unit, isFeatured, rating: ratingNum, status: dbStatus },
             });
 
+            flushProductCaches();
             return new Response(
               JSON.stringify({ success: true, message: "Product created successfully", productId: prodId }),
               { headers: { "Content-Type": "application/json" } }
@@ -162,6 +173,7 @@ export const Route = createFileRoute("/api/admin/products")({
               diff: { name, price, category, unit, isFeatured, rating: ratingNum, status: dbStatus },
             });
 
+            flushProductCaches();
             return new Response(
               JSON.stringify({ success: true, message: "Product updated successfully" }),
               { headers: { "Content-Type": "application/json" } }
@@ -194,8 +206,44 @@ export const Route = createFileRoute("/api/admin/products")({
               diff: { status: newDbStatus },
             });
 
+            flushProductCaches();
             return new Response(
               JSON.stringify({ success: true, message: `Product status set to ${newDbStatus}` }),
+              { headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          if (action === "toggle_featured") {
+            if (!hasPermission(auth.user.role, "products.update")) {
+              return new Response(JSON.stringify({ success: false, error: `Forbidden: role '${auth.user.role}' cannot update products.` }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            if (!id) {
+              return new Response(JSON.stringify({ success: false, error: "Product ID required" }), { status: 400 });
+            }
+
+            const current = await db.select({ isFeatured: products.isFeatured }).from(products).where(eq(products.id, id)).limit(1);
+            const newFeatured = current.length > 0 ? !current[0].isFeatured : true;
+
+            await db
+              .update(products)
+              .set({ isFeatured: newFeatured, updatedAt: new Date() })
+              .where(eq(products.id, id));
+
+            await logAdminAction({
+              actorId,
+              action: "PRODUCT_FEATURED_TOGGLED",
+              entity: "products",
+              entityId: id,
+              diff: { isFeatured: newFeatured },
+            });
+
+            flushProductCaches();
+            return new Response(
+              JSON.stringify({ success: true, message: `Product ${newFeatured ? "marked as featured" : "unfeatured"}`, isFeatured: newFeatured }),
               { headers: { "Content-Type": "application/json" } }
             );
           }
@@ -233,6 +281,7 @@ export const Route = createFileRoute("/api/admin/products")({
               diff: { status: "archived", deletedAt: new Date().toISOString() },
             });
 
+            flushProductCaches();
             return new Response(
               JSON.stringify({ success: true, message: "Product safely archived from shop catalog" }),
               { headers: { "Content-Type": "application/json" } }

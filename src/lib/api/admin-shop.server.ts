@@ -111,6 +111,11 @@ export const adminCreateProduct = createServerFn({ method: "POST" })
         diff: { name: data.name, price: data.price, stock: data.stock }
       });
 
+      if (data.isFeatured) {
+        const { invalidateFeaturedCache } = await import("./products.server");
+        invalidateFeaturedCache();
+      }
+
       return { success: true, product: newProduct };
     } catch (err: any) {
       console.error("Failed to insert product into DB:", err);
@@ -164,6 +169,10 @@ export const adminUpdateProduct = createServerFn({ method: "POST" })
         WHERE id = ${data.id}
       `;
 
+      // Invalidate featured cache if featured status changed or product updated
+      const { invalidateFeaturedCache } = await import("./products.server");
+      invalidateFeaturedCache();
+
       // Log action to audit
       const { writeAuditLog } = await import("../audit.server");
       await writeAuditLog({
@@ -195,6 +204,9 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
         SET status = 'archived', deleted_at = NOW() 
         WHERE id = ${data.id}
       `;
+
+      const { invalidateFeaturedCache } = await import("./products.server");
+      invalidateFeaturedCache();
 
       // Log action to audit
       const { writeAuditLog } = await import("../audit.server");

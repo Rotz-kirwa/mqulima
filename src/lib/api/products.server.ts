@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { type ShopProduct } from "../shop-data";
+import { type ShopProduct, mapToNewTaxonomy } from "../shop-data";
 
 const ProductsInputSchema = z.object({
   category: z.string().optional(),
@@ -11,6 +11,10 @@ const ProductsInputSchema = z.object({
 import { resolveFastProductImage } from "./shop.server";
 
 function mapDbProduct(p: any): ShopProduct {
+  const tax = mapToNewTaxonomy(p);
+  const resolvedCategory = p.category_name || p.old_category_name || tax.category || p.subcategory || p.field || "Farm Essentials";
+  const resolvedSubcategory = p.subcategory_name || p.subcategory || tax.subcategory || "";
+
   return {
     id: p.id,
     name: p.name,
@@ -22,7 +26,7 @@ function mapDbProduct(p: any): ShopProduct {
     stock: p.status === 'draft' ? (p.stock_qty || 0) : 9999,
     image: resolveFastProductImage(p),
     imageUrls: Array.isArray(p.image_urls) ? p.image_urls : [],
-    category: p.category_name || p.old_category_name || "",
+    category: resolvedCategory,
     badge: p.badge || "",
     brand: p.brand || "",
     seller: p.seller || "",
@@ -33,8 +37,8 @@ function mapDbProduct(p: any): ShopProduct {
     sellerScore: p.seller_score || 0,
     condition: p.condition || "Fresh",
     shopType: p.shop_type === "agrovet" ? "Agrovet" : (p.shop_type === "specialist" ? "Specialist Shop" : "For Retailers"),
-    field: p.field_name || "",
-    subcategory: p.subcategory_name || p.subcategory || "",
+    field: p.field_name || p.field || "",
+    subcategory: resolvedSubcategory,
     rating: Number(p.avg_rating || 0),
     reviewsCount: Number(p.rating_count || 0),
     isFeatured: !!p.is_featured
@@ -117,6 +121,11 @@ export const getProducts = createServerFn({ method: "GET" })
 const featuredCache = { data: null as any, expiry: 0 };
 const FEATURED_CACHE_TTL = 5 * 60 * 1000;
 
+export function invalidateFeaturedCache() {
+  featuredCache.data = null;
+  featuredCache.expiry = 0;
+}
+
 export const getFeaturedProducts = createServerFn({ method: "GET" })
   .handler(async () => {
     const now = Date.now();
@@ -127,47 +136,113 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    const featItems = await sql`
-      SELECT id, title, image_url, link_url, position
-      FROM featured_items
-      ORDER BY position ASC
-    `;
-
-    if (featItems.length > 0) {
-      const res = featItems.map((fi: any) => ({
-        id: fi.id,
-        name: fi.title || "Farm Essential",
-        image: fi.image_url || "/placeholder-product.png",
-        imageUrls: [fi.image_url || "/placeholder-product.png"],
-        linkUrl: fi.link_url || "/shop",
-        category: "Farm Essentials",
-        price: 0,
-        slug: "",
-      }));
-      featuredCache.data = res;
-      featuredCache.expiry = now + FEATURED_CACHE_TTL;
-      return res;
+    // 1. Fetch active products marked as featured in products table
+    let dbProducts: any[] = [];
+    try {
+      dbProducts = await sql`
+        SELECT p.*,
+               COALESCE(sc.name, pc.name) AS category_name,
+               sf.name AS field_name,
+               ss.name AS subcategory_name
+        FROM products p
+        LEFT JOIN shop_fields sf ON p.field_id = sf.id
+        LEFT JOIN shop_categories sc ON p.category_id = sc.id
+        LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        WHERE p.status = 'active' AND p.is_featured = true AND p.deleted_at IS NULL
+        ORDER BY p.created_at DESC
+        LIMIT 12
+      `;
+    } catch (e) {
+      console.error("[getFeaturedProducts] Failed to query products table:", e);
     }
 
-    const products = await sql`
-      SELECT p.*,
-             COALESCE(sc.name, pc.name) AS category_name,
-             sf.name AS field_name,
-             ss.name AS subcategory_name
-      FROM products p
-      LEFT JOIN shop_fields sf ON p.field_id = sf.id
-      LEFT JOIN shop_categories sc ON p.category_id = sc.id
-      LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
-      LEFT JOIN product_categories pc ON p.category_id = pc.id
-      WHERE p.status = 'active' AND p.is_featured = true AND p.deleted_at IS NULL
-      ORDER BY p.created_at DESC
-      LIMIT 8
-    `;
+    const mappedProducts = dbProducts.map((p: any) => {
+      const mapped = mapDbProduct(p);
+      return {
+        ...mapped,
+        linkUrl: `/shop/product/${mapped.slug}`,
+      };
+    });
 
-    const res = products.map(mapDbProduct);
-    featuredCache.data = res;
+    // 2. Fetch curated items from featured_items table (managed via Admin FeaturedCollectionModule)
+    let featItems: any[] = [];
+    try {
+      featItems = await sql`
+        SELECT id, title, image_url, link_url, position, entity_type, entity_id
+        FROM featured_items
+        ORDER BY position ASC
+      `;
+    } catch (e) {
+      console.warn("[getFeaturedProducts] featured_items table query skipped or empty:", e);
+    }
+
+    // Filter out dummy initial seeds if real featured products exist
+    const customItems = featItems
+      .filter((fi: any) => !fi.id?.startsWith("feat-seed-") || mappedProducts.length === 0)
+      .map((fi: any) => {
+        // Try to match with existing products for pricing & slug enrichment
+        const matched = mappedProducts.find((mp: any) => 
+          (fi.link_url && mp.slug && fi.link_url.includes(mp.slug)) ||
+          (fi.title && mp.name && mp.name.toLowerCase().includes(fi.title.toLowerCase()))
+        );
+
+        const slug = matched ? matched.slug : (fi.link_url?.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "") || "");
+
+        return {
+          id: fi.id,
+          name: fi.title || matched?.name || "Farm Essential",
+          image: fi.image_url || matched?.image || "/placeholder-product.png",
+          imageUrls: [fi.image_url || matched?.image || "/placeholder-product.png"],
+          linkUrl: fi.link_url || (slug ? `/shop/product/${slug}` : "/shop"),
+          category: matched?.category || "Farm Essentials",
+          price: matched ? matched.price : 0,
+          slug,
+          isFeatured: true,
+        };
+      });
+
+    // Merge: custom curated items first, followed by active featured products
+    const combined: any[] = [...customItems];
+    for (const p of mappedProducts) {
+      if (!combined.some((item) => (item.slug && item.slug === p.slug) || item.id === p.id)) {
+        combined.push(p);
+      }
+    }
+
+    // 3. Fallback: If no products marked featured, fetch latest active products
+    if (combined.length === 0) {
+      try {
+        const fallbackProducts = await sql`
+          SELECT p.*,
+                 COALESCE(sc.name, pc.name) AS category_name,
+                 sf.name AS field_name,
+                 ss.name AS subcategory_name
+          FROM products p
+          LEFT JOIN shop_fields sf ON p.field_id = sf.id
+          LEFT JOIN shop_categories sc ON p.category_id = sc.id
+          LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
+          LEFT JOIN product_categories pc ON p.category_id = pc.id
+          WHERE p.status = 'active' AND p.deleted_at IS NULL
+          ORDER BY p.created_at DESC
+          LIMIT 8
+        `;
+        const fallbackMapped = fallbackProducts.map((p: any) => {
+          const mapped = mapDbProduct(p);
+          return {
+            ...mapped,
+            linkUrl: `/shop/product/${mapped.slug}`,
+          };
+        });
+        combined.push(...fallbackMapped);
+      } catch (e) {
+        console.error("[getFeaturedProducts] Fallback catalog query error:", e);
+      }
+    }
+
+    featuredCache.data = combined;
     featuredCache.expiry = now + FEATURED_CACHE_TTL;
-    return res;
+    return combined;
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })

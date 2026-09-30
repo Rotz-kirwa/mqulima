@@ -23,6 +23,8 @@ export const FeaturedCollectionModule: React.FC = () => {
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
+  const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,7 +43,45 @@ export const FeaturedCollectionModule: React.FC = () => {
 
   useEffect(() => {
     fetchFeatured();
+    adminFetch("/api/admin/products?limit=500")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products)) {
+          setCatalogProducts(data.products);
+        }
+      })
+      .catch((e) => console.error("Load catalog products error:", e));
   }, []);
+
+  const handleSelectProduct = (productId: string) => {
+    if (!productId) return;
+    const prod = catalogProducts.find((p) => p.id === productId);
+    if (!prod) return;
+    setTitle(prod.name);
+    if (prod.imageUrl) {
+      setImageUrl(prod.imageUrl);
+      setImagePreview(prod.imageUrl);
+    }
+    if (prod.slug) {
+      setLinkUrl(`/shop/product/${prod.slug}`);
+    } else {
+      setLinkUrl("/shop");
+    }
+  };
+
+  const handleSelectEditProduct = (productId: string) => {
+    if (!productId) return;
+    const prod = catalogProducts.find((p) => p.id === productId);
+    if (!prod) return;
+    setEditTitle(prod.name);
+    if (prod.imageUrl) {
+      setEditImageUrl(prod.imageUrl);
+      setEditImagePreview(prod.imageUrl);
+    }
+    if (prod.slug) {
+      setEditLinkUrl(`/shop/product/${prod.slug}`);
+    }
+  };
 
   // Handle File Upload to Data URL
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,6 +297,33 @@ export const FeaturedCollectionModule: React.FC = () => {
         </h2>
 
         <form onSubmit={handleAddItem} className="space-y-4">
+          {/* Quick Select from Store Products */}
+          {catalogProducts.length > 0 && (
+            <div className="bg-[#E8F4F1] border border-[#CCE5E1] p-3 rounded-[6px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="text-xs text-[#0F3D3C]">
+                <span className="font-bold flex items-center gap-1.5">
+                  <Star className="h-3.5 w-3.5 text-[#16A34A] fill-[#16A34A]" />
+                  Quick Pick from Shop Catalog
+                </span>
+                <span className="text-[11px] text-[#4A7C79] block">
+                  Auto-fills product image, title, and direct link (/shop/product/slug)
+                </span>
+              </div>
+              <select
+                onChange={(e) => handleSelectProduct(e.target.value)}
+                defaultValue=""
+                className="w-full sm:w-auto max-w-xs px-3 py-1.5 bg-white border border-[#CCE5E1] rounded-[4px] text-xs font-semibold text-[#0F3D3C] focus:outline-none focus:border-[#278C7B]"
+              >
+                <option value="">-- Choose a product to auto-fill --</option>
+                {catalogProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} (KSh {Number(p.price).toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Image Selection (Upload or URL) */}
@@ -469,6 +536,28 @@ export const FeaturedCollectionModule: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
+              {/* Quick Select from Store Products */}
+              {catalogProducts.length > 0 && (
+                <div className="bg-[#E8F4F1] border border-[#CCE5E1] p-2.5 rounded-[6px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-[#0F3D3C] flex items-center gap-1">
+                    <Star className="h-3 w-3 text-[#16A34A] fill-[#16A34A]" />
+                    Auto-fill from Catalog:
+                  </span>
+                  <select
+                    onChange={(e) => handleSelectEditProduct(e.target.value)}
+                    defaultValue=""
+                    className="w-full sm:w-auto max-w-xs px-2 py-1 bg-white border border-[#CCE5E1] rounded-[4px] text-xs text-[#0F3D3C] focus:outline-none focus:border-[#278C7B]"
+                  >
+                    <option value="">-- Select product --</option>
+                    {catalogProducts.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Image Selection */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-[#0F3D3C]">

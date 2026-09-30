@@ -4,6 +4,7 @@ import { featuredItems } from "@/db/schema/admin";
 import { eq, asc } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import { invalidateFeaturedCache } from "@/lib/api/products.server";
 
 const DEFAULT_FEATURED_SEEDS = [
   {
@@ -131,6 +132,7 @@ export const Route = createFileRoute("/api/admin/featured")({
               diff: { imageUrl, title, linkUrl, position: nextPos },
             });
 
+            invalidateFeaturedCache();
             return new Response(
               JSON.stringify({ success: true, message: "Featured item created successfully", id: newId }),
               { headers: { "Content-Type": "application/json" } }
@@ -155,6 +157,7 @@ export const Route = createFileRoute("/api/admin/featured")({
               diff: { deletedId: id },
             });
 
+            invalidateFeaturedCache();
             return new Response(
               JSON.stringify({ success: true, message: "Featured item deleted successfully" }),
               { headers: { "Content-Type": "application/json" } }
@@ -185,6 +188,7 @@ export const Route = createFileRoute("/api/admin/featured")({
               diff: updates,
             });
 
+            invalidateFeaturedCache();
             return new Response(
               JSON.stringify({ success: true, message: "Featured item updated successfully" }),
               { headers: { "Content-Type": "application/json" } }
@@ -203,6 +207,7 @@ export const Route = createFileRoute("/api/admin/featured")({
             diff: { position: targetPos },
           });
 
+          invalidateFeaturedCache();
           return new Response(JSON.stringify({ success: true, message: "Featured order updated" }), {
             headers: { "Content-Type": "application/json" },
           });
