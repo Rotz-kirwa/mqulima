@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { HomeHero } from "@/components/mqulima/HomeHero";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { 
@@ -36,18 +37,21 @@ import {
   Check,
   ArrowUpRight
 } from "lucide-react";
-import { articles } from "@/lib/mqulima-data";
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedProducts } from "@/lib/api/products.server";
 import { getPublishedBlogPosts } from "@/lib/api/blog.server";
-import heroFarmerWoman from "@/assets/hero-farmer-woman.png";
+import heroFarmerWoman from "@/assets/hero-farmer-woman.webp";
+import heroCinematic from "@/assets/hero-cinematic.webp";
+import heroCinematic640 from "@/assets/hero-cinematic-640w.webp";
+import { HomeSkeleton } from "@/components/mqulima/RouteSkeletons";
 
 export const Route = createFileRoute("/")({
+  pendingComponent: HomeSkeleton,
   loader: async () => {
     try {
       const [featProducts, pubArticles] = await Promise.all([
         getFeaturedProducts().catch(() => []),
-        getPublishedBlogPosts().catch(() => []),
+        getPublishedBlogPosts({ data: { limit: 3 } }).catch(() => []),
       ]);
       return {
         featuredProducts: featProducts || [],
@@ -59,11 +63,71 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Mqulima — Agriculture for the Future" },
+      { title: "Home — Agriculture for the Future | Mqulima" },
       {
         name: "description",
-        content:
-          "Cutting through the noise to empower farmers with the right knowledge, authentic products, and premium services.",
+        content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
+      },
+      { property: "og:title", content: "Home — Agriculture for the Future | Mqulima" },
+      {
+        property: "og:description",
+        content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
+      },
+      { property: "og:url", content: "https://www.mqulima.com/" },
+      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Home — Agriculture for the Future | Mqulima" },
+      {
+        name: "twitter:description",
+        content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
+      },
+      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://www.mqulima.com/" },
+      {
+        rel: "preload",
+        as: "image",
+        href: heroCinematic640,
+        type: "image/webp",
+        fetchpriority: "high",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://www.mqulima.com/#organization",
+              "name": "Mqulima",
+              "url": "https://www.mqulima.com",
+              "logo": "https://www.mqulima.com/icon-192.png",
+              "description": "Africa's 360° agricultural ecosystem connecting farmers to agrodealers, veterinary doctors, and certified market intelligence.",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Nakuru",
+                "addressCountry": "KE",
+              },
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+254700000000",
+                "contactType": "Customer Support",
+                "areaServed": "KE",
+              },
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://www.mqulima.com/#website",
+              "url": "https://www.mqulima.com",
+              "name": "Mqulima",
+              "publisher": { "@id": "https://www.mqulima.com/#organization" },
+            },
+          ],
+        }),
       },
     ],
   }),
@@ -85,7 +149,7 @@ const testimonials = [
     quote: "Finally, a premium platform where farmers can access verified agronomy knowledge, products, and services under one roof. First class execution.",
     author: "Grace Wambui",
     role: "Agronomist, Nakuru",
-    image: "/images/farmer_grace.png",
+    image: "/images/farmer_grace.webp",
     color: "from-[#0E2E1E] via-[#123C27] to-[#040C06] text-emerald-100 border-[#52B788]/20",
     badge: "Expert Advisory",
     stars: 5,
@@ -94,7 +158,7 @@ const testimonials = [
     quote: "The lookup headache is over. I have found genuine knowledge, authentic seed vectors, and a supportive community in one unified site. God bless Mqulima.",
     author: "David Kiprop",
     role: "Farmer, Uasin Gishu",
-    image: "/images/farmer_david.png",
+    image: "/images/farmer_david.webp",
     color: "from-[#2A1E08] via-[#3D2C0C] to-[#120C03] text-amber-100 border-[#F5A623]/20",
     badge: "Verified Smallholder",
     stars: 5,
@@ -103,7 +167,7 @@ const testimonials = [
     quote: "This premium platform provides the digital infrastructure and tools that agriculture in Kenya has been missing for a long time.",
     author: "Joy Chemutai",
     role: "Livestock Breeder, Baringo",
-    image: "/images/farmer_joy.png",
+    image: "/images/farmer_joy.webp",
     color: "from-[#0B2535] via-[#10344B] to-[#040D13] text-cyan-100 border-cyan-500/20",
     badge: "Dairy & Genetics",
     stars: 5,
@@ -112,7 +176,7 @@ const testimonials = [
     quote: "With Mqulima's Soil Doctor tool, I optimized my fertilizer budget and increased my crop yields by 40% in Kiambu this season.",
     author: "Samuel Kamau",
     role: "Agribusiness Owner, Kiambu",
-    image: "/images/farmer_samuel.png",
+    image: "/images/farmer_samuel.webp",
     color: "from-[#240F3E] via-[#331557] to-[#0F0619] text-violet-100 border-violet-500/20",
     badge: "Agripreneur",
     stars: 5,
@@ -125,7 +189,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Soil Services",
     servicesCountText: "3 services",
     description: "Improve soil productivity through testing, treatment and professional fertilizer recommendations.",
-    image: "/images/services/soil.png",
+    image: "/images/services/soil.webp",
     icon: Sprout,
     checklist: [
       "Soil Testing & Analysis",
@@ -138,7 +202,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Veterinary & Animal Health",
     servicesCountText: "4 services",
     description: "Professional veterinary care, breeding services, vaccinations and livestock diagnosis.",
-    image: "/images/services/veterinary.png",
+    image: "/images/services/veterinary.webp",
     icon: Stethoscope,
     checklist: [
       "AI & Breeding",
@@ -152,7 +216,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Animal Feeds",
     servicesCountText: "6 services",
     description: "Feed formulation, silage production, incubation and livestock nutrition.",
-    image: "/images/services/animal_feeds.png",
+    image: "/images/services/animal_feeds.webp",
     icon: Wheat,
     checklist: [
       "Feed Formulation",
@@ -168,7 +232,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Crop Production",
     servicesCountText: "8 services",
     description: "Complete crop production services from land preparation to harvesting.",
-    image: "/images/services/crop_production.png",
+    image: "/images/services/crop_production.webp",
     icon: Tractor,
     checklist: [
       "Greenhouse Installation",
@@ -184,7 +248,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Value Addition",
     servicesCountText: "4 services",
     description: "Increase the value of your agricultural produce through processing and expert guidance.",
-    image: "/images/services/value_addition.png",
+    image: "/images/services/value_addition.webp",
     icon: Factory,
     checklist: [
       "Agro-Processing & Milling",
@@ -198,7 +262,7 @@ const HOMEPAGE_CATEGORIES = [
     title: "Other Services",
     servicesCountText: "7 services",
     description: "Additional agricultural services to support profitable farming.",
-    image: "/images/services/other_services.png",
+    image: "/images/services/other_services.webp",
     icon: Sun,
     checklist: [
       "Boreholes & Hydro Survey",
@@ -210,7 +274,18 @@ const HOMEPAGE_CATEGORIES = [
 ];
 
 function Index() {
+  const router = useRouter();
   const loaderData = Route.useLoaderData();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        router.preloadRoute({ to: "/shop" }).catch(() => {});
+        router.preloadRoute({ to: "/blog" }).catch(() => {});
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [router]);
 
   const { data: dbFeaturedProducts } = useQuery({
     queryKey: ["featuredProducts"],
@@ -219,8 +294,8 @@ function Index() {
   });
 
   const { data: dbArticles } = useQuery({
-    queryKey: ["publishedArticles"],
-    queryFn: () => getPublishedBlogPosts(),
+    queryKey: ["publishedArticles", 3],
+    queryFn: () => getPublishedBlogPosts({ data: { limit: 3 } }),
     initialData: loaderData?.publishedArticles,
   });
 
@@ -372,11 +447,22 @@ function Index() {
               transition={{ duration: 0.7 }}
               className="lg:col-span-5 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/5] rounded-[28px] overflow-hidden border border-slate-200/90 shadow-xl"
             >
-              <img
-                src="https://i.pinimg.com/736x/d3/8a/07/d38a0721bac4f6b2a4ee73d79c557f08.jpg"
-                alt="Aerial view of lush green modern agriculture fields"
-                className="w-full h-full object-cover object-center"
-              />
+              <picture className="w-full h-full">
+                <source
+                  type="image/webp"
+                  srcSet="/images/home-ecosystem-320w.webp 320w, /images/home-ecosystem-640w.webp 640w, /images/home-ecosystem.webp 736w"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 540px"
+                />
+                <img
+                  src="/images/home-ecosystem.webp"
+                  alt="Modern African agriculture ecosystem - farmer using digital technology in crop field"
+                  className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                  width={736}
+                  height={736}
+                />
+              </picture>
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-transparent to-transparent flex items-end p-8">
                 <div className="text-white text-left">
                   <span className="text-xs font-bold uppercase tracking-widest text-[#85CC14]">
@@ -918,6 +1004,10 @@ function Index() {
                 src={heroFarmerWoman}
                 alt="Modern African farming excellence"
                 className="w-full h-full object-cover object-center"
+                loading="lazy"
+                decoding="async"
+                width={800}
+                height={1000}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117]/90 via-transparent to-transparent flex items-end p-8">
                 <div className="text-white text-left">
@@ -1044,6 +1134,8 @@ function Index() {
                       <img
                         src={t.image}
                         alt={t.author}
+                        loading="lazy"
+                        decoding="async"
                         className="h-10 w-10 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
                       />
                       <div>
@@ -1150,23 +1242,22 @@ function Index() {
 
           {/* Blogs Grid */}
           <div className="grid gap-8 md:grid-cols-3">
-            {featuredArticles.map((a, idx) => (
+            {featuredArticles.map((a: any, idx: number) => (
               <motion.article
                 key={a.id}
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="group flex flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl text-left"
+                className="group flex flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:shadow-xl text-left content-auto-card"
               >
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                  <img
+                  <OptimizedImage
                     src={(a as any).coverImage || (a as any).image}
                     alt={a.title}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      e.currentTarget.src = "/mqulima_news_banner.png";
-                    }}
+                    width={400}
+                    height={250}
                   />
                   <span className="absolute left-4 top-4 rounded-full bg-[#0F291E] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                     {a.category}
@@ -1184,7 +1275,9 @@ function Index() {
                   </p>
                   
                   <Link
-                    to="/blog"
+                    to="/blog/$slug"
+                    params={{ slug: a.slug }}
+                    preload="intent"
                     className="mt-6 w-full py-2.5 px-4 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <span>Read article</span>
