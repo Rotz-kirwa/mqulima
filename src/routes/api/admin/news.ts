@@ -4,6 +4,17 @@ import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 import fs from "node:fs";
 import path from "node:path";
 
+function flushNewsCaches() {
+  try {
+    const { invalidateNewsApiCache } = require("@/routes/api/news");
+    invalidateNewsApiCache();
+  } catch (e) {}
+  try {
+    const { invalidateBlogCache } = require("@/lib/api/blog.server");
+    invalidateBlogCache();
+  } catch (e) {}
+}
+
 export const Route = createFileRoute("/api/admin/news")({
   server: {
     handlers: {
@@ -191,6 +202,8 @@ export const Route = createFileRoute("/api/admin/news")({
             `;
           }
 
+          flushNewsCaches();
+
           return new Response(
             JSON.stringify({ success: true, message: "Agritech news article saved successfully", id: articleId }),
             { headers: { "Content-Type": "application/json" } }
@@ -242,6 +255,8 @@ export const Route = createFileRoute("/api/admin/news")({
               WHERE id = ${articleId}
             `;
           } catch (_) {}
+
+          flushNewsCaches();
 
           return new Response(
             JSON.stringify({ success: true, message: "Article deleted successfully" }),

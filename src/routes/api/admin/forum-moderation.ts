@@ -3,6 +3,13 @@ import { getDb } from "@/lib/db.server";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 
+function flushForumCaches() {
+  try {
+    const { invalidatePostsApiCache } = require("@/routes/api/posts");
+    invalidatePostsApiCache();
+  } catch (e) {}
+}
+
 export const Route = createFileRoute("/api/admin/forum-moderation")({
   server: {
     handlers: {
@@ -126,31 +133,38 @@ export const Route = createFileRoute("/api/admin/forum-moderation")({
             LIMIT 100
           `.catch(() => []);
 
-          const allPosts = await Promise.all(
-            postsRaw.map(async (post: any) => {
-              const comments = await sql`
-                SELECT
-                  sc.id,
-                  sc.body,
-                  sc.status,
-                  sc.created_at AS "createdAt",
-                  p.id AS "authorId",
-                  p.full_name AS "authorName",
-                  p.username AS "authorUsername",
-                  p.avatar_url AS "authorAvatar"
-                FROM show_comments sc
-                LEFT JOIN profiles p ON p.id = sc.user_id
-                WHERE sc.post_id = ${post.id}
-                ORDER BY sc.created_at ASC
-                LIMIT 50
-              `.catch(() => []);
+          const postIds = postsRaw.map((p: any) => p.id);
+          let commentsByPostId: Record<string, any[]> = {};
+          if (postIds.length > 0) {
+            const allCommentsRaw = await sql`
+              SELECT
+                sc.id,
+                sc.post_id AS "postId",
+                sc.body,
+                sc.status,
+                sc.created_at AS "createdAt",
+                p.id AS "authorId",
+                p.full_name AS "authorName",
+                p.username AS "authorUsername",
+                p.avatar_url AS "authorAvatar"
+              FROM show_comments sc
+              LEFT JOIN profiles p ON p.id = sc.user_id
+              WHERE sc.post_id = ANY(${postIds})
+              ORDER BY sc.created_at ASC
+            `.catch(() => []);
 
-              return {
-                ...post,
-                comments,
-              };
-            })
-          );
+            for (const c of allCommentsRaw) {
+              if (!commentsByPostId[c.postId]) commentsByPostId[c.postId] = [];
+              if (commentsByPostId[c.postId].length < 50) {
+                commentsByPostId[c.postId].push(c);
+              }
+            }
+          }
+
+          const allPosts = postsRaw.map((post: any) => ({
+            ...post,
+            comments: commentsByPostId[post.id] || [],
+          }));
 
           // 3. Fetch Restricted / Muted Users
           const restrictedProfiles = await sql`
@@ -239,6 +253,7 @@ export const Route = createFileRoute("/api/admin/forum-moderation")({
               entity: "show_posts",
               entityId: postId,
             });
+            flushForumCaches();
             return new Response(JSON.stringify({ success: true, message: `Post status updated to ${newStatus}` }), {
               headers: { "Content-Type": "application/json" },
             });
@@ -256,6 +271,7 @@ export const Route = createFileRoute("/api/admin/forum-moderation")({
               entity: "show_comments",
               entityId: commentId,
             });
+            flushForumCaches();
             return new Response(JSON.stringify({ success: true, message: `Comment status updated to ${newStatus}` }), {
               headers: { "Content-Type": "application/json" },
             });
@@ -313,6 +329,7 @@ export const Route = createFileRoute("/api/admin/forum-moderation")({
               entityId: targetContentId,
             });
 
+            flushForumCaches();
             return new Response(JSON.stringify({ success: true, message: `Content ${mode}d successfully` }), {
               headers: { "Content-Type": "application/json" },
             });

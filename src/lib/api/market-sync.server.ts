@@ -168,6 +168,11 @@ export async function executeKamisSync() {
     }
   }
 
+  try {
+    const { invalidateMarketPricesCache } = await import("./markets.server");
+    invalidateMarketPricesCache();
+  } catch (e) {}
+
   return {
     success: true,
     updatedCount,
