@@ -133,12 +133,13 @@ export function Footer() {
               </li>
             </ul>
 
-            <div className="mt-5 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+
+            <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
               <Link
                 to="/contact"
                 className="w-full flex items-center justify-between bg-[#F5A623] hover:bg-[#E0951F] text-[#0F291E] font-bold text-[10px] sm:text-xs px-2 sm:px-3 py-2.5 rounded-xl transition-all duration-200 shadow-sm"
               >
-                <span>Visit Contact Page</span>
+                <span>Contact Page</span>
                 <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-0.5" />
               </Link>
               <a
@@ -149,7 +150,7 @@ export function Footer() {
               >
                 <span className="flex items-center gap-1">
                   <WhatsAppIcon className="h-3.5 w-3.5 text-white shrink-0" />
-                  <span>WhatsApp Chat</span>
+                  <span>WhatsApp</span>
                 </span>
                 <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-0.5" />
               </a>
@@ -157,9 +158,18 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-[11px] text-white/40 md:flex-row md:items-center">
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[11px] text-white/60 md:flex-row">
           <p>© 2026 Mqulima Kenya Ltd. All rights reserved.</p>
-          <p className="font-bold text-white/60">Engineered by Webmakers</p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] font-medium text-white/70">
+            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+            <span>·</span>
+            <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-white transition-colors">Privacy Policy</Link>
+          </div>
+          <p className="font-bold text-white/40">Engineered by Webmakers</p>
         </div>
       </div>
     </footer>
