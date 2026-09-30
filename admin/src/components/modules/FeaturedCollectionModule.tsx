@@ -152,25 +152,40 @@ export const FeaturedCollectionModule: React.FC = () => {
     }
   };
 
-  // Delete Item
+  // Delete Item with Optimistic Update & Rollback on failure
   const handleDeleteItem = async (id: string) => {
     if (!window.confirm("Are you sure you want to remove this item from the Featured Collection?")) {
       return;
     }
+
+    setError(null);
+    setSuccessMsg(null);
+
+    // Save previous snapshot for rollback if server mutation fails
+    const previousItems = [...items];
+    // Optimistic UI update: immediately remove from view
+    setItems((prev) => prev.filter((item) => item.id !== id));
 
     try {
       const res = await adminFetch("/api/admin/featured", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete", id }),
+        bypassCache: true,
       });
       const data = await res.json();
       if (data.success) {
         setSuccessMsg("Item removed from Featured Collection.");
-        fetchFeatured();
+        fetchFeatured(true);
+      } else {
+        // Rollback on server error
+        setItems(previousItems);
+        setError(data.error || "Failed to remove item from Featured Collection. Please try again.");
       }
-    } catch (e) {
-      console.error("Delete error:", e);
+    } catch (e: any) {
+      // Rollback on network error
+      setItems(previousItems);
+      setError(e.message || "Network error. Failed to delete item.");
     }
   };
 
@@ -228,13 +243,14 @@ export const FeaturedCollectionModule: React.FC = () => {
           imageUrl: editImageUrl.trim(),
           linkUrl: editLinkUrl.trim() || "/shop",
         }),
+        bypassCache: true,
       });
 
       const data = await res.json();
       if (data.success) {
         setSuccessMsg("Featured item updated successfully!");
         setEditingItem(null);
-        fetchFeatured();
+        fetchFeatured(true);
       } else {
         setError(data.error || "Failed to update featured item");
       }
@@ -245,18 +261,40 @@ export const FeaturedCollectionModule: React.FC = () => {
     }
   };
 
-  // Reorder Item
+  // Reorder Item with Optimistic Reorder & Rollback
   const handleReorder = async (id: string, newPosition: number) => {
+    setError(null);
+    const previousItems = [...items];
+
+    // Optimistic swap
+    const index = items.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    const newItems = [...items];
+    const targetIndex = newPosition > items[index].displayOrder ? index + 1 : index - 1;
+    if (targetIndex >= 0 && targetIndex < newItems.length) {
+      const temp = newItems[index];
+      newItems[index] = newItems[targetIndex];
+      newItems[targetIndex] = temp;
+      setItems(newItems);
+    }
+
     try {
       const res = await adminFetch("/api/admin/featured", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reorder", id, displayOrder: newPosition }),
+        bypassCache: true,
       });
       const data = await res.json();
-      if (data.success) fetchFeatured();
-    } catch (e) {
-      console.error("Reorder error:", e);
+      if (data.success) {
+        fetchFeatured(true);
+      } else {
+        setItems(previousItems);
+        setError("Failed to reorder items.");
+      }
+    } catch (e: any) {
+      setItems(previousItems);
+      setError(e.message || "Network error. Failed to reorder items.");
     }
   };
 

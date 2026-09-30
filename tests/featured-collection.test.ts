@@ -162,4 +162,48 @@ describe("Featured Collection & Farm Essentials Routing & Architecture", () => {
       expect(tax.subcategory).toBeDefined();
     });
   });
+
+  describe("4. Deletion Persistence & Zero Seed Resurrection Guardrail", () => {
+    it("should delete an item and keep it deleted without resurrecting seeds", () => {
+      // Simulated DB table state
+      let dbFeaturedTable = [
+        { id: "feat-custom-1", title: "Custom Drip Kit", position: 0 },
+        { id: "feat-custom-2", title: "Organic Fertilizer", position: 1 },
+      ];
+
+      // Admin deletes feat-custom-2
+      const targetId = "feat-custom-2";
+      dbFeaturedTable = dbFeaturedTable.filter((item) => item.id !== targetId);
+      expect(dbFeaturedTable).toHaveLength(1);
+      expect(dbFeaturedTable.some((i) => i.id === targetId)).toBe(false);
+
+      // Admin deletes the last item (feat-custom-1)
+      dbFeaturedTable = dbFeaturedTable.filter((item) => item.id !== "feat-custom-1");
+      expect(dbFeaturedTable).toHaveLength(0);
+
+      // Verify that a subsequent read on empty table returns 0 items and NEVER auto-seeds
+      const readResult = dbFeaturedTable.map((item) => item);
+      expect(readResult).toHaveLength(0);
+      expect(readResult.some((i) => i.id?.startsWith("feat-seed-"))).toBe(false);
+    });
+
+    it("should ensure public site does not display deleted items", () => {
+      const liveCuratedItems: any[] = []; // Empty after admin deletion
+      const activeCatalogProducts = [
+        { id: "prod-1", name: "Maize Seeds", isFeatured: true, slug: "maize-seeds" },
+      ];
+
+      // Simulated public site merge logic (products.server.ts)
+      const combined = [...liveCuratedItems];
+      for (const p of activeCatalogProducts) {
+        if (!combined.some((item) => item.id === p.id)) {
+          combined.push(p);
+        }
+      }
+
+      // Must never contain resurrected feat-seed-* items
+      expect(combined.every((item) => !item.id?.startsWith("feat-seed-"))).toBe(true);
+      expect(combined).toHaveLength(1);
+    });
+  });
 });

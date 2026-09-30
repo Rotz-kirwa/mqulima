@@ -6,50 +6,7 @@ import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 import { invalidateFeaturedCache } from "@/lib/api/products.server";
 
-const DEFAULT_FEATURED_SEEDS = [
-  {
-    id: "feat-seed-1",
-    imageUrl: "/placeholder-product.png",
-    title: "Organic Maize Seed Vector",
-    linkUrl: "/shop",
-    position: 0,
-  },
-  {
-    id: "feat-seed-2",
-    imageUrl: "/placeholder-product.png",
-    title: "Solar Water Pump Kit",
-    linkUrl: "/shop",
-    position: 1,
-  },
-  {
-    id: "feat-seed-3",
-    imageUrl: "/placeholder-product.png",
-    title: "NPK Premium Booster Fertilizer",
-    linkUrl: "/shop",
-    position: 2,
-  },
-  {
-    id: "feat-seed-4",
-    imageUrl: "/placeholder-product.png",
-    title: "Smart Irrigation Drip Lines",
-    linkUrl: "/shop",
-    position: 3,
-  },
-  {
-    id: "feat-seed-5",
-    imageUrl: "/placeholder-product.png",
-    title: "High-Yield Tomato Seedling",
-    linkUrl: "/shop",
-    position: 4,
-  },
-  {
-    id: "feat-seed-6",
-    imageUrl: "/placeholder-product.png",
-    title: "Veterinary Feed Supplement",
-    linkUrl: "/shop",
-    position: 5,
-  },
-];
+
 
 
 export const Route = createFileRoute("/api/admin/featured")({
@@ -57,22 +14,7 @@ export const Route = createFileRoute("/api/admin/featured")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          let list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
-
-          if (list.length === 0) {
-            for (const item of DEFAULT_FEATURED_SEEDS) {
-              await db.insert(featuredItems).values({
-                id: item.id,
-                entityType: "image",
-                entityId: item.id,
-                imageUrl: item.imageUrl,
-                title: item.title,
-                linkUrl: item.linkUrl,
-                position: item.position,
-              });
-            }
-            list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
-          }
+          const list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
 
           return new Response(
             JSON.stringify({
@@ -86,12 +28,21 @@ export const Route = createFileRoute("/api/admin/featured")({
                 displayOrder: item.position,
               })),
             }),
-            { headers: { "Content-Type": "application/json" } }
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                Pragma: "no-cache",
+              },
+            }
           );
         } catch (error: any) {
           return new Response(JSON.stringify({ success: false, error: error.message }), {
             status: 500,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store",
+            },
           });
         }
       },

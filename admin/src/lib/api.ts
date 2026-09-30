@@ -44,38 +44,8 @@ export async function adminFetch(
   const isGet = method === "GET";
   const urlString = typeof finalUrl === "string" ? finalUrl : finalUrl.toString();
 
-  // 1. Handle GET requests with Smart SWR Caching & Deduplication
+  // 1. Handle concurrent GET request deduplication (never serve stale-while-revalidate)
   if (isGet && !init?.bypassCache) {
-    const { entry, isFresh } = adminCache.get(urlString);
-
-    // If we have a fresh cache hit, return immediately (0ms)
-    if (entry && isFresh) {
-      return new Response(JSON.stringify(entry.data), {
-        status: entry.status,
-        statusText: entry.statusText,
-        headers: new Headers({
-          ...entry.headers,
-          "x-cache": "HIT",
-        }),
-      });
-    }
-
-    // If we have a stale entry, serve it immediately while refetching in background (Stale-While-Revalidate)
-    if (entry && !isFresh) {
-      // Trigger background revalidation if not already in-flight
-      triggerBackgroundRevalidation(urlString, { ...init, headers, credentials: "include" });
-
-      return new Response(JSON.stringify(entry.data), {
-        status: entry.status,
-        statusText: entry.statusText,
-        headers: new Headers({
-          ...entry.headers,
-          "x-cache": "STALE",
-        }),
-      });
-    }
-
-    // If an identical request is already in-flight, deduplicate and share the promise
     const existingPromise = adminCache.getInFlight(urlString);
     if (existingPromise) {
       const data = await existingPromise;
@@ -86,6 +56,10 @@ export async function adminFetch(
       });
     }
   }
+
+  // Ensure fresh responses: admin reads must never be cached by proxy or browser
+  headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  headers.set("Pragma", "no-cache");
 
   // 2. Perform Network Request
   const controller = new AbortController();
