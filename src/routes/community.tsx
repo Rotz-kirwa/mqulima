@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import { createFileRoute, Link, useNavigate, defer, Await, useRouterState } from "@tanstack/react-router";
+import React, { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { 
   MessageSquare, 
   Users, 
@@ -68,8 +68,12 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { motion, AnimatePresence } from "framer-motion";
+
+const LazyPostComposerModal = React.lazy(() => import("@/features/community/components/LazyPostComposerModal"));
+const LazyPostCommentThread = React.lazy(() => import("@/features/community/components/LazyPostCommentThread"));
+const LazyEmojiPickerPopover = React.lazy(() => import("@/features/community/components/LazyEmojiPickerPopover"));
 import { 
   getForumSnapshot,
   getCurrentFarmerProfile,
@@ -93,28 +97,76 @@ import { getPublishedBlogPosts } from "@/lib/api/blog.server";
 import { getMarketPrices } from "@/lib/api/markets.server";
 import { getCsrfTokenFromCookie } from "@/lib/csrf-client";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { CommunitySkeleton } from "@/components/mqulima/RouteSkeletons";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import "@/styles/community-forum.css";
 
 export const Route = createFileRoute("/community")({
+  pendingComponent: CommunitySkeleton,
+  pendingMs: 250,
+  loader: async () => {
+    try {
+      // Direct server await: SWR cached in memory (1.8ms), so HTML arrives with REAL posts!
+      const snapshot = await getForumSnapshot();
+      return {
+        snapshot: snapshot || {
+          showPosts: [],
+          sokoListings: [],
+          pulsePosts: [],
+          suggestedFarmers: [],
+        },
+      };
+    } catch (e) {
+      console.error("Failed to load forum snapshot in loader:", e);
+      return {
+        snapshot: {
+          showPosts: [],
+          sokoListings: [],
+          pulsePosts: [],
+          suggestedFarmers: [],
+        },
+      };
+    }
+  },
   head: () => ({
     meta: [
-      { title: "Mqulima Forum — Premium Farmer Social Community" },
+      { title: "Forum — Farmer Community & Peer Intelligence | Mqulima" },
       {
         name: "description",
-        content: "A beautiful, premium social community built specifically for farmers. Share moments at Mqulima Show, trade on Mqulima Soko, get updates on Mqulima Pulse, and message via Mqulima Konnekt.",
+        content: "Connect with certified Kenyan agronomists, veterinary doctors, and progressive growers on Mqulima Forum. Peer knowledge, live commodity market discussions, and farm management advice.",
       },
+      { property: "og:title", content: "Forum — Farmer Community & Peer Intelligence | Mqulima" },
+      {
+        property: "og:description",
+        content: "Connect with certified Kenyan agronomists, veterinary doctors, and progressive growers on Mqulima Forum. Peer knowledge, live commodity market discussions, and farm management advice.",
+      },
+      { property: "og:url", content: "https://www.mqulima.com/community" },
+      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Forum — Farmer Community & Peer Intelligence | Mqulima" },
+      {
+        name: "twitter:description",
+        content: "Connect with certified Kenyan agronomists, veterinary doctors, and progressive growers on Mqulima Forum. Peer knowledge, live commodity market discussions, and farm management advice.",
+      },
+      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap",
-      },
+      { rel: "canonical", href: "https://www.mqulima.com/community" },
+      { rel: "preconnect", href: "https://api.dicebear.com" },
     ],
   }),
-  component: ForumSubdomainPage,
+  component: CommunityRoute,
 });
+
+function CommunityRoute() {
+  const { snapshot } = Route.useLoaderData();
+  const isPendingNavigation = useRouterState({ select: (s) => s.status === "pending" });
+
+  return (
+    <ForumSubdomainPage initialSnapshot={snapshot} isPendingNavigation={isPendingNavigation} />
+  );
+}
 
 // Types Declarations
 type FarmerProfile = {
@@ -225,6 +277,71 @@ const initialCommunityPosts: CommunityPost[] = [];
 const initialSokoListings: SokoListing[] = [];
 const initialPulsePosts: PulsePost[] = [];
 
+function mapSnapshotToPosts(showPosts: any[]): CommunityPost[] {
+  if (!showPosts || !Array.isArray(showPosts) || showPosts.length === 0) return [];
+  return showPosts.map((sp) => {
+    const authorRecord = {
+      username: "@mqulima_guest",
+      name: "Guest Farmer",
+      country: "Kenya",
+      county: "Nakuru",
+      interests: [],
+      crops: [],
+      livestock: [],
+      yearsFarming: 0,
+      certifications: [],
+      reputationScore: 0,
+      followersCount: 0,
+      followers: [],
+      avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Guest%20Farmer&backgroundColor=1a5438&textColor=ffffff",
+      coverImage: null,
+      ...sp.author,
+    };
+    return {
+      id: sp.id,
+      author: authorRecord,
+      title: sp.title || "Farm update",
+      body: sp.body,
+      category: (sp.category || "Farm Progress") as any,
+      images: sp.images || [],
+      likes: sp.likes || 0,
+      hasLiked: sp.hasLiked,
+      comments: sp.comments || [],
+      cropsTagged: sp.tags || [],
+      livestockTagged: [],
+      location: sp.author?.county || "Kenya",
+      createdAt: sp.createdAt || "Recently",
+    };
+  });
+}
+
+function mapSnapshotToSoko(sokoListings: any[]): SokoListing[] {
+  if (!sokoListings || !Array.isArray(sokoListings) || sokoListings.length === 0) return [];
+  return sokoListings.map((sl) => {
+    const authorRecord = {
+      username: "@mqulima_guest",
+      name: "Guest Farmer",
+      country: "Kenya",
+      county: "Nakuru",
+      interests: [],
+      crops: [],
+      livestock: [],
+      yearsFarming: 0,
+      certifications: [],
+      reputationScore: 0,
+      followersCount: 0,
+      followers: [],
+      avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Guest%20Farmer&backgroundColor=1a5438&textColor=ffffff",
+      coverImage: null,
+      ...sl.author,
+    };
+    return {
+      ...sl,
+      author: authorRecord,
+    };
+  });
+}
+
 function isUsernameMatch(u1?: string | null, u2?: string | null): boolean {
   if (!u1 || !u2) return false;
   const c1 = u1.replace(/^@/, "").trim().toLowerCase();
@@ -239,7 +356,7 @@ function isPostByFarmer(post: CommunityPost, farmer?: FarmerProfile | null): boo
   return false;
 }
 
-function ForumSubdomainPage() {
+function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialSnapshot?: any; isPendingNavigation?: boolean }) {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [subpage, setSubpageState] = useState<"posts" | "soko" | "consult" | "konnekt" | "saved" | "profile" | "network">("posts");
@@ -357,12 +474,42 @@ function ForumSubdomainPage() {
     }
   };
 
-  // Database States
-  const [farmers, setFarmers] = useState<FarmerProfile[]>(initialFarmers);
-  const [posts, setPosts] = useState<CommunityPost[]>(initialCommunityPosts);
-  const [sokoListings, setSokoListings] = useState<SokoListing[]>(initialSokoListings);
-  const [pulsePosts, setPulsePosts] = useState<PulsePost[]>(initialPulsePosts);
-  const [communityDataSource, setCommunityDataSource] = useState<"loading" | "database" | "curated">("loading");
+  // Persistent client cache helper for instant zero-latency loads on repeat visits
+  const effectiveSnapshot = useMemo(() => {
+    if (initialSnapshot?.showPosts && initialSnapshot.showPosts.length > 0) {
+      return initialSnapshot;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("mqulima_community_cached_snapshot");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.showPosts) && parsed.showPosts.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return initialSnapshot;
+  }, [initialSnapshot]);
+
+  // Save snapshot to local storage on receive
+  useEffect(() => {
+    if (typeof window !== "undefined" && initialSnapshot?.showPosts?.length) {
+      try {
+        localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(initialSnapshot));
+      } catch {}
+    }
+  }, [initialSnapshot]);
+
+  // Database States initialized immediately from loader snapshot or persistent client cache
+  const [farmers, setFarmers] = useState<FarmerProfile[]>(() => (effectiveSnapshot?.suggestedFarmers || []) as FarmerProfile[]);
+  const [posts, setPosts] = useState<CommunityPost[]>(() => mapSnapshotToPosts(effectiveSnapshot?.showPosts || []));
+  const [sokoListings, setSokoListings] = useState<SokoListing[]>(() => mapSnapshotToSoko(effectiveSnapshot?.sokoListings || []));
+  const [pulsePosts, setPulsePosts] = useState<PulsePost[]>(() => (effectiveSnapshot?.pulsePosts || []) as PulsePost[]);
+  const [communityDataSource, setCommunityDataSource] = useState<"loading" | "database" | "curated">(
+    effectiveSnapshot?.showPosts?.length ? "database" : "loading"
+  );
   const [realNewsPosts, setRealNewsPosts] = useState<any[]>([]);
 
   // Active viewing profile username & tab navigation states
@@ -595,12 +742,12 @@ function ForumSubdomainPage() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
+        const dataUriString = reader.result as string;
         const isVideo = file.type.startsWith("video/");
         setPostMediaFiles((prev) => [
           ...prev,
           {
-            url: base64String,
+            url: dataUriString,
             name: file.name,
             type: isVideo ? "video" : "image"
           }
@@ -670,70 +817,13 @@ function ForumSubdomainPage() {
     getForumSnapshot()
       .then((snapshot) => {
         if (snapshot.showPosts && snapshot.showPosts.length > 0) {
-          const mappedPosts: CommunityPost[] = (snapshot.showPosts as any[]).map(sp => {
-            const authorRecord = {
-              username: "@mqulima_guest",
-              name: "Guest Farmer",
-              country: "Kenya",
-              county: "Nakuru",
-              interests: [],
-              crops: [],
-              livestock: [],
-              yearsFarming: 0,
-              certifications: [],
-              reputationScore: 0,
-              followersCount: 0,
-              followers: [],
-              avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Guest%20Farmer&backgroundColor=1a5438&textColor=ffffff",
-              coverImage: null,
-              ...sp.author
-            };
-            return {
-              id: sp.id,
-              author: authorRecord,
-              title: sp.title || "Farm update",
-              body: sp.body,
-              category: (sp.category || "Farm Progress") as any,
-              images: sp.images || [],
-              likes: sp.likes || 0,
-              hasLiked: sp.hasLiked,
-              comments: sp.comments || [],
-              cropsTagged: sp.tags || [],
-              livestockTagged: [],
-              location: sp.author.county || "Kenya",
-              createdAt: sp.createdAt || "Recently"
-            };
-          });
-          setPosts(mappedPosts);
+          setPosts(mapSnapshotToPosts(snapshot.showPosts));
         } else {
           setPosts([]);
         }
         
         if (snapshot.sokoListings && snapshot.sokoListings.length > 0) {
-          const mappedSoko: SokoListing[] = (snapshot.sokoListings as any[]).map(sl => {
-            const authorRecord = {
-              username: "@mqulima_guest",
-              name: "Guest Farmer",
-              country: "Kenya",
-              county: "Nakuru",
-              interests: [],
-              crops: [],
-              livestock: [],
-              yearsFarming: 0,
-              certifications: [],
-              reputationScore: 0,
-              followersCount: 0,
-              followers: [],
-              avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Guest%20Farmer&backgroundColor=1a5438&textColor=ffffff",
-              coverImage: null,
-              ...sl.author
-            };
-            return {
-              ...sl,
-              author: authorRecord
-            };
-          });
-          setSokoListings(mappedSoko);
+          setSokoListings(mapSnapshotToSoko(snapshot.sokoListings));
         } else {
           setSokoListings([]);
         }
@@ -782,7 +872,10 @@ function ForumSubdomainPage() {
         console.error("Error loading market prices:", e);
       });
 
-    reloadForum();
+    // Skip redundant network fetch if already seeded from loader or persistent client cache
+    if (!effectiveSnapshot?.showPosts || effectiveSnapshot.showPosts.length === 0) {
+      reloadForum();
+    }
 
     getCurrentFarmerProfile().then((profile) => {
       if (cancelled) return;
@@ -1079,7 +1172,7 @@ function ForumSubdomainPage() {
     }
   };
 
-  // Handle profile image file changes (base64 reader & auto-save)
+  // Handle profile image file changes (data URI reader & auto-save)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "avatar" | "cover") => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1091,14 +1184,14 @@ function ForumSubdomainPage() {
 
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const base64String = reader.result as string;
+      const dataUriString = reader.result as string;
       const csrfToken = getCsrfTokenFromCookie();
 
       if (type === "avatar") {
-        setRegAvatarUrl(base64String);
+        setRegAvatarUrl(dataUriString);
         if (currentUser) {
-          setCurrentUser(prev => prev ? { ...prev, avatarUrl: base64String } : null);
-          setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, avatarUrl: base64String } : f));
+          setCurrentUser(prev => prev ? { ...prev, avatarUrl: dataUriString } : null);
+          setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, avatarUrl: dataUriString } : f));
           try {
             toast.loading("Saving avatar...");
             const res = await updateFarmerProfile({
@@ -1108,7 +1201,7 @@ function ForumSubdomainPage() {
                 county: currentUser.county || "Kenya",
                 bio: currentUser.bio || "",
                 website: currentUser.website || "",
-                avatarUrl: base64String,
+                avatarUrl: dataUriString,
                 coverImage: currentUser.coverImage || "",
                 phone: currentUser.phone || "",
                 email: currentUser.email || "",
@@ -1128,10 +1221,10 @@ function ForumSubdomainPage() {
           }
         }
       } else {
-        setRegCoverImage(base64String);
+        setRegCoverImage(dataUriString);
         if (currentUser) {
-          setCurrentUser(prev => prev ? { ...prev, coverImage: base64String } : null);
-          setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, coverImage: base64String } : f));
+          setCurrentUser(prev => prev ? { ...prev, coverImage: dataUriString } : null);
+          setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, coverImage: dataUriString } : f));
           try {
             toast.loading("Saving cover photo...");
             const res = await updateFarmerProfile({
@@ -1142,7 +1235,7 @@ function ForumSubdomainPage() {
                 bio: currentUser.bio || "",
                 website: currentUser.website || "",
                 avatarUrl: currentUser.avatarUrl || "",
-                coverImage: base64String,
+                coverImage: dataUriString,
                 phone: currentUser.phone || "",
                 email: currentUser.email || "",
                 farmingActivities: currentUser.farmingActivities || "",
@@ -1477,6 +1570,10 @@ function ForumSubdomainPage() {
   // Bookmark/Save Toggle Handler
   const handleSavePost = async (postId: string) => {
     if (!requireAuth("bookmark posts")) return;
+
+    // Optimistically toggle save in UI
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, hasSaved: !p.hasSaved } : p));
+
     const csrfToken = getCsrfTokenFromCookie();
     try {
       const res = await toggleBookmarkPost({
@@ -1485,11 +1582,13 @@ function ForumSubdomainPage() {
           csrfToken
         }
       });
-      if (res.success) {
+      if (res && res.success) {
         toast.success(res.saved ? "Post saved to bookmarks" : "Post removed from bookmarks");
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, hasSaved: res.saved } : p));
       }
     } catch (err: any) {
+      // Revert optimistic save on error
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, hasSaved: !p.hasSaved } : p));
       toast.error(err.message || "Failed to save post. Are you logged in?");
     }
   };
@@ -1497,16 +1596,25 @@ function ForumSubdomainPage() {
   // Delete Post Handler
   const handleDeletePost = async (postId: string) => {
     if (!confirm("Are you sure you want to delete this post?")) return;
+
+    // Optimistic delete
+    const postToDelete = posts.find(p => p.id === postId);
+    setPosts(prev => prev.filter(p => p.id !== postId));
+
     const csrfToken = getCsrfTokenFromCookie();
     try {
       const res = await deleteCommunityPost({
         data: { postId, csrfToken }
       });
-      if (res.success) {
+      if (res && res.success) {
         toast.success("Post removed.");
-        reloadForum();
+      } else if (postToDelete) {
+        setPosts(prev => [postToDelete, ...prev]);
       }
     } catch (err: any) {
+      if (postToDelete) {
+        setPosts(prev => [postToDelete, ...prev]);
+      }
       toast.error(err.message || "Failed to delete post.");
     }
   };
@@ -1514,17 +1622,24 @@ function ForumSubdomainPage() {
   // Delete Comment Handler
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    // Optimistic comment delete across posts
+    setPosts(prev => prev.map(p => ({
+      ...p,
+      comments: p.comments.filter(c => c.id !== commentId)
+    })));
+
     const csrfToken = getCsrfTokenFromCookie();
     try {
       const res = await deleteComment({
         data: { commentId, csrfToken }
       });
-      if (res.success) {
+      if (res && res.success) {
         toast.success("Comment removed.");
-        reloadForum();
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to delete comment.");
+      reloadForum();
     }
   };
 
@@ -1726,6 +1841,8 @@ function ForumSubdomainPage() {
 
 
   // Filter posts based on search bar & subpage selection
+  const deferredSearch = React.useDeferredValue(globalSearch);
+
   const filteredPosts = useMemo(() => {
     let result = [...posts];
 
@@ -1742,8 +1859,8 @@ function ForumSubdomainPage() {
     }
 
     // Global Search filters
-    if (globalSearch.trim()) {
-      const q = globalSearch.toLowerCase();
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase();
       result = result.filter(p => 
         p.title.toLowerCase().includes(q) || 
         p.body.toLowerCase().includes(q) || 
@@ -1773,7 +1890,7 @@ function ForumSubdomainPage() {
     }
 
     return result;
-  }, [posts, subpage, globalSearch, currentUser, selectedCategoryFilter, feedFilterTab, farmers]);
+  }, [posts, subpage, deferredSearch, currentUser, selectedCategoryFilter, feedFilterTab, farmers]);
 
   // Soko Listings filter
   const filteredSokoListings = useMemo(() => {
@@ -1794,7 +1911,7 @@ function ForumSubdomainPage() {
   const partner = activeChat?.farmer;  return (
     <AppLayout>
       <div 
-        className="forum-page min-h-screen antialiased selection:bg-[#0B2117] selection:text-[#85CC14] relative"
+        className={`forum-page min-h-screen antialiased selection:bg-[#0B2117] selection:text-[#85CC14] relative transition-opacity duration-200 ${isPendingNavigation ? "opacity-60 pointer-events-none" : "opacity-100"}`}
         style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", backgroundColor: '#FAFBF9' }}
       >
 
@@ -1806,8 +1923,8 @@ function ForumSubdomainPage() {
             
             {/* Header: Community Feed title */}
             <div className="text-left shrink-0">
-              <h1 className="text-lg font-black text-[#0B2117] tracking-tight leading-tight" style={{ letterSpacing: '-0.02em' }}>Community Feed</h1>
-              <p className="text-xs text-[#475569] font-medium hidden sm:block" style={{ marginTop: '-1px' }}>Share progress, ask questions, connect with fellow farmers</p>
+              <h1 className="text-lg font-black text-[#0B2117] tracking-tight leading-tight" style={{ letterSpacing: '-0.02em' }}>Forum</h1>
+              <p className="text-xs text-[#475569] font-medium hidden sm:block" style={{ marginTop: '-1px' }}>Farmer Community Feed, Agronomy Q&A, and Peer Intelligence</p>
             </div>
 
             {/* Search bar */}
@@ -4120,21 +4237,14 @@ function ForumSubdomainPage() {
 
                         {/* Emoji Picker Popover */}
                         {showEmojiPicker && (
-                          <div className="absolute bottom-20 left-4 bg-white border border-stone-200/90 rounded-2xl p-3 shadow-xl z-20 grid grid-cols-6 gap-2 text-xl animate-in fade-in zoom-in-95 duration-150">
-                            {["🌽", "🍅", "🥑", "🚜", "💧", "🌱", "🐄", "👍", "❤️", "🔥", "👏", "😊"].map(e => (
-                              <button
-                                key={e}
-                                type="button"
-                                onClick={() => {
-                                  setChatInput(prev => prev + e);
-                                  setShowEmojiPicker(false);
-                                }}
-                                className="hover:scale-125 transition p-1.5 hover:bg-emerald-50 rounded-xl cursor-pointer"
-                              >
-                                {e}
-                              </button>
-                            ))}
-                          </div>
+                          <Suspense fallback={null}>
+                            <LazyEmojiPickerPopover
+                              onSelect={(e) => {
+                                setChatInput(prev => prev + e);
+                                setShowEmojiPicker(false);
+                              }}
+                            />
+                          </Suspense>
                         )}
 
                         {/* WhatsApp / Instagram Floating Input Footer Bar */}
@@ -4457,298 +4567,41 @@ function ForumSubdomainPage() {
                 {/* 2. DEDICATED SOCIAL POST COMPOSER MODAL */}
                 <AnimatePresence>
                   {isPostComposerOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-xl border border-stone-250/60 text-left relative my-auto max-h-[90vh] flex flex-col"
-                      >
-                        {/* Header Bar */}
-                        <div className="px-5 py-4 border-b border-stone-150 flex items-center justify-between bg-stone-50/60 shrink-0">
-                          <div>
-                            <h3 className="text-base font-bold text-stone-900 font-serif">Create Post</h3>
-                            <p className="text-[11px] text-stone-400 font-medium">Share with the Mqulima agricultural community</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setIsPostComposerOpen(false)}
-                            className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-full transition cursor-pointer"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
-
-                        {/* Scrollable Body */}
-                        <div className="p-5 overflow-y-auto space-y-4 flex-1">
-                          
-                          {/* User Identity & Category Bar */}
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={currentUser ? currentUser.avatarUrl : defaultGuestFarmer.avatarUrl}
-                                alt="Avatar"
-                                className="h-10 w-10 rounded-xl object-cover border border-stone-200 shadow-2xs"
-                              />
-                              <div>
-                                <h4 className="text-xs font-bold text-stone-900 leading-tight">
-                                  {currentUser ? currentUser.name : "Mqulima Farmer"}
-                                </h4>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200/60">
-                                    <Globe className="h-3 w-3" />
-                                    {postAudience}
-                                  </span>
-                                  {createLocation && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-stone-500 font-medium">
-                                      <MapPin className="h-3 w-3 text-stone-400" />
-                                      {createLocation}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Category Selector */}
-                            <select
-                              value={createCategory}
-                              onChange={(e) => setCreateCategory(e.target.value as any)}
-                              className="bg-stone-50 border border-stone-200 hover:border-emerald-700 text-stone-800 text-xs font-bold px-3 py-1.5 rounded-xl outline-none transition cursor-pointer"
-                            >
-                              <option value="Farm Progress">🌱 Farm Progress</option>
-                              <option value="Harvest Update">🌾 Harvest Update</option>
-                              <option value="Farming Tips">💡 Farming Tips</option>
-                              <option value="Question">❓ Question</option>
-                              <option value="Success Story">🏆 Success Story</option>
-                            </select>
-                          </div>
-
-                          {/* Large Text Editor Area */}
-                          <div className="space-y-2">
-                            <textarea
-                              rows={5}
-                              value={createBody}
-                              onChange={(e) => setCreateBody(e.target.value)}
-                              placeholder={`Share a farm update, ask a question, or tell the community what's happening on your farm, ${currentUser ? currentUser.name.split(' ')[0] : 'farmer'}...`}
-                              className="w-full bg-transparent text-sm text-stone-850 placeholder:text-stone-400 outline-none resize-none leading-relaxed font-normal"
-                              autoFocus
-                            />
-
-                            {/* Emoji Shortcuts Bar (Collapsible) */}
-                            {showEmojiShortcutBar && (
-                              <div className="flex flex-wrap gap-1.5 p-2 bg-stone-50 rounded-2xl border border-stone-200/70 text-base">
-                                {["🌾", "🌽", "🍅", "🥛", "🐮", "🚜", "🌱", "☀️", "🌧️", "💚", "🎯", "🏷️", "📍", "💡"].map((emoji, i) => (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => setCreateBody(prev => prev + " " + emoji)}
-                                    className="p-1.5 hover:bg-white rounded-lg transition cursor-pointer hover:scale-125"
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Attached Media Gallery Preview */}
-                          {postMediaFiles.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-[11px] font-bold text-stone-600 uppercase tracking-wide">
-                                <span>Attached Media ({postMediaFiles.length})</span>
-                              </div>
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                                {postMediaFiles.map((media, idx) => (
-                                  <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border border-stone-200 bg-stone-900 shadow-2xs">
-                                    {media.type === "image" ? (
-                                      <img src={media.url} alt={media.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <div className="w-full h-full flex flex-col items-center justify-center text-white text-[9px] p-2 text-center">
-                                        <Video className="h-6 w-6 text-emerald-400 mb-1" />
-                                        <span className="truncate w-full font-mono">{media.name}</span>
-                                      </div>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemovePostMedia(idx)}
-                                      className="absolute top-1.5 right-1.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition shadow-xs cursor-pointer"
-                                      title="Remove item"
-                                    >
-                                      <X className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Expandable Agricultural Fields (Crops, Livestock, Location, Links) */}
-                          {(showTagFields || showMediaFields) && (
-                            <div className="p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-3">
-                              {showTagFields && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Crop Tags</label>
-                                    <input
-                                      type="text"
-                                      placeholder="Maize, Tomatoes..."
-                                      value={createCrops}
-                                      onChange={(e) => setCreateCrops(e.target.value)}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-700"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Livestock Tags</label>
-                                    <input
-                                      type="text"
-                                      placeholder="Dairy Cattle, Poultry..."
-                                      value={createLivestock}
-                                      onChange={(e) => setCreateLivestock(e.target.value)}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-700"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Farm Location</label>
-                                    <input
-                                      type="text"
-                                      placeholder="Nakuru, Kenya"
-                                      value={createLocation}
-                                      onChange={(e) => setCreateLocation(e.target.value)}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-700"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-
-                              {showMediaFields && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Direct Image Link</label>
-                                    <input
-                                      type="text"
-                                      placeholder="https://example.com/photo.jpg"
-                                      value={createImagesText}
-                                      onChange={(e) => setCreateImagesText(e.target.value)}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-700"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Direct Video Address</label>
-                                    <input
-                                      type="text"
-                                      placeholder="https://example.com/video.mp4"
-                                      value={createVideoUrl}
-                                      onChange={(e) => setCreateVideoUrl(e.target.value)}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-700"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* "Add to Your Post" Toolbar */}
-                          <div className="p-3 bg-stone-50/60 rounded-2xl border border-stone-200/70 flex items-center justify-between gap-2 overflow-x-auto">
-                            <span className="text-xs font-bold text-stone-700 shrink-0 pl-1">Add to post:</span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              
-                              <label className="p-2 hover:bg-emerald-100/70 text-emerald-800 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold" title="Upload Photo/Video">
-                                <ImageIcon className="h-4 w-4 text-emerald-600" />
-                                <span className="hidden sm:inline">Photo/Video</span>
-                                <input
-                                  type="file"
-                                  accept="image/*,video/*"
-                                  multiple
-                                  onChange={handlePostMediaUpload}
-                                  className="hidden"
-                                />
-                              </label>
-
-                              <button
-                                type="button"
-                                onClick={() => setShowTagFields(!showTagFields)}
-                                className={`p-2 rounded-xl transition flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-                                  showTagFields ? "bg-amber-100 text-amber-900" : "hover:bg-stone-200/60 text-stone-700"
-                                }`}
-                                title="Tag Crops & Location"
-                              >
-                                <Tag className="h-4 w-4 text-amber-600" />
-                                <span className="hidden sm:inline">Tags & Location</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setShowMediaFields(!showMediaFields)}
-                                className={`p-2 rounded-xl transition flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-                                  showMediaFields ? "bg-blue-100 text-blue-900" : "hover:bg-stone-200/60 text-stone-700"
-                                }`}
-                                title="Add Links"
-                              >
-                                <Globe className="h-4 w-4 text-blue-600" />
-                                <span className="hidden sm:inline">Link</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setShowEmojiShortcutBar(!showEmojiShortcutBar)}
-                                className="p-2 hover:bg-stone-200/60 text-stone-700 rounded-xl transition cursor-pointer text-xs font-bold flex items-center gap-1"
-                                title="Insert Emoji"
-                              >
-                                <Sparkles className="h-4 w-4 text-amber-500" />
-                                <span className="hidden sm:inline">Emojis</span>
-                              </button>
-
-                            </div>
-                          </div>
-
-                        </div>
-
-                        {/* Modal Footer / Publish Actions */}
-                        <div className="px-5 py-3.5 border-t border-stone-150 bg-stone-50/80 flex items-center justify-between gap-3 shrink-0">
-                          <div className="flex items-center gap-2">
-                            {(createBody || createCrops || postMediaFiles.length > 0) && (
-                              <button
-                                type="button"
-                                onClick={clearPostDraft}
-                                className="text-[11px] font-bold text-stone-400 hover:text-red-600 transition cursor-pointer"
-                              >
-                                Clear Draft
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <span className="text-[11px] text-stone-400 font-medium hidden sm:inline">
-                              {createBody.length} chars
-                            </span>
-                            <button
-                              type="button"
-                              onClick={handleCreatePost}
-                              disabled={!createBody.trim() || isSubmittingPost}
-                              className={`px-6 py-2.5 rounded-full text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer ${
-                                !createBody.trim() || isSubmittingPost
-                                  ? "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
-                                  : "bg-[#1B4332] hover:bg-[#2D6A4F] text-white active:scale-95"
-                              }`}
-                            >
-                              {isSubmittingPost ? (
-                                <>
-                                  <RotateCw className="h-3.5 w-3.5 animate-spin" />
-                                  <span>Publishing...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="h-3.5 w-3.5" />
-                                  <span>Publish Post</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                      </motion.div>
-                    </div>
+                    <Suspense fallback={null}>
+                      <LazyPostComposerModal
+                        isOpen={isPostComposerOpen}
+                        onClose={() => setIsPostComposerOpen(false)}
+                        currentUser={currentUser}
+                        defaultGuestFarmer={defaultGuestFarmer}
+                        postAudience={postAudience}
+                        createLocation={createLocation}
+                        setCreateLocation={setCreateLocation}
+                        createCategory={createCategory}
+                        setCreateCategory={setCreateCategory}
+                        createBody={createBody}
+                        setCreateBody={setCreateBody}
+                        showEmojiShortcutBar={showEmojiShortcutBar}
+                        setShowEmojiShortcutBar={setShowEmojiShortcutBar}
+                        postMediaFiles={postMediaFiles}
+                        handleRemovePostMedia={handleRemovePostMedia}
+                        handlePostMediaUpload={handlePostMediaUpload}
+                        showTagFields={showTagFields}
+                        setShowTagFields={setShowTagFields}
+                        showMediaFields={showMediaFields}
+                        setShowMediaFields={setShowMediaFields}
+                        createCrops={createCrops}
+                        setCreateCrops={setCreateCrops}
+                        createLivestock={createLivestock}
+                        setCreateLivestock={setCreateLivestock}
+                        createImagesText={createImagesText}
+                        setCreateImagesText={setCreateImagesText}
+                        createVideoUrl={createVideoUrl}
+                        setCreateVideoUrl={setCreateVideoUrl}
+                        clearPostDraft={clearPostDraft}
+                        handleCreatePost={handleCreatePost}
+                        isSubmittingPost={isSubmittingPost}
+                      />
+                    </Suspense>
                   )}
                 </AnimatePresence>
 
@@ -4876,15 +4729,23 @@ function ForumSubdomainPage() {
                     <div 
                       key={post.id} 
                       className="mq-card p-5 space-y-3.5 text-left"
-                      style={{ animationDelay: `${postIdx * 0.08}s` }}
+                      style={{
+                        animationDelay: `${postIdx * 0.08}s`,
+                        contentVisibility: "auto",
+                        containIntrinsicSize: "0 400px",
+                      }}
                     >
                       {/* Post Header */}
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2.5">
                           <img 
                             src={post.author.avatarUrl} 
-                            alt="author" 
+                            alt={post.author.name} 
                             className="h-10 w-10 rounded-full object-cover border border-black/[0.06]" 
+                            width={40}
+                            height={40}
+                            loading="lazy"
+                            decoding="async"
                           />
                           
                           <div className="text-left">
@@ -4942,7 +4803,7 @@ function ForumSubdomainPage() {
                           </button>
                           
                           <div className="flex gap-4 items-center">
-                            <img src={post.author.avatarUrl} alt="author" className="h-12 w-12 rounded-xl object-cover border border-[#1A5438]/15 shadow-xs" />
+                            <img src={post.author.avatarUrl} alt="author" className="h-12 w-12 rounded-xl object-cover border border-[#1A5438]/15 shadow-xs" width={48} height={48} loading="lazy" decoding="async" />
                             <div>
                               <strong className="text-stone-850 block font-bold">{post.author.name}</strong>
                               <span className="text-[10px] text-stone-400 font-mono block">{post.author.username}</span>
@@ -4994,14 +4855,14 @@ function ForumSubdomainPage() {
                             style={{ maxHeight: '400px' }}
                             onClick={() => setActiveLightboxImage(post.images[0])}
                           >
-                            <img 
+                            <OptimizedImage 
                               src={post.images[0]} 
                               alt="Post media" 
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                              loading="lazy"
+                              aspectRatio="16/9"
                             />
                             {post.images.length > 1 && (
-                              <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-3 py-1 rounded-lg">
+                              <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-3 py-1 rounded-lg z-20">
                                 +{post.images.length - 1} more photos
                               </span>
                             )}
@@ -5085,88 +4946,17 @@ function ForumSubdomainPage() {
 
                       {/* Nested Comments Section */}
                       {expandedCommentsPostId === post.id && (
-                        <div className="border-t border-black/[0.04] pt-3 space-y-3">
-                          <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                            {post.comments.map((comm: any, idx: number) => {
-                              const isReply = Boolean(comm.parentId);
-                              return (
-                                <div 
-                                  key={comm.id || idx} 
-                                  className={`text-left space-y-1 ${isReply ? "mq-comment-reply-indent bg-emerald-50/20 p-2.5 rounded-xl" : "border-b border-stone-100/60 pb-2.5"}`}
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                      {comm.authorAvatar && (
-                                        <img src={comm.authorAvatar} alt="avatar" className="h-6 w-6 rounded-full object-cover" />
-                                      )}
-                                      <div>
-                                        <strong className="text-[12px] text-[#2D3436] font-bold">{comm.authorName}</strong>
-                                        <span className="text-[10px] text-stone-400 font-mono ml-1.5">{comm.authorUsername}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[10px]">
-                                      <span className="text-stone-400">{comm.time}</span>
-                                      <button
-                                        onClick={() => {
-                                          setReplyToCommentId(comm.id);
-                                          setCommentInput(`@${comm.authorName} `);
-                                        }}
-                                        className="text-[#1B4332] font-bold hover:underline"
-                                      >
-                                        Reply
-                                      </button>
-                                      {comm.id && (
-                                        <button
-                                          onClick={() => handleOpenReport("comment", comm.id)}
-                                          className="text-stone-400 hover:text-red-500"
-                                        >
-                                          Report
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <p className="text-[12.5px] text-[#636E72] leading-relaxed pl-1">{comm.text}</p>
-                                </div>
-                              );
-                            })}
-                            {post.comments.length === 0 && (
-                              <p className="text-[12px] text-[#636E72] py-2 italic text-center">No comments yet. Start the conversation!</p>
-                            )}
-                          </div>
-
-                          {/* Reply Indicator Pill */}
-                          {replyToCommentId && (
-                            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs text-emerald-800 font-medium">
-                              <span>Replying to comment thread...</span>
-                              <button 
-                                onClick={() => {
-                                  setReplyToCommentId(null);
-                                  setCommentInput("");
-                                }} 
-                                className="text-stone-500 hover:text-stone-800"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          )}
-
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              required 
-                              placeholder={replyToCommentId ? "Write your reply..." : "Write a comment..."} 
-                              value={commentInput}
-                              onChange={(e) => setCommentInput(e.target.value)}
-                              className="flex-1 bg-white border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-[#1B4332] transition-colors"
-                            />
-                            <button 
-                              onClick={() => handleAddComment(post.id)}
-                              className="px-4 py-2 bg-[#1B4332] hover:bg-[#2D6A4F] text-white rounded-xl text-[12px] font-semibold transition-colors shadow-xs"
-                            >
-                              Publish
-                            </button>
-                          </div>
-                        </div>
+                        <Suspense fallback={<div className="p-4 text-center text-xs text-stone-400">Loading comments...</div>}>
+                          <LazyPostCommentThread
+                            post={post}
+                            replyToCommentId={replyToCommentId}
+                            commentInput={commentInput}
+                            onSetCommentInput={setCommentInput}
+                            onSetReplyToCommentId={setReplyToCommentId}
+                            onOpenReport={handleOpenReport}
+                            onAddComment={handleAddComment}
+                          />
+                        </Suspense>
                       )}
 
                     </div>
