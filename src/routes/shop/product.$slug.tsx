@@ -41,14 +41,79 @@ import { type ShopProduct, mapToNewTaxonomy, cleanDescriptionText } from "@/lib/
 import { useCart } from "@/lib/cart-context";
 import { useQuery } from "@tanstack/react-query";
 import { getProductBySlug, getProducts } from "@/lib/api/products.server";
+import { ProductDetailSkeleton } from "@/components/mqulima/RouteSkeletons";
 
 export const Route = createFileRoute("/shop/product/$slug")({
-  head: () => {
+  pendingComponent: ProductDetailSkeleton,
+  loader: async ({ params }) => {
+    try {
+      const res = await getProductBySlug({ data: params.slug });
+      return { product: res?.product || null };
+    } catch {
+      return { product: null };
+    }
+  },
+  head: ({ loaderData }) => {
+    const product = loaderData?.product;
+    if (!product) {
+      return {
+        meta: [{ title: "Product Not Found | AgroShop Mqulima" }],
+      };
+    }
+
+    const title = `${product.name} | AgroShop Mqulima`;
+    const cleanDesc = (product.description || "Certified agricultural inputs on Mqulima.").replace(/<[^>]*>?/gm, "").slice(0, 155);
+    const url = `https://www.mqulima.com/shop/product/${product.slug || product.id}`;
+    const imgUrl = (product.imageUrls && product.imageUrls[0]) || product.image || "https://www.mqulima.com/placeholder-product.png";
+    const fullImg = imgUrl.startsWith("http") ? imgUrl : `https://www.mqulima.com${imgUrl}`;
+
+    const jsonLd = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.name,
+      "image": [fullImg],
+      "description": cleanDesc,
+      "brand": {
+        "@type": "Brand",
+        "name": product.brand || "Mqulima Verified",
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": url,
+        "priceCurrency": "KES",
+        "price": product.price || 1500,
+        "availability": "https://schema.org/InStock",
+        "seller": {
+          "@type": "Organization",
+          "name": product.seller || "Mqulima Verified Agrodealer",
+        },
+      },
+    };
+
     return {
       meta: [
-        { title: "Product Details · Mqulima Hub" },
-        { name: "description", content: "Explore agricultural inputs on Mqulima." }
-      ]
+        { title },
+        { name: "description", content: cleanDesc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: cleanDesc },
+        { property: "og:image", content: fullImg },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "product" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: cleanDesc },
+        { name: "twitter:image", content: fullImg },
+      ],
+      links: [
+        { rel: "canonical", href: url },
+        ...(fullImg ? [{ rel: "preload", as: "image", href: fullImg, fetchpriority: "high" as const }] : []),
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(jsonLd),
+        },
+      ],
     };
   },
   component: ProductDetailPage,
@@ -66,13 +131,15 @@ type Review = {
 
 function ProductDetailPage() {
   const { slug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const { addToCart, buyNow } = useCart();
   
   // Fetch details from backend API
   const { data, isLoading, error } = useQuery({
     queryKey: ["productDetail", slug],
-    queryFn: () => getProductBySlug({ data: slug })
+    queryFn: () => getProductBySlug({ data: slug }),
+    initialData: loaderData?.product ? { product: loaderData.product, reviews: (loaderData as any)?.reviews || [] } : undefined,
   });
 
   const product = useMemo(() => {
@@ -486,7 +553,11 @@ function ProductDetailPage() {
                   src={productImages[activeImageIndex]}
                   alt={product.name}
                   className="w-full h-full object-contain rounded-xl max-h-[460px]"
-                  loading="lazy"
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
+                  width={460}
+                  height={460}
                 />
 
                 {/* Primary Smart badges overlay */}
@@ -516,7 +587,7 @@ function ProductDetailPage() {
                         : "border-stone-200 hover:border-stone-400"
                     }`}
                   >
-                    <img src={img} className="h-full w-full object-contain rounded-lg" alt="product thumbnail" />
+                    <img src={img} className="h-full w-full object-contain rounded-lg" alt="product thumbnail" loading="lazy" decoding="async" width={64} height={64} />
                   </button>
                 ))}
               </div>
@@ -793,11 +864,12 @@ function ProductDetailPage() {
                       key={p.id}
                       to="/shop/product/$slug"
                       params={{ slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || p.id }}
-                      className="group bg-white border border-stone-200/80 rounded-xl p-3 hover:-translate-y-1 hover:shadow-md transition duration-300 flex flex-col justify-between"
+                      preload="intent"
+                      className="group bg-white border border-stone-200/80 rounded-xl p-3 hover:-translate-y-1 hover:shadow-md transition duration-300 flex flex-col justify-between content-auto-card"
                     >
                       <div>
                         <div className="aspect-square bg-stone-50 rounded-lg overflow-hidden flex items-center justify-center p-1 relative mb-3">
-                          <img src={p.image} className="h-full w-full object-contain transition duration-300" />
+                          <img src={p.image} className="h-full w-full object-contain transition duration-300" alt={p.name} loading="lazy" decoding="async" width={180} height={180} />
                           {/* Badges & Discount tags overlay */}
                           <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 items-start">
                             {hasDiscount && (

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -28,11 +28,12 @@ import { toast } from "sonner";
 import { type ShopProduct, shopProducts, AGRICULTURE_TAXONOMY, mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { useCart } from "@/lib/cart-context";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { getProducts as getShopProducts } from "@/lib/api/shop.server";
 import { useAuth } from "@/hooks/useAuth";
 import { submitStockSourcingRequest } from "@/lib/api/contact-partnership.server";
 import { ProductQuickViewModal } from "@/components/shop/ProductQuickViewModal";
+import { ShopSkeleton } from "@/components/mqulima/RouteSkeletons";
 
 
 type ShopSearch = {
@@ -42,9 +43,11 @@ type ShopSearch = {
   category?: string;
   subcategory?: string;
   page?: number;
+  sort?: string;
 };
 
 export const Route = createFileRoute("/shop/")({
+  pendingComponent: ShopSkeleton,
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
     const pageNum = Number(search.page);
     return {
@@ -53,14 +56,25 @@ export const Route = createFileRoute("/shop/")({
       field: (search.field as string) || undefined,
       category: (search.category as string) || undefined,
       subcategory: (search.subcategory as string) || undefined,
-      page: !isNaN(pageNum) && pageNum > 0 ? pageNum : 1,
+      page: !isNaN(pageNum) && pageNum > 0 ? pageNum : undefined,
+      sort: (search.sort as string) || undefined,
     };
   },
-  loader: async () => {
+  loader: async ({ location }) => {
     try {
+      const page = Number(location.search?.page) || 1;
+      const category = location.search?.category && location.search.category !== "All" ? location.search.category : undefined;
+      const subcategory = location.search?.subcategory && location.search.subcategory !== "All" ? location.search.subcategory : undefined;
+      const q = location.search?.q || undefined;
+      const sort = location.search?.sort || undefined;
       const data = await getShopProducts({
         data: {
-          limit: 1000,
+          page,
+          limit: 20,
+          categoryId: category,
+          subcategoryId: subcategory,
+          q,
+          sort
         },
       });
       return data;
@@ -71,11 +85,29 @@ export const Route = createFileRoute("/shop/")({
   },
   head: () => ({
     meta: [
-      { title: "Mqulima Agrovet Store — Premium Farmers Essentials" },
+      { title: "AgroShop — Certified Farm Inputs, Seeds & Equipment | Mqulima" },
       {
         name: "description",
-        content: "Shop certified seeds, premium fertilizers, crop health solutions, and farm machinery with agronomist support.",
+        content: "Buy certified seeds, fertilizers, crop protection chemicals, and farm tools directly from verified agrodealers across Kenya with secure M-Pesa escrow.",
       },
+      { property: "og:title", content: "AgroShop — Certified Farm Inputs, Seeds & Equipment | Mqulima" },
+      {
+        property: "og:description",
+        content: "Buy certified seeds, fertilizers, crop protection chemicals, and farm tools directly from verified agrodealers across Kenya with secure M-Pesa escrow.",
+      },
+      { property: "og:url", content: "https://www.mqulima.com/shop" },
+      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "AgroShop — Certified Farm Inputs, Seeds & Equipment | Mqulima" },
+      {
+        name: "twitter:description",
+        content: "Buy certified seeds, fertilizers, crop protection chemicals, and farm tools directly from verified agrodealers across Kenya with secure M-Pesa escrow.",
+      },
+      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://www.mqulima.com/shop" },
     ],
   }),
   component: ShopPage,
@@ -85,6 +117,7 @@ export const Route = createFileRoute("/shop/")({
 
 function ShopPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const searchParams = Route.useSearch();
   const { addToCart } = useCart();
   const queryClient = useQueryClient();
@@ -99,7 +132,7 @@ function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("Popularity");
-  const itemsPerPage = 12;
+  const itemsPerPage = 20;
 
   // Search Autocomplete state
   const [searchFocused, setSearchFocused] = useState(false);
@@ -158,28 +191,26 @@ function ShopPage() {
   // Fetch products with SSR loader initialData and API endpoint fallback
   const initialData = Route.useLoaderData();
   const { data: allProductsData, isLoading: isProductsLoading } = useQuery({
-    queryKey: ["allShopProducts"],
-    staleTime: 60_000,
+    queryKey: ["shopProducts", { page: currentPage, category: selectedCategory, subcategory: selectedSubcategory, q: searchText, sort: sortBy }],
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      try {
-        const res = await fetch(`/api/products?limit=1000&_t=${Date.now()}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.products && json.products.length > 0) {
-            return json;
-          }
-        }
-      } catch (e) {
-        console.error("Error fetching /api/products:", e);
-      }
       return getShopProducts({
         data: {
-          limit: 1000,
+          page: currentPage,
+          limit: itemsPerPage,
+          categoryId: selectedCategory !== "All" ? selectedCategory : undefined,
+          subcategoryId: selectedSubcategory !== "All" ? selectedSubcategory : undefined,
+          q: searchText.trim() || undefined,
+          sort: sortBy
         }
       });
     },
-    initialData
+    initialData: (currentPage === (initialData?.page || 1) && !searchParams.category && !searchParams.subcategory && !searchParams.q && !searchParams.sort)
+      ? initialData
+      : undefined
   });
 
   const rawProductsList = useMemo(() => {
@@ -370,9 +401,12 @@ function ShopPage() {
   }, [filteredProducts, sortBy]);
 
   // Paginated products
-  const totalCount = sortedProducts.length;
-  const totalPages = Math.ceil(totalCount / itemsPerPage) || 1;
+  const totalCount = allProductsData?.total || sortedProducts.length;
+  const totalPages = allProductsData?.totalPages || Math.ceil(totalCount / itemsPerPage) || 1;
   const paginatedProducts = useMemo(() => {
+    if (sortedProducts.length <= itemsPerPage) {
+      return sortedProducts;
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedProducts, currentPage, itemsPerPage]);
@@ -797,7 +831,7 @@ function ShopPage() {
           {/* Main Marketplace Header */}
           <div className="bg-white border border-gray-200 p-6 rounded-2xl mb-6 shadow-sm">
             <div className="text-left">
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Farmer Marketplace</h1>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">AgroShop</h1>
               <p className="text-xs text-gray-500 mt-1">Certified premium seeds, crop protection, and feeds with expert support</p>
             </div>
           </div>
@@ -985,6 +1019,12 @@ function ShopPage() {
                     return (
                       <div
                         key={p.id}
+                        onMouseEnter={() => {
+                          try {
+                            const slug = p.slug || p.id;
+                            router.preloadRoute({ to: "/shop/product/$slug", params: { slug } });
+                          } catch {}
+                        }}
                         onClick={() => {
                           // Save to recently viewed
                           const list = recentlyViewed.filter((item) => item.id !== p.id);
@@ -994,7 +1034,7 @@ function ShopPage() {
                           const slug = p.slug || p.id;
                           navigate({ to: "/shop/product/$slug", params: { slug } });
                         }}
-                        className={`group bg-white rounded-none border border-gray-200/80 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex text-gray-800 p-4 ${
+                        className={`group bg-white rounded-none border border-gray-200/80 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex text-gray-800 p-4 cursor-pointer content-auto-card ${
                           viewMode === "list"
                             ? "flex-row w-full gap-5 items-center"
                             : "flex-col w-full gap-3 justify-between h-full relative"
@@ -1011,21 +1051,23 @@ function ShopPage() {
                             alt={p.name}
                             loading="lazy"
                             decoding="async"
+                            width={280}
+                            height={280}
                             className="w-full h-full object-cover transition duration-300 bg-gray-50"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               // Fallback to category-specific placeholder, then generic
                               const cat = (p.category || "").toLowerCase();
                               if (cat.includes("animal")) {
-                                e.currentTarget.src = '/images/placeholders/livestock.png';
+                                e.currentTarget.src = '/images/placeholders/livestock.webp';
                               } else if (cat.includes("fertilizer") || cat.includes("growth")) {
-                                e.currentTarget.src = '/images/placeholders/fertilizer.png';
+                                e.currentTarget.src = '/images/placeholders/fertilizer.webp';
                               } else if (cat.includes("seed")) {
-                                e.currentTarget.src = '/images/placeholders/seeds.png';
+                                e.currentTarget.src = '/images/placeholders/seeds.webp';
                               } else if (cat.includes("equipment") || cat.includes("tools")) {
-                                e.currentTarget.src = '/images/placeholders/equipment.png';
+                                e.currentTarget.src = '/images/placeholders/equipment.webp';
                               } else {
-                                e.currentTarget.src = '/images/placeholders/agrochemical.png';
+                                e.currentTarget.src = '/images/placeholders/agrochemical.webp';
                               }
                             }}
                           />
@@ -1293,7 +1335,7 @@ function ShopPage() {
                         className="relative bg-white border border-gray-200 p-3 rounded-xl hover:shadow-md transition cursor-pointer flex gap-3 items-center group/recent"
                       >
                         <div className="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden shrink-0 border border-gray-150 p-0.5">
-                          <img src={recent.image} alt={recent.name} className="h-full w-full object-cover" />
+                          <img src={recent.image} alt={recent.name} loading="lazy" decoding="async" width={48} height={48} className="h-full w-full object-cover" />
                         </div>
                         <div className="min-w-0 pr-4">
                           <h4 className="text-xs font-bold text-gray-800 truncate">{recent.name}</h4>
@@ -1442,7 +1484,7 @@ function ShopPage() {
                       {/* Product Card */}
                       <div className="text-center">
                         <div className="h-24 w-full bg-gray-50 rounded-xl overflow-hidden p-1 border border-gray-150 mb-2">
-                          <img src={product.image} alt={product.name} className="h-full w-full object-contain" />
+                          <img src={product.image} alt={product.name} loading="lazy" decoding="async" width={96} height={96} className="h-full w-full object-contain" />
                         </div>
                         <h4 className="font-extrabold text-gray-800 line-clamp-2 h-8 text-xs">{product.name}</h4>
                         <span className="text-[9px] text-gray-400 uppercase font-bold">{product.brand}</span>

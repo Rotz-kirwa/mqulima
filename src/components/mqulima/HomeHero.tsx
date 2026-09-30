@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { motion, Variants } from "framer-motion";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
-import heroCinematic from "@/assets/hero-cinematic.png";
+import heroCinematic from "@/assets/hero-cinematic.webp";
+import heroCinematic640 from "@/assets/hero-cinematic-640w.webp";
+import heroCinematic320 from "@/assets/hero-cinematic-320w.webp";
 import { useAuth } from "@/hooks/useAuth";
 
 const containerVariants = {
@@ -10,8 +12,8 @@ const containerVariants = {
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut" } as any },
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } as any },
 };
 
 export function HomeHero() {
@@ -20,20 +22,27 @@ export function HomeHero() {
   return (
     <section className="relative h-[95svh] min-h-[650px] w-full overflow-hidden bg-[#F4F8F5]">
       {/* ── Cinematic Static Background ── */}
-      <div className="absolute inset-0 h-full w-full z-0">
+      <div className="absolute inset-0 h-full w-full z-0 overflow-hidden">
         <img
-          src={heroCinematic}
-          alt="Cinematic premium farming"
-          className="h-full w-full object-cover object-center"
+          src={heroCinematic640}
+          srcSet={`${heroCinematic320} 320w, ${heroCinematic640} 640w, ${heroCinematic} 1280w`}
+          sizes="100vw"
+          alt="Agriculture and Success in One Basket - Mqulima"
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          width={1280}
+          height={720}
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
-        
-        {/* Subtle overlay for text readability without darkening the image excessively */}
-        <div className="absolute inset-0 bg-black/30" />
+        {/* Rich dark gradient overlay for crystal-clear text readability over photography */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/35 md:from-black/80 md:via-black/55 md:to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
       </div>
 
       {/* ── Main Layout Container ── */}
       <div className="container-px relative z-10 mx-auto flex h-full max-w-7xl items-center">
-        <div className="w-full pt-12 text-left">
+        <div className="w-full pt-12 pb-12 sm:pb-8 text-left">
           
           {/* Text Content Column */}
           <div className="max-w-2xl lg:max-w-3xl flex flex-col">
@@ -64,10 +73,10 @@ export function HomeHero() {
                 in One Basket
               </motion.h1>
 
-              {/* Sub-headline */}
+              {/* Sub-headline with high contrast */}
               <motion.p
                 variants={itemVariants}
-                className="max-w-xl text-base leading-relaxed text-white/95 md:text-lg font-medium"
+                className="max-w-xl text-base leading-relaxed text-white md:text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]"
               >
                 Everything you need to know, learn, buy, hire, trade, treat or tell someone in
                 one platform. Africa’s 360° agriculture ecosystem
