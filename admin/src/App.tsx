@@ -3,6 +3,7 @@ import { Topbar } from "./components/layout/Topbar";
 import { Sidebar, AdminTab } from "./components/layout/Sidebar";
 import { AdminLoginScreen } from "./components/auth/AdminLoginScreen";
 import { clearAdminCache } from "./lib/api";
+import { AdminErrorBoundary } from "./components/common/AdminErrorBoundary";
 
 const DashboardHomeModule = React.lazy(() => import("./components/modules/DashboardHomeModule").then(m => ({ default: m.DashboardHomeModule })));
 const CustomersModule = React.lazy(() => import("./components/modules/CustomersModule").then(m => ({ default: m.CustomersModule })));
@@ -281,9 +282,11 @@ export const App: React.FC = () => {
               style={{ display: tab === activeTab ? "block" : "none" }}
               className="w-full"
             >
-              <React.Suspense fallback={<ModuleLoadingSkeleton />}>
-                {renderModuleTab(tab)}
-              </React.Suspense>
+              <AdminErrorBoundary fallbackTitle={`Error rendering ${tab.replace("-", " ")} module`}>
+                <React.Suspense fallback={<ModuleLoadingSkeleton />}>
+                  {renderModuleTab(tab)}
+                </React.Suspense>
+              </AdminErrorBoundary>
             </div>
           ))}
         </main>

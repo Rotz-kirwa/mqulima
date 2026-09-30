@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import crypto from "node:crypto";
 
 import { initProductSyncJob } from "./jobs/productSync.job";
 
@@ -84,6 +85,8 @@ function isOriginAllowed(origin: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
+    const requestStart = performance.now();
     const url = new URL(request.url);
     if (url.pathname === "/favicon.ico") {
       return new Response(null, {
@@ -93,6 +96,26 @@ export default {
           "Cache-Control": "public, max-age=86400",
         },
       });
+    }
+
+    if (url.pathname === "/sitemap.xml") {
+      try {
+        const { generateSitemapXml } = await import("./lib/sitemap.server");
+        const sitemapXml = await generateSitemapXml();
+        return new Response(sitemapXml, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            "Cache-Control": "public, max-age=3600, s-maxage=3600",
+          },
+        });
+      } catch (err) {
+        console.error("[SERVER] Error generating sitemap.xml:", err);
+        return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://www.mqulima.com/</loc></urlset>", {
+          status: 200,
+          headers: { "Content-Type": "application/xml; charset=utf-8" },
+        });
+      }
     }
 
     const origin = request.headers.get("origin") || "";
@@ -119,25 +142,44 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       const normalizedResponse = await normalizeCatastrophicSsrResponse(response);
 
+      const newHeaders = new Headers(normalizedResponse.headers);
+      const existingVary = newHeaders.get("Vary");
+      if (!existingVary) {
+        newHeaders.set("Vary", "Accept-Encoding");
+      } else if (!existingVary.includes("Accept-Encoding")) {
+        newHeaders.set("Vary", `${existingVary}, Accept-Encoding`);
+      }
+
       if (isAllowed) {
-        const newHeaders = new Headers(normalizedResponse.headers);
         newHeaders.set("Access-Control-Allow-Origin", normalizedOrigin);
         newHeaders.set("Access-Control-Allow-Credentials", "true");
         if (!newHeaders.has("Access-Control-Allow-Headers")) {
           newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Cookie");
         }
-
-        return new Response(normalizedResponse.body, {
-          status: normalizedResponse.status,
-          statusText: normalizedResponse.statusText,
-          headers: newHeaders,
-        });
       }
 
-      return normalizedResponse;
+      const durationMs = Math.round(performance.now() - requestStart);
+      newHeaders.set("X-Request-Id", requestId);
+
+      if (durationMs > 500 && !url.pathname.includes("/assets/")) {
+        console.warn(`[SLOW REQUEST] [${requestId}] ${request.method} ${url.pathname} completed in ${durationMs}ms`);
+      }
+      if (normalizedResponse.status >= 400 && request.method !== "GET" && request.method !== "HEAD") {
+        console.error(`[MUTATION ERROR] [${requestId}] ${request.method} ${url.pathname} failed with HTTP ${normalizedResponse.status}`);
+      }
+
+      return new Response(normalizedResponse.body, {
+        status: normalizedResponse.status,
+        statusText: normalizedResponse.statusText,
+        headers: newHeaders,
+      });
     } catch (error) {
-      console.error(error);
-      const errorHeaders = new Headers({ "content-type": "text/html; charset=utf-8" });
+      const durationMs = Math.round(performance.now() - requestStart);
+      console.error(`[SERVER ERROR] [${requestId}] ${request.method} ${url.pathname} threw after ${durationMs}ms:`, error);
+      const errorHeaders = new Headers({ 
+        "content-type": "text/html; charset=utf-8",
+        "X-Request-Id": requestId,
+      });
       if (isAllowed) {
         errorHeaders.set("Access-Control-Allow-Origin", normalizedOrigin);
         errorHeaders.set("Access-Control-Allow-Credentials", "true");

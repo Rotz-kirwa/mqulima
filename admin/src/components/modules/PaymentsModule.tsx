@@ -26,6 +26,7 @@ export const PaymentsModule: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<"all" | "matched" | "orphaned">("all");
   const [selectedOrphan, setSelectedOrphan] = useState<any | null>(null);
   const [targetOrderId, setTargetOrderId] = useState("");
+  const [isReconciling, setIsReconciling] = useState(false);
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -47,7 +48,8 @@ export const PaymentsModule: React.FC = () => {
   }, []);
 
   const handleReconcile = async (paymentId: string) => {
-    if (!targetOrderId) return;
+    if (!targetOrderId || isReconciling) return;
+    setIsReconciling(true);
     try {
       const res = await adminFetch("/api/admin/payments", {
         method: "POST",
@@ -64,6 +66,8 @@ export const PaymentsModule: React.FC = () => {
       }
     } catch (e) {
       console.error("Reconcile error:", e);
+    } finally {
+      setIsReconciling(false);
     }
   };
 
@@ -614,9 +618,10 @@ export const PaymentsModule: React.FC = () => {
               </button>
               <button
                 onClick={() => handleReconcile(selectedOrphan.id)}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[4px] cursor-pointer"
+                disabled={isReconciling || !targetOrderId.trim()}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[4px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Match Payment
+                {isReconciling ? "Matching..." : "Match Payment"}
               </button>
             </div>
           </div>

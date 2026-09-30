@@ -29,6 +29,7 @@ export const ProductsStockModule: React.FC = () => {
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form Fields
   const [prodName, setProdName] = useState("");
@@ -150,6 +151,8 @@ export const ProductsStockModule: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const action = editingProduct ? "update_product" : "create_product";
       const payload: any = {
@@ -181,6 +184,8 @@ export const ProductsStockModule: React.FC = () => {
       }
     } catch (e) {
       console.error("Save product error:", e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -836,9 +841,10 @@ export const ProductsStockModule: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-[#278C7B] hover:bg-[#1E6B5E] text-white font-bold text-xs rounded-[6px] cursor-pointer transition shadow-xs"
+                disabled={isSaving}
+                className="px-5 py-2 bg-[#278C7B] hover:bg-[#1E6B5E] text-white font-bold text-xs rounded-[6px] cursor-pointer transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {editingProduct ? "Save Changes" : "Publish to Shop"}
+                {isSaving ? "Saving..." : editingProduct ? "Save Changes" : "Publish to Shop"}
               </button>
             </div>
           </form>
