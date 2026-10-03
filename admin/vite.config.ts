@@ -39,9 +39,6 @@ export default defineConfig({
             if (id.includes("dompurify")) {
               return "vendor-purify";
             }
-            if (id.includes("jspdf") || id.includes("html2canvas") || id.includes("canvg") || id.includes("fflate")) {
-              return "vendor-pdf";
-            }
           }
         },
       },
