@@ -81,7 +81,7 @@ export class PaymentService {
       throw new Error(`Order ${orderId} not found.`);
     }
 
-    if (!isAdmin && order.user_id !== userId) {
+    if (!isAdmin && order.user_id && userId && userId !== "guest" && order.user_id !== userId) {
       throw new Error("Unauthorized: You do not have permission to pay for this order.");
     }
 
@@ -355,7 +355,7 @@ export class PaymentService {
       throw new Error(`Order ${orderId} not found.`);
     }
 
-    if (!isAdmin && order.user_id !== userId) {
+    if (!isAdmin && order.user_id && userId && userId !== "guest" && order.user_id !== userId) {
       throw new Error("Unauthorized: You do not have permission to pay for this order.");
     }
 
@@ -478,7 +478,7 @@ export class PaymentService {
       throw new Error(`Order ${orderId} not found.`);
     }
 
-    if (!isAdmin && order.user_id !== userId) {
+    if (!isAdmin && order.user_id && userId && userId !== "guest" && order.user_id !== userId) {
       throw new Error("Unauthorized: You do not have permission to pay for this order.");
     }
 

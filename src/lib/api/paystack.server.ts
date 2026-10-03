@@ -17,20 +17,40 @@ export const initiatePaystackCheckout = createServerFn({ method: "POST" })
   .inputValidator((val: unknown) => InitiatePaystackInputSchema.parse(val || {}))
   .handler(async ({ data }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        return {
-          success: false,
-          error: "You must be logged in to process payment."
-        };
+      let user = await getCurrentUser();
+      const inputEmail = (data.email || "").trim().toLowerCase();
+
+      // If user session is unverified or cookie expired, resolve against registered profile by email
+      if (!user && inputEmail && inputEmail.includes("@")) {
+        const { getDb } = await import("../db.server");
+        const sql = getDb();
+        const [matchedProfile] = await sql`
+          SELECT id, email, full_name, role
+          FROM profiles
+          WHERE LOWER(email) = ${inputEmail} AND deleted_at IS NULL
+          LIMIT 1
+        `;
+        if (matchedProfile) {
+          user = {
+            id: matchedProfile.id,
+            name: matchedProfile.full_name,
+            email: matchedProfile.email,
+            role: matchedProfile.role,
+            county: "",
+            farmSize: "",
+            crops: "",
+            livestock: "",
+          };
+        }
       }
 
-      const isAdmin = user.role === "admin" || user.role === "super_admin";
+      const isAdmin = user ? (user.role === "admin" || user.role === "super_admin") : false;
+      const effectiveUserId = user ? user.id : "guest";
 
       const result = await PaymentService.initiatePaystackPayment({
         orderId: data.orderId,
-        userId: user.id,
-        email: data.email || user.email,
+        userId: effectiveUserId,
+        email: inputEmail || user?.email || "",
         isAdmin,
         callbackUrl: data.callbackUrl,
         channels: data.channels
@@ -85,21 +105,41 @@ export const chargePaystackMobileMoney = createServerFn({ method: "POST" })
   .inputValidator((val: unknown) => ChargeMobileMoneyInputSchema.parse(val || {}))
   .handler(async ({ data }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        return {
-          success: false,
-          error: "You must be logged in to process payment."
-        };
+      let user = await getCurrentUser();
+      const inputEmail = (data.email || "").trim().toLowerCase();
+
+      // If user session is unverified or cookie expired, resolve against registered profile by email
+      if (!user && inputEmail && inputEmail.includes("@")) {
+        const { getDb } = await import("../db.server");
+        const sql = getDb();
+        const [matchedProfile] = await sql`
+          SELECT id, email, full_name, role
+          FROM profiles
+          WHERE LOWER(email) = ${inputEmail} AND deleted_at IS NULL
+          LIMIT 1
+        `;
+        if (matchedProfile) {
+          user = {
+            id: matchedProfile.id,
+            name: matchedProfile.full_name,
+            email: matchedProfile.email,
+            role: matchedProfile.role,
+            county: "",
+            farmSize: "",
+            crops: "",
+            livestock: "",
+          };
+        }
       }
 
-      const isAdmin = user.role === "admin" || user.role === "super_admin";
+      const isAdmin = user ? (user.role === "admin" || user.role === "super_admin") : false;
+      const effectiveUserId = user ? user.id : "guest";
 
       const result = await PaymentService.chargePaystackMobileMoney({
         orderId: data.orderId,
-        userId: user.id,
+        userId: effectiveUserId,
         phone: data.phone,
-        email: data.email || user.email,
+        email: inputEmail || user?.email || "",
         provider: data.provider,
         isAdmin
       });

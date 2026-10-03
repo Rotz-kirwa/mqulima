@@ -262,6 +262,7 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       const secret = getJwtSecret();
       const { payload } = await jose.jwtVerify(token, secret);
       const userId = (payload.sub || payload.id) as string;
+      const tokenEmail = (typeof payload.email === "string" ? payload.email : "").trim().toLowerCase();
 
       const { getDb } = await import("./db.server");
       const sql = getDb();
@@ -271,11 +272,21 @@ export const getCurrentUser = createServerFn({ method: "GET" })
         WHERE id = ${userId} AND deleted_at IS NULL
       `;
 
+      if (!dbUser && tokenEmail) {
+        [dbUser] = await sql`
+          SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
+          FROM profiles
+          WHERE LOWER(email) = ${tokenEmail} AND deleted_at IS NULL
+          LIMIT 1
+        `;
+      }
+
       if (!dbUser) {
         const [rawUser] = await sql`
           SELECT id, email, first_name, last_name, county
           FROM users
-          WHERE id = ${userId}
+          WHERE id = ${userId} OR (email IS NOT NULL AND LOWER(email) = ${tokenEmail})
+          LIMIT 1
         `;
         if (rawUser) {
           dbUser = {
