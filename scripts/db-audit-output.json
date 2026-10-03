@@ -1,0 +1,5005 @@
+{
+  "provider": "Render PostgreSQL",
+  "host": "dpg-dahf12ad0e5s7395pgg0-a.ohio-postgres.render.com",
+  "database": "mq",
+  "region": "Ohio (us-east-2)",
+  "latency_ms": {
+    "min": "275.91",
+    "median": "307.30",
+    "max": "3148.72"
+  },
+  "version": "PostgreSQL 18.6 (Debian 18.6-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+  "settings": {
+    "max_connections": "103",
+    "shared_buffers": "64MB",
+    "work_mem": "1654kB",
+    "statement_timeout": "0",
+    "lock_timeout": "0",
+    "idle_in_transaction_session_timeout": "0"
+  },
+  "db_size": "14 MB",
+  "connections": {
+    "total": "2",
+    "active": "1",
+    "idle": "1"
+  },
+  "cache_hit_ratio": {
+    "heap_read": "1",
+    "heap_hit": "1384932",
+    "hit_ratio": "100.00"
+  },
+  "tables": [
+    {
+      "table_name": "products",
+      "estimated_rows": "330",
+      "table_size": "608 kB",
+      "index_size": "600 kB",
+      "total_size": "1208 kB",
+      "total_bytes": "1236992",
+      "dead_tuples": "0",
+      "live_tuples": "330",
+      "last_vacuum": "2026-09-30T16:44:08.024Z",
+      "last_autovacuum": "2026-09-30T16:45:05.851Z",
+      "last_analyze": "2026-09-30T16:44:08.128Z",
+      "last_autoanalyze": "2026-09-30T16:45:05.926Z",
+      "exact_rows": 330
+    },
+    {
+      "table_name": "pos_sync_logs",
+      "estimated_rows": "2054",
+      "table_size": "424 kB",
+      "index_size": "192 kB",
+      "total_size": "616 kB",
+      "total_bytes": "630784",
+      "dead_tuples": "0",
+      "live_tuples": "2054",
+      "last_vacuum": "2026-09-30T16:44:08.422Z",
+      "last_autovacuum": "2026-09-23T15:52:11.547Z",
+      "last_analyze": "2026-09-30T16:44:08.427Z",
+      "last_autoanalyze": "2026-09-29T23:01:31.525Z",
+      "exact_rows": 2054
+    },
+    {
+      "table_name": "product_variants",
+      "estimated_rows": "323",
+      "table_size": "144 kB",
+      "index_size": "104 kB",
+      "total_size": "248 kB",
+      "total_bytes": "253952",
+      "dead_tuples": "59",
+      "live_tuples": "323",
+      "last_vacuum": null,
+      "last_autovacuum": "2026-09-17T01:45:32.817Z",
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-17T02:15:33.341Z",
+      "exact_rows": 323
+    },
+    {
+      "table_name": "show_posts",
+      "estimated_rows": "1",
+      "table_size": "72 kB",
+      "index_size": "96 kB",
+      "total_size": "168 kB",
+      "total_bytes": "172032",
+      "dead_tuples": "3",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "blog_posts",
+      "estimated_rows": "-1",
+      "table_size": "72 kB",
+      "index_size": "88 kB",
+      "total_size": "160 kB",
+      "total_bytes": "163840",
+      "dead_tuples": "12",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "agritech_news",
+      "estimated_rows": "8",
+      "table_size": "64 kB",
+      "index_size": "80 kB",
+      "total_size": "144 kB",
+      "total_bytes": "147456",
+      "dead_tuples": "0",
+      "live_tuples": "8",
+      "last_vacuum": "2026-09-30T16:44:07.723Z",
+      "last_autovacuum": null,
+      "last_analyze": "2026-09-30T16:44:07.724Z",
+      "last_autoanalyze": null,
+      "exact_rows": 8
+    },
+    {
+      "table_name": "courses",
+      "estimated_rows": "5",
+      "table_size": "64 kB",
+      "index_size": "64 kB",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "dead_tuples": "2",
+      "live_tuples": "5",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 5
+    },
+    {
+      "table_name": "orders",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "112 kB",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "dead_tuples": "4",
+      "live_tuples": "14",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 14
+    },
+    {
+      "table_name": "profiles",
+      "estimated_rows": "6",
+      "table_size": "16 kB",
+      "index_size": "112 kB",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "dead_tuples": "15",
+      "live_tuples": "3",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-14T13:08:33.643Z",
+      "exact_rows": 3
+    },
+    {
+      "table_name": "payments",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "112 kB",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "dead_tuples": "0",
+      "live_tuples": "10",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 10
+    },
+    {
+      "table_name": "users",
+      "estimated_rows": "3",
+      "table_size": "16 kB",
+      "index_size": "96 kB",
+      "total_size": "112 kB",
+      "total_bytes": "114688",
+      "dead_tuples": "3",
+      "live_tuples": "3",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 3
+    },
+    {
+      "table_name": "notifications",
+      "estimated_rows": "18",
+      "table_size": "56 kB",
+      "index_size": "48 kB",
+      "total_size": "104 kB",
+      "total_bytes": "106496",
+      "dead_tuples": "2",
+      "live_tuples": "18",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 18
+    },
+    {
+      "table_name": "admin_audit_logs",
+      "estimated_rows": "51",
+      "table_size": "48 kB",
+      "index_size": "48 kB",
+      "total_size": "96 kB",
+      "total_bytes": "98304",
+      "dead_tuples": "0",
+      "live_tuples": "61",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-13T05:30:01.403Z",
+      "exact_rows": 61
+    },
+    {
+      "table_name": "sms_logs",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "64 kB",
+      "total_size": "80 kB",
+      "total_bytes": "81920",
+      "dead_tuples": "0",
+      "live_tuples": "17",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 17
+    },
+    {
+      "table_name": "direct_messages",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "order_items",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "14",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 14
+    },
+    {
+      "table_name": "course_chapters",
+      "estimated_rows": "20",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "20",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 20
+    },
+    {
+      "table_name": "service_categories",
+      "estimated_rows": "6",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "6",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 6
+    },
+    {
+      "table_name": "chapter_lessons",
+      "estimated_rows": "22",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "22",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 22
+    },
+    {
+      "table_name": "shop_fields",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "0",
+      "live_tuples": "6",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 6
+    },
+    {
+      "table_name": "services",
+      "estimated_rows": "3",
+      "table_size": "16 kB",
+      "index_size": "48 kB",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "dead_tuples": "3",
+      "live_tuples": "3",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 3
+    },
+    {
+      "table_name": "service_requests",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "48 kB",
+      "total_size": "56 kB",
+      "total_bytes": "57344",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "show_likes",
+      "estimated_rows": "2",
+      "table_size": "8192 bytes",
+      "index_size": "48 kB",
+      "total_size": "56 kB",
+      "total_bytes": "57344",
+      "dead_tuples": "1",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "product_categories",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "0",
+      "live_tuples": "16",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 16
+    },
+    {
+      "table_name": "shop_categories",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "0",
+      "live_tuples": "21",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 21
+    },
+    {
+      "table_name": "newsletter_subscribers",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "0",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "shop_subcategories",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "0",
+      "live_tuples": "45",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 45
+    },
+    {
+      "table_name": "commodity_price_board",
+      "estimated_rows": "24",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "28",
+      "live_tuples": "24",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-30T05:00:33.971Z",
+      "exact_rows": 24
+    },
+    {
+      "table_name": "commodity_listings",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "40 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "pos_auth_tokens",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "32 kB",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "dead_tuples": "1",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "email_verifications",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "32 kB",
+      "total_size": "40 kB",
+      "total_bytes": "40960",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "farmer_followers",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "32 kB",
+      "total_size": "40 kB",
+      "total_bytes": "40960",
+      "dead_tuples": "0",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "crop_diagnoses",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "24 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "blog_authors",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "16 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "12",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "schema_migrations",
+      "estimated_rows": "52",
+      "table_size": "16 kB",
+      "index_size": "16 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "60",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-11T08:36:34.958Z",
+      "exact_rows": 60
+    },
+    {
+      "table_name": "featured_items",
+      "estimated_rows": "2",
+      "table_size": "16 kB",
+      "index_size": "16 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "30",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-09-30T15:53:04.850Z",
+      "exact_rows": 0
+    },
+    {
+      "table_name": "show_comments",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "24 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "commodities",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "16 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "10",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 10
+    },
+    {
+      "table_name": "audit_log",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "24 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "ai_conversations",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "24 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "ai_messages",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "24 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "moderation_settings",
+      "estimated_rows": "-1",
+      "table_size": "16 kB",
+      "index_size": "16 kB",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "dead_tuples": "0",
+      "live_tuples": "1",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 1
+    },
+    {
+      "table_name": "partnership_applications",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "contact_submissions",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "proforma_invoices",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "product_reviews",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "logistics_records",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "show_bookmarks",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "24 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "messages",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "pulse_posts",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "16 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_completed_lessons",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "24 kB",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "ai_query_logs",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "quotations",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "stock_recommendations",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "newsletter_issues",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "conversations",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "course_enrollments",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "16 kB",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "forum_reports",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "moderation_actions",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_restrictions",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_audit_actions",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_activity_logs",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_sessions",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "farmer_activities",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "moderation_reports",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "market_price_overrides",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "admin_quotations",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "stock_sourcing_requests",
+      "estimated_rows": "-1",
+      "table_size": "8192 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "farmer_badges",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "farmer_following",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    },
+    {
+      "table_name": "user_logs",
+      "estimated_rows": "-1",
+      "table_size": "0 bytes",
+      "index_size": "8192 bytes",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "dead_tuples": "0",
+      "live_tuples": "0",
+      "last_vacuum": null,
+      "last_autovacuum": null,
+      "last_analyze": null,
+      "last_autoanalyze": null,
+      "exact_rows": 0
+    }
+  ],
+  "foreign_keys": [
+    {
+      "table_name": "ai_conversations",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "ai_messages",
+      "column_name": "conversation_id",
+      "foreign_table_name": "ai_conversations",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "audit_log",
+      "column_name": "actor_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "blog_authors",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "blog_posts",
+      "column_name": "author_id",
+      "foreign_table_name": "blog_authors",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "chapter_lessons",
+      "column_name": "chapter_id",
+      "foreign_table_name": "course_chapters",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "commodities",
+      "column_name": "category_id",
+      "foreign_table_name": "product_categories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "commodity_listings",
+      "column_name": "commodity_id",
+      "foreign_table_name": "commodities",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "commodity_listings",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "commodity_price_board",
+      "column_name": "commodity_id",
+      "foreign_table_name": "commodities",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "course_chapters",
+      "column_name": "course_id",
+      "foreign_table_name": "courses",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "course_enrollments",
+      "column_name": "course_id",
+      "foreign_table_name": "courses",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "course_enrollments",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "courses",
+      "column_name": "instructor_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "crop_diagnoses",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "direct_messages",
+      "column_name": "recipient_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "direct_messages",
+      "column_name": "sender_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "email_verifications",
+      "column_name": "user_id",
+      "foreign_table_name": "users",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "forum_reports",
+      "column_name": "reporter_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "logistics_records",
+      "column_name": "order_id",
+      "foreign_table_name": "orders",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "messages",
+      "column_name": "conversation_id",
+      "foreign_table_name": "conversations",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "messages",
+      "column_name": "sender_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "moderation_actions",
+      "column_name": "admin_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "newsletter_subscribers",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "order_items",
+      "column_name": "order_id",
+      "foreign_table_name": "orders",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "order_items",
+      "column_name": "product_id",
+      "foreign_table_name": "products",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "orders",
+      "column_name": "sales_agent_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "orders",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "payments",
+      "column_name": "order_id",
+      "foreign_table_name": "orders",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "product_categories",
+      "column_name": "parent_category_id",
+      "foreign_table_name": "product_categories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "product_reviews",
+      "column_name": "product_id",
+      "foreign_table_name": "products",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "product_reviews",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "product_variants",
+      "column_name": "product_id",
+      "foreign_table_name": "products",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "products",
+      "column_name": "category_id",
+      "foreign_table_name": "product_categories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "products",
+      "column_name": "field_id",
+      "foreign_table_name": "shop_fields",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "NO ACTION"
+    },
+    {
+      "table_name": "products",
+      "column_name": "subcategory_id",
+      "foreign_table_name": "shop_subcategories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "NO ACTION"
+    },
+    {
+      "table_name": "proforma_invoices",
+      "column_name": "quotation_id",
+      "foreign_table_name": "quotations",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "pulse_posts",
+      "column_name": "author_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "quotations",
+      "column_name": "sales_agent_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "quotations",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "assigned_expert_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "service_id",
+      "foreign_table_name": "services",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "services",
+      "column_name": "category_id",
+      "foreign_table_name": "service_categories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "shop_categories",
+      "column_name": "field_id",
+      "foreign_table_name": "shop_fields",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "shop_subcategories",
+      "column_name": "category_id",
+      "foreign_table_name": "shop_categories",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_bookmarks",
+      "column_name": "post_id",
+      "foreign_table_name": "show_posts",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_bookmarks",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_comments",
+      "column_name": "parent_id",
+      "foreign_table_name": "show_comments",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_comments",
+      "column_name": "post_id",
+      "foreign_table_name": "show_posts",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_comments",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_likes",
+      "column_name": "post_id",
+      "foreign_table_name": "show_posts",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_likes",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "show_posts",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "stock_recommendations",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "user_completed_lessons",
+      "column_name": "course_id",
+      "foreign_table_name": "courses",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "user_completed_lessons",
+      "column_name": "lesson_id",
+      "foreign_table_name": "chapter_lessons",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "user_completed_lessons",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "table_name": "user_restrictions",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "table_name": "user_restrictions",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id",
+      "update_rule": "NO ACTION",
+      "delete_rule": "CASCADE"
+    }
+  ],
+  "indexes": [
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "idx_blog_search",
+      "index_size": "40 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_not_deleted",
+      "index_size": "40 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_catalog_sort",
+      "index_size": "32 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_followers",
+      "index_name": "farmer_followers_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "notifications",
+      "index_name": "notifications_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "direct_messages",
+      "index_name": "direct_messages_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "profiles_username_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "idx_users_lower_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_created_at",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_user",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_status_created",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "order_items",
+      "index_name": "order_items_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "order_items",
+      "index_name": "idx_order_items_order",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_status",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_subcategories",
+      "index_name": "shop_subcategories_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_subcategories",
+      "index_name": "shop_subcategories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_not_deleted",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_fields",
+      "index_name": "shop_fields_name_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "chapter_lessons",
+      "index_name": "chapter_lessons_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "idx_courses_sort",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_payment",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "payments_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_categories",
+      "index_name": "product_categories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_category",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_view_count",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "services_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "services_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pos_auth_tokens",
+      "index_name": "pos_auth_tokens_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_customer_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "blog_posts_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "blog_posts_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "idx_blog_posts_status",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "newsletter_subscribers",
+      "index_name": "newsletter_subscribers_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_receipt",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_price_board",
+      "index_name": "idx_cpb_commodity_recorded",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_merchant_ref",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_provider_ref",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_categories",
+      "index_name": "idx_service_categories_name",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_likes",
+      "index_name": "show_likes_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "idx_sms_logs_trigger_type",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "idx_sms_logs_recipient",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_category",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "sms_logs_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_audit_logs",
+      "index_name": "admin_audit_logs_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "idx_services_cat_name",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_chapters",
+      "index_name": "idx_course_chapters_course_sort",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "idx_courses_pub_order",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_variants",
+      "index_name": "product_variants_sku_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_user_created",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_order_provider",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "idx_users_county",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_feed",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_likes",
+      "index_name": "idx_show_likes_user_id",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_lower_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_reference",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_reviews",
+      "index_name": "product_reviews_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "quotations",
+      "index_name": "quotations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "proforma_invoices",
+      "index_name": "proforma_invoices_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "proforma_invoices",
+      "index_name": "proforma_invoices_invoice_number_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "stock_recommendations",
+      "index_name": "stock_recommendations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "service_requests_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "newsletter_issues",
+      "index_name": "newsletter_issues_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_comments",
+      "index_name": "show_comments_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "commodity_listings_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pulse_posts",
+      "index_name": "pulse_posts_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "conversations",
+      "index_name": "conversations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "messages",
+      "index_name": "messages_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "messages",
+      "index_name": "idx_messages_conversation",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_enrollments",
+      "index_name": "course_enrollments_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "audit_log",
+      "index_name": "audit_log_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "audit_log",
+      "index_name": "idx_audit_log_entity",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "contact_submissions",
+      "index_name": "contact_submissions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "contact_submissions",
+      "index_name": "idx_contact_submissions_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "partnership_applications",
+      "index_name": "partnership_applications_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "partnership_applications",
+      "index_name": "idx_partnership_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "service_requests_reference_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_completed_lessons",
+      "index_name": "user_completed_lessons_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_completed_lessons",
+      "index_name": "user_completed_lessons_user_id_lesson_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "crop_diagnoses",
+      "index_name": "crop_diagnoses_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "crop_diagnoses",
+      "index_name": "idx_crop_diagnoses_user",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_conversations",
+      "index_name": "ai_conversations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "ai_messages_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "idx_ai_messages_conversation",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "forum_reports",
+      "index_name": "forum_reports_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "moderation_actions",
+      "index_name": "moderation_actions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_restrictions",
+      "index_name": "user_restrictions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_bookmarks",
+      "index_name": "show_bookmarks_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_bookmarks",
+      "index_name": "show_bookmarks_post_id_user_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_audit_actions",
+      "index_name": "user_audit_actions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "moderation_reports",
+      "index_name": "moderation_reports_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_activity_logs",
+      "index_name": "user_activity_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_sessions",
+      "index_name": "user_sessions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_following",
+      "index_name": "farmer_following_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_activities",
+      "index_name": "farmer_activities_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_badges",
+      "index_name": "farmer_badges_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_logs",
+      "index_name": "user_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_channel",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_soko_listings_user_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_soko_commodity_location",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_conversations",
+      "index_name": "idx_ai_conversations_user_updated",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "idx_ai_messages_conv_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "logistics_records",
+      "index_name": "logistics_records_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "market_price_overrides",
+      "index_name": "market_price_overrides_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_query_logs",
+      "index_name": "ai_query_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "logistics_records",
+      "index_name": "idx_logistics_records_order_id",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_quotations",
+      "index_name": "admin_quotations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "stock_sourcing_requests",
+      "index_name": "stock_sourcing_requests_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "email_verifications_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "idx_email_verifications_email_created_at",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "idx_email_verifications_user_id",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "users_email_key",
+      "index_size": "16 kB",
+      "idx_scan": "1",
+      "idx_tup_read": "1",
+      "idx_tup_fetch": "1"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_followers",
+      "index_name": "farmer_followers_farmer_follower_uidx",
+      "index_size": "16 kB",
+      "idx_scan": "1",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_role",
+      "index_size": "16 kB",
+      "idx_scan": "1",
+      "idx_tup_read": "1",
+      "idx_tup_fetch": "1"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "moderation_settings",
+      "index_name": "moderation_settings_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "1",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "idx_sms_logs_created_at",
+      "index_size": "16 kB",
+      "idx_scan": "1",
+      "idx_tup_read": "2",
+      "idx_tup_fetch": "2"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "idx_email_verifications_expires_at",
+      "index_size": "8192 bytes",
+      "idx_scan": "1",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "newsletter_subscribers",
+      "index_name": "newsletter_subscribers_email_key",
+      "index_size": "16 kB",
+      "idx_scan": "2",
+      "idx_tup_read": "1",
+      "idx_tup_fetch": "1"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_status_pub",
+      "index_size": "16 kB",
+      "idx_scan": "2",
+      "idx_tup_read": "20",
+      "idx_tup_fetch": "18"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_field_status",
+      "index_size": "16 kB",
+      "idx_scan": "3",
+      "idx_tup_read": "990",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_subcategory",
+      "index_size": "16 kB",
+      "idx_scan": "3",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_user_status",
+      "index_size": "16 kB",
+      "idx_scan": "3",
+      "idx_tup_read": "6",
+      "idx_tup_fetch": "6"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_comments",
+      "index_name": "idx_show_comments_post_status_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "4",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_status_featured_updated",
+      "index_size": "40 kB",
+      "idx_scan": "5",
+      "idx_tup_read": "418",
+      "idx_tup_fetch": "418"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_chapters",
+      "index_name": "idx_chapters_course",
+      "index_size": "16 kB",
+      "idx_scan": "5",
+      "idx_tup_read": "20",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "profiles_email_key",
+      "index_size": "16 kB",
+      "idx_scan": "5",
+      "idx_tup_read": "3",
+      "idx_tup_fetch": "3"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_categories",
+      "index_name": "service_categories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "6",
+      "idx_tup_read": "6",
+      "idx_tup_fetch": "6"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "profiles_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "6",
+      "idx_tup_read": "6",
+      "idx_tup_fetch": "6"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "users_national_id_key",
+      "index_size": "16 kB",
+      "idx_scan": "6",
+      "idx_tup_read": "3",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_fields",
+      "index_name": "shop_fields_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "6",
+      "idx_tup_read": "6",
+      "idx_tup_fetch": "6"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_categories",
+      "index_name": "service_categories_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "6",
+      "idx_tup_read": "6",
+      "idx_tup_fetch": "6"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_completed_lessons",
+      "index_name": "idx_completed_lessons_user_course",
+      "index_size": "8192 bytes",
+      "idx_scan": "6",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "audit_log",
+      "index_name": "idx_audit_log_actor",
+      "index_size": "8192 bytes",
+      "idx_scan": "6",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_enrollments",
+      "index_name": "course_enrollments_course_id_user_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "6",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_conversations",
+      "index_name": "idx_ai_conversations_user",
+      "index_size": "8192 bytes",
+      "idx_scan": "6",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "show_posts_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "7",
+      "idx_tup_read": "7",
+      "idx_tup_fetch": "7"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "users_phone_number_key",
+      "index_size": "16 kB",
+      "idx_scan": "8",
+      "idx_tup_read": "5",
+      "idx_tup_fetch": "2"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_categories",
+      "index_name": "shop_categories_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "9",
+      "idx_tup_read": "9",
+      "idx_tup_fetch": "9"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "courses_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "10",
+      "idx_tup_read": "12",
+      "idx_tup_fetch": "10"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_featured",
+      "index_size": "16 kB",
+      "idx_scan": "11",
+      "idx_tup_read": "77",
+      "idx_tup_fetch": "70"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "order_items",
+      "index_name": "idx_order_items_product",
+      "index_size": "16 kB",
+      "idx_scan": "12",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_authors",
+      "index_name": "blog_authors_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "12",
+      "idx_tup_read": "12",
+      "idx_tup_fetch": "12"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_not_deleted",
+      "index_size": "16 kB",
+      "idx_scan": "14",
+      "idx_tup_read": "14",
+      "idx_tup_fetch": "14"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_provider_status",
+      "index_size": "16 kB",
+      "idx_scan": "14",
+      "idx_tup_read": "45",
+      "idx_tup_fetch": "45"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_search",
+      "index_size": "208 kB",
+      "idx_scan": "15",
+      "idx_tup_read": "5",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pos_sync_logs",
+      "index_name": "idx_pos_sync_logs_started_at",
+      "index_size": "104 kB",
+      "idx_scan": "16",
+      "idx_tup_read": "15",
+      "idx_tup_fetch": "15"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_categories",
+      "index_name": "product_categories_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "16",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_slug",
+      "index_size": "16 kB",
+      "idx_scan": "17",
+      "idx_tup_read": "16",
+      "idx_tup_fetch": "16"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "chapter_lessons",
+      "index_name": "idx_lessons_chapter",
+      "index_size": "16 kB",
+      "idx_scan": "20",
+      "idx_tup_read": "22",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_fields",
+      "index_name": "shop_fields_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "21",
+      "idx_tup_read": "21",
+      "idx_tup_fetch": "21"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_chapters",
+      "index_name": "course_chapters_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "22",
+      "idx_tup_read": "22",
+      "idx_tup_fetch": "22"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "courses_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "25",
+      "idx_tup_read": "20",
+      "idx_tup_fetch": "20"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_price_board",
+      "index_name": "commodity_price_board_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "28",
+      "idx_tup_read": "28",
+      "idx_tup_fetch": "28"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_user",
+      "index_size": "16 kB",
+      "idx_scan": "28",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "agritech_news_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "29",
+      "idx_tup_read": "30",
+      "idx_tup_fetch": "26"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_user_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "29",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pulse_posts",
+      "index_name": "idx_pulse_posts_published",
+      "index_size": "8192 bytes",
+      "idx_scan": "31",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_county_status",
+      "index_size": "16 kB",
+      "idx_scan": "32",
+      "idx_tup_read": "10360",
+      "idx_tup_fetch": "2332"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "crop_diagnoses",
+      "index_name": "idx_crop_diagnoses_user_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "32",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_commodity_listings_status_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "32",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "orders_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "33",
+      "idx_tup_read": "35",
+      "idx_tup_fetch": "33"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "direct_messages",
+      "index_name": "idx_direct_messages_participants",
+      "index_size": "16 kB",
+      "idx_scan": "34",
+      "idx_tup_read": "12",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "products_slug_key",
+      "index_size": "40 kB",
+      "idx_scan": "39",
+      "idx_tup_read": "28",
+      "idx_tup_fetch": "28"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "chapter_lessons",
+      "index_name": "idx_chapter_lessons_chapter_sort",
+      "index_size": "16 kB",
+      "idx_scan": "40",
+      "idx_tup_read": "44",
+      "idx_tup_fetch": "44"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_audit_logs",
+      "index_name": "idx_admin_audit_logs_created_at",
+      "index_size": "16 kB",
+      "idx_scan": "43",
+      "idx_tup_read": "630",
+      "idx_tup_fetch": "630"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_categories",
+      "index_name": "shop_categories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "45",
+      "idx_tup_read": "45",
+      "idx_tup_fetch": "45"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "featured_items",
+      "index_name": "featured_items_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "47",
+      "idx_tup_read": "47",
+      "idx_tup_fetch": "46"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_variants",
+      "index_name": "idx_product_variants_product_id",
+      "index_size": "32 kB",
+      "idx_scan": "48",
+      "idx_tup_read": "64",
+      "idx_tup_fetch": "30"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_likes",
+      "index_name": "show_likes_post_id_user_id_key",
+      "index_size": "16 kB",
+      "idx_scan": "50",
+      "idx_tup_read": "37",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_reviews",
+      "index_name": "product_reviews_product_id_user_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "55",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "direct_messages",
+      "index_name": "idx_direct_messages_recipient_read",
+      "index_size": "16 kB",
+      "idx_scan": "75",
+      "idx_tup_read": "1",
+      "idx_tup_fetch": "1"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_bookmarks",
+      "index_name": "idx_show_bookmarks_user",
+      "index_size": "8192 bytes",
+      "idx_scan": "81",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "83",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_status",
+      "index_size": "16 kB",
+      "idx_scan": "88",
+      "idx_tup_read": "28655",
+      "idx_tup_fetch": "1952"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_commodity_listings_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "88",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_user_created_at",
+      "index_size": "16 kB",
+      "idx_scan": "104",
+      "idx_tup_read": "216",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_comments",
+      "index_name": "idx_show_comments_post_id",
+      "index_size": "8192 bytes",
+      "idx_scan": "146",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_audit_logs",
+      "index_name": "idx_admin_audit_logs_actor",
+      "index_size": "16 kB",
+      "idx_scan": "148",
+      "idx_tup_read": "148",
+      "idx_tup_fetch": "148"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "schema_migrations",
+      "index_name": "schema_migrations_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "148",
+      "idx_tup_read": "96",
+      "idx_tup_fetch": "96"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_category_status",
+      "index_size": "16 kB",
+      "idx_scan": "242",
+      "idx_tup_read": "79875",
+      "idx_tup_fetch": "7147"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodities",
+      "index_name": "commodities_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "298",
+      "idx_tup_read": "298",
+      "idx_tup_fetch": "298"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_status",
+      "index_size": "16 kB",
+      "idx_scan": "413",
+      "idx_tup_read": "1073",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "users_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "609",
+      "idx_tup_read": "523",
+      "idx_tup_fetch": "517"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pos_auth_tokens",
+      "index_name": "pos_auth_tokens_provider_key",
+      "index_size": "16 kB",
+      "idx_scan": "984",
+      "idx_tup_read": "290",
+      "idx_tup_fetch": "289"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "notifications",
+      "index_name": "idx_notifications_user_created",
+      "index_size": "16 kB",
+      "idx_scan": "1548",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pos_sync_logs",
+      "index_name": "pos_sync_logs_pkey",
+      "index_size": "88 kB",
+      "idx_scan": "2011",
+      "idx_tup_read": "4064",
+      "idx_tup_fetch": "2010"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "notifications",
+      "index_name": "idx_notifications_user",
+      "index_size": "16 kB",
+      "idx_scan": "4843",
+      "idx_tup_read": "6209",
+      "idx_tup_fetch": "2"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_variants",
+      "index_name": "product_variants_pkey",
+      "index_size": "40 kB",
+      "idx_scan": "66234",
+      "idx_tup_read": "66251",
+      "idx_tup_fetch": "66234"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_external_product_id",
+      "index_size": "40 kB",
+      "idx_scan": "66557",
+      "idx_tup_read": "66487",
+      "idx_tup_fetch": "66245"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_variants",
+      "index_name": "idx_product_variants_external_variation_id",
+      "index_size": "16 kB",
+      "idx_scan": "66557",
+      "idx_tup_read": "66249",
+      "idx_tup_fetch": "66234"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "products_pkey",
+      "index_size": "40 kB",
+      "idx_scan": "133878",
+      "idx_tup_read": "140483",
+      "idx_tup_fetch": "133862"
+    }
+  ],
+  "unused_indexes": [
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "idx_blog_search",
+      "index_size": "40 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_not_deleted",
+      "index_size": "40 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_catalog_sort",
+      "index_size": "32 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_followers",
+      "index_name": "farmer_followers_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "notifications",
+      "index_name": "notifications_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "direct_messages",
+      "index_name": "direct_messages_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "profiles_username_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "idx_users_lower_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_created_at",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_user",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_status_created",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "order_items",
+      "index_name": "order_items_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "order_items",
+      "index_name": "idx_order_items_order",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_status",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_subcategories",
+      "index_name": "shop_subcategories_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_subcategories",
+      "index_name": "shop_subcategories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_not_deleted",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "shop_fields",
+      "index_name": "shop_fields_name_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "chapter_lessons",
+      "index_name": "chapter_lessons_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "idx_courses_sort",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "orders",
+      "index_name": "idx_orders_payment",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "payments_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_categories",
+      "index_name": "product_categories_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_category",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "agritech_news",
+      "index_name": "idx_agritech_news_view_count",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "services_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "services_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pos_auth_tokens",
+      "index_name": "pos_auth_tokens_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_customer_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "blog_posts_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "blog_posts_slug_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "blog_posts",
+      "index_name": "idx_blog_posts_status",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "newsletter_subscribers",
+      "index_name": "newsletter_subscribers_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_receipt",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_price_board",
+      "index_name": "idx_cpb_commodity_recorded",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_merchant_ref",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_provider_ref",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_categories",
+      "index_name": "idx_service_categories_name",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_likes",
+      "index_name": "show_likes_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "idx_sms_logs_trigger_type",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "idx_sms_logs_recipient",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "products",
+      "index_name": "idx_products_category",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "sms_logs",
+      "index_name": "sms_logs_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_audit_logs",
+      "index_name": "admin_audit_logs_pkey",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "services",
+      "index_name": "idx_services_cat_name",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_chapters",
+      "index_name": "idx_course_chapters_course_sort",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "courses",
+      "index_name": "idx_courses_pub_order",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_variants",
+      "index_name": "product_variants_sku_key",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_user_created",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "payments",
+      "index_name": "idx_payments_order_provider",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "users",
+      "index_name": "idx_users_county",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_posts",
+      "index_name": "idx_show_posts_feed",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_likes",
+      "index_name": "idx_show_likes_user_id",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "profiles",
+      "index_name": "idx_profiles_lower_email",
+      "index_size": "16 kB",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_reference",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "product_reviews",
+      "index_name": "product_reviews_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "quotations",
+      "index_name": "quotations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "proforma_invoices",
+      "index_name": "proforma_invoices_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "proforma_invoices",
+      "index_name": "proforma_invoices_invoice_number_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "stock_recommendations",
+      "index_name": "stock_recommendations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "service_requests_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "newsletter_issues",
+      "index_name": "newsletter_issues_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_comments",
+      "index_name": "show_comments_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "commodity_listings_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "pulse_posts",
+      "index_name": "pulse_posts_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "conversations",
+      "index_name": "conversations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "messages",
+      "index_name": "messages_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "messages",
+      "index_name": "idx_messages_conversation",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "course_enrollments",
+      "index_name": "course_enrollments_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "audit_log",
+      "index_name": "audit_log_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "audit_log",
+      "index_name": "idx_audit_log_entity",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "contact_submissions",
+      "index_name": "contact_submissions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "contact_submissions",
+      "index_name": "idx_contact_submissions_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "partnership_applications",
+      "index_name": "partnership_applications_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "partnership_applications",
+      "index_name": "idx_partnership_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "service_requests_reference_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_completed_lessons",
+      "index_name": "user_completed_lessons_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_completed_lessons",
+      "index_name": "user_completed_lessons_user_id_lesson_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "crop_diagnoses",
+      "index_name": "crop_diagnoses_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "crop_diagnoses",
+      "index_name": "idx_crop_diagnoses_user",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_conversations",
+      "index_name": "ai_conversations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "ai_messages_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "idx_ai_messages_conversation",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "forum_reports",
+      "index_name": "forum_reports_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "moderation_actions",
+      "index_name": "moderation_actions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_restrictions",
+      "index_name": "user_restrictions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_bookmarks",
+      "index_name": "show_bookmarks_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "show_bookmarks",
+      "index_name": "show_bookmarks_post_id_user_id_key",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_audit_actions",
+      "index_name": "user_audit_actions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "moderation_reports",
+      "index_name": "moderation_reports_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_activity_logs",
+      "index_name": "user_activity_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_sessions",
+      "index_name": "user_sessions_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_following",
+      "index_name": "farmer_following_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_activities",
+      "index_name": "farmer_activities_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "farmer_badges",
+      "index_name": "farmer_badges_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "user_logs",
+      "index_name": "user_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "service_requests",
+      "index_name": "idx_service_requests_channel",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_soko_listings_user_status",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "commodity_listings",
+      "index_name": "idx_soko_commodity_location",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_conversations",
+      "index_name": "idx_ai_conversations_user_updated",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_messages",
+      "index_name": "idx_ai_messages_conv_created",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "logistics_records",
+      "index_name": "logistics_records_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "market_price_overrides",
+      "index_name": "market_price_overrides_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "ai_query_logs",
+      "index_name": "ai_query_logs_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "logistics_records",
+      "index_name": "idx_logistics_records_order_id",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "admin_quotations",
+      "index_name": "admin_quotations_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "stock_sourcing_requests",
+      "index_name": "stock_sourcing_requests_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "email_verifications_pkey",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "idx_email_verifications_email_created_at",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    },
+    {
+      "schemaname": "public",
+      "table_name": "email_verifications",
+      "index_name": "idx_email_verifications_user_id",
+      "index_size": "8192 bytes",
+      "idx_scan": "0",
+      "idx_tup_read": "0",
+      "idx_tup_fetch": "0"
+    }
+  ],
+  "pg_stat_statements_installed": true,
+  "top_queries_by_total_time": [
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57474",
+      "total_ms": "6654679.73",
+      "mean_ms": "115.79",
+      "rows": "57474"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "229900",
+      "total_ms": "5838080.44",
+      "mean_ms": "25.39",
+      "rows": "229900"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "1218287.22",
+      "mean_ms": "21.20",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "1099152.72",
+      "mean_ms": "19.12",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "872918.22",
+      "mean_ms": "15.19",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "862869.79",
+      "mean_ms": "15.01",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "680076.73",
+      "mean_ms": "11.83",
+      "rows": "114950"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "433774.91",
+      "mean_ms": "7.55",
+      "rows": "55731"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "374461.11",
+      "mean_ms": "6.52",
+      "rows": "1381215"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "356546.18",
+      "mean_ms": "6.20",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "335630.46",
+      "mean_ms": "5.84",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "311608.18",
+      "mean_ms": "5.42",
+      "rows": "2069100"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "259545.26",
+      "mean_ms": "4.52",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "155429.71",
+      "mean_ms": "2.70",
+      "rows": "26354"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "117344.17",
+      "mean_ms": "2.04",
+      "rows": "57475"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "101525.05",
+      "mean_ms": "1.77",
+      "rows": "57453"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "73845.62",
+      "mean_ms": "1.28",
+      "rows": "0"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "66095.11",
+      "mean_ms": "1.15",
+      "rows": "57453"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "48505.04",
+      "mean_ms": "0.84",
+      "rows": "287375"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "40334.89",
+      "mean_ms": "0.70",
+      "rows": "57475"
+    }
+  ],
+  "top_queries_by_mean_time": [
+    {
+      "query": "UPDATE agritech_news\n              SET\n                title = $1,\n                summary = $2,\n                content = $3,\n                media_type = $4,\n                media_url = $5,\n                category = $6,\n                source_attribution = $7,\n                status = $8,\n                published_at = COALESCE(published_at, NOW())\n              WHERE id = $9",
+      "calls": "3",
+      "total_ms": "3508.57",
+      "mean_ms": "1169.52",
+      "rows": "3"
+    },
+    {
+      "query": "SELECT\n      tc.table_name,\n      kcu.column_name,\n      ccu.table_name AS foreign_table_name,\n      ccu.column_name AS foreign_column_name,\n      rc.update_rule,\n      rc.delete_rule\n    FROM information_schema.table_constraints AS tc\n    JOIN information_schema.key_column_usage AS kcu\n      ON tc.constraint_name = kcu.constraint_name\n      AND tc.table_schema = kcu.table_schema\n    JOIN information_schema.referential_constraints AS rc\n      ON tc.constraint_name = rc.constraint_name\n    JOIN information_schema.constraint_column_usage AS ccu\n      ON ccu.constraint_name = tc.constraint_name\n    WHERE tc.constraint_type = $1 AND tc.table_schema = $2\n    ORDER BY tc.table_name, kcu.column_name",
+      "calls": "2",
+      "total_ms": "2234.20",
+      "mean_ms": "1117.10",
+      "rows": "122"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "1",
+      "total_ms": "801.48",
+      "mean_ms": "801.48",
+      "rows": "0"
+    },
+    {
+      "query": "INSERT INTO show_posts (user_id, type, title, caption, media_urls, tags, status)\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $7\n      )\n      RETURNING id",
+      "calls": "1",
+      "total_ms": "599.07",
+      "mean_ms": "599.07",
+      "rows": "1"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "1",
+      "total_ms": "214.51",
+      "mean_ms": "214.51",
+      "rows": "0"
+    },
+    {
+      "query": "SELECT id, media_url FROM agritech_news WHERE id = $1",
+      "calls": "2",
+      "total_ms": "323.66",
+      "mean_ms": "161.83",
+      "rows": "2"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "21",
+      "total_ms": "3374.90",
+      "mean_ms": "160.71",
+      "rows": "21"
+    },
+    {
+      "query": "VACUUM (ANALYZE) public.pos_sync_logs",
+      "calls": "1",
+      "total_ms": "158.80",
+      "mean_ms": "158.80",
+      "rows": "0"
+    },
+    {
+      "query": "SELECT\n        sp.id,\n        sp.type,\n        sp.title,\n        sp.caption,\n        sp.media_urls,\n        sp.like_count,\n        sp.relate_count,\n        sp.comment_count,\n        sp.tags,\n        sp.created_at,\n        COALESCE(p.username, CONCAT($1, LOWER(REGEXP_REPLACE(COALESCE(u.first_name, $2), $3, $4, $5)))) AS username,\n        COALESCE(p.full_name, CONCAT(u.first_name, $6, u.last_name), u.email, $7) AS full_name,\n        COALESCE(p.country, $8) AS country,\n        COALESCE(p.county_region, u.county, $9) AS county_region,\n        p.farming_interests,\n        p.crops,\n        p.livestock,\n        p.years_farming,\n        p.certifications,\n        p.reputation_score,\n        p.followers_count,\n        p.avatar_url,\n        p.bio,\n        p.website,\n        p.phone,\n        COALESCE(p.email, u.email) AS email,\n        p.farming_activities,\n        p.farming_photos,\n        p.created_at AS profile_created_at\n      FROM show_posts sp\n      LEFT JOIN profiles p ON p.id = sp.user_id\n      LEFT JOIN users u ON u.id = sp.user_id\n      WHERE (sp.status IS NULL OR sp.status IN ($10 /*, ... */))\n      ORDER BY sp.created_at DESC\n      LIMIT $11",
+      "calls": "89",
+      "total_ms": "12517.15",
+      "mean_ms": "140.64",
+      "rows": "84"
+    },
+    {
+      "query": "SELECT\n              sp.id,\n              sp.title,\n              sp.caption,\n              sp.type,\n              sp.media_urls AS \"mediaUrls\",\n              sp.tags,\n              sp.status,\n              sp.like_count AS \"likeCount\",\n              sp.comment_count AS \"commentCount\",\n              sp.reports_count AS \"reportsCount\",\n              sp.created_at AS \"createdAt\",\n              p.id AS \"authorId\",\n              p.full_name AS \"authorName\",\n              p.username AS \"authorUsername\",\n              p.avatar_url AS \"authorAvatar\"\n            FROM show_posts sp\n            LEFT JOIN profiles p ON p.id = sp.user_id\n            ORDER BY sp.created_at DESC\n            LIMIT $1",
+      "calls": "38",
+      "total_ms": "5022.11",
+      "mean_ms": "132.16",
+      "rows": "36"
+    },
+    {
+      "query": "SELECT id, media_urls FROM show_posts",
+      "calls": "2",
+      "total_ms": "254.24",
+      "mean_ms": "127.12",
+      "rows": "2"
+    },
+    {
+      "query": "<insufficient privilege>",
+      "calls": "57475",
+      "total_ms": "6654783.82",
+      "mean_ms": "115.79",
+      "rows": "57475"
+    },
+    {
+      "query": "UPDATE products\n    SET \n      description = CASE \n        WHEN description ILIKE $1 OR description ILIKE $2 \n        THEN $3\n        ELSE description \n      END,\n      brand = CASE \n        WHEN brand ILIKE $4 OR brand ILIKE $5\n        THEN (CASE WHEN subcategory IS NOT NULL AND subcategory != $6 AND subcategory != $7 THEN subcategory ELSE $8 END)\n        ELSE brand \n      END,\n      seller = CASE \n        WHEN seller ILIKE $9 OR seller ILIKE $10\n        THEN $11\n        ELSE seller \n      END\n    WHERE description ILIKE $12 \n       OR description ILIKE $13\n       OR brand ILIKE $14\n       OR seller ILIKE $15",
+      "calls": "1",
+      "total_ms": "108.94",
+      "mean_ms": "108.94",
+      "rows": "323"
+    },
+    {
+      "query": "VACUUM (ANALYZE) public.products",
+      "calls": "1",
+      "total_ms": "108.07",
+      "mean_ms": "108.07",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE IF NOT EXISTS shop_categories (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  field_id UUID REFERENCES shop_fields(id) ON DELETE CASCADE,\n  name TEXT NOT NULL,\n  slug TEXT NOT NULL UNIQUE,\n  sort_order INTEGER DEFAULT 0\n)",
+      "calls": "1",
+      "total_ms": "99.45",
+      "mean_ms": "99.45",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE pulse_posts (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  author_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  title         TEXT NOT NULL,\n  body          TEXT NOT NULL,\n  category      TEXT,\n  source_url    TEXT NOT NULL,\n  published_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_ms": "98.62",
+      "mean_ms": "98.62",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE commodity_listings (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  commodity_id  UUID NOT NULL REFERENCES commodities(id) ON DELETE CASCADE,\n  quantity      NUMERIC(12,2) NOT NULL,\n  asking_price  NUMERIC(12,2) NOT NULL,\n  location      TEXT,\n  description   TEXT,\n  image_urls    TEXT[] DEFAULT '{}',\n  status        listing_status NOT NULL DEFAULT 'active',\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_ms": "97.77",
+      "mean_ms": "97.77",
+      "rows": "0"
+    },
+    {
+      "query": "DELETE FROM public.profiles WHERE id = ANY($1) RETURNING id",
+      "calls": "1",
+      "total_ms": "97.22",
+      "mean_ms": "97.22",
+      "rows": "3"
+    },
+    {
+      "query": "CREATE TABLE notifications (\n  id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  type      TEXT NOT NULL,\n  payload   JSONB NOT NULL DEFAULT '{}',\n  read_at   TIMESTAMPTZ,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_ms": "96.61",
+      "mean_ms": "96.61",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE courses (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  title         TEXT NOT NULL,\n  slug          TEXT UNIQUE NOT NULL,\n  description   TEXT,\n  instructor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,\n  level         TEXT DEFAULT 'beginner',\n  price         NUMERIC(12,2) DEFAULT 0,\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_ms": "95.50",
+      "mean_ms": "95.50",
+      "rows": "0"
+    }
+  ],
+  "dead_tuples_summary": [
+    {
+      "relname": "product_variants",
+      "n_live_tup": "323",
+      "n_dead_tup": "59",
+      "dead_tup_pct": "15.45"
+    },
+    {
+      "relname": "featured_items",
+      "n_live_tup": "0",
+      "n_dead_tup": "30",
+      "dead_tup_pct": "100.00"
+    },
+    {
+      "relname": "commodity_price_board",
+      "n_live_tup": "24",
+      "n_dead_tup": "28",
+      "dead_tup_pct": "53.85"
+    },
+    {
+      "relname": "profiles",
+      "n_live_tup": "3",
+      "n_dead_tup": "15",
+      "dead_tup_pct": "83.33"
+    },
+    {
+      "relname": "blog_posts",
+      "n_live_tup": "0",
+      "n_dead_tup": "12",
+      "dead_tup_pct": "100.00"
+    },
+    {
+      "relname": "blog_authors",
+      "n_live_tup": "0",
+      "n_dead_tup": "12",
+      "dead_tup_pct": "100.00"
+    },
+    {
+      "relname": "orders",
+      "n_live_tup": "14",
+      "n_dead_tup": "4",
+      "dead_tup_pct": "22.22"
+    },
+    {
+      "relname": "services",
+      "n_live_tup": "3",
+      "n_dead_tup": "3",
+      "dead_tup_pct": "50.00"
+    },
+    {
+      "relname": "users",
+      "n_live_tup": "3",
+      "n_dead_tup": "3",
+      "dead_tup_pct": "50.00"
+    },
+    {
+      "relname": "show_posts",
+      "n_live_tup": "1",
+      "n_dead_tup": "3",
+      "dead_tup_pct": "75.00"
+    },
+    {
+      "relname": "notifications",
+      "n_live_tup": "18",
+      "n_dead_tup": "2",
+      "dead_tup_pct": "10.00"
+    },
+    {
+      "relname": "courses",
+      "n_live_tup": "5",
+      "n_dead_tup": "2",
+      "dead_tup_pct": "28.57"
+    },
+    {
+      "relname": "show_likes",
+      "n_live_tup": "1",
+      "n_dead_tup": "1",
+      "dead_tup_pct": "50.00"
+    },
+    {
+      "relname": "pos_auth_tokens",
+      "n_live_tup": "0",
+      "n_dead_tup": "1",
+      "dead_tup_pct": "100.00"
+    },
+    {
+      "relname": "audit_log",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "agritech_news",
+      "n_live_tup": "8",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "service_categories",
+      "n_live_tup": "6",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "stock_sourcing_requests",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "course_enrollments",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "order_items",
+      "n_live_tup": "14",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "payments",
+      "n_live_tup": "10",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "email_verifications",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "schema_migrations",
+      "n_live_tup": "60",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "ai_query_logs",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "partnership_applications",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "user_audit_actions",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "moderation_settings",
+      "n_live_tup": "1",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "shop_subcategories",
+      "n_live_tup": "45",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "admin_quotations",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "direct_messages",
+      "n_live_tup": "1",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "quotations",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "market_price_overrides",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "show_comments",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "user_restrictions",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "user_completed_lessons",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "products",
+      "n_live_tup": "330",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "service_requests",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "user_sessions",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "course_chapters",
+      "n_live_tup": "20",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "pulse_posts",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "shop_fields",
+      "n_live_tup": "6",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "show_bookmarks",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "product_reviews",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "ai_conversations",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "newsletter_issues",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "stock_recommendations",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "moderation_reports",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "contact_submissions",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "newsletter_subscribers",
+      "n_live_tup": "1",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "user_logs",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "farmer_activities",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "ai_messages",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "messages",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "shop_categories",
+      "n_live_tup": "21",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "product_categories",
+      "n_live_tup": "16",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "conversations",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "sms_logs",
+      "n_live_tup": "17",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "crop_diagnoses",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "chapter_lessons",
+      "n_live_tup": "22",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "commodity_listings",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "pos_sync_logs",
+      "n_live_tup": "2054",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "farmer_followers",
+      "n_live_tup": "1",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "admin_audit_logs",
+      "n_live_tup": "61",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    },
+    {
+      "relname": "farmer_badges",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "logistics_records",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "moderation_actions",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "forum_reports",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "proforma_invoices",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "user_activity_logs",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "farmer_following",
+      "n_live_tup": "0",
+      "n_dead_tup": "0",
+      "dead_tup_pct": null
+    },
+    {
+      "relname": "commodities",
+      "n_live_tup": "10",
+      "n_dead_tup": "0",
+      "dead_tup_pct": "0.00"
+    }
+  ]
+}

@@ -1,0 +1,957 @@
+[
+  {
+    "tablename": "admin_audit_logs",
+    "indexname": "admin_audit_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX admin_audit_logs_pkey ON public.admin_audit_logs USING btree (id)"
+  },
+  {
+    "tablename": "admin_audit_logs",
+    "indexname": "idx_admin_audit_logs_actor",
+    "indexdef": "CREATE INDEX idx_admin_audit_logs_actor ON public.admin_audit_logs USING btree (actor_id)"
+  },
+  {
+    "tablename": "admin_audit_logs",
+    "indexname": "idx_admin_audit_logs_created_at",
+    "indexdef": "CREATE INDEX idx_admin_audit_logs_created_at ON public.admin_audit_logs USING btree (created_at DESC)"
+  },
+  {
+    "tablename": "admin_quotations",
+    "indexname": "admin_quotations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX admin_quotations_pkey ON public.admin_quotations USING btree (id)"
+  },
+  {
+    "tablename": "agritech_news",
+    "indexname": "agritech_news_pkey",
+    "indexdef": "CREATE UNIQUE INDEX agritech_news_pkey ON public.agritech_news USING btree (id)"
+  },
+  {
+    "tablename": "agritech_news",
+    "indexname": "idx_agritech_news_category",
+    "indexdef": "CREATE INDEX idx_agritech_news_category ON public.agritech_news USING btree (category)"
+  },
+  {
+    "tablename": "agritech_news",
+    "indexname": "idx_agritech_news_slug",
+    "indexdef": "CREATE INDEX idx_agritech_news_slug ON public.agritech_news USING btree (slug)"
+  },
+  {
+    "tablename": "agritech_news",
+    "indexname": "idx_agritech_news_status_pub",
+    "indexdef": "CREATE INDEX idx_agritech_news_status_pub ON public.agritech_news USING btree (status, published_at DESC NULLS LAST, created_at DESC)"
+  },
+  {
+    "tablename": "agritech_news",
+    "indexname": "idx_agritech_news_view_count",
+    "indexdef": "CREATE INDEX idx_agritech_news_view_count ON public.agritech_news USING btree (view_count DESC)"
+  },
+  {
+    "tablename": "ai_conversations",
+    "indexname": "ai_conversations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX ai_conversations_pkey ON public.ai_conversations USING btree (id)"
+  },
+  {
+    "tablename": "ai_conversations",
+    "indexname": "idx_ai_conversations_user",
+    "indexdef": "CREATE INDEX idx_ai_conversations_user ON public.ai_conversations USING btree (user_id)"
+  },
+  {
+    "tablename": "ai_conversations",
+    "indexname": "idx_ai_conversations_user_updated",
+    "indexdef": "CREATE INDEX idx_ai_conversations_user_updated ON public.ai_conversations USING btree (user_id, is_pinned DESC, updated_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "ai_messages",
+    "indexname": "ai_messages_pkey",
+    "indexdef": "CREATE UNIQUE INDEX ai_messages_pkey ON public.ai_messages USING btree (id)"
+  },
+  {
+    "tablename": "ai_messages",
+    "indexname": "idx_ai_messages_conv_created",
+    "indexdef": "CREATE INDEX idx_ai_messages_conv_created ON public.ai_messages USING btree (conversation_id, created_at)"
+  },
+  {
+    "tablename": "ai_messages",
+    "indexname": "idx_ai_messages_conversation",
+    "indexdef": "CREATE INDEX idx_ai_messages_conversation ON public.ai_messages USING btree (conversation_id)"
+  },
+  {
+    "tablename": "ai_query_logs",
+    "indexname": "ai_query_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX ai_query_logs_pkey ON public.ai_query_logs USING btree (id)"
+  },
+  {
+    "tablename": "audit_log",
+    "indexname": "audit_log_pkey",
+    "indexdef": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)"
+  },
+  {
+    "tablename": "audit_log",
+    "indexname": "idx_audit_log_actor",
+    "indexdef": "CREATE INDEX idx_audit_log_actor ON public.audit_log USING btree (actor_id, created_at DESC)"
+  },
+  {
+    "tablename": "audit_log",
+    "indexname": "idx_audit_log_entity",
+    "indexdef": "CREATE INDEX idx_audit_log_entity ON public.audit_log USING btree (entity_type, entity_id)"
+  },
+  {
+    "tablename": "blog_authors",
+    "indexname": "blog_authors_pkey",
+    "indexdef": "CREATE UNIQUE INDEX blog_authors_pkey ON public.blog_authors USING btree (id)"
+  },
+  {
+    "tablename": "blog_posts",
+    "indexname": "blog_posts_pkey",
+    "indexdef": "CREATE UNIQUE INDEX blog_posts_pkey ON public.blog_posts USING btree (id)"
+  },
+  {
+    "tablename": "blog_posts",
+    "indexname": "blog_posts_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX blog_posts_slug_key ON public.blog_posts USING btree (slug)"
+  },
+  {
+    "tablename": "blog_posts",
+    "indexname": "idx_blog_posts_status",
+    "indexdef": "CREATE INDEX idx_blog_posts_status ON public.blog_posts USING btree (status, published_at DESC)"
+  },
+  {
+    "tablename": "blog_posts",
+    "indexname": "idx_blog_search",
+    "indexdef": "CREATE INDEX idx_blog_search ON public.blog_posts USING gin (search_vector)"
+  },
+  {
+    "tablename": "chapter_lessons",
+    "indexname": "chapter_lessons_pkey",
+    "indexdef": "CREATE UNIQUE INDEX chapter_lessons_pkey ON public.chapter_lessons USING btree (id)"
+  },
+  {
+    "tablename": "chapter_lessons",
+    "indexname": "idx_chapter_lessons_chapter_sort",
+    "indexdef": "CREATE INDEX idx_chapter_lessons_chapter_sort ON public.chapter_lessons USING btree (chapter_id, sort_order)"
+  },
+  {
+    "tablename": "chapter_lessons",
+    "indexname": "idx_lessons_chapter",
+    "indexdef": "CREATE INDEX idx_lessons_chapter ON public.chapter_lessons USING btree (chapter_id, sort_order)"
+  },
+  {
+    "tablename": "commodities",
+    "indexname": "commodities_pkey",
+    "indexdef": "CREATE UNIQUE INDEX commodities_pkey ON public.commodities USING btree (id)"
+  },
+  {
+    "tablename": "commodity_listings",
+    "indexname": "commodity_listings_pkey",
+    "indexdef": "CREATE UNIQUE INDEX commodity_listings_pkey ON public.commodity_listings USING btree (id)"
+  },
+  {
+    "tablename": "commodity_listings",
+    "indexname": "idx_commodity_listings_status",
+    "indexdef": "CREATE INDEX idx_commodity_listings_status ON public.commodity_listings USING btree (commodity_id, status)"
+  },
+  {
+    "tablename": "commodity_listings",
+    "indexname": "idx_commodity_listings_status_created",
+    "indexdef": "CREATE INDEX idx_commodity_listings_status_created ON public.commodity_listings USING btree (status, created_at DESC)"
+  },
+  {
+    "tablename": "commodity_listings",
+    "indexname": "idx_soko_commodity_location",
+    "indexdef": "CREATE INDEX idx_soko_commodity_location ON public.commodity_listings USING btree (commodity_id, location) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "commodity_listings",
+    "indexname": "idx_soko_listings_user_status",
+    "indexdef": "CREATE INDEX idx_soko_listings_user_status ON public.commodity_listings USING btree (user_id, status, created_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "commodity_price_board",
+    "indexname": "commodity_price_board_pkey",
+    "indexdef": "CREATE UNIQUE INDEX commodity_price_board_pkey ON public.commodity_price_board USING btree (id)"
+  },
+  {
+    "tablename": "commodity_price_board",
+    "indexname": "idx_cpb_commodity_recorded",
+    "indexdef": "CREATE INDEX idx_cpb_commodity_recorded ON public.commodity_price_board USING btree (commodity_id, recorded_at DESC)"
+  },
+  {
+    "tablename": "contact_submissions",
+    "indexname": "contact_submissions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX contact_submissions_pkey ON public.contact_submissions USING btree (id)"
+  },
+  {
+    "tablename": "contact_submissions",
+    "indexname": "idx_contact_submissions_created",
+    "indexdef": "CREATE INDEX idx_contact_submissions_created ON public.contact_submissions USING btree (created_at DESC)"
+  },
+  {
+    "tablename": "conversations",
+    "indexname": "conversations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)"
+  },
+  {
+    "tablename": "course_chapters",
+    "indexname": "course_chapters_pkey",
+    "indexdef": "CREATE UNIQUE INDEX course_chapters_pkey ON public.course_chapters USING btree (id)"
+  },
+  {
+    "tablename": "course_chapters",
+    "indexname": "idx_chapters_course",
+    "indexdef": "CREATE INDEX idx_chapters_course ON public.course_chapters USING btree (course_id, sort_order)"
+  },
+  {
+    "tablename": "course_chapters",
+    "indexname": "idx_course_chapters_course_sort",
+    "indexdef": "CREATE INDEX idx_course_chapters_course_sort ON public.course_chapters USING btree (course_id, sort_order) WHERE (is_published = true)"
+  },
+  {
+    "tablename": "course_enrollments",
+    "indexname": "course_enrollments_course_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX course_enrollments_course_id_user_id_key ON public.course_enrollments USING btree (course_id, user_id)"
+  },
+  {
+    "tablename": "course_enrollments",
+    "indexname": "course_enrollments_pkey",
+    "indexdef": "CREATE UNIQUE INDEX course_enrollments_pkey ON public.course_enrollments USING btree (id)"
+  },
+  {
+    "tablename": "courses",
+    "indexname": "courses_pkey",
+    "indexdef": "CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id)"
+  },
+  {
+    "tablename": "courses",
+    "indexname": "courses_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX courses_slug_key ON public.courses USING btree (slug)"
+  },
+  {
+    "tablename": "courses",
+    "indexname": "idx_courses_pub_order",
+    "indexdef": "CREATE INDEX idx_courses_pub_order ON public.courses USING btree (is_published, sort_order, created_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "courses",
+    "indexname": "idx_courses_sort",
+    "indexdef": "CREATE INDEX idx_courses_sort ON public.courses USING btree (sort_order, created_at DESC)"
+  },
+  {
+    "tablename": "crop_diagnoses",
+    "indexname": "crop_diagnoses_pkey",
+    "indexdef": "CREATE UNIQUE INDEX crop_diagnoses_pkey ON public.crop_diagnoses USING btree (id)"
+  },
+  {
+    "tablename": "crop_diagnoses",
+    "indexname": "idx_crop_diagnoses_user",
+    "indexdef": "CREATE INDEX idx_crop_diagnoses_user ON public.crop_diagnoses USING btree (user_id)"
+  },
+  {
+    "tablename": "crop_diagnoses",
+    "indexname": "idx_crop_diagnoses_user_created",
+    "indexdef": "CREATE INDEX idx_crop_diagnoses_user_created ON public.crop_diagnoses USING btree (user_id, created_at DESC)"
+  },
+  {
+    "tablename": "direct_messages",
+    "indexname": "direct_messages_pkey",
+    "indexdef": "CREATE UNIQUE INDEX direct_messages_pkey ON public.direct_messages USING btree (id)"
+  },
+  {
+    "tablename": "direct_messages",
+    "indexname": "idx_direct_messages_participants",
+    "indexdef": "CREATE INDEX idx_direct_messages_participants ON public.direct_messages USING btree (sender_id, recipient_id, created_at DESC)"
+  },
+  {
+    "tablename": "direct_messages",
+    "indexname": "idx_direct_messages_recipient_read",
+    "indexdef": "CREATE INDEX idx_direct_messages_recipient_read ON public.direct_messages USING btree (recipient_id, is_read)"
+  },
+  {
+    "tablename": "email_verifications",
+    "indexname": "email_verifications_pkey",
+    "indexdef": "CREATE UNIQUE INDEX email_verifications_pkey ON public.email_verifications USING btree (id)"
+  },
+  {
+    "tablename": "email_verifications",
+    "indexname": "idx_email_verifications_email_created_at",
+    "indexdef": "CREATE INDEX idx_email_verifications_email_created_at ON public.email_verifications USING btree (email, created_at DESC)"
+  },
+  {
+    "tablename": "email_verifications",
+    "indexname": "idx_email_verifications_expires_at",
+    "indexdef": "CREATE INDEX idx_email_verifications_expires_at ON public.email_verifications USING btree (expires_at)"
+  },
+  {
+    "tablename": "email_verifications",
+    "indexname": "idx_email_verifications_user_id",
+    "indexdef": "CREATE INDEX idx_email_verifications_user_id ON public.email_verifications USING btree (user_id)"
+  },
+  {
+    "tablename": "farmer_activities",
+    "indexname": "farmer_activities_pkey",
+    "indexdef": "CREATE UNIQUE INDEX farmer_activities_pkey ON public.farmer_activities USING btree (id)"
+  },
+  {
+    "tablename": "farmer_badges",
+    "indexname": "farmer_badges_pkey",
+    "indexdef": "CREATE UNIQUE INDEX farmer_badges_pkey ON public.farmer_badges USING btree (id)"
+  },
+  {
+    "tablename": "farmer_followers",
+    "indexname": "farmer_followers_farmer_follower_uidx",
+    "indexdef": "CREATE UNIQUE INDEX farmer_followers_farmer_follower_uidx ON public.farmer_followers USING btree (farmer_id, follower_id)"
+  },
+  {
+    "tablename": "farmer_followers",
+    "indexname": "farmer_followers_pkey",
+    "indexdef": "CREATE UNIQUE INDEX farmer_followers_pkey ON public.farmer_followers USING btree (id)"
+  },
+  {
+    "tablename": "farmer_following",
+    "indexname": "farmer_following_pkey",
+    "indexdef": "CREATE UNIQUE INDEX farmer_following_pkey ON public.farmer_following USING btree (id)"
+  },
+  {
+    "tablename": "featured_items",
+    "indexname": "featured_items_pkey",
+    "indexdef": "CREATE UNIQUE INDEX featured_items_pkey ON public.featured_items USING btree (id)"
+  },
+  {
+    "tablename": "forum_reports",
+    "indexname": "forum_reports_pkey",
+    "indexdef": "CREATE UNIQUE INDEX forum_reports_pkey ON public.forum_reports USING btree (id)"
+  },
+  {
+    "tablename": "logistics_records",
+    "indexname": "idx_logistics_records_order_id",
+    "indexdef": "CREATE INDEX idx_logistics_records_order_id ON public.logistics_records USING btree (order_id)"
+  },
+  {
+    "tablename": "logistics_records",
+    "indexname": "logistics_records_pkey",
+    "indexdef": "CREATE UNIQUE INDEX logistics_records_pkey ON public.logistics_records USING btree (id)"
+  },
+  {
+    "tablename": "market_price_overrides",
+    "indexname": "market_price_overrides_pkey",
+    "indexdef": "CREATE UNIQUE INDEX market_price_overrides_pkey ON public.market_price_overrides USING btree (id)"
+  },
+  {
+    "tablename": "messages",
+    "indexname": "idx_messages_conversation",
+    "indexdef": "CREATE INDEX idx_messages_conversation ON public.messages USING btree (conversation_id, created_at)"
+  },
+  {
+    "tablename": "messages",
+    "indexname": "messages_pkey",
+    "indexdef": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)"
+  },
+  {
+    "tablename": "moderation_actions",
+    "indexname": "moderation_actions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX moderation_actions_pkey ON public.moderation_actions USING btree (id)"
+  },
+  {
+    "tablename": "moderation_reports",
+    "indexname": "moderation_reports_pkey",
+    "indexdef": "CREATE UNIQUE INDEX moderation_reports_pkey ON public.moderation_reports USING btree (id)"
+  },
+  {
+    "tablename": "moderation_settings",
+    "indexname": "moderation_settings_pkey",
+    "indexdef": "CREATE UNIQUE INDEX moderation_settings_pkey ON public.moderation_settings USING btree (id)"
+  },
+  {
+    "tablename": "newsletter_issues",
+    "indexname": "newsletter_issues_pkey",
+    "indexdef": "CREATE UNIQUE INDEX newsletter_issues_pkey ON public.newsletter_issues USING btree (id)"
+  },
+  {
+    "tablename": "newsletter_subscribers",
+    "indexname": "newsletter_subscribers_email_key",
+    "indexdef": "CREATE UNIQUE INDEX newsletter_subscribers_email_key ON public.newsletter_subscribers USING btree (email)"
+  },
+  {
+    "tablename": "newsletter_subscribers",
+    "indexname": "newsletter_subscribers_pkey",
+    "indexdef": "CREATE UNIQUE INDEX newsletter_subscribers_pkey ON public.newsletter_subscribers USING btree (id)"
+  },
+  {
+    "tablename": "notifications",
+    "indexname": "idx_notifications_user",
+    "indexdef": "CREATE INDEX idx_notifications_user ON public.notifications USING btree (user_id, read_at NULLS FIRST)"
+  },
+  {
+    "tablename": "notifications",
+    "indexname": "idx_notifications_user_created",
+    "indexdef": "CREATE INDEX idx_notifications_user_created ON public.notifications USING btree (user_id, created_at DESC)"
+  },
+  {
+    "tablename": "notifications",
+    "indexname": "notifications_pkey",
+    "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+  },
+  {
+    "tablename": "order_items",
+    "indexname": "idx_order_items_order",
+    "indexdef": "CREATE INDEX idx_order_items_order ON public.order_items USING btree (order_id)"
+  },
+  {
+    "tablename": "order_items",
+    "indexname": "idx_order_items_order_id",
+    "indexdef": "CREATE INDEX idx_order_items_order_id ON public.order_items USING btree (order_id)"
+  },
+  {
+    "tablename": "order_items",
+    "indexname": "idx_order_items_product",
+    "indexdef": "CREATE INDEX idx_order_items_product ON public.order_items USING btree (product_id)"
+  },
+  {
+    "tablename": "order_items",
+    "indexname": "order_items_pkey",
+    "indexdef": "CREATE UNIQUE INDEX order_items_pkey ON public.order_items USING btree (id)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_not_deleted",
+    "indexdef": "CREATE INDEX idx_orders_not_deleted ON public.orders USING btree (id) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_payment",
+    "indexdef": "CREATE INDEX idx_orders_payment ON public.orders USING btree (payment_status)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_status",
+    "indexdef": "CREATE INDEX idx_orders_status ON public.orders USING btree (status)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_user",
+    "indexdef": "CREATE INDEX idx_orders_user ON public.orders USING btree (user_id, status)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_user_created_at",
+    "indexdef": "CREATE INDEX idx_orders_user_created_at ON public.orders USING btree (user_id, created_at DESC)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "idx_orders_user_status",
+    "indexdef": "CREATE INDEX idx_orders_user_status ON public.orders USING btree (user_id, status, created_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "orders",
+    "indexname": "orders_pkey",
+    "indexdef": "CREATE UNIQUE INDEX orders_pkey ON public.orders USING btree (id)"
+  },
+  {
+    "tablename": "partnership_applications",
+    "indexname": "idx_partnership_status",
+    "indexdef": "CREATE INDEX idx_partnership_status ON public.partnership_applications USING btree (status, created_at DESC)"
+  },
+  {
+    "tablename": "partnership_applications",
+    "indexname": "partnership_applications_pkey",
+    "indexdef": "CREATE UNIQUE INDEX partnership_applications_pkey ON public.partnership_applications USING btree (id)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_customer_email",
+    "indexdef": "CREATE INDEX idx_payments_customer_email ON public.payments USING btree (customer_email)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_merchant_ref",
+    "indexdef": "CREATE INDEX idx_payments_merchant_ref ON public.payments USING btree (merchant_reference)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_order_provider",
+    "indexdef": "CREATE INDEX idx_payments_order_provider ON public.payments USING btree (order_id, provider, status)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_provider_ref",
+    "indexdef": "CREATE INDEX idx_payments_provider_ref ON public.payments USING btree (provider, provider_ref)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_provider_status",
+    "indexdef": "CREATE INDEX idx_payments_provider_status ON public.payments USING btree (provider, status)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "idx_payments_receipt",
+    "indexdef": "CREATE INDEX idx_payments_receipt ON public.payments USING btree (receipt_number)"
+  },
+  {
+    "tablename": "payments",
+    "indexname": "payments_pkey",
+    "indexdef": "CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id)"
+  },
+  {
+    "tablename": "pos_auth_tokens",
+    "indexname": "pos_auth_tokens_pkey",
+    "indexdef": "CREATE UNIQUE INDEX pos_auth_tokens_pkey ON public.pos_auth_tokens USING btree (id)"
+  },
+  {
+    "tablename": "pos_auth_tokens",
+    "indexname": "pos_auth_tokens_provider_key",
+    "indexdef": "CREATE UNIQUE INDEX pos_auth_tokens_provider_key ON public.pos_auth_tokens USING btree (provider)"
+  },
+  {
+    "tablename": "pos_sync_logs",
+    "indexname": "idx_pos_sync_logs_started_at",
+    "indexdef": "CREATE INDEX idx_pos_sync_logs_started_at ON public.pos_sync_logs USING btree (started_at DESC)"
+  },
+  {
+    "tablename": "pos_sync_logs",
+    "indexname": "pos_sync_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX pos_sync_logs_pkey ON public.pos_sync_logs USING btree (id)"
+  },
+  {
+    "tablename": "product_categories",
+    "indexname": "product_categories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX product_categories_pkey ON public.product_categories USING btree (id)"
+  },
+  {
+    "tablename": "product_categories",
+    "indexname": "product_categories_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX product_categories_slug_key ON public.product_categories USING btree (slug)"
+  },
+  {
+    "tablename": "product_reviews",
+    "indexname": "product_reviews_pkey",
+    "indexdef": "CREATE UNIQUE INDEX product_reviews_pkey ON public.product_reviews USING btree (id)"
+  },
+  {
+    "tablename": "product_reviews",
+    "indexname": "product_reviews_product_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX product_reviews_product_id_user_id_key ON public.product_reviews USING btree (product_id, user_id)"
+  },
+  {
+    "tablename": "product_variants",
+    "indexname": "idx_product_variants_external_variation_id",
+    "indexdef": "CREATE UNIQUE INDEX idx_product_variants_external_variation_id ON public.product_variants USING btree (external_variation_id) WHERE (external_variation_id IS NOT NULL)"
+  },
+  {
+    "tablename": "product_variants",
+    "indexname": "idx_product_variants_product_id",
+    "indexdef": "CREATE INDEX idx_product_variants_product_id ON public.product_variants USING btree (product_id)"
+  },
+  {
+    "tablename": "product_variants",
+    "indexname": "product_variants_pkey",
+    "indexdef": "CREATE UNIQUE INDEX product_variants_pkey ON public.product_variants USING btree (id)"
+  },
+  {
+    "tablename": "product_variants",
+    "indexname": "product_variants_sku_key",
+    "indexdef": "CREATE UNIQUE INDEX product_variants_sku_key ON public.product_variants USING btree (sku)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_category",
+    "indexdef": "CREATE INDEX idx_products_category ON public.products USING btree (category_id, status)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_category_status",
+    "indexdef": "CREATE INDEX idx_products_category_status ON public.products USING btree (category_id, status) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_county_status",
+    "indexdef": "CREATE INDEX idx_products_county_status ON public.products USING btree (county, status) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_external_product_id",
+    "indexdef": "CREATE UNIQUE INDEX idx_products_external_product_id ON public.products USING btree (external_product_id) WHERE (external_product_id IS NOT NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_featured",
+    "indexdef": "CREATE INDEX idx_products_featured ON public.products USING btree (is_featured) WHERE (is_featured = true)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_field_status",
+    "indexdef": "CREATE INDEX idx_products_field_status ON public.products USING btree (field, status) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_not_deleted",
+    "indexdef": "CREATE INDEX idx_products_not_deleted ON public.products USING btree (id) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_search",
+    "indexdef": "CREATE INDEX idx_products_search ON public.products USING gin (search_vector)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_slug",
+    "indexdef": "CREATE INDEX idx_products_slug ON public.products USING btree (slug)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_status",
+    "indexdef": "CREATE INDEX idx_products_status ON public.products USING btree (status)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_status_featured_updated",
+    "indexdef": "CREATE INDEX idx_products_status_featured_updated ON public.products USING btree (status, is_featured DESC, updated_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "idx_products_subcategory",
+    "indexdef": "CREATE INDEX idx_products_subcategory ON public.products USING btree (subcategory) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "products_pkey",
+    "indexdef": "CREATE UNIQUE INDEX products_pkey ON public.products USING btree (id)"
+  },
+  {
+    "tablename": "products",
+    "indexname": "products_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX products_slug_key ON public.products USING btree (slug)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_email",
+    "indexdef": "CREATE INDEX idx_profiles_email ON public.profiles USING btree (email)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_not_deleted",
+    "indexdef": "CREATE INDEX idx_profiles_not_deleted ON public.profiles USING btree (id) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_role",
+    "indexdef": "CREATE INDEX idx_profiles_role ON public.profiles USING btree (role)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_status",
+    "indexdef": "CREATE INDEX idx_profiles_status ON public.profiles USING btree (status)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_user_id",
+    "indexdef": "CREATE INDEX idx_profiles_user_id ON public.profiles USING btree (id)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "idx_profiles_username",
+    "indexdef": "CREATE INDEX idx_profiles_username ON public.profiles USING btree (username)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "profiles_email_key",
+    "indexdef": "CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "profiles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+  },
+  {
+    "tablename": "profiles",
+    "indexname": "profiles_username_key",
+    "indexdef": "CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username)"
+  },
+  {
+    "tablename": "proforma_invoices",
+    "indexname": "proforma_invoices_invoice_number_key",
+    "indexdef": "CREATE UNIQUE INDEX proforma_invoices_invoice_number_key ON public.proforma_invoices USING btree (invoice_number)"
+  },
+  {
+    "tablename": "proforma_invoices",
+    "indexname": "proforma_invoices_pkey",
+    "indexdef": "CREATE UNIQUE INDEX proforma_invoices_pkey ON public.proforma_invoices USING btree (id)"
+  },
+  {
+    "tablename": "pulse_posts",
+    "indexname": "idx_pulse_posts_published",
+    "indexdef": "CREATE INDEX idx_pulse_posts_published ON public.pulse_posts USING btree (published_at DESC NULLS LAST)"
+  },
+  {
+    "tablename": "pulse_posts",
+    "indexname": "pulse_posts_pkey",
+    "indexdef": "CREATE UNIQUE INDEX pulse_posts_pkey ON public.pulse_posts USING btree (id)"
+  },
+  {
+    "tablename": "quotations",
+    "indexname": "quotations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX quotations_pkey ON public.quotations USING btree (id)"
+  },
+  {
+    "tablename": "schema_migrations",
+    "indexname": "schema_migrations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+  },
+  {
+    "tablename": "service_categories",
+    "indexname": "idx_service_categories_name",
+    "indexdef": "CREATE INDEX idx_service_categories_name ON public.service_categories USING btree (name)"
+  },
+  {
+    "tablename": "service_categories",
+    "indexname": "service_categories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX service_categories_pkey ON public.service_categories USING btree (id)"
+  },
+  {
+    "tablename": "service_categories",
+    "indexname": "service_categories_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX service_categories_slug_key ON public.service_categories USING btree (slug)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "idx_service_requests_channel",
+    "indexdef": "CREATE INDEX idx_service_requests_channel ON public.service_requests USING btree (channel)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "idx_service_requests_reference",
+    "indexdef": "CREATE INDEX idx_service_requests_reference ON public.service_requests USING btree (reference)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "idx_service_requests_status",
+    "indexdef": "CREATE INDEX idx_service_requests_status ON public.service_requests USING btree (status)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "idx_service_requests_user_status",
+    "indexdef": "CREATE INDEX idx_service_requests_user_status ON public.service_requests USING btree (user_id, status)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "service_requests_pkey",
+    "indexdef": "CREATE UNIQUE INDEX service_requests_pkey ON public.service_requests USING btree (id)"
+  },
+  {
+    "tablename": "service_requests",
+    "indexname": "service_requests_reference_key",
+    "indexdef": "CREATE UNIQUE INDEX service_requests_reference_key ON public.service_requests USING btree (reference)"
+  },
+  {
+    "tablename": "services",
+    "indexname": "idx_services_cat_name",
+    "indexdef": "CREATE INDEX idx_services_cat_name ON public.services USING btree (category_id, name)"
+  },
+  {
+    "tablename": "services",
+    "indexname": "services_pkey",
+    "indexdef": "CREATE UNIQUE INDEX services_pkey ON public.services USING btree (id)"
+  },
+  {
+    "tablename": "services",
+    "indexname": "services_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX services_slug_key ON public.services USING btree (slug)"
+  },
+  {
+    "tablename": "shop_categories",
+    "indexname": "shop_categories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX shop_categories_pkey ON public.shop_categories USING btree (id)"
+  },
+  {
+    "tablename": "shop_categories",
+    "indexname": "shop_categories_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX shop_categories_slug_key ON public.shop_categories USING btree (slug)"
+  },
+  {
+    "tablename": "shop_fields",
+    "indexname": "shop_fields_name_key",
+    "indexdef": "CREATE UNIQUE INDEX shop_fields_name_key ON public.shop_fields USING btree (name)"
+  },
+  {
+    "tablename": "shop_fields",
+    "indexname": "shop_fields_pkey",
+    "indexdef": "CREATE UNIQUE INDEX shop_fields_pkey ON public.shop_fields USING btree (id)"
+  },
+  {
+    "tablename": "shop_fields",
+    "indexname": "shop_fields_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX shop_fields_slug_key ON public.shop_fields USING btree (slug)"
+  },
+  {
+    "tablename": "shop_subcategories",
+    "indexname": "shop_subcategories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX shop_subcategories_pkey ON public.shop_subcategories USING btree (id)"
+  },
+  {
+    "tablename": "shop_subcategories",
+    "indexname": "shop_subcategories_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX shop_subcategories_slug_key ON public.shop_subcategories USING btree (slug)"
+  },
+  {
+    "tablename": "show_bookmarks",
+    "indexname": "idx_show_bookmarks_user",
+    "indexdef": "CREATE INDEX idx_show_bookmarks_user ON public.show_bookmarks USING btree (user_id, created_at DESC)"
+  },
+  {
+    "tablename": "show_bookmarks",
+    "indexname": "show_bookmarks_pkey",
+    "indexdef": "CREATE UNIQUE INDEX show_bookmarks_pkey ON public.show_bookmarks USING btree (id)"
+  },
+  {
+    "tablename": "show_bookmarks",
+    "indexname": "show_bookmarks_post_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX show_bookmarks_post_id_user_id_key ON public.show_bookmarks USING btree (post_id, user_id)"
+  },
+  {
+    "tablename": "show_comments",
+    "indexname": "idx_show_comments_post_id",
+    "indexdef": "CREATE INDEX idx_show_comments_post_id ON public.show_comments USING btree (post_id, created_at)"
+  },
+  {
+    "tablename": "show_comments",
+    "indexname": "idx_show_comments_post_status_created",
+    "indexdef": "CREATE INDEX idx_show_comments_post_status_created ON public.show_comments USING btree (post_id, status, created_at)"
+  },
+  {
+    "tablename": "show_comments",
+    "indexname": "show_comments_pkey",
+    "indexdef": "CREATE UNIQUE INDEX show_comments_pkey ON public.show_comments USING btree (id)"
+  },
+  {
+    "tablename": "show_likes",
+    "indexname": "idx_show_likes_user_id",
+    "indexdef": "CREATE INDEX idx_show_likes_user_id ON public.show_likes USING btree (user_id)"
+  },
+  {
+    "tablename": "show_likes",
+    "indexname": "show_likes_pkey",
+    "indexdef": "CREATE UNIQUE INDEX show_likes_pkey ON public.show_likes USING btree (id)"
+  },
+  {
+    "tablename": "show_likes",
+    "indexname": "show_likes_post_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX show_likes_post_id_user_id_key ON public.show_likes USING btree (post_id, user_id)"
+  },
+  {
+    "tablename": "show_posts",
+    "indexname": "idx_show_posts_created_at",
+    "indexdef": "CREATE INDEX idx_show_posts_created_at ON public.show_posts USING btree (created_at DESC)"
+  },
+  {
+    "tablename": "show_posts",
+    "indexname": "idx_show_posts_status_created",
+    "indexdef": "CREATE INDEX idx_show_posts_status_created ON public.show_posts USING btree (status, created_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "show_posts",
+    "indexname": "idx_show_posts_user",
+    "indexdef": "CREATE INDEX idx_show_posts_user ON public.show_posts USING btree (user_id, created_at DESC)"
+  },
+  {
+    "tablename": "show_posts",
+    "indexname": "idx_show_posts_user_created",
+    "indexdef": "CREATE INDEX idx_show_posts_user_created ON public.show_posts USING btree (user_id, created_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "tablename": "show_posts",
+    "indexname": "show_posts_pkey",
+    "indexdef": "CREATE UNIQUE INDEX show_posts_pkey ON public.show_posts USING btree (id)"
+  },
+  {
+    "tablename": "sms_logs",
+    "indexname": "idx_sms_logs_created_at",
+    "indexdef": "CREATE INDEX idx_sms_logs_created_at ON public.sms_logs USING btree (created_at DESC)"
+  },
+  {
+    "tablename": "sms_logs",
+    "indexname": "idx_sms_logs_recipient",
+    "indexdef": "CREATE INDEX idx_sms_logs_recipient ON public.sms_logs USING btree (recipient)"
+  },
+  {
+    "tablename": "sms_logs",
+    "indexname": "idx_sms_logs_trigger_type",
+    "indexdef": "CREATE INDEX idx_sms_logs_trigger_type ON public.sms_logs USING btree (trigger_type)"
+  },
+  {
+    "tablename": "sms_logs",
+    "indexname": "sms_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX sms_logs_pkey ON public.sms_logs USING btree (id)"
+  },
+  {
+    "tablename": "stock_recommendations",
+    "indexname": "stock_recommendations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX stock_recommendations_pkey ON public.stock_recommendations USING btree (id)"
+  },
+  {
+    "tablename": "stock_sourcing_requests",
+    "indexname": "stock_sourcing_requests_pkey",
+    "indexdef": "CREATE UNIQUE INDEX stock_sourcing_requests_pkey ON public.stock_sourcing_requests USING btree (id)"
+  },
+  {
+    "tablename": "user_activity_logs",
+    "indexname": "user_activity_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_activity_logs_pkey ON public.user_activity_logs USING btree (id)"
+  },
+  {
+    "tablename": "user_audit_actions",
+    "indexname": "user_audit_actions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_audit_actions_pkey ON public.user_audit_actions USING btree (id)"
+  },
+  {
+    "tablename": "user_completed_lessons",
+    "indexname": "idx_completed_lessons_user_course",
+    "indexdef": "CREATE INDEX idx_completed_lessons_user_course ON public.user_completed_lessons USING btree (user_id, course_id)"
+  },
+  {
+    "tablename": "user_completed_lessons",
+    "indexname": "user_completed_lessons_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_completed_lessons_pkey ON public.user_completed_lessons USING btree (id)"
+  },
+  {
+    "tablename": "user_completed_lessons",
+    "indexname": "user_completed_lessons_user_id_lesson_id_key",
+    "indexdef": "CREATE UNIQUE INDEX user_completed_lessons_user_id_lesson_id_key ON public.user_completed_lessons USING btree (user_id, lesson_id)"
+  },
+  {
+    "tablename": "user_logs",
+    "indexname": "user_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_logs_pkey ON public.user_logs USING btree (id)"
+  },
+  {
+    "tablename": "user_restrictions",
+    "indexname": "user_restrictions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_restrictions_pkey ON public.user_restrictions USING btree (id)"
+  },
+  {
+    "tablename": "user_sessions",
+    "indexname": "user_sessions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_sessions_pkey ON public.user_sessions USING btree (id)"
+  },
+  {
+    "tablename": "users",
+    "indexname": "idx_users_county",
+    "indexdef": "CREATE INDEX idx_users_county ON public.users USING btree (county) WHERE (county IS NOT NULL)"
+  },
+  {
+    "tablename": "users",
+    "indexname": "users_email_key",
+    "indexdef": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+  },
+  {
+    "tablename": "users",
+    "indexname": "users_national_id_key",
+    "indexdef": "CREATE UNIQUE INDEX users_national_id_key ON public.users USING btree (national_id)"
+  },
+  {
+    "tablename": "users",
+    "indexname": "users_phone_number_key",
+    "indexdef": "CREATE UNIQUE INDEX users_phone_number_key ON public.users USING btree (phone_number)"
+  },
+  {
+    "tablename": "users",
+    "indexname": "users_pkey",
+    "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+  }
+]

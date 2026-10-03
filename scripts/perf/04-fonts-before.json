@@ -1,0 +1,110 @@
+[
+  {
+    "page": "Home",
+    "path": "/",
+    "cold": {
+      "ttfb": 8681,
+      "fcp": 13436,
+      "domContentLoaded": 13496,
+      "loadTime": 16357,
+      "lcp": 13436,
+      "lcpElement": "IMG.absolute inset-0 h-full w-full",
+      "cls": 0,
+      "totalRequests": 35,
+      "totalBytesKB": 1180,
+      "jsBytesKB": 429,
+      "cssBytesKB": 376,
+      "imgBytesKB": 225,
+      "fontBytesKB": 27,
+      "thirdPartyRequests": 1
+    },
+    "warm": {
+      "ttfb": 325,
+      "fcp": 920,
+      "domContentLoaded": 1136,
+      "loadTime": 1661,
+      "lcp": 920,
+      "lcpElement": "IMG.absolute inset-0 h-full w-full",
+      "cls": 0.0012,
+      "totalRequests": 162,
+      "totalBytesKB": 159,
+      "jsBytesKB": 9,
+      "cssBytesKB": 0,
+      "imgBytesKB": 1,
+      "fontBytesKB": 27,
+      "thirdPartyRequests": 5
+    }
+  },
+  {
+    "page": "News",
+    "path": "/blog",
+    "cold": {
+      "ttfb": 140,
+      "fcp": 7944,
+      "domContentLoaded": 8019,
+      "loadTime": 0,
+      "lcp": 7944,
+      "lcpElement": "IMG.w-full h-full object-cover gro",
+      "cls": 0.0001,
+      "totalRequests": 20,
+      "totalBytesKB": 1686,
+      "jsBytesKB": 110,
+      "cssBytesKB": 378,
+      "imgBytesKB": 952,
+      "fontBytesKB": 188,
+      "thirdPartyRequests": 6
+    },
+    "warm": {
+      "ttfb": 138,
+      "fcp": 1072,
+      "domContentLoaded": 1265,
+      "loadTime": 1789,
+      "lcp": 1072,
+      "lcpElement": "IMG.w-full h-full object-cover gro",
+      "cls": 0,
+      "totalRequests": 176,
+      "totalBytesKB": 70,
+      "jsBytesKB": 10,
+      "cssBytesKB": 0,
+      "imgBytesKB": 1,
+      "fontBytesKB": 0,
+      "thirdPartyRequests": 10
+    }
+  },
+  {
+    "page": "Academy",
+    "path": "/academy",
+    "cold": {
+      "ttfb": 140,
+      "fcp": 3856,
+      "domContentLoaded": 3840,
+      "loadTime": 5736,
+      "lcp": 3856,
+      "lcpElement": "SPAN.block bg-gradient-to-b from-[#",
+      "cls": 0,
+      "totalRequests": 42,
+      "totalBytesKB": 951,
+      "jsBytesKB": 500,
+      "cssBytesKB": 376,
+      "imgBytesKB": 2,
+      "fontBytesKB": 27,
+      "thirdPartyRequests": 1
+    },
+    "warm": {
+      "ttfb": 111,
+      "fcp": 692,
+      "domContentLoaded": 710,
+      "loadTime": 1230,
+      "lcp": 692,
+      "lcpElement": "SPAN.block bg-gradient-to-b from-[#",
+      "cls": 0.0039,
+      "totalRequests": 166,
+      "totalBytesKB": 57,
+      "jsBytesKB": 10,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0,
+      "fontBytesKB": 0,
+      "thirdPartyRequests": 5
+    }
+  }
+]

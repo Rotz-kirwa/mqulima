@@ -1,0 +1,331 @@
+[
+  {
+    "table": "admin_quotations",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/routes/api/admin/quotations.ts"
+    ]
+  },
+  {
+    "table": "ai_conversations",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/ai.ts",
+      "src/lib/api/ai-helpers.server.ts",
+      "src/lib/api/ai.server.ts"
+    ]
+  },
+  {
+    "table": "ai_messages",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/ai.ts",
+      "src/lib/api/ai-helpers.server.ts",
+      "src/lib/api/ai.server.ts"
+    ]
+  },
+  {
+    "table": "ai_query_logs",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/routes/api/admin/ai-forecasts.ts"
+    ]
+  },
+  {
+    "table": "audit_log",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/routes/api/admin/analytics.ts"
+    ]
+  },
+  {
+    "table": "blog_authors",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "blog_posts",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/blog.server.ts",
+      "src/routes/api/admin/news.ts"
+    ]
+  },
+  {
+    "table": "commodity_listings",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/marketplace.ts",
+      "src/lib/api/community.server.ts",
+      "src/routes/api/admin/customers.ts"
+    ]
+  },
+  {
+    "table": "contact_submissions",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/community.server.ts",
+      "src/lib/api/contact-partnership.server.ts",
+      "src/routes/api/admin/inquiries.ts"
+    ]
+  },
+  {
+    "table": "conversations",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/ai.ts",
+      "src/features/ai/components/ChatWindow.tsx",
+      "src/features/ai/components/ConversationHistory.tsx",
+      "src/features/ai/hooks/useAIChat.ts",
+      "src/lib/api/ai-helpers.server.ts",
+      "src/lib/api/ai.server.ts",
+      "src/lib/api/community.server.ts",
+      "src/routes/ai.tsx",
+      "src/routes/community.tsx"
+    ]
+  },
+  {
+    "table": "course_enrollments",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/academy-public.server.ts"
+    ]
+  },
+  {
+    "table": "crop_diagnoses",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/ai.ts",
+      "src/lib/api/crop-doctor.server.ts",
+      "src/routes/api/admin/customers.ts",
+      "src/routes/api/ai/chat.ts"
+    ]
+  },
+  {
+    "table": "email_verifications",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "farmer_activities",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "farmer_badges",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "farmer_following",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "featured_items",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/lib/api/products.server.ts",
+      "src/routes/api/admin/featured.ts"
+    ]
+  },
+  {
+    "table": "forum_reports",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/community.server.ts",
+      "src/routes/api/admin/customers.ts",
+      "src/routes/api/admin/forum-moderation.ts"
+    ]
+  },
+  {
+    "table": "logistics_records",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/routes/api/admin/logistics.ts"
+    ]
+  },
+  {
+    "table": "market_price_overrides",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/admin.ts",
+      "src/routes/api/admin/commodity-trends.ts",
+      "src/routes/api/admin/market-prices.ts"
+    ]
+  },
+  {
+    "table": "messages",
+    "isReferenced": true,
+    "referencedFiles": [
+      "admin/src/components/modules/InquiriesModule.tsx",
+      "src/components/mqulima/FloatingAIChat.tsx",
+      "src/db/schema/ai.ts",
+      "src/db/schema/index.ts",
+      "src/db/schema/messages.ts",
+      "src/features/ai/components/ChatWindow.tsx",
+      "src/features/ai/components/ExportPDF.tsx",
+      "src/features/ai/hooks/useAIChat.ts",
+      "src/features/community/components/KonnektMessaging.tsx",
+      "src/lib/api/ai-helpers.server.ts",
+      "src/lib/api/ai.server.ts",
+      "src/lib/api/community.server.ts",
+      "src/routes/ai.tsx",
+      "src/routes/api/admin/inquiries.ts",
+      "src/routes/community.tsx"
+    ]
+  },
+  {
+    "table": "moderation_actions",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "moderation_reports",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "newsletter_issues",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "partnership_applications",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/contact-partnership.server.ts",
+      "src/routes/api/admin/inquiries.ts"
+    ]
+  },
+  {
+    "table": "pos_auth_tokens",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/products.ts"
+    ]
+  },
+  {
+    "table": "product_reviews",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/products.server.ts"
+    ]
+  },
+  {
+    "table": "proforma_invoices",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "pulse_posts",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/posts.ts",
+      "src/lib/api/community.server.ts"
+    ]
+  },
+  {
+    "table": "quotations",
+    "isReferenced": true,
+    "referencedFiles": [
+      "admin/src/components/layout/Sidebar.tsx",
+      "admin/src/components/modules/OrdersQuotationsModule.tsx",
+      "admin/src/lib/api.ts",
+      "src/db/schema/admin.ts",
+      "src/db/schema/orders.ts",
+      "src/routeTree.gen.ts",
+      "src/routes/api/admin/quotations.ts"
+    ]
+  },
+  {
+    "table": "service_requests",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/services.ts",
+      "src/lib/api/admin-services.server.ts",
+      "src/lib/api/dashboard.server.ts",
+      "src/lib/api/services-core.server.ts",
+      "src/routes/api/admin/analytics.ts",
+      "src/routes/api/admin/customers.ts",
+      "src/routes/api/admin/inquiries.ts",
+      "src/routes/api/admin/services.ts"
+    ]
+  },
+  {
+    "table": "show_bookmarks",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/community.server.ts",
+      "src/routes/api/admin/customers.ts"
+    ]
+  },
+  {
+    "table": "show_comments",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/db/schema/posts.ts",
+      "src/lib/api/community.server.ts",
+      "src/routes/api/admin/customers.ts",
+      "src/routes/api/admin/forum-moderation.ts"
+    ]
+  },
+  {
+    "table": "stock_recommendations",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "stock_sourcing_requests",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/contact-partnership.server.ts",
+      "src/routes/api/admin/inquiries.ts"
+    ]
+  },
+  {
+    "table": "user_activity_logs",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/routes/api/admin/customers.ts"
+    ]
+  },
+  {
+    "table": "user_audit_actions",
+    "isReferenced": false,
+    "referencedFiles": []
+  },
+  {
+    "table": "user_completed_lessons",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/lib/api/academy-public.server.ts"
+    ]
+  },
+  {
+    "table": "user_logs",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/routes/api/admin/customers.ts"
+    ]
+  },
+  {
+    "table": "user_restrictions",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/routes/api/admin/forum-moderation.ts"
+    ]
+  },
+  {
+    "table": "user_sessions",
+    "isReferenced": true,
+    "referencedFiles": [
+      "src/routes/api/admin/customers.ts"
+    ]
+  }
+]

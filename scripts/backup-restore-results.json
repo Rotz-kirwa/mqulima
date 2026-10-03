@@ -1,0 +1,163 @@
+{
+  "customDumpFile": "mqulima_backup_2026-09-30T16-56-37-141Z.dump",
+  "customDumpSizeKb": "374.8",
+  "schemaDumpFile": "mqulima_schema_2026-09-30T16-56-37-141Z.sql",
+  "schemaDumpSizeKb": "128.6",
+  "dumpDurationSeconds": "89.34",
+  "restoreDurationSeconds": "0.75",
+  "totalTablesChecked": 71,
+  "discrepanciesCount": 0,
+  "discrepancies": [],
+  "sampleVerifiedTables": [
+    {
+      "table": "admin_audit_logs",
+      "liveRows": 61,
+      "restoredRows": 61
+    },
+    {
+      "table": "agritech_news",
+      "liveRows": 8,
+      "restoredRows": 8
+    },
+    {
+      "table": "chapter_lessons",
+      "liveRows": 22,
+      "restoredRows": 22
+    },
+    {
+      "table": "commodities",
+      "liveRows": 10,
+      "restoredRows": 10
+    },
+    {
+      "table": "commodity_price_board",
+      "liveRows": 24,
+      "restoredRows": 24
+    },
+    {
+      "table": "course_chapters",
+      "liveRows": 20,
+      "restoredRows": 20
+    },
+    {
+      "table": "courses",
+      "liveRows": 5,
+      "restoredRows": 5
+    },
+    {
+      "table": "direct_messages",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "farmer_followers",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "moderation_settings",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "newsletter_subscribers",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "notifications",
+      "liveRows": 18,
+      "restoredRows": 18
+    },
+    {
+      "table": "order_items",
+      "liveRows": 14,
+      "restoredRows": 14
+    },
+    {
+      "table": "orders",
+      "liveRows": 14,
+      "restoredRows": 14
+    },
+    {
+      "table": "payments",
+      "liveRows": 10,
+      "restoredRows": 10
+    },
+    {
+      "table": "pos_sync_logs",
+      "liveRows": 2055,
+      "restoredRows": 2055
+    },
+    {
+      "table": "product_categories",
+      "liveRows": 16,
+      "restoredRows": 16
+    },
+    {
+      "table": "product_variants",
+      "liveRows": 323,
+      "restoredRows": 323
+    },
+    {
+      "table": "products",
+      "liveRows": 330,
+      "restoredRows": 330
+    },
+    {
+      "table": "profiles",
+      "liveRows": 3,
+      "restoredRows": 3
+    },
+    {
+      "table": "schema_migrations",
+      "liveRows": 60,
+      "restoredRows": 60
+    },
+    {
+      "table": "service_categories",
+      "liveRows": 6,
+      "restoredRows": 6
+    },
+    {
+      "table": "services",
+      "liveRows": 3,
+      "restoredRows": 3
+    },
+    {
+      "table": "shop_categories",
+      "liveRows": 21,
+      "restoredRows": 21
+    },
+    {
+      "table": "shop_fields",
+      "liveRows": 6,
+      "restoredRows": 6
+    },
+    {
+      "table": "shop_subcategories",
+      "liveRows": 45,
+      "restoredRows": 45
+    },
+    {
+      "table": "show_likes",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "show_posts",
+      "liveRows": 1,
+      "restoredRows": 1
+    },
+    {
+      "table": "sms_logs",
+      "liveRows": 17,
+      "restoredRows": 17
+    },
+    {
+      "table": "users",
+      "liveRows": 3,
+      "restoredRows": 3
+    }
+  ]
+}

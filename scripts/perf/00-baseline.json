@@ -1,0 +1,258 @@
+[
+  {
+    "page": "Home",
+    "path": "/",
+    "cold": {
+      "ttfb": 160,
+      "fcp": 4148,
+      "domContentLoaded": 4150,
+      "loadTime": 6488,
+      "lcp": 4148,
+      "lcpElement": "IMG.absolute inset-0 h-full w-full",
+      "cls": 0,
+      "totalRequests": 48,
+      "totalBytesKB": 1251,
+      "jsBytesKB": 10,
+      "cssBytesKB": 2,
+      "imgBytesKB": 2
+    },
+    "warm": {
+      "ttfb": 206,
+      "fcp": 724,
+      "domContentLoaded": 957,
+      "loadTime": 1472,
+      "lcp": 724,
+      "lcpElement": "IMG.absolute inset-0 h-full w-full",
+      "cls": 0.0012,
+      "totalRequests": 177,
+      "totalBytesKB": 135,
+      "jsBytesKB": 11,
+      "cssBytesKB": 0,
+      "imgBytesKB": 1
+    }
+  },
+  {
+    "page": "AgroShop List",
+    "path": "/shop",
+    "cold": {
+      "ttfb": 50376,
+      "fcp": 55152,
+      "domContentLoaded": 55208,
+      "loadTime": 57287,
+      "lcp": 55620,
+      "lcpElement": "IMG.w-full h-full object-cover tra",
+      "cls": 0,
+      "totalRequests": 43,
+      "totalBytesKB": 1393,
+      "jsBytesKB": 10,
+      "cssBytesKB": 1,
+      "imgBytesKB": 1
+    },
+    "warm": {
+      "ttfb": 21003,
+      "fcp": 21312,
+      "domContentLoaded": 23276,
+      "loadTime": 23815,
+      "lcp": 21516,
+      "lcpElement": "IMG.w-full h-full object-cover tra",
+      "cls": 0.0004,
+      "totalRequests": 171,
+      "totalBytesKB": 484,
+      "jsBytesKB": 11,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  },
+  {
+    "page": "AgroShop Product",
+    "path": "/shop/product/102470-9586",
+    "cold": {
+      "ttfb": 988,
+      "fcp": 3656,
+      "domContentLoaded": 3654,
+      "loadTime": 5550,
+      "lcp": 3656,
+      "lcpElement": "IMG.w-full h-full object-contain r",
+      "cls": 0,
+      "totalRequests": 44,
+      "totalBytesKB": 981,
+      "jsBytesKB": 10,
+      "cssBytesKB": 2,
+      "imgBytesKB": 7
+    },
+    "warm": {
+      "ttfb": 1048,
+      "fcp": 1704,
+      "domContentLoaded": 1323,
+      "loadTime": 2141,
+      "lcp": 1704,
+      "lcpElement": "IMG.w-full h-full object-contain r",
+      "cls": 0.0003,
+      "totalRequests": 168,
+      "totalBytesKB": 61,
+      "jsBytesKB": 10,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  },
+  {
+    "page": "News",
+    "path": "/blog",
+    "cold": {
+      "ttfb": 94,
+      "fcp": 7544,
+      "domContentLoaded": 7543,
+      "loadTime": 10095,
+      "lcp": 7544,
+      "lcpElement": "IMG.w-full h-full object-cover gro",
+      "cls": 0.0001,
+      "totalRequests": 22,
+      "totalBytesKB": 1866,
+      "jsBytesKB": 1,
+      "cssBytesKB": 3,
+      "imgBytesKB": 2
+    },
+    "warm": {
+      "ttfb": 1417,
+      "fcp": 1960,
+      "domContentLoaded": 2182,
+      "loadTime": 2699,
+      "lcp": 1960,
+      "lcpElement": "IMG.w-full h-full object-cover gro",
+      "cls": 0,
+      "totalRequests": 180,
+      "totalBytesKB": 71,
+      "jsBytesKB": 11,
+      "cssBytesKB": 0,
+      "imgBytesKB": 1
+    }
+  },
+  {
+    "page": "Forum",
+    "path": "/community",
+    "cold": {
+      "ttfb": 1676,
+      "fcp": 4648,
+      "domContentLoaded": 4653,
+      "loadTime": 7199,
+      "lcp": 4648,
+      "lcpElement": "P.text-xs sm:text-sm text-stone-",
+      "cls": 0,
+      "totalRequests": 53,
+      "totalBytesKB": 1181,
+      "jsBytesKB": 10,
+      "cssBytesKB": 1,
+      "imgBytesKB": 6
+    },
+    "warm": {
+      "ttfb": 1765,
+      "fcp": 2288,
+      "domContentLoaded": 2394,
+      "loadTime": 2977,
+      "lcp": 2288,
+      "lcpElement": "P.text-xs sm:text-sm text-stone-",
+      "cls": 0,
+      "totalRequests": 176,
+      "totalBytesKB": 105,
+      "jsBytesKB": 11,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  },
+  {
+    "page": "Academy",
+    "path": "/academy",
+    "cold": {
+      "ttfb": 80,
+      "fcp": 2668,
+      "domContentLoaded": 2660,
+      "loadTime": 4557,
+      "lcp": 2668,
+      "lcpElement": "SPAN.block bg-gradient-to-b from-[#",
+      "cls": 0,
+      "totalRequests": 42,
+      "totalBytesKB": 951,
+      "jsBytesKB": 10,
+      "cssBytesKB": 2,
+      "imgBytesKB": 1
+    },
+    "warm": {
+      "ttfb": 113,
+      "fcp": 676,
+      "domContentLoaded": 698,
+      "loadTime": 1213,
+      "lcp": 676,
+      "lcpElement": "SPAN.block bg-gradient-to-b from-[#",
+      "cls": 0.0039,
+      "totalRequests": 166,
+      "totalBytesKB": 57,
+      "jsBytesKB": 10,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  },
+  {
+    "page": "Tools",
+    "path": "/tools",
+    "cold": {
+      "ttfb": 112,
+      "fcp": 5040,
+      "domContentLoaded": 4996,
+      "loadTime": 6886,
+      "lcp": 5040,
+      "lcpElement": "IMG.w-full h-full object-cover obj",
+      "cls": 0,
+      "totalRequests": 43,
+      "totalBytesKB": 1218,
+      "jsBytesKB": 10,
+      "cssBytesKB": 2,
+      "imgBytesKB": 17
+    },
+    "warm": {
+      "ttfb": 167,
+      "fcp": 696,
+      "domContentLoaded": 749,
+      "loadTime": 1306,
+      "lcp": 696,
+      "lcpElement": "IMG.w-full h-full object-cover obj",
+      "cls": 0.0002,
+      "totalRequests": 176,
+      "totalBytesKB": 80,
+      "jsBytesKB": 12,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  },
+  {
+    "page": "Services",
+    "path": "/services",
+    "cold": {
+      "ttfb": 428,
+      "fcp": 4792,
+      "domContentLoaded": 4794,
+      "loadTime": 6684,
+      "lcp": 4792,
+      "lcpElement": "DIV.absolute inset-0 z-0 bg-cover ",
+      "cls": 0,
+      "totalRequests": 44,
+      "totalBytesKB": 1269,
+      "jsBytesKB": 10,
+      "cssBytesKB": 2,
+      "imgBytesKB": 1
+    },
+    "warm": {
+      "ttfb": 453,
+      "fcp": 1096,
+      "domContentLoaded": 1824,
+      "loadTime": 2349,
+      "lcp": 1096,
+      "lcpElement": "DIV.absolute inset-0 z-0 bg-cover ",
+      "cls": 0,
+      "totalRequests": 170,
+      "totalBytesKB": 277,
+      "jsBytesKB": 11,
+      "cssBytesKB": 0,
+      "imgBytesKB": 0
+    }
+  }
+]

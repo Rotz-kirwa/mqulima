@@ -1,0 +1,366 @@
+{
+  "topTotal": [
+    {
+      "query": "select b.oid, b.typarray\n      from pg_catalog.pg_type a\n      left join pg_catalog.pg_type b on b.oid = a.typelem\n      where a.typcategory = $1\n      group by b.oid, b.typarray\n      order by b.oid",
+      "calls": "5435",
+      "total_time_ms": "21077.00",
+      "mean_time_ms": "3.878",
+      "min_time_ms": "0.344",
+      "max_time_ms": "400.151",
+      "rows": "2111259"
+    },
+    {
+      "query": "SELECT\n        id,\n        title,\n        slug,\n        summary AS excerpt,\n        content AS body,\n        media_type AS \"mediaType\",\n        media_url AS \"mediaUrl\",\n        category,\n        source_attribution AS \"authorName\",\n        view_count AS \"viewCount\",\n        published_at AS \"publishedAt\",\n        created_at AS \"createdAt\"\n      FROM agritech_news\n      WHERE LOWER(status) = $3\n      ORDER BY published_at DESC NULLS LAST, created_at DESC\n      LIMIT $1\n      OFFSET $2",
+      "calls": "908",
+      "total_time_ms": "13655.56",
+      "mean_time_ms": "15.039",
+      "min_time_ms": "0.528",
+      "max_time_ms": "371.258",
+      "rows": "7861"
+    },
+    {
+      "query": "SELECT\n        sp.id,\n        sp.type,\n        sp.title,\n        sp.caption,\n        sp.media_urls,\n        sp.like_count,\n        sp.relate_count,\n        sp.comment_count,\n        sp.tags,\n        sp.created_at,\n        COALESCE(p.username, CONCAT($1, LOWER(REGEXP_REPLACE(COALESCE(u.first_name, $2), $3, $4, $5)))) AS username,\n        COALESCE(p.full_name, CONCAT(u.first_name, $6, u.last_name), u.email, $7) AS full_name,\n        COALESCE(p.country, $8) AS country,\n        COALESCE(p.county_region, u.county, $9) AS county_region,\n        p.farming_interests,\n        p.crops,\n        p.livestock,\n        p.years_farming,\n        p.certifications,\n        p.reputation_score,\n        p.followers_count,\n        p.avatar_url,\n        p.bio,\n        p.website,\n        p.phone,\n        COALESCE(p.email, u.email) AS email,\n        p.farming_activities,\n        p.farming_photos,\n        p.created_at AS profile_created_at\n      FROM show_posts sp\n      LEFT JOIN profiles p ON p.id = sp.user_id\n      LEFT JOIN users u ON u.id = sp.user_id\n      WHERE (sp.status IS NULL OR sp.status IN ($10 /*, ... */))\n      ORDER BY sp.created_at DESC\n      LIMIT $11",
+      "calls": "89",
+      "total_time_ms": "12517.15",
+      "mean_time_ms": "140.642",
+      "min_time_ms": "0.008",
+      "max_time_ms": "798.786",
+      "rows": "84"
+    },
+    {
+      "query": "update \"products\" set \"name\" = $1, \"description\" = $2, \"image_urls\" = $3, \"brand\" = $4, \"unit\" = $5, \"subcategory\" = $6, \"external_product_id\" = $7, \"updated_at\" = $8 where \"products\".\"id\" = $9",
+      "calls": "66245",
+      "total_time_ms": "11669.57",
+      "mean_time_ms": "0.176",
+      "min_time_ms": "0.053",
+      "max_time_ms": "101.042",
+      "rows": "66245"
+    },
+    {
+      "query": "update \"products\" set \"base_price\" = $1, \"stock_qty\" = $2, \"status\" = $3, \"updated_at\" = $4 where \"products\".\"id\" = $5",
+      "calls": "66555",
+      "total_time_ms": "10508.13",
+      "mean_time_ms": "0.158",
+      "min_time_ms": "0.053",
+      "max_time_ms": "99.885",
+      "rows": "66555"
+    },
+    {
+      "query": "SELECT\n              sp.id,\n              sp.title,\n              sp.caption,\n              sp.type,\n              sp.media_urls AS \"mediaUrls\",\n              sp.tags,\n              sp.status,\n              sp.like_count AS \"likeCount\",\n              sp.comment_count AS \"commentCount\",\n              sp.reports_count AS \"reportsCount\",\n              sp.created_at AS \"createdAt\",\n              p.id AS \"authorId\",\n              p.full_name AS \"authorName\",\n              p.username AS \"authorUsername\",\n              p.avatar_url AS \"authorAvatar\"\n            FROM show_posts sp\n            LEFT JOIN profiles p ON p.id = sp.user_id\n            ORDER BY sp.created_at DESC\n            LIMIT $1",
+      "calls": "38",
+      "total_time_ms": "5022.11",
+      "mean_time_ms": "132.161",
+      "min_time_ms": "0.013",
+      "max_time_ms": "596.389",
+      "rows": "36"
+    },
+    {
+      "query": "update \"product_variants\" set \"variant_label\" = $1, \"price\" = $2, \"stock_qty\" = $3, \"sku\" = $4, \"location\" = $5, \"updated_at\" = $6 where \"product_variants\".\"id\" = $7",
+      "calls": "66234",
+      "total_time_ms": "4138.04",
+      "mean_time_ms": "0.062",
+      "min_time_ms": "0.024",
+      "max_time_ms": "94.517",
+      "rows": "66234"
+    },
+    {
+      "query": "UPDATE agritech_news\n              SET\n                title = $1,\n                summary = $2,\n                content = $3,\n                media_type = $4,\n                media_url = $5,\n                category = $6,\n                source_attribution = $7,\n                status = $8,\n                published_at = COALESCE(published_at, NOW())\n              WHERE id = $9",
+      "calls": "3",
+      "total_time_ms": "3508.57",
+      "mean_time_ms": "1169.524",
+      "min_time_ms": "902.935",
+      "max_time_ms": "1700.141",
+      "rows": "3"
+    },
+    {
+      "query": "select \"id\", \"product_id\", \"variant_label\", \"price\", \"stock_qty\", \"sku\", \"external_variation_id\", \"location\", \"created_at\", \"updated_at\" from \"product_variants\" where \"product_variants\".\"external_variation_id\" = $1 limit $2",
+      "calls": "66557",
+      "total_time_ms": "2647.61",
+      "mean_time_ms": "0.040",
+      "min_time_ms": "0.006",
+      "max_time_ms": "95.013",
+      "rows": "66234"
+    },
+    {
+      "query": "select \"id\", \"name\", \"slug\", \"category_id\", \"description\", \"base_price\", \"original_price\", \"image_urls\", \"stock_qty\", \"is_featured\", \"avg_rating\", \"rating_count\", \"status\", \"brand\", \"seller\", \"county\", \"unit\", \"badge\", \"organic\", \"verified_seller\", \"seller_score\", \"condition\", \"shop_type\", \"field\", \"subcategory\", \"external_product_id\", \"created_at\", \"updated_at\", \"deleted_at\" from \"products\" where \"products\".\"external_product_id\" = $1 limit $2",
+      "calls": "66558",
+      "total_time_ms": "2415.94",
+      "mean_time_ms": "0.036",
+      "min_time_ms": "0.008",
+      "max_time_ms": "100.078",
+      "rows": "66245"
+    },
+    {
+      "query": "SELECT\n      tc.table_name,\n      kcu.column_name,\n      ccu.table_name AS foreign_table_name,\n      ccu.column_name AS foreign_column_name,\n      rc.update_rule,\n      rc.delete_rule\n    FROM information_schema.table_constraints AS tc\n    JOIN information_schema.key_column_usage AS kcu\n      ON tc.constraint_name = kcu.constraint_name\n      AND tc.table_schema = kcu.table_schema\n    JOIN information_schema.referential_constraints AS rc\n      ON tc.constraint_name = rc.constraint_name\n    JOIN information_schema.constraint_column_usage AS ccu\n      ON ccu.constraint_name = tc.constraint_name\n    WHERE tc.constraint_type = $1 AND tc.table_schema = $2\n    ORDER BY tc.table_name, kcu.column_name",
+      "calls": "2",
+      "total_time_ms": "2234.20",
+      "mean_time_ms": "1117.101",
+      "min_time_ms": "1095.324",
+      "max_time_ms": "1138.878",
+      "rows": "122"
+    },
+    {
+      "query": "SELECT p.*, \n               COALESCE(sc.name, pc.name, p.subcategory) AS category_name, \n               sf.name AS field_name, \n               ss.name AS subcategory_name\n        FROM products p\n        LEFT JOIN shop_fields sf ON p.field_id = sf.id\n        LEFT JOIN shop_categories sc ON p.category_id = sc.id\n        LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id\n        LEFT JOIN product_categories pc ON p.category_id = pc.id\n        WHERE p.status = $1 AND p.deleted_at IS NULL\n        ORDER BY p.is_featured DESC, p.created_at DESC\n        LIMIT $2 OFFSET $3",
+      "calls": "242",
+      "total_time_ms": "1734.36",
+      "mean_time_ms": "7.167",
+      "min_time_ms": "0.156",
+      "max_time_ms": "198.462",
+      "rows": "75321"
+    },
+    {
+      "query": "select \"id\", \"product_id\", \"variant_label\", \"price\", \"stock_qty\", \"sku\", \"external_variation_id\", \"location\", \"created_at\", \"updated_at\" from \"product_variants\" where \"product_variants\".\"product_id\" = $1",
+      "calls": "6666",
+      "total_time_ms": "1255.20",
+      "mean_time_ms": "0.188",
+      "min_time_ms": "0.005",
+      "max_time_ms": "199.725",
+      "rows": "6486"
+    },
+    {
+      "query": "INSERT INTO agritech_news (\n                id, title, slug, summary, content, media_type, media_url, category, source_attribution, status, published_at\n              ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6,\n                $7,\n                $8,\n                $9,\n                $10,\n                NOW()\n              )",
+      "calls": "10",
+      "total_time_ms": "938.49",
+      "mean_time_ms": "93.849",
+      "min_time_ms": "0.258",
+      "max_time_ms": "896.074",
+      "rows": "10"
+    },
+    {
+      "query": "SELECT \n              id,\n              title,\n              slug,\n              summary,\n              content,\n              media_type AS \"mediaType\",\n              media_url AS \"mediaUrl\",\n              category,\n              source_attribution AS \"sourceAttribution\",\n              author_id AS \"authorId\",\n              status,\n              published_at AS \"publishedAt\",\n              created_at AS \"createdAt\"\n            FROM agritech_news\n            ORDER BY created_at DESC",
+      "calls": "28",
+      "total_time_ms": "836.58",
+      "mean_time_ms": "29.878",
+      "min_time_ms": "0.013",
+      "max_time_ms": "545.159",
+      "rows": "117"
+    },
+    {
+      "query": "SELECT\n        id,\n        title,\n        slug,\n        summary AS excerpt,\n        content AS body,\n        media_type AS \"mediaType\",\n        media_url AS \"mediaUrl\",\n        category,\n        source_attribution AS \"authorName\",\n        published_at AS \"publishedAt\",\n        created_at AS \"createdAt\"\n      FROM agritech_news\n      WHERE status = $1\n      ORDER BY published_at DESC NULLS LAST",
+      "calls": "54",
+      "total_time_ms": "787.54",
+      "mean_time_ms": "14.584",
+      "min_time_ms": "0.010",
+      "max_time_ms": "275.680",
+      "rows": "122"
+    },
+    {
+      "query": "insert into \"pos_sync_logs\" (\"id\", \"sync_type\", \"status\", \"products_synced\", \"variations_synced\", \"error_message\", \"started_at\", \"completed_at\") values ($1, $2, $3, $4, $5, default, $6, default)",
+      "calls": "2055",
+      "total_time_ms": "678.59",
+      "mean_time_ms": "0.330",
+      "min_time_ms": "0.115",
+      "max_time_ms": "81.821",
+      "rows": "2055"
+    },
+    {
+      "query": "INSERT INTO show_posts (user_id, type, title, caption, media_urls, tags, status)\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $7\n      )\n      RETURNING id",
+      "calls": "1",
+      "total_time_ms": "599.07",
+      "mean_time_ms": "599.073",
+      "min_time_ms": "599.073",
+      "max_time_ms": "599.073",
+      "rows": "1"
+    },
+    {
+      "query": "SELECT id, type, payload, read_at, created_at\n      FROM notifications\n      WHERE user_id = $1\n      ORDER BY created_at DESC\n      LIMIT $2",
+      "calls": "6358",
+      "total_time_ms": "484.38",
+      "mean_time_ms": "0.076",
+      "min_time_ms": "0.004",
+      "max_time_ms": "87.557",
+      "rows": "4735"
+    },
+    {
+      "query": "SELECT id, title, image_url, link_url, position\n      FROM featured_items\n      ORDER BY position ASC",
+      "calls": "915",
+      "total_time_ms": "366.07",
+      "mean_time_ms": "0.400",
+      "min_time_ms": "0.016",
+      "max_time_ms": "100.177",
+      "rows": "5455"
+    }
+  ],
+  "topMean": [
+    {
+      "query": "UPDATE agritech_news\n              SET\n                title = $1,\n                summary = $2,\n                content = $3,\n                media_type = $4,\n                media_url = $5,\n                category = $6,\n                source_attribution = $7,\n                status = $8,\n                published_at = COALESCE(published_at, NOW())\n              WHERE id = $9",
+      "calls": "3",
+      "total_time_ms": "3508.57",
+      "mean_time_ms": "1169.524",
+      "min_time_ms": "902.935",
+      "max_time_ms": "1700.141",
+      "rows": "3"
+    },
+    {
+      "query": "SELECT\n      tc.table_name,\n      kcu.column_name,\n      ccu.table_name AS foreign_table_name,\n      ccu.column_name AS foreign_column_name,\n      rc.update_rule,\n      rc.delete_rule\n    FROM information_schema.table_constraints AS tc\n    JOIN information_schema.key_column_usage AS kcu\n      ON tc.constraint_name = kcu.constraint_name\n      AND tc.table_schema = kcu.table_schema\n    JOIN information_schema.referential_constraints AS rc\n      ON tc.constraint_name = rc.constraint_name\n    JOIN information_schema.constraint_column_usage AS ccu\n      ON ccu.constraint_name = tc.constraint_name\n    WHERE tc.constraint_type = $1 AND tc.table_schema = $2\n    ORDER BY tc.table_name, kcu.column_name",
+      "calls": "2",
+      "total_time_ms": "2234.20",
+      "mean_time_ms": "1117.101",
+      "min_time_ms": "1095.324",
+      "max_time_ms": "1138.878",
+      "rows": "122"
+    },
+    {
+      "query": "INSERT INTO show_posts (user_id, type, title, caption, media_urls, tags, status)\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $7\n      )\n      RETURNING id",
+      "calls": "1",
+      "total_time_ms": "599.07",
+      "mean_time_ms": "599.073",
+      "min_time_ms": "599.073",
+      "max_time_ms": "599.073",
+      "rows": "1"
+    },
+    {
+      "query": "SELECT id, media_url FROM agritech_news WHERE id = $1",
+      "calls": "2",
+      "total_time_ms": "323.66",
+      "mean_time_ms": "161.830",
+      "min_time_ms": "56.887",
+      "max_time_ms": "266.773",
+      "rows": "2"
+    },
+    {
+      "query": "VACUUM (ANALYZE) public.pos_sync_logs",
+      "calls": "1",
+      "total_time_ms": "158.80",
+      "mean_time_ms": "158.805",
+      "min_time_ms": "158.805",
+      "max_time_ms": "158.805",
+      "rows": "0"
+    },
+    {
+      "query": "SELECT\n        sp.id,\n        sp.type,\n        sp.title,\n        sp.caption,\n        sp.media_urls,\n        sp.like_count,\n        sp.relate_count,\n        sp.comment_count,\n        sp.tags,\n        sp.created_at,\n        COALESCE(p.username, CONCAT($1, LOWER(REGEXP_REPLACE(COALESCE(u.first_name, $2), $3, $4, $5)))) AS username,\n        COALESCE(p.full_name, CONCAT(u.first_name, $6, u.last_name), u.email, $7) AS full_name,\n        COALESCE(p.country, $8) AS country,\n        COALESCE(p.county_region, u.county, $9) AS county_region,\n        p.farming_interests,\n        p.crops,\n        p.livestock,\n        p.years_farming,\n        p.certifications,\n        p.reputation_score,\n        p.followers_count,\n        p.avatar_url,\n        p.bio,\n        p.website,\n        p.phone,\n        COALESCE(p.email, u.email) AS email,\n        p.farming_activities,\n        p.farming_photos,\n        p.created_at AS profile_created_at\n      FROM show_posts sp\n      LEFT JOIN profiles p ON p.id = sp.user_id\n      LEFT JOIN users u ON u.id = sp.user_id\n      WHERE (sp.status IS NULL OR sp.status IN ($10 /*, ... */))\n      ORDER BY sp.created_at DESC\n      LIMIT $11",
+      "calls": "89",
+      "total_time_ms": "12517.15",
+      "mean_time_ms": "140.642",
+      "min_time_ms": "0.008",
+      "max_time_ms": "798.786",
+      "rows": "84"
+    },
+    {
+      "query": "SELECT\n              sp.id,\n              sp.title,\n              sp.caption,\n              sp.type,\n              sp.media_urls AS \"mediaUrls\",\n              sp.tags,\n              sp.status,\n              sp.like_count AS \"likeCount\",\n              sp.comment_count AS \"commentCount\",\n              sp.reports_count AS \"reportsCount\",\n              sp.created_at AS \"createdAt\",\n              p.id AS \"authorId\",\n              p.full_name AS \"authorName\",\n              p.username AS \"authorUsername\",\n              p.avatar_url AS \"authorAvatar\"\n            FROM show_posts sp\n            LEFT JOIN profiles p ON p.id = sp.user_id\n            ORDER BY sp.created_at DESC\n            LIMIT $1",
+      "calls": "38",
+      "total_time_ms": "5022.11",
+      "mean_time_ms": "132.161",
+      "min_time_ms": "0.013",
+      "max_time_ms": "596.389",
+      "rows": "36"
+    },
+    {
+      "query": "SELECT id, media_urls FROM show_posts",
+      "calls": "2",
+      "total_time_ms": "254.24",
+      "mean_time_ms": "127.119",
+      "min_time_ms": "57.233",
+      "max_time_ms": "197.005",
+      "rows": "2"
+    },
+    {
+      "query": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements",
+      "calls": "1",
+      "total_time_ms": "125.29",
+      "mean_time_ms": "125.286",
+      "min_time_ms": "125.286",
+      "max_time_ms": "125.286",
+      "rows": "0"
+    },
+    {
+      "query": "SELECT\n      c.relname as table_name,\n      c.reltuples::bigint as estimated_rows,\n      pg_size_pretty(pg_table_size(c.oid)) as table_size,\n      pg_size_pretty(pg_indexes_size(c.oid)) as index_size,\n      pg_size_pretty(pg_total_relation_size(c.oid)) as total_size,\n      pg_total_relation_size(c.oid) as total_bytes,\n      s.n_dead_tup as dead_tuples,\n      s.n_live_tup as live_tuples,\n      s.last_vacuum,\n      s.last_autovacuum,\n      s.last_analyze,\n      s.last_autoanalyze\n    FROM pg_class c\n    JOIN pg_namespace n ON n.oid = c.relnamespace\n    LEFT JOIN pg_stat_user_tables s ON s.relid = c.oid\n    WHERE n.nspname = $1 AND c.relkind = $2\n    ORDER BY pg_total_relation_size(c.oid) DESC",
+      "calls": "2",
+      "total_time_ms": "249.17",
+      "mean_time_ms": "124.583",
+      "min_time_ms": "55.403",
+      "max_time_ms": "193.762",
+      "rows": "142"
+    },
+    {
+      "query": "UPDATE products\n    SET \n      description = CASE \n        WHEN description ILIKE $1 OR description ILIKE $2 \n        THEN $3\n        ELSE description \n      END,\n      brand = CASE \n        WHEN brand ILIKE $4 OR brand ILIKE $5\n        THEN (CASE WHEN subcategory IS NOT NULL AND subcategory != $6 AND subcategory != $7 THEN subcategory ELSE $8 END)\n        ELSE brand \n      END,\n      seller = CASE \n        WHEN seller ILIKE $9 OR seller ILIKE $10\n        THEN $11\n        ELSE seller \n      END\n    WHERE description ILIKE $12 \n       OR description ILIKE $13\n       OR brand ILIKE $14\n       OR seller ILIKE $15",
+      "calls": "1",
+      "total_time_ms": "108.94",
+      "mean_time_ms": "108.939",
+      "min_time_ms": "108.939",
+      "max_time_ms": "108.939",
+      "rows": "323"
+    },
+    {
+      "query": "VACUUM (ANALYZE) public.products",
+      "calls": "1",
+      "total_time_ms": "108.07",
+      "mean_time_ms": "108.075",
+      "min_time_ms": "108.075",
+      "max_time_ms": "108.075",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE IF NOT EXISTS shop_categories (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  field_id UUID REFERENCES shop_fields(id) ON DELETE CASCADE,\n  name TEXT NOT NULL,\n  slug TEXT NOT NULL UNIQUE,\n  sort_order INTEGER DEFAULT 0\n)",
+      "calls": "1",
+      "total_time_ms": "99.45",
+      "mean_time_ms": "99.455",
+      "min_time_ms": "99.455",
+      "max_time_ms": "99.455",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE pulse_posts (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  author_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  title         TEXT NOT NULL,\n  body          TEXT NOT NULL,\n  category      TEXT,\n  source_url    TEXT NOT NULL,\n  published_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_time_ms": "98.62",
+      "mean_time_ms": "98.619",
+      "min_time_ms": "98.619",
+      "max_time_ms": "98.619",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE commodity_listings (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  commodity_id  UUID NOT NULL REFERENCES commodities(id) ON DELETE CASCADE,\n  quantity      NUMERIC(12,2) NOT NULL,\n  asking_price  NUMERIC(12,2) NOT NULL,\n  location      TEXT,\n  description   TEXT,\n  image_urls    TEXT[] DEFAULT '{}',\n  status        listing_status NOT NULL DEFAULT 'active',\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_time_ms": "97.77",
+      "mean_time_ms": "97.769",
+      "min_time_ms": "97.769",
+      "max_time_ms": "97.769",
+      "rows": "0"
+    },
+    {
+      "query": "DELETE FROM public.profiles WHERE id = ANY($1) RETURNING id",
+      "calls": "1",
+      "total_time_ms": "97.22",
+      "mean_time_ms": "97.217",
+      "min_time_ms": "97.217",
+      "max_time_ms": "97.217",
+      "rows": "3"
+    },
+    {
+      "query": "CREATE TABLE notifications (\n  id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  type      TEXT NOT NULL,\n  payload   JSONB NOT NULL DEFAULT '{}',\n  read_at   TIMESTAMPTZ,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_time_ms": "96.61",
+      "mean_time_ms": "96.614",
+      "min_time_ms": "96.614",
+      "max_time_ms": "96.614",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE courses (\n  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  title         TEXT NOT NULL,\n  slug          TEXT UNIQUE NOT NULL,\n  description   TEXT,\n  instructor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,\n  level         TEXT DEFAULT 'beginner',\n  price         NUMERIC(12,2) DEFAULT 0,\n  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()\n)",
+      "calls": "1",
+      "total_time_ms": "95.50",
+      "mean_time_ms": "95.503",
+      "min_time_ms": "95.503",
+      "max_time_ms": "95.503",
+      "rows": "0"
+    },
+    {
+      "query": "CREATE TABLE show_likes (\n  id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  post_id   UUID NOT NULL REFERENCES show_posts(id) ON DELETE CASCADE,\n  user_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  UNIQUE(post_id, user_id)\n)",
+      "calls": "1",
+      "total_time_ms": "95.32",
+      "mean_time_ms": "95.322",
+      "min_time_ms": "95.322",
+      "max_time_ms": "95.322",
+      "rows": "0"
+    },
+    {
+      "query": "INSERT INTO agritech_news (\n                id, title, slug, summary, content, media_type, media_url, category, source_attribution, status, published_at\n              ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6,\n                $7,\n                $8,\n                $9,\n                $10,\n                NOW()\n              )",
+      "calls": "10",
+      "total_time_ms": "938.49",
+      "mean_time_ms": "93.849",
+      "min_time_ms": "0.258",
+      "max_time_ms": "896.074",
+      "rows": "10"
+    }
+  ]
+}

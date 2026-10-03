@@ -1,0 +1,1829 @@
+{
+  "pg_stat_statements": {
+    "success": true,
+    "details": {
+      "extname": "pg_stat_statements",
+      "extversion": "1.12"
+    }
+  },
+  "agritech_news_bloat": {
+    "error": "column \"image_url\" does not exist"
+  },
+  "all_tables": [
+    {
+      "table_name": "admin_audit_logs",
+      "est_rows": "51",
+      "total_size": "96 kB",
+      "total_bytes": "98304",
+      "n_dead_tup": "0",
+      "n_live_tup": "61"
+    },
+    {
+      "table_name": "admin_quotations",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "agritech_news",
+      "est_rows": "10",
+      "total_size": "9336 kB",
+      "total_bytes": "9560064",
+      "n_dead_tup": "22",
+      "n_live_tup": "8"
+    },
+    {
+      "table_name": "ai_conversations",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "ai_messages",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "ai_query_logs",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "audit_log",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "blog_authors",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "8",
+      "n_live_tup": "4"
+    },
+    {
+      "table_name": "blog_posts",
+      "est_rows": "-1",
+      "total_size": "160 kB",
+      "total_bytes": "163840",
+      "n_dead_tup": "8",
+      "n_live_tup": "4"
+    },
+    {
+      "table_name": "chapter_lessons",
+      "est_rows": "22",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "0",
+      "n_live_tup": "22"
+    },
+    {
+      "table_name": "commodities",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "10"
+    },
+    {
+      "table_name": "commodity_listings",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "commodity_price_board",
+      "est_rows": "24",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "28",
+      "n_live_tup": "24"
+    },
+    {
+      "table_name": "contact_submissions",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "conversations",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "course_chapters",
+      "est_rows": "20",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "0",
+      "n_live_tup": "20"
+    },
+    {
+      "table_name": "course_enrollments",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "courses",
+      "est_rows": "5",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "n_dead_tup": "2",
+      "n_live_tup": "5"
+    },
+    {
+      "table_name": "crop_diagnoses",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "direct_messages",
+      "est_rows": "-1",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "0",
+      "n_live_tup": "1"
+    },
+    {
+      "table_name": "email_verifications",
+      "est_rows": "-1",
+      "total_size": "40 kB",
+      "total_bytes": "40960",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "farmer_activities",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "farmer_badges",
+      "est_rows": "-1",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "farmer_followers",
+      "est_rows": "-1",
+      "total_size": "40 kB",
+      "total_bytes": "40960",
+      "n_dead_tup": "0",
+      "n_live_tup": "1"
+    },
+    {
+      "table_name": "farmer_following",
+      "est_rows": "-1",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "featured_items",
+      "est_rows": "2",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "25",
+      "n_live_tup": "5"
+    },
+    {
+      "table_name": "forum_reports",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "logistics_records",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "market_price_overrides",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "messages",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "moderation_actions",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "moderation_reports",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "moderation_settings",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "1"
+    },
+    {
+      "table_name": "newsletter_issues",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "newsletter_subscribers",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "0",
+      "n_live_tup": "1"
+    },
+    {
+      "table_name": "notifications",
+      "est_rows": "18",
+      "total_size": "104 kB",
+      "total_bytes": "106496",
+      "n_dead_tup": "2",
+      "n_live_tup": "18"
+    },
+    {
+      "table_name": "order_items",
+      "est_rows": "-1",
+      "total_size": "80 kB",
+      "total_bytes": "81920",
+      "n_dead_tup": "0",
+      "n_live_tup": "14"
+    },
+    {
+      "table_name": "orders",
+      "est_rows": "-1",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "n_dead_tup": "4",
+      "n_live_tup": "14"
+    },
+    {
+      "table_name": "partnership_applications",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "payments",
+      "est_rows": "-1",
+      "total_size": "128 kB",
+      "total_bytes": "131072",
+      "n_dead_tup": "0",
+      "n_live_tup": "10"
+    },
+    {
+      "table_name": "pos_auth_tokens",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "1",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "pos_sync_logs",
+      "est_rows": "1953",
+      "total_size": "616 kB",
+      "total_bytes": "630784",
+      "n_dead_tup": "57",
+      "n_live_tup": "2051"
+    },
+    {
+      "table_name": "product_categories",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "0",
+      "n_live_tup": "16"
+    },
+    {
+      "table_name": "product_reviews",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "product_variants",
+      "est_rows": "323",
+      "total_size": "248 kB",
+      "total_bytes": "253952",
+      "n_dead_tup": "59",
+      "n_live_tup": "323"
+    },
+    {
+      "table_name": "products",
+      "est_rows": "330",
+      "total_size": "1200 kB",
+      "total_bytes": "1228800",
+      "n_dead_tup": "0",
+      "n_live_tup": "330"
+    },
+    {
+      "table_name": "profiles",
+      "est_rows": "5",
+      "total_size": "160 kB",
+      "total_bytes": "163840",
+      "n_dead_tup": "12",
+      "n_live_tup": "6"
+    },
+    {
+      "table_name": "proforma_invoices",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "pulse_posts",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "quotations",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "schema_migrations",
+      "est_rows": "52",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "60"
+    },
+    {
+      "table_name": "service_categories",
+      "est_rows": "6",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "0",
+      "n_live_tup": "6"
+    },
+    {
+      "table_name": "service_requests",
+      "est_rows": "-1",
+      "total_size": "56 kB",
+      "total_bytes": "57344",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "services",
+      "est_rows": "3",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "3",
+      "n_live_tup": "3"
+    },
+    {
+      "table_name": "shop_categories",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "0",
+      "n_live_tup": "21"
+    },
+    {
+      "table_name": "shop_fields",
+      "est_rows": "-1",
+      "total_size": "64 kB",
+      "total_bytes": "65536",
+      "n_dead_tup": "0",
+      "n_live_tup": "6"
+    },
+    {
+      "table_name": "shop_subcategories",
+      "est_rows": "-1",
+      "total_size": "48 kB",
+      "total_bytes": "49152",
+      "n_dead_tup": "0",
+      "n_live_tup": "45"
+    },
+    {
+      "table_name": "show_bookmarks",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "show_comments",
+      "est_rows": "-1",
+      "total_size": "32 kB",
+      "total_bytes": "32768",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "show_likes",
+      "est_rows": "2",
+      "total_size": "56 kB",
+      "total_bytes": "57344",
+      "n_dead_tup": "0",
+      "n_live_tup": "2"
+    },
+    {
+      "table_name": "show_posts",
+      "est_rows": "1",
+      "total_size": "152 kB",
+      "total_bytes": "155648",
+      "n_dead_tup": "3",
+      "n_live_tup": "1"
+    },
+    {
+      "table_name": "sms_logs",
+      "est_rows": "-1",
+      "total_size": "80 kB",
+      "total_bytes": "81920",
+      "n_dead_tup": "0",
+      "n_live_tup": "17"
+    },
+    {
+      "table_name": "stock_recommendations",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "stock_sourcing_requests",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_activity_logs",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_audit_actions",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_completed_lessons",
+      "est_rows": "-1",
+      "total_size": "24 kB",
+      "total_bytes": "24576",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_logs",
+      "est_rows": "-1",
+      "total_size": "8192 bytes",
+      "total_bytes": "8192",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_restrictions",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "user_sessions",
+      "est_rows": "-1",
+      "total_size": "16 kB",
+      "total_bytes": "16384",
+      "n_dead_tup": "0",
+      "n_live_tup": "0"
+    },
+    {
+      "table_name": "users",
+      "est_rows": "-1",
+      "total_size": "96 kB",
+      "total_bytes": "98304",
+      "n_dead_tup": "3",
+      "n_live_tup": "3"
+    }
+  ],
+  "explain_plans": {
+    "shop_list": {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 39.14,
+        "Total Cost": 42.27,
+        "Plan Rows": 24,
+        "Plan Width": 160,
+        "Actual Startup Time": 0.192,
+        "Actual Total Time": 0.428,
+        "Actual Rows": 24,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Shared Hit Blocks": 89,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Incremental Sort",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 39.14,
+            "Total Cost": 82.17,
+            "Plan Rows": 330,
+            "Plan Width": 160,
+            "Actual Startup Time": 0.191,
+            "Actual Total Time": 0.426,
+            "Actual Rows": 24,
+            "Actual Loops": 1,
+            "Disabled": false,
+            "Sort Key": [
+              "is_featured DESC",
+              "((stock_qty > 0)) DESC",
+              "created_at DESC"
+            ],
+            "Presorted Key": [
+              "is_featured"
+            ],
+            "Full-sort Groups": {
+              "Group Count": 1,
+              "Sort Methods Used": [
+                "top-N heapsort"
+              ],
+              "Sort Space Memory": {
+                "Average Sort Space Used": 36,
+                "Peak Sort Space Used": 36
+              }
+            },
+            "Pre-sorted Groups": {
+              "Group Count": 2,
+              "Sort Methods Used": [
+                "top-N heapsort",
+                "quicksort"
+              ],
+              "Sort Space Memory": {
+                "Average Sort Space Used": 26,
+                "Peak Sort Space Used": 26
+              }
+            },
+            "Shared Hit Blocks": 89,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "idx_products_status_featured_updated",
+                "Relation Name": "products",
+                "Alias": "p",
+                "Startup Cost": 0.27,
+                "Total Cost": 68.79,
+                "Plan Rows": 330,
+                "Plan Width": 160,
+                "Actual Startup Time": 0.012,
+                "Actual Total Time": 0.24,
+                "Actual Rows": 330,
+                "Actual Loops": 1,
+                "Disabled": false,
+                "Index Cond": "(status = 'active'::product_status)",
+                "Rows Removed by Index Recheck": 0,
+                "Index Searches": 1,
+                "Shared Hit Blocks": 78,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          }
+        ]
+      },
+      "Planning": {
+        "Shared Hit Blocks": 146,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.73,
+      "Triggers": [],
+      "Execution Time": 0.452
+    },
+    "shop_category": {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 2.38,
+        "Total Cost": 2.38,
+        "Plan Rows": 1,
+        "Plan Width": 82,
+        "Actual Startup Time": 0.035,
+        "Actual Total Time": 0.036,
+        "Actual Rows": 0,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Shared Hit Blocks": 1,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Sort",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 2.38,
+            "Total Cost": 2.38,
+            "Plan Rows": 1,
+            "Plan Width": 82,
+            "Actual Startup Time": 0.034,
+            "Actual Total Time": 0.034,
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Disabled": false,
+            "Sort Key": [
+              "created_at DESC"
+            ],
+            "Sort Method": "quicksort",
+            "Sort Space Used": 25,
+            "Sort Space Type": "Memory",
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "idx_products_subcategory",
+                "Relation Name": "products",
+                "Alias": "p",
+                "Startup Cost": 0.15,
+                "Total Cost": 2.37,
+                "Plan Rows": 1,
+                "Plan Width": 82,
+                "Actual Startup Time": 0.03,
+                "Actual Total Time": 0.03,
+                "Actual Rows": 0,
+                "Actual Loops": 1,
+                "Disabled": false,
+                "Index Cond": "(subcategory = 'Fertilizers'::text)",
+                "Rows Removed by Index Recheck": 0,
+                "Filter": "(status = 'active'::product_status)",
+                "Rows Removed by Filter": 0,
+                "Index Searches": 1,
+                "Shared Hit Blocks": 1,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          }
+        ]
+      },
+      "Planning": {
+        "Shared Hit Blocks": 0,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.19,
+      "Triggers": [],
+      "Execution Time": 0.06
+    },
+    "shop_search": {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 0,
+        "Total Cost": 59.77,
+        "Plan Rows": 1,
+        "Plan Width": 53,
+        "Actual Startup Time": 0.6,
+        "Actual Total Time": 0.601,
+        "Actual Rows": 0,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Shared Hit Blocks": 59,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Seq Scan",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Relation Name": "products",
+            "Alias": "p",
+            "Startup Cost": 0,
+            "Total Cost": 59.77,
+            "Plan Rows": 1,
+            "Plan Width": 53,
+            "Actual Startup Time": 0.6,
+            "Actual Total Time": 0.6,
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Disabled": false,
+            "Filter": "((deleted_at IS NULL) AND (status = 'active'::product_status) AND ((name ~~* '%maize%'::text) OR (description ~~* '%maize%'::text)))",
+            "Rows Removed by Filter": 330,
+            "Shared Hit Blocks": 59,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      "Planning": {
+        "Shared Hit Blocks": 3,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.315,
+      "Triggers": [],
+      "Execution Time": 0.614
+    },
+    "product_by_slug": {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 0.27,
+        "Total Cost": 2.49,
+        "Plan Rows": 1,
+        "Plan Width": 595,
+        "Actual Startup Time": 0.015,
+        "Actual Total Time": 0.016,
+        "Actual Rows": 1,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Shared Hit Blocks": 3,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Index Scan",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Scan Direction": "Forward",
+            "Index Name": "idx_products_slug",
+            "Relation Name": "products",
+            "Alias": "products",
+            "Startup Cost": 0.27,
+            "Total Cost": 2.49,
+            "Plan Rows": 1,
+            "Plan Width": 595,
+            "Actual Startup Time": 0.014,
+            "Actual Total Time": 0.015,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Disabled": false,
+            "Index Cond": "(slug = '20l-heavy-duty-knapsack-sprayer'::text)",
+            "Rows Removed by Index Recheck": 0,
+            "Index Searches": 1,
+            "Shared Hit Blocks": 3,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ]
+      },
+      "Planning": {
+        "Shared Hit Blocks": 56,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.333,
+      "Triggers": [],
+      "Execution Time": 0.048
+    },
+    "blog_list": {
+      "error": "column \"read_time\" does not exist"
+    },
+    "community_threads": {
+      "error": "relation \"forum_threads\" does not exist"
+    },
+    "academy_courses": {
+      "error": "column \"duration_weeks\" does not exist"
+    },
+    "services_list": {
+      "error": "column \"category\" does not exist"
+    },
+    "auth_lookup": {
+      "error": "column p.user_id does not exist"
+    }
+  },
+  "junk_audit": {
+    "orphans": {
+      "forum_comments_without_thread": "relation \"forum_comments\" does not exist",
+      "order_items_without_order": 0,
+      "reviews_without_product": 0,
+      "profiles_without_user": "column p.user_id does not exist",
+      "variants_without_product": 0
+    },
+    "duplicates": {
+      "duplicate_product_slugs": [],
+      "duplicate_user_emails": [],
+      "duplicate_newsletter_subscribers": []
+    },
+    "stale_data": {
+      "expired_email_verifications_30d": "column \"verified\" does not exist",
+      "pos_sync_logs_90d": "column \"synced_at\" does not exist"
+    },
+    "test_data": {
+      "test_products": [],
+      "test_users": "column \"role\" does not exist"
+    },
+    "soft_deleted_90d": {
+      "products_deleted_90d": 0,
+      "threads_deleted_90d": "relation \"forum_threads\" does not exist"
+    },
+    "empty_rows": {
+      "products_empty_or_zero_price": [
+        {
+          "id": "696142c1-1ac6-4c3f-b358-dd2e106f8fe1",
+          "name": "MOTO PLUS 75WG 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "1ee314eb-b73d-4475-a7f0-320f1f71f1e1",
+          "name": "NILZAN PLUS 5L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d20332d0-4da9-492e-a6e5-4d475c80d0b3",
+          "name": "VALBAZEN 10% 180ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "be933568-8763-46a1-aa61-7c71e0a0bacd",
+          "name": "LEVANIDE 90 SUPER 150ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "298257d6-f730-40a2-86a0-67a4dbbc5268",
+          "name": "MULTI -COLD(ORGANIC FOLIAR) 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "17d88ac4-f145-4d4b-9089-642483eea6c7",
+          "name": "MULTI -COLD(ORGANIC FOLIAR) 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "5df8e9b2-4ec4-439c-856c-7b06d64f4343",
+          "name": "MAGUGUMA 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3c8b7311-9ab5-4f36-9ebb-ca8e3bbea8e3",
+          "name": "ALGREEN (SUPASENSE) 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "694cde20-dff8-4407-b937-ca694a325634",
+          "name": "POTASUN 5EC 200ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "f93b2ca9-0c28-4a17-87ef-0e4c63629415",
+          "name": "DOWNLIGHTER 720WP 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "6ec1b488-ae90-4533-abd3-12618853f56f",
+          "name": "RIDOMIL GOLD MZ 68WG 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9e495925-66bf-46af-936e-665e877c44db",
+          "name": "CABBAGE SUGARLOAF 25GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d26e91f8-1053-46e9-8892-87eb095d5ccd",
+          "name": "LEVANIDE 90 SUPER 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "03188cbd-3c2a-4635-a7ab-82120191e144",
+          "name": "RIDOMIL GOLD MZ 68WG 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "ed886245-6618-4a11-a061-03602b357527",
+          "name": "EASYGRO STARTER 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3304f5dd-493a-4deb-a4ad-59070151cd01",
+          "name": "VITA BOOSTER 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e65e8a18-76ca-4715-8f57-228b84f7a2a5",
+          "name": "BLOSOL 25GM",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "a08f1a4a-88bb-4b8e-81d2-3fd197120acf",
+          "name": "SIDAI DAIRY BLOCK 5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "8c959ede-2d36-4b03-bda0-885a22989b11",
+          "name": "KAUSHA 480SL 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "fb607f7c-ad02-4d4a-9a70-7dfc2f9daae9",
+          "name": "SIDAI DAIRY BLOCK 10KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "f8d5f448-5651-4320-ac15-c5c11b849a91",
+          "name": "MAXLICK JOTO 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "46cdd29d-fd73-4b49-8bf2-1b7fce268fba",
+          "name": "NOZLE SMALL",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "f3dee6ca-7db9-4535-8b79-5b65b2f15d27",
+          "name": "MISTRESS 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "f8a9d8ac-a3ed-48c0-93ae-154a6533d084",
+          "name": "SPRAY TRIGGER",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "bb331adf-944d-427f-9f5a-c98c2380b674",
+          "name": "NOZLES LARGE",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "375b8b5c-d158-470a-9e2a-95e70bb3cafa",
+          "name": "TOMATO RIO GRANDE VF 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "10bdbf5b-9b3e-4304-998f-8b57405d7a7e",
+          "name": "TRUVETS SUPREME 2KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "b401e528-ac72-4f69-ad05-aa4d8c864003",
+          "name": "NORBROOK MILKING SALVE  250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "46372692-a71a-4af3-9697-59febebd3e11",
+          "name": "ZETANIL 76WP 240GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "be3cde90-bd1f-439b-851f-7dab310814e8",
+          "name": "TWIGALICK 5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "502c1d29-d37a-45e8-88e0-713ca5680411",
+          "name": "OSHOTHANE 80WP 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "346a6fb4-f8a8-41f6-b0e4-1dfc0b08a054",
+          "name": "HAND SPRAYER",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "b334e4dd-1fc0-41d6-bdf9-62d09cb89853",
+          "name": "COVVER 72WP/XL 500GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3c80a40e-bac4-41bc-9d8d-efb6ac43d190",
+          "name": "AGROMAX  720MZ/WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "97525fb3-f9ce-4300-84cd-0521cad036ad",
+          "name": "AGROMAX  720MZ/WP 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e58755f1-1567-4326-aa98-0e156e9dccb6",
+          "name": "COVVER 72WP/XL 100GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9a5a7fd9-9316-402f-be32-ea3da8a15885",
+          "name": "AGROMAX  720MZ/WP 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d83a9b6f-c5c8-4b18-98c4-631b590b01c1",
+          "name": "FORMULEX FOLIAR (VIAZI PLUS) 250ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "afe8c2bb-d426-4f53-8d34-d63a8fa6aeb2",
+          "name": "COVVER 72WP/XL 240GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "cf8682b9-9207-49b7-bd62-efaa48aa37d5",
+          "name": "COVVER 72WP/XL 250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "12ed09ac-e2c9-4e42-83b3-c8664eda73d5",
+          "name": "ZETANIL 76WP 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e8d77902-2d65-4d91-9293-fc91a777671d",
+          "name": "AGROMAX  720MZ/WP 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "09d4f1dc-683f-454b-8860-38766f1c45f0",
+          "name": "OSHOTHANE 80WP 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "4c74d2a1-0adf-425b-8c55-1022ff6ddf22",
+          "name": "TAJIRI 720WP 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "24095d38-f155-4ab0-8a4c-5bb901f35c18",
+          "name": "TAJIRI 720WP 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "6548ff58-fa5a-4e37-b5a1-ede143d4e141",
+          "name": "GLORY 750WG 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "41774a05-7587-4ac7-a31a-fa503e9d59ec",
+          "name": "TAJIRI 720WP 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "6c49a3e5-b23d-46af-9881-8c5ab986d4ea",
+          "name": "HERBIKILL 200SL(CONTACT HERBICIDE) 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "23780182-13ee-4a3e-923b-9b4ed8ea5d4e",
+          "name": "GLORY 750WG 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "0c2d7a56-2661-4b97-9b7a-f979835e94c0",
+          "name": "TRINITY GOLD 452WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "8736236b-a73e-4aef-8a3f-74adbb18b26a",
+          "name": "GLORY 750WG 500GMGS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "168510c8-f19d-4677-bd82-f0f96001e09a",
+          "name": "TRINITY GOLD 452WP 250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "2ef03429-ab11-4f28-b1f0-660c22115bd7",
+          "name": "GLORY 750WG 240GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "edb233f9-c338-4185-92fa-18e6fbc18edf",
+          "name": "DOWNLIGHTER 720WP 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "872f131a-adf7-4fcf-ad89-06355b9fc097",
+          "name": "GLORY 750WG 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3682eeb0-8647-47de-85b7-b770ea8a2b25",
+          "name": "RIDOMIL GOLD MZ 68WG 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e582ddb1-7d53-4987-acf9-510f035965b6",
+          "name": "DOWNLIGHTER 720WP 240GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "c9ce6bca-b902-468f-8dc3-d211366df322",
+          "name": "DOWNLIGHTER 720WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9d20b423-6842-42ba-830f-a4c2d95f7c82",
+          "name": "RIDOMIL GOLD MZ 68WG 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "86635470-ace4-4e31-b525-8655e5c14a1c",
+          "name": "TRINITY GOLD 452WP 80GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "cb056674-3ccc-45a5-97b1-c72010478d46",
+          "name": "GLORY 750WG 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "dd9a3af7-a55a-45c5-bd1b-b502e61498b6",
+          "name": "DOWNLIGHTER 720WP 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "0121f948-daf5-4557-9a90-b2ab8aaf5527",
+          "name": "RIDOMIL GOLD MZ 68WG 500GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "14dc3783-59fd-4066-bfa6-8a83c4f9166a",
+          "name": "TRINITY GOLD 452WP 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d4dbc88c-375e-4340-886f-362870d203b2",
+          "name": "RIDOMIL GOLD MZ 68WG 250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "b179f81c-26c5-4378-b4b8-c0695981695d",
+          "name": "TRINITY GOLD 452WP 120GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "26f3dbd7-02a8-49de-a74e-570fc64a0ebb",
+          "name": "RIDOMIL GOLD MZ 68WG 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "607856c8-84dc-4a52-bf5a-c8f113d30ac5",
+          "name": "OSHOTHANE 80WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "cc799668-d382-4c8a-b881-0483ac80d7f2",
+          "name": "FARMMIL 72WP 250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "de83230f-60bc-4074-bb6f-408e61d0ad82",
+          "name": "FARMROUND 480SL 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "7ec50d23-d263-4008-bd12-85c5151bca06",
+          "name": "FARMMIL 72WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9506a309-c8c5-4f4b-a078-5ec577065470",
+          "name": "FARMMIL 72WP 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "80d56dde-292e-46e8-a1be-d9e94aa2d3c4",
+          "name": "FARMMIL 72WP 500GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "20d07f0a-4cee-4339-862b-758440429cb8",
+          "name": "OSHOTHANE 80WP 40GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e5a88285-01fd-4aef-b89c-ebe4a7e9e42b",
+          "name": "COVVER 72WP/XL 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "55530ae2-918d-4443-b88c-52a99750af0c",
+          "name": "COVVER 72WP/XL 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "581318c2-8fcd-4e7a-b664-dd0abb00e4a8",
+          "name": "COVVER 72WP/XL 5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "5991d935-8f06-47b1-a2b1-3d08a7f56620",
+          "name": "COVVER-XTRA 500SC  100ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "4a94fd75-973b-4413-bfc1-993b9841682f",
+          "name": "COVVER-XTRA 500SC  500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "b0f37656-94a8-4822-8729-3e964b4f8b3a",
+          "name": "COVVER-XTRA 500SC  1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "40d1a125-d122-4a68-a5fc-30e222a8a903",
+          "name": "FARMMIL 72WP 100GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9154ea45-b883-4464-9d37-24a604895326",
+          "name": "FARMMIL 72WP 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "a257e8f3-f30d-403b-b5c0-3d909f867fe7",
+          "name": "COVVER-XTRA 500SC  50ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "ac782e9c-a1e0-4de3-9f1c-b3a24594d1ba",
+          "name": "COVVER 72WP/XL 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "6b8fac7b-701c-47c5-b99f-43a3e91b89ff",
+          "name": "SIDAI ULTRADIP (55EC) 100ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "835d0746-d841-4ef1-97aa-61fcda5fa394",
+          "name": "TIXFIX 125 EC 40ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "8b3544ed-a746-49e5-b999-1a274976b00c",
+          "name": "SIDAI ULTRADIP (55EC) 50ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "6479683e-9e59-4443-98fa-768ba7f54013",
+          "name": "TWIGATRAZ 12.5EC 10ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "2c0cf628-36a3-4bb8-bfa5-3dea9a8d1734",
+          "name": "TWIGATRAZ 12.5EC 40ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "453f2d7f-a9ae-4707-ae92-534be7bc0b70",
+          "name": "FARMTRAZ(STOCK SPRAY) 20ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "99777e3d-e816-416e-9ce4-f360e9b7d016",
+          "name": "FARM-AMINE 720SL (KIUA GUGU)  1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "2915e1dd-17d4-474b-b463-931f9cf0e34f",
+          "name": "EDITOR 480 SC 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e941f86c-1747-4242-92a7-187b018f628c",
+          "name": "EDITOR 480 SC 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d197943a-798a-4291-ac2f-43ce04350318",
+          "name": "MAGUGUMA 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "15b3caa7-b1e8-4fcd-940a-b0b21904d6f0",
+          "name": "AGROMINE 860SL (2,4-D) 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "50cde222-d3cb-49a3-a537-f97e8067cf28",
+          "name": "POTASUN 5EC 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "0239712c-29f1-41b1-b6c0-b15c0fa92a55",
+          "name": "FARM-AMINE 720SL (KIUA GUGU)  500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3ee876da-5d4a-4cd9-ac8d-2688e7e5f7d6",
+          "name": "FARMROUND 480SL 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "1e26a53d-5c31-4fe8-86b7-0231afb6e645",
+          "name": "LEVAFAS DIAMOND 125ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "b989178d-b3f7-4c7f-af2e-210f3662509f",
+          "name": "NEFLUK 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "964f952b-392f-4277-966e-c7b9e11f9471",
+          "name": "HAI-AMINE 720SL 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "38f3dcc8-8af4-47f5-ad98-cd00435fb459",
+          "name": "HAI-AMINE 720SL 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e01f9f09-dc5b-4a72-bda6-efecdc65eb2e",
+          "name": "NEFLUK 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "9b32bf3d-110d-4025-b28f-d2a5fe06fffd",
+          "name": "CABBAGE SUGARLOAF 10GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "2c8889c1-a17e-424a-aa6b-fca97b8640a5",
+          "name": "FORMULEX FOLIAR (VIAZI PLUS) 100ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "f254a4f6-7302-4f9f-af0f-26876205688e",
+          "name": "RED BEET DETROIT 25GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "3cf55a98-a83d-4639-973e-ee97af816fc0",
+          "name": "RED BEET DETROIT 10GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "ae45be76-3d2f-4dfe-aca5-5d1fe4619f30",
+          "name": "COLLARDS SUKUMA WIKI 25GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "245a27c5-f5b1-43c7-a7d2-02a768254715",
+          "name": "MULTI -COLD(ORGANIC FOLIAR) 5L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "ed55f11b-860d-4bc1-ba03-69e093ab8f97",
+          "name": "WEEDAL480SL 5L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "a2409915-5ce0-4f97-bc70-947e352745d4",
+          "name": "MULTI -COLD(ORGANIC FOLIAR) 200ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "fc359e21-86a7-4dc4-ab18-844bc7856348",
+          "name": "ALGREEN (SUPASENSE) 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "2a5baf2b-3c16-44b6-8ee0-a79a35d037af",
+          "name": "DUDUTHRIN 1.75EC 100ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "4eacf70e-0107-4e29-83bf-53a121c81f8f",
+          "name": "VITA BOOSTER 5L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "48103215-9761-4899-aa56-33f401c5fc88",
+          "name": "SEVIN DUDU DUST 100GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "fb2b2f81-eec2-4e55-afe9-6fbfad8aad4f",
+          "name": "CATTLEPHOS RED BLOCK 5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "fc4b0aa7-93be-4ee8-b6f7-08fb7f644b59",
+          "name": "SEVIN DUDU DUST 50GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "30c7b95b-9c51-4e8e-9e6d-ad3df9ffe2d8",
+          "name": "SIDAI MINERAL BLOCK 5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "5b5a94a1-0d3e-4162-89c6-98465f476323",
+          "name": "FOSCAP TOP 250 ME 50ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "102d3b8b-bb0f-48b8-8067-e265844a4f4a",
+          "name": "SIDAI DAIRY BLOCK 2KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d7ee5ce0-7ab4-450d-a459-b2f15af8919d",
+          "name": "COMPLETE SPRAY PIPE",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "fe04f17b-4498-408a-a2b4-9b6abd57bc96",
+          "name": "ALPHASUMU 100ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e428460b-dae2-4f27-8390-0ac7a9aecb5f",
+          "name": "TAJIRI 720WP 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "ed7ca1c0-6cb4-479b-9a32-5425d34908f2",
+          "name": "DOWNLIGHTER 720WP 500GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "8aa6450c-adde-40bb-8eff-2679a1a4837d",
+          "name": "DOWNLIGHTER 720WP 1KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "17a3170b-5cb6-44bf-bd94-e3023caa4709",
+          "name": "OSHOTHANE 80WP 250GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "8236fdb2-15b5-4297-89cf-c3c4b8317a12",
+          "name": "OSHOTHANE 80WP 500GMS",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "a8306fb1-9af1-4fa1-b7a6-6464453fd5de",
+          "name": "COVVER 72WP/XL 2.5KG",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "96f2c874-fff0-4b4c-8e12-d127b0bbac54",
+          "name": "MOSTRAS 12.5 EC 20ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "568ad252-5c7d-4abd-bb88-f68f4b5af6f2",
+          "name": "PANGA",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "954484bd-4ca7-4e9b-84a4-2582b57d8297",
+          "name": "HAI-AMINE 720SL 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "e4f6751e-eaa8-4753-b054-b5a4775089f7",
+          "name": "FORMULEX FOLIAR (VIAZI PLUS) 1L",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "11f58398-adba-4b4d-841e-0ec741ab8c22",
+          "name": "FORMULEX FOLIAR (VIAZI PLUS) 500ML",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "61e6cd5f-0941-40be-a820-70b00e997de7",
+          "name": "SIDAI MINERAL BLOCK 10KG",
+          "base_price": "0.00",
+          "status": "active"
+        }
+      ]
+    },
+    "hotlinked_images": {
+      "products_pinimg": [],
+      "news_pinimg": "column \"image_url\" does not exist"
+    },
+    "base64_blobs": {
+      "products_base64": [],
+      "news_base64": "column \"image_url\" does not exist"
+    }
+  }
+}

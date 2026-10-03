@@ -1,0 +1,242 @@
+{
+  "orphans": {
+    "show_comments": {
+      "count": 0,
+      "samples": []
+    },
+    "show_likes": {
+      "count": 0,
+      "samples": []
+    },
+    "order_items": {
+      "count": 0,
+      "samples": []
+    },
+    "product_reviews": {
+      "count": 0,
+      "samples": []
+    },
+    "product_variants": {
+      "count": 0,
+      "samples": []
+    },
+    "chapter_lessons": {
+      "count": 0,
+      "samples": []
+    },
+    "profiles": {
+      "count": 3,
+      "samples": [
+        {
+          "id": "934e18e8-98ba-4e21-8741-eda97fd1a469",
+          "full_name": "Mqulima Admin",
+          "email": "admin@mqulima.co.ke",
+          "created_at": "2026-09-11T08:33:56.738Z"
+        },
+        {
+          "id": "035dba78-9c5a-4994-be80-c915755f5009",
+          "full_name": "Mqulima Super Admin",
+          "email": "Mqulima001@gmail.com",
+          "created_at": "2026-09-11T08:34:01.785Z"
+        },
+        {
+          "id": "9ec45c9e-b967-4722-a64d-cba7ba1b2ef2",
+          "full_name": "Mkulima Super Admin",
+          "email": "Mkulima001@gmail.com",
+          "created_at": "2026-09-11T08:34:01.785Z"
+        }
+      ]
+    }
+  },
+  "duplicates": {
+    "duplicate_product_slugs": {
+      "count": 0,
+      "samples": []
+    },
+    "duplicate_product_names": {
+      "count": 4,
+      "samples": [
+        {
+          "name": "vita booster 1l",
+          "count": "2",
+          "ids": [
+            "63ccfa48-8b31-4b57-beaa-7dd9153c3729",
+            "3304f5dd-493a-4deb-a4ad-59070151cd01"
+          ]
+        },
+        {
+          "name": "hai-amine 720sl 500ml",
+          "count": "2",
+          "ids": [
+            "964f952b-392f-4277-966e-c7b9e11f9471",
+            "38f3dcc8-8af4-47f5-ad98-cd00435fb459"
+          ]
+        },
+        {
+          "name": "farmround 480sl 500ml",
+          "count": "2",
+          "ids": [
+            "de83230f-60bc-4074-bb6f-408e61d0ad82",
+            "fde2de77-ec1a-4705-8cf7-7c955b3b1fe9"
+          ]
+        },
+        {
+          "name": "covver 72wp/xl 2.5kg",
+          "count": "2",
+          "ids": [
+            "ac782e9c-a1e0-4de3-9f1c-b3a24594d1ba",
+            "a8306fb1-9af1-4fa1-b7a6-6464453fd5de"
+          ]
+        }
+      ]
+    },
+    "duplicate_user_emails": {
+      "count": 0,
+      "samples": []
+    },
+    "duplicate_newsletter_subscribers": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "stale_data": {
+    "expired_email_verifications": {
+      "count": 0,
+      "samples": []
+    },
+    "pos_sync_logs_90d": {
+      "count": 0,
+      "samples": []
+    },
+    "notifications_90d": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "test_data": {
+    "test_products": {
+      "count": 0,
+      "samples": []
+    },
+    "test_users": {
+      "error": "column \"role\" does not exist"
+    },
+    "seed_featured_items": {
+      "count": 5,
+      "samples": [
+        {
+          "id": "feat-seed-6",
+          "title": "Veterinary Feed Supplement",
+          "image_url": "/placeholder-product.png",
+          "link_url": "/shop"
+        },
+        {
+          "id": "feat-seed-1",
+          "title": "Organic Maize Seed Vector",
+          "image_url": "/placeholder-product.png",
+          "link_url": "/shop"
+        },
+        {
+          "id": "feat-seed-2",
+          "title": "Solar Water Pump Kit",
+          "image_url": "/placeholder-product.png",
+          "link_url": "/shop"
+        },
+        {
+          "id": "feat-seed-4",
+          "title": "Smart Irrigation Drip Lines",
+          "image_url": "/placeholder-product.png",
+          "link_url": "/shop"
+        },
+        {
+          "id": "feat-seed-5",
+          "title": "High-Yield Tomato Seedling",
+          "image_url": "/placeholder-product.png",
+          "link_url": "/shop"
+        }
+      ]
+    }
+  },
+  "soft_deleted_90d": {
+    "products": {
+      "count": 0,
+      "samples": []
+    },
+    "profiles": {
+      "count": 0,
+      "samples": []
+    },
+    "show_posts": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "empty_rows": {
+    "products_empty_or_zero_price": {
+      "count": 134,
+      "samples": [
+        {
+          "id": "696142c1-1ac6-4c3f-b358-dd2e106f8fe1",
+          "name": "MOTO PLUS 75WG 50GMS",
+          "slug": "102295-4317",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "1ee314eb-b73d-4475-a7f0-320f1f71f1e1",
+          "name": "NILZAN PLUS 5L",
+          "slug": "102333-1487",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "d20332d0-4da9-492e-a6e5-4d475c80d0b3",
+          "name": "VALBAZEN 10% 180ML",
+          "slug": "102329-2768",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "be933568-8763-46a1-aa61-7c71e0a0bacd",
+          "name": "LEVANIDE 90 SUPER 150ML",
+          "slug": "102331-7324",
+          "base_price": "0.00",
+          "status": "active"
+        },
+        {
+          "id": "298257d6-f730-40a2-86a0-67a4dbbc5268",
+          "name": "MULTI -COLD(ORGANIC FOLIAR) 1L",
+          "slug": "102355-3499",
+          "base_price": "0.00",
+          "status": "active"
+        }
+      ]
+    }
+  },
+  "hotlinked_images": {
+    "products": {
+      "count": 0,
+      "samples": []
+    },
+    "news": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "forum_spam": {
+    "posts": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "base64_blobs": {
+    "products": {
+      "count": 0,
+      "samples": []
+    },
+    "news": {
+      "count": 0,
+      "samples": []
+    }
+  }
+}

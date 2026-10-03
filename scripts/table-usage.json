@@ -1,0 +1,407 @@
+[
+  {
+    "table": "pos_sync_logs",
+    "rowCount": 2051,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "products",
+    "rowCount": 330,
+    "codeFilesWithMention": 43
+  },
+  {
+    "table": "product_variants",
+    "rowCount": 323,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "admin_audit_logs",
+    "rowCount": 61,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "schema_migrations",
+    "rowCount": 60,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "shop_subcategories",
+    "rowCount": 45,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "commodity_price_board",
+    "rowCount": 24,
+    "codeFilesWithMention": 6
+  },
+  {
+    "table": "chapter_lessons",
+    "rowCount": 22,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "shop_categories",
+    "rowCount": 21,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "course_chapters",
+    "rowCount": 20,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "notifications",
+    "rowCount": 18,
+    "codeFilesWithMention": 11
+  },
+  {
+    "table": "user_notifications",
+    "rowCount": 18,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "sms_logs",
+    "rowCount": 17,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "product_categories",
+    "rowCount": 16,
+    "codeFilesWithMention": 6
+  },
+  {
+    "table": "order_items",
+    "rowCount": 14,
+    "codeFilesWithMention": 6
+  },
+  {
+    "table": "orders",
+    "rowCount": 14,
+    "codeFilesWithMention": 30
+  },
+  {
+    "table": "commodities",
+    "rowCount": 10,
+    "codeFilesWithMention": 11
+  },
+  {
+    "table": "payments",
+    "rowCount": 10,
+    "codeFilesWithMention": 25
+  },
+  {
+    "table": "agritech_news",
+    "rowCount": 8,
+    "codeFilesWithMention": 6
+  },
+  {
+    "table": "profiles",
+    "rowCount": 6,
+    "codeFilesWithMention": 32
+  },
+  {
+    "table": "service_categories",
+    "rowCount": 6,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "shop_fields",
+    "rowCount": 6,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "courses",
+    "rowCount": 5,
+    "codeFilesWithMention": 4
+  },
+  {
+    "table": "featured_items",
+    "rowCount": 5,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "blog_authors",
+    "rowCount": 4,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "blog_posts",
+    "rowCount": 4,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "services",
+    "rowCount": 3,
+    "codeFilesWithMention": 53
+  },
+  {
+    "table": "users",
+    "rowCount": 3,
+    "codeFilesWithMention": 20
+  },
+  {
+    "table": "show_likes",
+    "rowCount": 2,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "direct_messages",
+    "rowCount": 1,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "farmer_followers",
+    "rowCount": 1,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "followers",
+    "rowCount": 1,
+    "codeFilesWithMention": 7
+  },
+  {
+    "table": "moderation_settings",
+    "rowCount": 1,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "newsletter_subscribers",
+    "rowCount": 1,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "show_posts",
+    "rowCount": 1,
+    "codeFilesWithMention": 5
+  },
+  {
+    "table": "user_followers",
+    "rowCount": 1,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "academy_lesson_progress",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "admin_logs",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "admin_logs_view",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "admin_quotations",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "ai_conversations",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "ai_messages",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "ai_query_logs",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "audit_log",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "commodity_listings",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "contact_submissions",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "conversations",
+    "rowCount": 0,
+    "codeFilesWithMention": 9
+  },
+  {
+    "table": "course_enrollments",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "crop_diagnoses",
+    "rowCount": 0,
+    "codeFilesWithMention": 4
+  },
+  {
+    "table": "email_verifications",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "farmer_activities",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "farmer_badges",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "farmer_following",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "forum_reports",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "logistics_records",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "market_price_overrides",
+    "rowCount": 0,
+    "codeFilesWithMention": 3
+  },
+  {
+    "table": "messages",
+    "rowCount": 0,
+    "codeFilesWithMention": 15
+  },
+  {
+    "table": "moderation_actions",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "moderation_reports",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "newsletter_issues",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "partnership_applications",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "pos_auth_tokens",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "product_reviews",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "proforma_invoices",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "pulse_posts",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "quotations",
+    "rowCount": 0,
+    "codeFilesWithMention": 7
+  },
+  {
+    "table": "service_requests",
+    "rowCount": 0,
+    "codeFilesWithMention": 8
+  },
+  {
+    "table": "show_bookmarks",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "show_comments",
+    "rowCount": 0,
+    "codeFilesWithMention": 4
+  },
+  {
+    "table": "stock_recommendations",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "stock_sourcing_requests",
+    "rowCount": 0,
+    "codeFilesWithMention": 2
+  },
+  {
+    "table": "user_activity_logs",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "user_audit_actions",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "user_audit_logs",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "user_badges",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "user_completed_lessons",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "user_following",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "user_logs",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "user_reports",
+    "rowCount": 0,
+    "codeFilesWithMention": 0
+  },
+  {
+    "table": "user_restrictions",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  },
+  {
+    "table": "user_sessions",
+    "rowCount": 0,
+    "codeFilesWithMention": 1
+  }
+]

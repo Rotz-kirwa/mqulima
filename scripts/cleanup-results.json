@@ -1,0 +1,18 @@
+{
+  "orphaned_profiles": {
+    "before_count": 6,
+    "deleted_rows": 3,
+    "after_count": 3
+  },
+  "seed_featured_items": {
+    "before_count": 5,
+    "deleted_rows": 5,
+    "after_count": 0
+  },
+  "unpriced_products": {
+    "active_unpriced_before": 134,
+    "updated_rows": 134,
+    "active_unpriced_after": 0,
+    "draft_total_after": 134
+  }
+}

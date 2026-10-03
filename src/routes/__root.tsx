@@ -91,13 +91,7 @@ export const Route = createRootRouteWithContext<{
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
-      {
-        rel: "preload",
-        as: "font",
-        type: "font/woff2",
-        href: "/fonts/plus-jakarta-sans.woff2",
-        crossOrigin: "anonymous",
-      },
+      // PERF: do not preload fonts that no @font-face uses (wasted high-priority download).
       { rel: "stylesheet", href: appCss },
     ],
   }),
