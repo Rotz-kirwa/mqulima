@@ -1,17 +1,7 @@
 // Vite configuration for TanStack Start app
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
-  plugins: [
-    visualizer((outputOptions: any) => ({
-      filename: outputOptions?.dir?.includes("static")
-        ? ".vercel/client-stats.html"
-        : ".vercel/server-stats.html",
-      gzipSize: true,
-      brotliSize: true,
-    })),
-  ],
   vite: {
     build: {
       target: "es2022",
