@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { orders } from "@/db/schema/orders";
 import { profiles } from "@/db/schema/profiles";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, sql } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import { invalidateAnalyticsCache } from "./analytics";
 
 export const Route = createFileRoute("/api/admin/orders")({
   server: {
@@ -36,12 +37,7 @@ export const Route = createFileRoute("/api/admin/orders")({
             })
             .from(orders)
             .leftJoin(profiles, eq(orders.userId, profiles.id))
-            .where(
-              or(
-                eq(orders.paymentStatus, "paid"),
-                eq(orders.checkoutChannel, "whatsapp")
-              )
-            )
+            .where(sql`${orders.deletedAt} IS NULL`)
             .orderBy(desc(orders.createdAt))
             .limit(100);
 
@@ -60,9 +56,9 @@ export const Route = createFileRoute("/api/admin/orders")({
         if ("response" in auth) return auth.response;
         try {
           const body = await request.json();
-          const { id, status, actorId = "system-admin" } = body;
+          const { id, status, paymentStatus, actorId = "system-admin" } = body;
 
-          if (!id || !status) {
+          if (!id || (!status && !paymentStatus)) {
             return new Response(JSON.stringify({ success: false, error: "Missing required parameters" }), {
               status: 400,
               headers: { "Content-Type": "application/json" },
@@ -126,20 +122,45 @@ export const Route = createFileRoute("/api/admin/orders")({
               restored = true;
             }
 
-            await tx`
-              UPDATE orders
-              SET status = ${status}, updated_at = NOW()
-              WHERE id = ${id}
-            `;
+            const targetStatus = status || previousStatus;
+            const isConfirmedOrPaid = 
+              targetStatus === "confirmed" || 
+              targetStatus === "paid" || 
+              paymentStatus === "paid";
+
+            if (isConfirmedOrPaid) {
+              await tx`
+                UPDATE orders
+                SET status = ${targetStatus}, 
+                    payment_status = 'paid', 
+                    updated_at = NOW()
+                WHERE id = ${id}
+              `;
+              await tx`
+                UPDATE payments
+                SET status = 'paid', updated_at = NOW()
+                WHERE order_id = ${id}
+              `;
+            } else {
+              await tx`
+                UPDATE orders
+                SET status = ${targetStatus}, 
+                    payment_status = ${paymentStatus || order.payment_status || "pending"},
+                    updated_at = NOW()
+                WHERE id = ${id}
+              `;
+            }
 
             await logAdminAction({
               actorId: auth.user?.id || actorId,
-              action: `ORDER_STATUS_${status.toUpperCase()}`,
+              action: `ORDER_STATUS_${targetStatus.toUpperCase()}`,
               entity: "orders",
               entityId: id,
-              diff: { previousStatus, newStatus: status, inventoryRestored: restored },
+              diff: { previousStatus, newStatus: targetStatus, paymentStatus: isConfirmedOrPaid ? "paid" : (paymentStatus || order.payment_status), inventoryRestored: restored },
             });
           });
+
+          invalidateAnalyticsCache();
 
           return new Response(
             JSON.stringify({

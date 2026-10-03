@@ -128,101 +128,97 @@ export const Route = createFileRoute("/api/admin/analytics")({
 
 async function computeAnalytics() {
   const sqlClient = getDb();
-  const confirmedOrderFilter = or(
-    eq(orders.paymentStatus, "paid"),
-    eq(orders.checkoutChannel, "whatsapp")
-  );
 
-          // Execute all independent analytics queries concurrently via Promise.all
-          const [
-            [orderStats],
-            [customerCountRes],
-            [farmersCountRes],
-            [productsCountRes],
-            [pendingServicesRes],
-            monthlyRaw,
-            weeklyRaw,
-            auditRows,
-            newsRows,
-            serviceRows,
-            orderRows,
-          ] = await Promise.all([
-            // 1. Single-pass aggregated order metrics
-            sqlClient`
-              SELECT 
-                COUNT(*)::int AS "totalOrdersCount",
-                COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS "totalRevenue",
-                COUNT(*) FILTER (WHERE status = 'delivered')::int AS "deliveredCount",
-                COUNT(*) FILTER (WHERE status = 'shipped')::int AS "shippedCount",
-                COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingCount",
-                COUNT(*) FILTER (WHERE status = 'processing')::int AS "processingCount",
-                COUNT(*) FILTER (WHERE status = 'cancelled')::int AS "cancelledCount"
-              FROM orders
-              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
-            `,
+  // Execute all independent analytics queries concurrently via Promise.all
+  const [
+    [orderStats],
+    [customerCountRes],
+    [farmersCountRes],
+    [productsCountRes],
+    [pendingServicesRes],
+    monthlyRaw,
+    weeklyRaw,
+    auditRows,
+    newsRows,
+    serviceRows,
+    orderRows,
+  ] = await Promise.all([
+    // 1. Single-pass aggregated order metrics (revenue strictly confirmed & validated)
+    sqlClient`
+      SELECT 
+        COUNT(*) FILTER (WHERE status != 'cancelled')::int AS "totalOrdersCount",
+        COALESCE(SUM(CAST(total AS NUMERIC)) FILTER (WHERE (payment_status = 'paid' OR status = 'confirmed') AND status != 'cancelled'), 0)::numeric AS "totalRevenue",
+        COUNT(*) FILTER (WHERE status = 'delivered')::int AS "deliveredCount",
+        COUNT(*) FILTER (WHERE status = 'shipped')::int AS "shippedCount",
+        COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingCount",
+        COUNT(*) FILTER (WHERE status = 'processing')::int AS "processingCount",
+        COUNT(*) FILTER (WHERE status = 'cancelled')::int AS "cancelledCount"
+      FROM orders
+    `,
 
-            // 2. Accurate Customer counts
-            sqlClient`
-              SELECT COUNT(DISTINCT LOWER(email))::int AS count
-              FROM (
-                SELECT email FROM users WHERE deleted_at IS NULL
-                UNION
-                SELECT email FROM profiles 
-                WHERE deleted_at IS NULL 
-                  AND role::text NOT IN ('admin', 'super_admin', 'sales_agent', 'content_editor')
-              ) customer_identities
-            `,
+    // 2. Accurate Customer counts
+    sqlClient`
+      SELECT COUNT(DISTINCT LOWER(email))::int AS count
+      FROM (
+        SELECT email FROM users WHERE deleted_at IS NULL
+        UNION
+        SELECT email FROM profiles 
+        WHERE deleted_at IS NULL 
+          AND role::text NOT IN ('admin', 'super_admin', 'sales_agent', 'content_editor')
+      ) customer_identities
+    `,
 
-            // 3. Accurate Farmer counts
-            sqlClient`
-              SELECT COUNT(DISTINCT LOWER(email))::int AS count
-              FROM (
-                SELECT email FROM users 
-                WHERE deleted_at IS NULL 
-                  AND (farming_type IS NULL OR farming_type != 'I''m a Buyer/Consumer Only (no farming)')
-                UNION
-                SELECT email FROM profiles 
-                WHERE deleted_at IS NULL 
-                  AND role::text = 'farmer'
-              ) farmer_identities
-            `,
+    // 3. Accurate Farmer counts
+    sqlClient`
+      SELECT COUNT(DISTINCT LOWER(email))::int AS count
+      FROM (
+        SELECT email FROM users 
+        WHERE deleted_at IS NULL 
+          AND (farming_type IS NULL OR farming_type != 'I''m a Buyer/Consumer Only (no farming)')
+        UNION
+        SELECT email FROM profiles 
+        WHERE deleted_at IS NULL 
+          AND role::text = 'farmer'
+      ) farmer_identities
+    `,
 
-            // 4. Products count
-            sqlClient`
-              SELECT COUNT(*)::int AS count 
-              FROM products 
-              WHERE deleted_at IS NULL
-            `,
+    // 4. Products count
+    sqlClient`
+      SELECT COUNT(*)::int AS count 
+      FROM products 
+      WHERE deleted_at IS NULL
+    `,
 
-            // 5. Pending service requests count
-            sqlClient`
-              SELECT COUNT(*)::int AS count 
-              FROM service_requests 
-              WHERE status = 'requested'
-            `,
+    // 5. Pending service requests count
+    sqlClient`
+      SELECT COUNT(*)::int AS count 
+      FROM service_requests 
+      WHERE status = 'requested'
+    `,
 
-            // 6. Monthly Gross Revenue Trend
-            sqlClient`
-              SELECT 
-                TO_CHAR(created_at, 'Mon') AS "monthLabel",
-                EXTRACT(MONTH FROM created_at)::int AS "monthNum",
-                COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS revenue
-              FROM orders
-              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
-              GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
-              ORDER BY "monthNum" ASC
-            `,
+    // 6. Monthly Confirmed & Validated Revenue Trend
+    sqlClient`
+      SELECT 
+        TO_CHAR(created_at, 'Mon') AS "monthLabel",
+        EXTRACT(MONTH FROM created_at)::int AS "monthNum",
+        COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS revenue
+      FROM orders
+      WHERE (payment_status = 'paid' OR status = 'confirmed')
+        AND status != 'cancelled'
+      GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
+      ORDER BY "monthNum" ASC
+    `,
 
-            // 7. Weekly Order Volume
-            sqlClient`
-              SELECT 
-                EXTRACT(DOW FROM created_at)::int AS dow,
-                COUNT(*)::int AS "orderCount"
-              FROM orders
-              WHERE (payment_status = 'paid' OR checkout_channel = 'whatsapp')
-              GROUP BY EXTRACT(DOW FROM created_at)
-              ORDER BY dow ASC
-            `,
+    // 7. Weekly Order Volume (all active orders)
+    sqlClient`
+      SELECT 
+        EXTRACT(DOW FROM created_at)::int AS dow,
+        COUNT(*)::int AS "orderCount"
+      FROM orders
+      WHERE status != 'cancelled'
+      GROUP BY EXTRACT(DOW FROM created_at)
+      ORDER BY dow ASC
+    `,
 
             // 8. Audit logs
             sqlClient`

@@ -549,7 +549,7 @@ export const OrdersQuotationsModule: React.FC = () => {
                               disabled={updatingStatusId === order.id}
                               onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                               className={`font-mono text-[11px] uppercase font-extrabold px-3 py-1.5 rounded-[6px] border cursor-pointer focus:outline-none transition-all shadow-xs ${
-                                order.status === "delivered" || order.status === "completed"
+                                order.status === "confirmed" || order.status === "paid" || order.status === "delivered" || order.status === "completed"
                                   ? "bg-emerald-100 border-emerald-400 text-emerald-950 hover:bg-emerald-200"
                                   : order.status === "cancelled"
                                   ? "bg-rose-100 border-rose-400 text-rose-950 hover:bg-rose-200"
@@ -557,6 +557,7 @@ export const OrdersQuotationsModule: React.FC = () => {
                               }`}
                             >
                               <option value="pending" className="bg-white text-blue-900 font-bold">⏳ Pending</option>
+                              <option value="confirmed" className="bg-white text-emerald-900 font-bold">✓ Confirmed & Validated</option>
                               <option value="processing" className="bg-white text-blue-900 font-bold">⚙ Processing</option>
                               <option value="shipped" className="bg-white text-blue-900 font-bold">🚚 Dispatched</option>
                               <option value="delivered" className="bg-white text-emerald-900 font-bold">✓ Delivered</option>
@@ -575,18 +576,22 @@ export const OrdersQuotationsModule: React.FC = () => {
                               <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
                                 <Check className="h-3.5 w-3.5 text-emerald-700" /> Delivered
                               </span>
+                            ) : order.status === "confirmed" || order.paymentStatus === "paid" ? (
+                              <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
+                                <Check className="h-3.5 w-3.5 text-emerald-700" /> Confirmed
+                              </span>
                             ) : order.status === "cancelled" ? (
                               <span className="px-2.5 py-1 bg-rose-100 border border-rose-300 text-rose-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
                                 <X className="h-3.5 w-3.5 text-rose-700" /> Cancelled
                               </span>
                             ) : (
                               <button
-                                onClick={() => handleUpdateOrderStatus(order.id, "delivered")}
+                                onClick={() => handleUpdateOrderStatus(order.id, "confirmed")}
                                 disabled={updatingStatusId === order.id}
-                                title="Mark Order as Delivered"
+                                title="Validate and Confirm Order"
                                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-xs"
                               >
-                                <Check className="h-3.5 w-3.5" /> Mark Delivered
+                                <Check className="h-3.5 w-3.5" /> Validate & Confirm
                               </button>
                             )}
 
@@ -861,7 +866,9 @@ export const OrdersQuotationsModule: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[#4A7C79] font-bold">Payment Status: </span>
-                    <span className="font-mono font-bold text-[#278C7B] uppercase">{selectedOrder.paymentStatus || "PAID"}</span>
+                    <span className={`font-mono font-bold uppercase ${selectedOrder.paymentStatus === "paid" || selectedOrder.status === "confirmed" ? "text-emerald-700" : "text-amber-700"}`}>
+                      {selectedOrder.paymentStatus === "paid" || selectedOrder.status === "confirmed" ? "CONFIRMED & VALIDATED" : (selectedOrder.paymentStatus || "PENDING VALIDATION")}
+                    </span>
                   </div>
                   {selectedOrder.deliveryAddress && (
                     <div>
@@ -889,6 +896,7 @@ export const OrdersQuotationsModule: React.FC = () => {
                   className="font-mono text-xs uppercase font-extrabold px-3 py-1.5 rounded-[6px] border border-[#278C7B] bg-white text-[#0F3D3C] cursor-pointer focus:outline-none"
                 >
                   <option value="pending">⏳ Pending</option>
+                  <option value="confirmed">✓ Confirmed & Validated</option>
                   <option value="processing">⚙ Processing</option>
                   <option value="shipped">🚚 Dispatched</option>
                   <option value="delivered">✓ Delivered</option>

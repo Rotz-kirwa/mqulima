@@ -233,13 +233,13 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
         >
           <div>
             <div className="text-[11px] font-mono uppercase text-[#A7F3D0] font-bold tracking-wider">
-              Revenue (Gross Total)
+              Revenue (Confirmed & Validated)
             </div>
             <div className="text-2xl font-serif font-bold text-white mt-1">
               {kpiLoading ? "..." : `KSh ${kpi.totalRevenueKsh.toLocaleString()}`}
             </div>
             <div className="text-[10px] font-mono text-[#D1FAE5] mt-1 font-bold">
-              PostgreSQL Order Ledger
+              Confirmed & Validated Orders
             </div>
           </div>
           <div className="h-12 w-12 rounded-[8px] bg-white/15 border border-white/20 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
@@ -276,8 +276,8 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
         <div className="lg:col-span-2 bg-white border border-[#CCE5E1] rounded-[6px] p-5 space-y-4 text-left shadow-xs">
           <div className="flex items-center justify-between border-b border-[#CCE5E1]/60 pb-3">
             <div>
-              <h2 className="text-sm font-serif font-bold text-[#0F3D3C]">Monthly Gross Revenue Trend</h2>
-              <p className="text-[11px] text-[#4A7C79]">Marketplace transactions (PostgreSQL SQL Monthly Sum)</p>
+              <h2 className="text-sm font-serif font-bold text-[#0F3D3C]">Monthly Confirmed Revenue Trend</h2>
+              <p className="text-[11px] text-[#4A7C79]">Marketplace transactions (PostgreSQL Confirmed & Validated Sum)</p>
             </div>
             <span className="text-[10px] font-mono text-[#278C7B] uppercase font-extrabold bg-[#E8F4F1] px-2 py-0.5 rounded-[2px]">
               Live SQL Trend

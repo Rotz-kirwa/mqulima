@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getDb } from "@/lib/db.server";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
+import { invalidateAnalyticsCache } from "./analytics";
 import crypto from "crypto";
 
 export const Route = createFileRoute("/api/admin/payments")({
@@ -217,6 +218,8 @@ export const Route = createFileRoute("/api/admin/payments")({
               entityId: paymentId,
               diff: { matchedOrderId: orderId },
             });
+
+            invalidateAnalyticsCache();
 
             return new Response(
               JSON.stringify({ success: true, message: `Payment ${paymentId} manually matched to Order #${orderId}` }),
