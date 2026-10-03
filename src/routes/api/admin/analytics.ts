@@ -24,20 +24,114 @@ function formatRelativeTime(date: Date | string | null | undefined): string {
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+interface AnalyticsCache {
+  data: any;
+  cachedAt: number;
+  expiresAt: number;
+  staleUntil: number;
+}
+
+let analyticsCache: AnalyticsCache | null = null;
+let revalidatingPromise: Promise<any> | null = null;
+
+export function invalidateAnalyticsCache(): void {
+  analyticsCache = null;
+}
+
 export const Route = createFileRoute("/api/admin/analytics")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if ("response" in auth) return auth.response;
-        try {
-          // Gating filter: Admin only records and analyses confirmed paid orders OR WhatsApp orders
-          const confirmedOrderFilter = or(
-            eq(orders.paymentStatus, "paid"),
-            eq(orders.checkoutChannel, "whatsapp")
-          );
 
-          const sqlClient = getDb();
+        const now = Date.now();
+        const url = new URL(request.url);
+        const bypass = url.searchParams.get("bypassCache") === "true";
+
+        // 1. Instant Cache Hit (0ms)
+        if (!bypass && analyticsCache && now < analyticsCache.expiresAt) {
+          return new Response(JSON.stringify(analyticsCache.data), {
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "private, no-cache, no-transform",
+              "X-Cache": "HIT",
+              "Server-Timing": "cache;desc=AnalyticsHit;dur=0",
+            },
+          });
+        }
+
+        // 2. Stale-While-Revalidate (Instant response while revalidating in background)
+        if (!bypass && analyticsCache && now < analyticsCache.staleUntil) {
+          const staleData = analyticsCache.data;
+          // Trigger background revalidation if not already in flight
+          if (!revalidatingPromise) {
+            revalidatingPromise = computeAnalytics().then((fresh) => {
+              analyticsCache = {
+                data: fresh,
+                cachedAt: Date.now(),
+                expiresAt: Date.now() + 45_000, // 45s fresh
+                staleUntil: Date.now() + 300_000, // 5m stale window
+              };
+              revalidatingPromise = null;
+            }).catch(() => {
+              revalidatingPromise = null;
+            });
+          }
+
+          return new Response(JSON.stringify(staleData), {
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "private, no-cache, no-transform",
+              "X-Cache": "STALE",
+              "Server-Timing": "cache;desc=AnalyticsStale;dur=0",
+            },
+          });
+        }
+
+        try {
+          const freshData = await computeAnalytics();
+          analyticsCache = {
+            data: freshData,
+            cachedAt: now,
+            expiresAt: now + 45_000,
+            staleUntil: now + 300_000,
+          };
+
+          return new Response(JSON.stringify(freshData), {
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "private, no-cache, no-transform",
+              "X-Cache": "MISS",
+            },
+          });
+        } catch (error: any) {
+          console.error("Admin analytics fetch error:", error);
+          if (analyticsCache) {
+            // Fallback to cached data if available on error
+            return new Response(JSON.stringify(analyticsCache.data), {
+              headers: { "Content-Type": "application/json", "X-Cache": "FALLBACK" },
+            });
+          }
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: error.message || "Failed to fetch analytics",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      },
+    },
+  },
+});
+
+async function computeAnalytics() {
+  const sqlClient = getDb();
+  const confirmedOrderFilter = or(
+    eq(orders.paymentStatus, "paid"),
+    eq(orders.checkoutChannel, "whatsapp")
+  );
 
           // Execute all independent analytics queries concurrently via Promise.all
           const [
@@ -408,44 +502,22 @@ export const Route = createFileRoute("/api/admin/analytics")({
 
           const liveActivities = activities.slice(0, 10);
 
-          return new Response(
-            JSON.stringify({
-              success: true,
-              kpis: {
-                activeCustomers: totalCustomersCount,
-                totalFarmers: totalFarmersCount,
-                openOrders: totalOrdersCount,
-                totalProducts: productsCountRes?.count || 0,
-                pendingServices: pendingServicesRes?.count || 0,
-                totalRevenueKsh: Number(orderStats?.totalRevenue) || 0,
-                fulfilledCount,
-                pendingCount,
-                cancelledCount,
-                fulfilledPct,
-                monthlyTrend,
-                weeklyVolume,
-              },
-              liveActivities,
-            }),
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-                Pragma: "no-cache",
-              },
-            }
-          );
-        } catch (error: any) {
-          console.error("Admin analytics fetch error:", error);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: error.message || "Failed to fetch analytics",
-            }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-          );
-        }
-      },
-    },
-  },
-});
+          return {
+            success: true,
+            kpis: {
+              activeCustomers: totalCustomersCount,
+              totalFarmers: totalFarmersCount,
+              openOrders: totalOrdersCount,
+              totalProducts: productsCountRes?.count || 0,
+              pendingServices: pendingServicesRes?.count || 0,
+              totalRevenueKsh: Number(orderStats?.totalRevenue) || 0,
+              fulfilledCount,
+              pendingCount,
+              cancelledCount,
+              fulfilledPct,
+              monthlyTrend,
+              weeklyVolume,
+            },
+            liveActivities,
+          };
+}
