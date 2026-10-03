@@ -1,9 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getDrizzleDb } from "@/lib/db.server";
 import { products, productVariants, productCategories } from "@/db/schema/products";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, inArray, or } from "drizzle-orm";
 import { resolveFastProductImage } from "@/lib/api/shop.server";
 import { mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
+
+// PERF: in-memory listing cache with stale-while-revalidate. Do not remove —
+// see PERFORMANCE.md. Invalidated by admin product mutations and POS sync.
+const LIST_CACHE_TTL_MS = 60_000;
+const LIST_CACHE_STALE_MS = 10 * 60_000;
+const listCache = new Map<string, { body: string; freshUntil: number; staleUntil: number }>();
+const inflight = new Map<string, Promise<string>>();
+
+export function invalidateApiProductsCache() {
+  listCache.clear();
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/api/products")({
   server: {
@@ -21,14 +34,16 @@ export const Route = createFileRoute("/api/products")({
 
           // Single Product Details Request via ?id=... or ?slug=...
           if (productId || slug) {
+            // Non-UUID ids (e.g. POS external ids / slugs) must not hit the uuid column — Postgres throws.
+            const idOrSlugWhere = productId
+              ? (UUID_RE.test(productId)
+                  ? eq(products.id, productId)
+                  : or(eq(products.slug, productId), eq(products.externalProductId, productId)))
+              : eq(products.slug, slug!);
             const productMatch = await db
               .select()
               .from(products)
-              .where(
-                productId
-                  ? eq(products.id, productId)
-                  : eq(products.slug, slug!)
-              )
+              .where(idOrSlugWhere)
               .limit(1);
 
             if (productMatch.length === 0) {
@@ -86,8 +101,19 @@ export const Route = createFileRoute("/api/products")({
 
           // Product Listing Request with Pagination
           const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
-          const limit = Math.min(1000, Math.max(1, parseInt(url.searchParams.get("limit") || "1000", 10) || 1000));
+          // PERF: paginated by default (was 1000). Callers can still request up to 1000 explicitly.
+          const limit = Math.min(1000, Math.max(1, parseInt(url.searchParams.get("limit") || "50", 10) || 50));
           const offset = (page - 1) * limit;
+
+          const cacheKey = `${page}|${limit}|${category || ""}|${(search || "").trim().toLowerCase()}`;
+          const jsonHeaders = {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+          };
+          const now = Date.now();
+          const hit = listCache.get(cacheKey);
+
+          const build = async (): Promise<string> => {
 
           const andConditions = [
             sql`${products.deletedAt} IS NULL`,
@@ -126,13 +152,20 @@ export const Route = createFileRoute("/api/products")({
           const total = countResult[0]?.count || 0;
           const totalPages = Math.ceil(total / limit) || 1;
 
-          // Optionally load variation counts or min/max prices
-          const formattedProducts = await Promise.all(
-            productList.map(async (p) => {
-              const vars = await db
-                .select()
-                .from(productVariants)
-                .where(eq(productVariants.productId, p.id));
+          // PERF: single batched variant query instead of one query per product (N+1).
+          const productIds = productList.map((p) => p.id);
+          const allVariants = productIds.length > 0
+            ? await db.select().from(productVariants).where(inArray(productVariants.productId, productIds))
+            : [];
+          const variantsByProduct = new Map<string, typeof allVariants>();
+          for (const v of allVariants) {
+            const list = variantsByProduct.get(v.productId as string) || [];
+            list.push(v);
+            variantsByProduct.set(v.productId as string, list);
+          }
+
+          const formattedProducts = productList.map((p) => {
+              const vars = variantsByProduct.get(p.id) || [];
 
               const tax = mapToNewTaxonomy(p);
               const cleanDesc = cleanDescriptionText(p.description) || "Certified genuine agricultural input for farm use.";
@@ -176,26 +209,44 @@ export const Route = createFileRoute("/api/products")({
                 createdAt: p.createdAt,
                 updatedAt: p.updatedAt,
               };
-            })
-          );
+            });
 
-          return new Response(
-            JSON.stringify({
-              success: true,
-              total,
-              page,
-              totalPages,
-              limit,
-              products: formattedProducts,
-            }),
-            {
-              status: 200,
-              headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "public, max-age=60, s-maxage=300",
-              },
+          return JSON.stringify({
+            success: true,
+            total,
+            page,
+            totalPages,
+            limit,
+            products: formattedProducts,
+          });
+          };
+
+          const refresh = () => {
+            let p = inflight.get(cacheKey);
+            if (!p) {
+              p = build()
+                .then((body) => {
+                  const t = Date.now();
+                  listCache.set(cacheKey, { body, freshUntil: t + LIST_CACHE_TTL_MS, staleUntil: t + LIST_CACHE_STALE_MS });
+                  return body;
+                })
+                .finally(() => inflight.delete(cacheKey));
+              inflight.set(cacheKey, p);
             }
-          );
+            return p;
+          };
+
+          let body: string;
+          if (hit && hit.freshUntil > now) {
+            body = hit.body;
+          } else if (hit && hit.staleUntil > now) {
+            body = hit.body;
+            refresh().catch(() => {});
+          } else {
+            body = await refresh();
+          }
+
+          return new Response(body, { status: 200, headers: jsonHeaders });
         } catch (err: any) {
           console.error("[API /api/products Error]:", err);
           return new Response(
