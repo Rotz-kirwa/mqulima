@@ -1,6 +1,7 @@
 import { adminCache } from "./cache";
 
-const API_BASE = ((import.meta as any).env?.VITE_API_URL || "").replace(/\/$/, "");
+const RAW_API_BASE = ((import.meta as any).env?.VITE_API_URL || "").trim();
+const API_BASE = RAW_API_BASE.replace(/\/$/, "");
 
 export function getApiUrl(path: string): string {
   if (!API_BASE || path.startsWith("http://") || path.startsWith("https://")) {
