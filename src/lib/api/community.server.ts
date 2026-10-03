@@ -12,12 +12,91 @@ function normalizeTags(tags: unknown): string[] {
   return tags.map((tag) => String(tag).startsWith("#") ? String(tag) : `#${tag}`).slice(0, 8);
 }
 
+// PERF: forum snapshot cache (public data only; per-user likes/bookmarks are always live).
+// Every forum write must invalidate via withForumInvalidation(). See PERFORMANCE.md.
+const FORUM_FRESH_MS = 15_000;
+const FORUM_STALE_MS = 120_000;
+let forumGen = 0;
+let forumCache: { data: any; freshUntil: number; staleUntil: number } | null = null;
+let forumInflight: { gen: number; promise: Promise<any> } | null = null;
+
+export function invalidateForumSnapshotCache() {
+  forumGen++;
+  forumCache = null;
+}
+
+async function withForumInvalidation<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } finally {
+    invalidateForumSnapshotCache();
+  }
+}
+
+function getPublicForumSnapshot(): Promise<any> {
+  const now = Date.now();
+  const refresh = () => {
+    if (forumInflight && forumInflight.gen === forumGen) return forumInflight.promise;
+    const gen = forumGen;
+    const promise = loadPublicForumSnapshot()
+      .then((data) => {
+        // Only cache if no write happened while we were loading.
+        if (gen === forumGen) {
+          const t = Date.now();
+          forumCache = { data, freshUntil: t + FORUM_FRESH_MS, staleUntil: t + FORUM_STALE_MS };
+        }
+        return data;
+      })
+      .finally(() => {
+        if (forumInflight?.promise === promise) forumInflight = null;
+      });
+    forumInflight = { gen, promise };
+    return promise;
+  };
+  if (forumCache && forumCache.freshUntil > now) return Promise.resolve(forumCache.data);
+  if (forumCache && forumCache.staleUntil > now) {
+    const stale = forumCache.data;
+    refresh().catch((e) => console.error("[forum] background refresh failed:", e));
+    return Promise.resolve(stale);
+  }
+  return refresh();
+}
+
+async function loadUserForumSets() {
+  const liked = new Set<string>();
+  const saved = new Set<string>();
+  const { getCurrentUser } = await import("../auth-server");
+  const currentUser = await getCurrentUser().catch(() => null);
+  if (!currentUser) return { liked, saved };
+  const { getDb } = await import("../db.server");
+  const sql = getDb();
+  const [likedRows, savedRows] = await Promise.all([
+    sql`SELECT post_id FROM show_likes WHERE user_id = ${currentUser.id}`,
+    sql`SELECT post_id FROM show_bookmarks WHERE user_id = ${currentUser.id}`,
+  ]);
+  likedRows.forEach((r: any) => liked.add(r.post_id));
+  savedRows.forEach((r: any) => saved.add(r.post_id));
+  return { liked, saved };
+}
+
 export const getForumSnapshot = createServerFn({ method: "GET" })
   .handler(async () => {
+    const [snap, userSets] = await Promise.all([getPublicForumSnapshot(), loadUserForumSets()]);
+    return {
+      ...snap,
+      showPosts: snap.showPosts.map((post: any) => ({
+        ...post,
+        hasLiked: userSets.liked.has(post.id),
+        hasSaved: userSets.saved.has(post.id),
+      })),
+    };
+  });
+
+async function loadPublicForumSnapshot() {
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    const posts = await sql`
+    const postsQ = sql`
       SELECT
         sp.id,
         sp.type,
@@ -56,64 +135,7 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
       LIMIT 50
     `;
 
-    const { getCurrentUser } = await import("../auth-server");
-    const currentUser = await getCurrentUser().catch(() => null);
-
-    let userLikedPostIds = new Set<string>();
-    let userSavedPostIds = new Set<string>();
-
-    if (currentUser) {
-      const likedRows = await sql`
-        SELECT post_id FROM show_likes WHERE user_id = ${currentUser.id}
-      `;
-      likedRows.forEach((r: any) => userLikedPostIds.add(r.post_id));
-
-      const savedRows = await sql`
-        SELECT post_id FROM show_bookmarks WHERE user_id = ${currentUser.id}
-      `;
-      savedRows.forEach((r: any) => userSavedPostIds.add(r.post_id));
-    }
-
-    const comments = posts.length > 0
-      ? await sql`
-          SELECT
-            sc.id,
-            sc.post_id,
-            sc.parent_id,
-            sc.body,
-            sc.created_at,
-            sc.user_id,
-            COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
-            COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
-            p.avatar_url
-          FROM show_comments sc
-          LEFT JOIN profiles p ON p.id = sc.user_id
-          LEFT JOIN users u ON u.id = sc.user_id
-          WHERE (sc.status IS NULL OR sc.status IN ('published', 'active')) AND sc.post_id IN ${sql(posts.map((post: any) => post.id))}
-          ORDER BY sc.created_at ASC
-          LIMIT 250
-        `.catch(() => [])
-      : [];
-
-    const commentsByPost = new Map<string, any[]>();
-    for (const comment of comments as any[]) {
-      const list = commentsByPost.get(comment.post_id) || [];
-      const authorName = comment.full_name || comment.username || "Mqulima Farmer";
-      list.push({
-        id: comment.id,
-        parentId: comment.parent_id || null,
-        userId: comment.user_id,
-        authorName,
-        authorUsername: comment.username ? (comment.username.startsWith("@") ? comment.username : `@${comment.username}`) : "@mqulima_farmer",
-        authorAvatar: resolveAvatar(comment.avatar_url, authorName),
-        text: comment.body,
-        time: new Date(comment.created_at).toLocaleDateString(),
-        createdAt: comment.created_at ? new Date(comment.created_at).toISOString() : new Date().toISOString()
-      });
-      commentsByPost.set(comment.post_id, list);
-    }
-
-    const listings = await sql`
+    const listingsQ = sql`
       SELECT
         cl.id,
         co.name AS commodity,
@@ -154,14 +176,14 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
       LIMIT 24
     `;
 
-    const pulse = await sql`
+    const pulseQ = sql`
       SELECT id, title, body, category, source_url, published_at
       FROM pulse_posts
       ORDER BY published_at DESC
       LIMIT 20
     `;
 
-    const suggestedProfiles = await sql`
+    const suggestedQ = sql`
       SELECT
         p.username,
         p.full_name,
@@ -191,6 +213,48 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
       ORDER BY p.created_at DESC, p.reputation_score DESC
       LIMIT 100
     `;
+
+    // PERF: independent queries run in parallel (previously sequential).
+    const [posts, listings, pulse, suggestedProfiles] = await Promise.all([postsQ, listingsQ, pulseQ, suggestedQ]);
+
+    const comments = posts.length > 0
+      ? await sql`
+          SELECT
+            sc.id,
+            sc.post_id,
+            sc.parent_id,
+            sc.body,
+            sc.created_at,
+            sc.user_id,
+            COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
+            COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
+            p.avatar_url
+          FROM show_comments sc
+          LEFT JOIN profiles p ON p.id = sc.user_id
+          LEFT JOIN users u ON u.id = sc.user_id
+          WHERE (sc.status IS NULL OR sc.status IN ('published', 'active')) AND sc.post_id IN ${sql(posts.map((post: any) => post.id))}
+          ORDER BY sc.created_at ASC
+          LIMIT 250
+        `.catch(() => [])
+      : [];
+
+    const commentsByPost = new Map<string, any[]>();
+    for (const comment of comments as any[]) {
+      const list = commentsByPost.get(comment.post_id) || [];
+      const authorName = comment.full_name || comment.username || "Mqulima Farmer";
+      list.push({
+        id: comment.id,
+        parentId: comment.parent_id || null,
+        userId: comment.user_id,
+        authorName,
+        authorUsername: comment.username ? (comment.username.startsWith("@") ? comment.username : `@${comment.username}`) : "@mqulima_farmer",
+        authorAvatar: resolveAvatar(comment.avatar_url, authorName),
+        text: comment.body,
+        time: new Date(comment.created_at).toLocaleDateString(),
+        createdAt: comment.created_at ? new Date(comment.created_at).toISOString() : new Date().toISOString()
+      });
+      commentsByPost.set(comment.post_id, list);
+    }
 
     const toFarmer = (row: any) => ({
       username: row.username?.startsWith("@") ? row.username : `@${row.username || "mqulima_farmer"}`,
@@ -240,8 +304,8 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
         images: post.media_urls || [],
         likes: post.like_count || 0,
         relates: post.relate_count || 0,
-        hasLiked: userLikedPostIds.has(post.id),
-        hasSaved: userSavedPostIds.has(post.id),
+        hasLiked: false,
+        hasSaved: false,
         comments: commentsByPost.get(post.id) || [],
         tags: normalizeTags(post.tags),
         createdAt: post.created_at ? new Date(post.created_at).toISOString().split("T")[0] : "2024-01-01",
@@ -270,7 +334,7 @@ export const getForumSnapshot = createServerFn({ method: "GET" })
       })),
       suggestedFarmers: suggestedProfiles.map(toFarmer),
     };
-  });
+}
 
 import { z } from "zod";
 
@@ -382,7 +446,7 @@ export const updateFarmerProfile = createServerFn({ method: "POST" })
     farmingPhotos: z.array(z.string()).optional(),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -447,7 +511,7 @@ export const updateFarmerProfile = createServerFn({ method: "POST" })
     });
 
     return { success: true, username: `@${username}` };
-  });
+  }));
 
 async function autoModeratePostOrComment(
   sql: any,
@@ -560,7 +624,7 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     tags: z.array(z.string()),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -638,7 +702,7 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     }
 
     return { success: true, postId: post.id };
-  });
+  }));
 
 export const createComment = createServerFn({ method: "POST" })
   .inputValidator(z.object({
@@ -647,7 +711,7 @@ export const createComment = createServerFn({ method: "POST" })
     body: z.string().min(1),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -724,7 +788,7 @@ export const createComment = createServerFn({ method: "POST" })
     });
 
     return { success: true, commentId };
-  });
+  }));
 
 
 export const toggleLikePost = createServerFn({ method: "POST" })
@@ -732,7 +796,7 @@ export const toggleLikePost = createServerFn({ method: "POST" })
     postId: z.string().uuid(),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -786,7 +850,7 @@ export const toggleLikePost = createServerFn({ method: "POST" })
 
       return { success: true, liked: true };
     }
-  });
+  }));
 
 export const createSokoListing = createServerFn({ method: "POST" })
   .inputValidator(z.object({
@@ -801,7 +865,7 @@ export const createSokoListing = createServerFn({ method: "POST" })
     csrfToken: z.string(),
   }))
 
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -854,7 +918,7 @@ export const createSokoListing = createServerFn({ method: "POST" })
     `;
 
     return { success: true };
-  });
+  }));
 
 export const toggleBookmarkPost = createServerFn({ method: "POST" })
   .inputValidator(z.object({
@@ -894,7 +958,7 @@ export const deleteCommunityPost = createServerFn({ method: "POST" })
     postId: z.string().uuid(),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -918,14 +982,14 @@ export const deleteCommunityPost = createServerFn({ method: "POST" })
       UPDATE show_posts SET status = 'deleted' WHERE id = ${data.postId}
     `;
     return { success: true };
-  });
+  }));
 
 export const deleteComment = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     commentId: z.string().uuid(),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -949,7 +1013,7 @@ export const deleteComment = createServerFn({ method: "POST" })
       UPDATE show_comments SET status = 'deleted' WHERE id = ${data.commentId}
     `;
     return { success: true };
-  });
+  }));
 
 export const reportCommunityContent = createServerFn({ method: "POST" })
   .inputValidator(z.object({
@@ -1393,7 +1457,7 @@ export const toggleFollowFarmer = createServerFn({ method: "POST" })
     targetUsername: z.string().min(1),
     csrfToken: z.string(),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
 
@@ -1446,5 +1510,5 @@ export const toggleFollowFarmer = createServerFn({ method: "POST" })
 
       return { success: true, following: true, targetUsername: cleanUsername };
     }
-  });
+  }));
 

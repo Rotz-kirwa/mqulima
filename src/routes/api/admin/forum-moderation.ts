@@ -3,11 +3,12 @@ import { getDb } from "@/lib/db.server";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 
+import { invalidatePostsApiCache } from "@/routes/api/posts";
+import { invalidateForumSnapshotCache } from "@/lib/api/community.server";
+
 function flushForumCaches() {
-  try {
-    const { invalidatePostsApiCache } = require("@/routes/api/posts");
-    invalidatePostsApiCache();
-  } catch (e) {}
+  try { invalidatePostsApiCache(); } catch (e) {}
+  try { invalidateForumSnapshotCache(); } catch (e) {}
 }
 
 export const Route = createFileRoute("/api/admin/forum-moderation")({
