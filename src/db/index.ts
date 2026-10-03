@@ -19,10 +19,11 @@ export function getRawSql() {
 
     const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");
     const requiresSsl = !isLocal || connectionString.includes("sslmode=require");
+    const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
     globalThis.__mq_raw_sql__ = postgres(connectionString, {
-      max: 10,
-      idle_timeout: 20,
-      connect_timeout: 15,
+      max: isServerless ? 2 : 5,
+      idle_timeout: 10,
+      connect_timeout: 10,
       ssl: requiresSsl ? { rejectUnauthorized: false } : false,
       onnotice: () => {},
     });
