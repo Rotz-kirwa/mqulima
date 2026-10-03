@@ -15,9 +15,25 @@ function getJwtSecret(): Uint8Array {
   return new TextEncoder().encode(env.JWT_SECRET);
 }
 
+interface CachedAdminSession {
+  user: AdminUser;
+  expiresAt: number;
+}
+
+const adminSessionCache = new Map<string, CachedAdminSession>();
+
+export function clearAdminSessionCache(userId?: string): void {
+  if (userId) {
+    adminSessionCache.delete(userId);
+  } else {
+    adminSessionCache.clear();
+  }
+}
+
 /**
  * Extract and verify an authenticated admin user session from a Request.
  * Supports HTTP-Only 'mq_session' cookie AND 'Authorization: Bearer <token>' header.
+ * Uses a 60-second in-memory session cache to prevent hitting the database on every server call.
  */
 export async function getAuthAdminUserFromRequest(request: Request): Promise<AdminUser | null> {
   let token: string | null = null;
@@ -53,6 +69,12 @@ export async function getAuthAdminUserFromRequest(request: Request): Promise<Adm
       return null;
     }
 
+    const now = Date.now();
+    const cached = adminSessionCache.get(userId);
+    if (cached && cached.expiresAt > now) {
+      return cached.user;
+    }
+
     const sql = getDb();
     const [dbUser] = await sql`
       SELECT id, email, full_name, role
@@ -66,12 +88,25 @@ export async function getAuthAdminUserFromRequest(request: Request): Promise<Adm
       return null;
     }
 
-    return {
+    const adminUser: AdminUser = {
       id: dbUser.id,
       email: dbUser.email,
       name: dbUser.full_name,
       role: dbUser.role,
     };
+
+    adminSessionCache.set(userId, {
+      user: adminUser,
+      expiresAt: now + 60_000,
+    });
+
+    if (adminSessionCache.size > 200) {
+      for (const [k, v] of adminSessionCache.entries()) {
+        if (v.expiresAt <= now) adminSessionCache.delete(k);
+      }
+    }
+
+    return adminUser;
   } catch (e) {
     return null;
   }
