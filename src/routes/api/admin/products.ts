@@ -9,12 +9,14 @@ import { cleanDescriptionText, mapToNewTaxonomy } from "@/lib/shop-data";
 import { invalidateProductsCache } from "@/lib/api/shop.server";
 import { invalidateApiProductsCache } from "@/routes/api/products";
 import { invalidateFeaturedCache } from "@/lib/api/products.server";
+import { invalidateAnalyticsCache } from "./analytics";
 import crypto from "crypto";
 
 function flushProductCaches() {
   try { invalidateProductsCache(); } catch (e) {}
   try { invalidateApiProductsCache(); } catch (e) {}
   try { invalidateFeaturedCache(); } catch (e) {}
+  try { invalidateAnalyticsCache(); } catch (e) {}
 }
 
 export const Route = createFileRoute("/api/admin/products")({
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/api/admin/products")({
           const statusParam = url.searchParams.get("status")?.trim();
           const minimal = url.searchParams.get("minimal") === "true";
 
-          const limit = limitParam ? Math.min(500, Math.max(1, Number(limitParam) || 50)) : 100;
+          const limit = limitParam ? Math.min(100, Math.max(1, Number(limitParam) || 25)) : 25;
           const page = Math.max(1, Number(pageParam) || 1);
           const offset = (page - 1) * limit;
 
@@ -47,7 +49,7 @@ export const Route = createFileRoute("/api/admin/products")({
             );
           }
           if (statusParam && statusParam !== "all") {
-            conditions.push(eq(products.status, statusParam));
+            conditions.push(eq(products.status, statusParam as any));
           }
           if (categoryParam && categoryParam !== "All") {
             conditions.push(
