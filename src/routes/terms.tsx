@@ -165,7 +165,7 @@ function TermsPage() {
                 <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 leading-relaxed list-disc list-inside">
                   <li>You must be at least 18 years old to create an account, or use the Platform under the supervision of a parent, guardian, or institution (e.g. an agricultural training programme).</li>
                   <li>You must provide accurate, current, and complete information when registering, and keep it up to date.</li>
-                  <li>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. Notify us immediately at <a href="mailto:Mqulima001@gmail.com" className="text-[#16A34A] font-bold hover:underline">Mqulima001@gmail.com</a> if you suspect unauthorised access.</li>
+                  <li>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. Notify us immediately at <a href="mailto:mqulima@mqulima.com" className="text-[#16A34A] font-bold hover:underline">mqulima@mqulima.com</a> if you suspect unauthorised access.</li>
                   <li>Mqulima Agro Systems reserves the right to verify the information you provide (e.g. for suppliers or Service Providers), refuse registration, or suspend an account that provides false or misleading information.</li>
                   <li>Depending on your role, additional verification (e.g. business registration, professional licences for Service Providers) may be required before you can list products or offer Services.</li>
                 </ul>
@@ -267,7 +267,7 @@ function TermsPage() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-[#0F291E]">5.4 Complaints About a Service</h3>
                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                    If you are unhappy with a Service, please report it to us within 48 hours via the Platform or <a href="mailto:Mqulima001@gmail.com" className="text-[#16A34A] font-bold hover:underline">Mqulima001@gmail.com</a>. We will investigate, mediate between you and the Service Provider where appropriate, and may issue a refund, credit, or remove a Service Provider from the Platform where warranted by our findings.
+                    If you are unhappy with a Service, please report it to us within 48 hours via the Platform or <a href="mailto:mqulima@mqulima.com" className="text-[#16A34A] font-bold hover:underline">mqulima@mqulima.com</a>. We will investigate, mediate between you and the Service Provider where appropriate, and may issue a refund, credit, or remove a Service Provider from the Platform where warranted by our findings.
                   </p>
                 </div>
               </section>
@@ -387,7 +387,7 @@ function TermsPage() {
                 <h2 className="text-xl sm:text-2xl font-black text-[#0F291E] font-['Outfit',sans-serif]">17. Dispute Resolution and Governing Law</h2>
                 <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 leading-relaxed list-disc list-inside">
                   <li>These Terms are governed by the laws of the Republic of Kenya.</li>
-                  <li>If a dispute arises, please first contact us at <a href="mailto:Mqulima001@gmail.com" className="text-[#16A34A] font-bold hover:underline">Mqulima001@gmail.com</a> so we can attempt to resolve it informally and promptly — our goal is always a fair resolution without the need for formal proceedings.</li>
+                  <li>If a dispute arises, please first contact us at <a href="mailto:mqulima@mqulima.com" className="text-[#16A34A] font-bold hover:underline">mqulima@mqulima.com</a> so we can attempt to resolve it informally and promptly — our goal is always a fair resolution without the need for formal proceedings.</li>
                   <li>If a dispute cannot be resolved informally within 30 days, either party may refer it to mediation or arbitration in Nairobi, Kenya, in accordance with the Arbitration Act, before resorting to the courts of Kenya, which shall have exclusive jurisdiction over any dispute not resolved through mediation or arbitration.</li>
                   <li>Nothing in this Section prevents you from lodging a complaint with the relevant Kenyan regulator (e.g. the ODPC for data protection matters, or the Competition Authority of Kenya for consumer protection matters).</li>
                 </ul>
@@ -423,8 +423,8 @@ function TermsPage() {
                   <div className="bg-white/10 p-4 rounded-2xl border border-white/15 space-y-1.5">
                     <Mail className="h-4 w-4 text-[#85CC14]" />
                     <div className="font-bold">Email</div>
-                    <a href="mailto:Mqulima001@gmail.com" className="text-white/80 hover:text-white hover:underline block truncate">
-                      Mqulima001@gmail.com
+                    <a href="mailto:mqulima@mqulima.com" className="text-white/80 hover:text-white hover:underline block truncate">
+                      mqulima@mqulima.com
                     </a>
                   </div>
 

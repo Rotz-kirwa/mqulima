@@ -471,30 +471,120 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
               {kpiLoading ? "Loading live platform activity notifications..." : "No recent platform activity notifications recorded yet."}
             </div>
           ) : (
-            activities.map((act) => (
-              <div
-                key={act.id}
-                className="bg-[#E8F4F1] border border-[#CCE5E1] rounded-[6px] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-[#278C7B] transition"
-              >
-                <div className="flex items-start gap-3">
-                  <span
-                    className={`px-2 py-1 rounded-[4px] text-white font-mono text-[10px] font-bold shrink-0 shadow-xs ${act.badgeBg || "bg-[#278C7B]"}`}
+            activities.map((act) => {
+              const badge = (() => {
+                const t = (act.type || "").toLowerCase();
+                if (t.includes("moderation") || t.includes("delete") || t.includes("remove")) {
+                  return { bg: "#BE123C", text: "#FFFFFF", border: "#9F1239" }; // Rose-700
+                }
+                if (t.includes("onboarding") || t.includes("farmer") || t.includes("register")) {
+                  return { bg: "#047857", text: "#FFFFFF", border: "#065F46" }; // Emerald-700
+                }
+                if (t.includes("order") || t.includes("purchase") || t.includes("commerce")) {
+                  return { bg: "#C2410C", text: "#FFFFFF", border: "#9A3412" }; // Orange-700
+                }
+                if (t.includes("fulfillment") || t.includes("logistics")) {
+                  return { bg: "#1D4ED8", text: "#FFFFFF", border: "#1E40AF" }; // Blue-700
+                }
+                if (t.includes("news") || t.includes("article") || t.includes("intel")) {
+                  return { bg: "#0F766E", text: "#FFFFFF", border: "#115E59" }; // Teal-700
+                }
+                if (t.includes("service") || t.includes("agronomy")) {
+                  return { bg: "#4338CA", text: "#FFFFFF", border: "#3730A3" }; // Indigo-700
+                }
+                if (t.includes("login") || t.includes("auth")) {
+                  return { bg: "#0E7490", text: "#FFFFFF", border: "#155E75" }; // Cyan-700
+                }
+                const hexMatch = act.badgeBg?.match(/#[0-9a-fA-F]{3,8}/);
+                if (hexMatch) {
+                  return { bg: hexMatch[0], text: "#FFFFFF", border: hexMatch[0] };
+                }
+                return { bg: "#0F3D3C", text: "#FFFFFF", border: "#0A2827" };
+              })();
+
+              const statusConfig = (() => {
+                const s = (act.paymentStatus || "info").toLowerCase();
+                if (s === "success") return { color: "#16A34A", bg: "#DCFCE7", border: "#BBF7D0", label: "SUCCESS", icon: "✓" };
+                if (s === "failed") return { color: "#DC2626", bg: "#FEE2E2", border: "#FECACA", label: "FAILED", icon: "✕" };
+                if (s === "pending") return { color: "#D97706", bg: "#FEF3C7", border: "#FDE68A", label: "PENDING", icon: "⏳" };
+                if (s === "warning") return { color: "#EA580C", bg: "#FFF7ED", border: "#FED7AA", label: "WARNING", icon: "⚠" };
+                return { color: "#0284C7", bg: "#E0F2FE", border: "#BAE6FD", label: "INFO", icon: "ℹ" };
+              })();
+
+              const exactTime = act.rawTimestamp
+                ? new Date(act.rawTimestamp).toLocaleString("en-KE", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                  })
+                : null;
+
+              return (
+                <div
+                  key={act.id}
+                  className="bg-white hover:bg-[#F2FAF7] border border-[#CCE5E1] rounded-[6px] p-4 flex flex-col gap-3 text-xs hover:border-[#278C7B] hover:shadow-xs transition"
+                >
+                  {/* Top Row: Badge + Title + Meta */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span
+                        style={{
+                          backgroundColor: badge.bg,
+                          color: badge.text,
+                          borderColor: badge.border,
+                        }}
+                        className="px-2.5 py-1 rounded-[4px] font-mono text-[10px] font-bold shrink-0 shadow-2xs border tracking-wide uppercase"
+                      >
+                        {act.type}
+                      </span>
+                      <div>
+                        <div className="font-bold text-[#0F3D3C] text-xs sm:text-sm">{act.title}</div>
+                        <div className="text-[11px] text-[#4A7C79] font-mono mt-0.5">{act.subtitle}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 font-mono text-[10px]">
+                      <span className="text-[#278C7B] font-bold">{act.time}</span>
+                      <span className="px-2 py-0.5 rounded-[4px] bg-[#E8F4F1] border border-[#CCE5E1] text-[#0F3D3C] font-bold">
+                        {act.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: Status + Reason + Exact Time */}
+                  <div
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-[#CCE5E1]/50"
                   >
-                    {act.type}
-                  </span>
-                  <div>
-                    <div className="font-bold text-[#0F3D3C] text-xs sm:text-sm">{act.title}</div>
-                    <div className="text-[11px] text-[#4A7C79] font-mono mt-0.5">{act.subtitle}</div>
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        style={{
+                          backgroundColor: statusConfig.bg,
+                          color: statusConfig.color,
+                          borderColor: statusConfig.border,
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] font-mono text-[10px] font-extrabold border tracking-wider"
+                      >
+                        <span className="text-[10px]">{statusConfig.icon}</span>
+                        {statusConfig.label}
+                      </span>
+                      {act.statusReason && (
+                        <span className="text-[11px] text-[#4A7C79] font-medium leading-tight max-w-md">
+                          {act.statusReason}
+                        </span>
+                      )}
+                    </div>
+                    {exactTime && (
+                      <span className="text-[10px] font-mono text-[#6B7280] shrink-0">
+                        {exactTime}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 font-mono text-[10px]">
-                  <span className="text-[#278C7B] font-bold">{act.time}</span>
-                  <span className="px-2 py-0.5 rounded-[2px] bg-white border border-[#CCE5E1] text-[#0F3D3C] font-semibold">
-                    {act.category}
-                  </span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

@@ -25,10 +25,13 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop/index'
 import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
+import { Route as ApiPostsRouteImport } from './routes/api/posts'
 import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
@@ -141,6 +144,11 @@ const ShopProductIdRoute = ShopProductIdRouteImport.update({
   path: '/shop/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
@@ -156,9 +164,19 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
 } as any)
+const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
+  id: '/api/subscribe',
+  path: '/api/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProductsRoute = ApiProductsRouteImport.update({
   id: '/api/products',
   path: '/api/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPostsRoute = ApiPostsRouteImport.update({
+  id: '/api/posts',
+  path: '/api/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNewsRoute = ApiNewsRouteImport.update({
@@ -325,7 +343,7 @@ export interface FileRoutesByFullPath {
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -336,10 +354,13 @@ export interface FileRoutesByFullPath {
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/news': typeof ApiNewsRoute
+  '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
+  '/api/subscribe': typeof ApiSubscribeRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
   '/api/admin/academy': typeof ApiAdminAcademyRoute
@@ -378,7 +399,7 @@ export interface FileRoutesByTo {
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -389,10 +410,13 @@ export interface FileRoutesByTo {
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/news': typeof ApiNewsRoute
+  '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
+  '/api/subscribe': typeof ApiSubscribeRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop': typeof ShopIndexRoute
   '/api/admin/academy': typeof ApiAdminAcademyRoute
@@ -432,7 +456,7 @@ export interface FileRoutesById {
   '/academy': typeof AcademyRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -443,10 +467,13 @@ export interface FileRoutesById {
   '/tools': typeof ToolsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/news': typeof ApiNewsRoute
+  '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
+  '/api/subscribe': typeof ApiSubscribeRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
   '/api/admin/academy': typeof ApiAdminAcademyRoute
@@ -498,10 +525,13 @@ export interface FileRouteTypes {
     | '/tools'
     | '/api/health'
     | '/api/news'
+    | '/api/posts'
     | '/api/products'
+    | '/api/subscribe'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/blog/$slug'
     | '/shop/$productId'
     | '/shop/'
     | '/api/admin/academy'
@@ -551,10 +581,13 @@ export interface FileRouteTypes {
     | '/tools'
     | '/api/health'
     | '/api/news'
+    | '/api/posts'
     | '/api/products'
+    | '/api/subscribe'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/blog/$slug'
     | '/shop/$productId'
     | '/shop'
     | '/api/admin/academy'
@@ -604,10 +637,13 @@ export interface FileRouteTypes {
     | '/tools'
     | '/api/health'
     | '/api/news'
+    | '/api/posts'
     | '/api/products'
+    | '/api/subscribe'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/blog/$slug'
     | '/shop/$productId'
     | '/shop/'
     | '/api/admin/academy'
@@ -647,7 +683,7 @@ export interface RootRouteChildren {
   AcademyRoute: typeof AcademyRoute
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRouteWithChildren
-  BlogRoute: typeof BlogRoute
+  BlogRoute: typeof BlogRouteWithChildren
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -658,7 +694,9 @@ export interface RootRouteChildren {
   ToolsRoute: typeof ToolsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiNewsRoute: typeof ApiNewsRoute
+  ApiPostsRoute: typeof ApiPostsRoute
   ApiProductsRoute: typeof ApiProductsRouteWithChildren
+  ApiSubscribeRoute: typeof ApiSubscribeRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiAdminAcademyRoute: typeof ApiAdminAcademyRoute
@@ -804,6 +842,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/auth/verify': {
       id: '/auth/verify'
       path: '/verify'
@@ -825,11 +870,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/api/subscribe': {
+      id: '/api/subscribe'
+      path: '/api/subscribe'
+      fullPath: '/api/subscribe'
+      preLoaderRoute: typeof ApiSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/products': {
       id: '/api/products'
       path: '/api/products'
       fullPath: '/api/products'
       preLoaderRoute: typeof ApiProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/posts': {
+      id: '/api/posts'
+      path: '/api/posts'
+      fullPath: '/api/posts'
+      preLoaderRoute: typeof ApiPostsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/news': {
@@ -1066,6 +1125,16 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
 interface ApiProductsRouteChildren {
   ApiProductsIdRoute: typeof ApiProductsIdRoute
 }
@@ -1095,7 +1164,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcademyRoute: AcademyRoute,
   AiRoute: AiRoute,
   AuthRoute: AuthRouteWithChildren,
-  BlogRoute: BlogRoute,
+  BlogRoute: BlogRouteWithChildren,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
@@ -1106,7 +1175,9 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsRoute: ToolsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiNewsRoute: ApiNewsRoute,
+  ApiPostsRoute: ApiPostsRoute,
   ApiProductsRoute: ApiProductsRouteWithChildren,
+  ApiSubscribeRoute: ApiSubscribeRoute,
   ShopProductIdRoute: ShopProductIdRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiAdminAcademyRoute: ApiAdminAcademyRoute,

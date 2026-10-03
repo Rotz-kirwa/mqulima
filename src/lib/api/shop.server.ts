@@ -355,10 +355,12 @@ const CreateShopOrderSchema = z.object({
   })).min(1, "Order must contain at least one item"),
   subtotal: z.number().optional(),
   total: z.number().optional(),
+  deliveryFee: z.number().optional().default(0),
   couponCode: z.string().optional(),
   fullName: z.string().min(1, "Full name is required"),
   phone: z.string().min(1, "Phone number is required"),
-  nationalId: z.string().min(1, "National ID is required"),
+  email: z.string().optional(),
+  nationalId: z.string().optional().default("N/A"),
   county: z.string().min(1, "County is required"),
   town: z.string().min(1, "Town is required"),
   village: z.string().optional(),
@@ -378,7 +380,7 @@ export const createShopOrder = createServerFn({ method: "POST" })
         couponCode,
         fullName,
         phone,
-        nationalId,
+        nationalId = "N/A",
         county,
         town,
         village,
@@ -393,15 +395,10 @@ export const createShopOrder = createServerFn({ method: "POST" })
       const { validateCsrfToken } = await import("../csrf-verify.server");
       validateCsrfToken(csrfToken);
 
-      // 2. Check authentication
+      // 2. Check authentication (allow logged-in user or guest checkout)
       const { getCurrentUser } = await import("../auth-server");
       const user = await getCurrentUser();
-      if (!user) {
-        return {
-          success: false,
-          error: "You must be logged in to place an order. Please log in and try again."
-        };
-      }
+      const userId = user ? user.id : null;
 
       const { getDb } = await import("../db.server");
       const sql = getDb();
@@ -411,12 +408,12 @@ export const createShopOrder = createServerFn({ method: "POST" })
 
       // Map paymentMethod to payment_method_enum
       let dbPaymentMethod: "mpesa" | "bank_transfer" | "card" | "gpay" | "ncba" | "paystack" | "airtel_money" = "mpesa";
-      if (paymentMethod === "card") dbPaymentMethod = "card";
+      if (paymentMethod === "card" || paymentMethod === "visa" || paymentMethod === "mastercard") dbPaymentMethod = "card";
       else if (paymentMethod === "airtel" || paymentMethod === "airtel_money") dbPaymentMethod = "airtel_money";
       else if (paymentMethod === "mpesa" || paymentMethod === "mpesa_till") dbPaymentMethod = "mpesa";
       else if (paymentMethod === "paystack") dbPaymentMethod = "paystack";
       else if (paymentMethod === "ncba") dbPaymentMethod = "ncba";
-      else if (paymentMethod === "bank") dbPaymentMethod = "bank_transfer";
+      else if (paymentMethod === "bank" || paymentMethod === "bank_transfer" || paymentMethod === "pesalink") dbPaymentMethod = "bank_transfer";
       else if (paymentMethod === "gpay") dbPaymentMethod = "gpay";
 
       // 4. Atomic transaction: Verify products, calculate server prices, check inventory, insert order
@@ -498,7 +495,7 @@ export const createShopOrder = createServerFn({ method: "POST" })
             notes
           )
           VALUES (
-            ${user.id},
+            ${userId},
             ${JSON.stringify(savedItems)}::jsonb,
             ${authoritativeSubtotal},
             ${authoritativeTotal},
@@ -529,45 +526,47 @@ export const createShopOrder = createServerFn({ method: "POST" })
         }
 
         // Insert in-app notification for logged-in user with full purchase details
-        const itemSummaries = savedItems.map((i: any) => `${i.quantity}x ${i.name}`).join(", ");
-        const shortOrderId = orderId.slice(0, 8).toUpperCase();
-        const notifPayload = {
-          tag: "Order Update",
-          tagClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-          title: `Order #${shortOrderId} Placed (KES ${finalTotal.toLocaleString()}) 📦`,
-          desc: `Purchased: ${itemSummaries}. Total: KES ${finalTotal.toLocaleString()}. Shipping to ${town}, ${county} (${phone}). Payment Method: ${paymentMethod.toUpperCase()}`,
-          details: {
-            orderId,
-            shortOrderId,
-            items: savedItems,
-            subtotal: finalSubtotal,
-            total: finalTotal,
-            fullName,
-            phone,
-            nationalId,
-            county,
-            town,
-            village,
-            instructions,
-            paymentMethod,
-            shippingOption,
-            deliveryAddress,
-            placedAt: new Date().toISOString()
-          },
-          time: "Just now",
-          link: "/shop"
-        };
+        if (userId) {
+          const itemSummaries = savedItems.map((i: any) => `${i.quantity}x ${i.name}`).join(", ");
+          const shortOrderId = orderId.slice(0, 8).toUpperCase();
+          const notifPayload = {
+            tag: "Order Update",
+            tagClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+            title: `Order #${shortOrderId} Placed (KES ${finalTotal.toLocaleString()}) 📦`,
+            desc: `Purchased: ${itemSummaries}. Total: KES ${finalTotal.toLocaleString()}. Shipping to ${town}, ${county} (${phone}). Payment Method: ${paymentMethod.toUpperCase()}`,
+            details: {
+              orderId,
+              shortOrderId,
+              items: savedItems,
+              subtotal: finalSubtotal,
+              total: finalTotal,
+              fullName,
+              phone,
+              nationalId,
+              county,
+              town,
+              village,
+              instructions,
+              paymentMethod,
+              shippingOption,
+              deliveryAddress,
+              placedAt: new Date().toISOString()
+            },
+            time: "Just now",
+            link: "/shop"
+          };
 
-        await tx`
-          INSERT INTO notifications (user_id, type, payload)
-          VALUES (${user.id}, 'product_purchase', ${JSON.stringify(notifPayload)}::jsonb)
-        `;
+          await tx`
+            INSERT INTO notifications (user_id, type, payload)
+            VALUES (${userId}, 'product_purchase', ${JSON.stringify(notifPayload)}::jsonb)
+          `;
+        }
       });
 
       // 5. Write Audit Log
       const { writeAuditLog } = await import("../audit.server");
       await writeAuditLog({
-        actorId: user.id,
+        actorId: userId || "guest-shopper",
         action: "order.created",
         entityType: "order",
         entityId: orderId,

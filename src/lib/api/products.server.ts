@@ -5,7 +5,7 @@ import { type ShopProduct, mapToNewTaxonomy } from "../shop-data";
 const ProductsInputSchema = z.object({
   category: z.string().optional(),
   page: z.number().int().positive().optional().default(1),
-  limit: z.number().int().positive().optional().default(20)
+  limit: z.number().int().positive().optional().default(1000)
 });
 
 import { resolveFastProductImage } from "./shop.server";
@@ -48,7 +48,7 @@ function mapDbProduct(p: any): ShopProduct {
 export const getProducts = createServerFn({ method: "GET" })
   .inputValidator((val: unknown) => ProductsInputSchema.parse(val || {}))
   .handler(async ({ data }) => {
-    const { category, page = 1, limit = 20 } = data;
+    const { category, page = 1, limit = 1000 } = data;
     const { getDb } = await import("../db.server");
     const sql = getDb();
 

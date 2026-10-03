@@ -41,6 +41,25 @@ export interface PaystackVerifyResponse {
   error?: string;
 }
 
+export interface ChargePaystackMobileMoneyParams {
+  email: string;
+  amount: number; // In main currency unit, e.g. KES 1500.50
+  phone: string;
+  provider: "atl" | "mpesa";
+  reference: string;
+  metadata?: Record<string, any>;
+}
+
+export interface PaystackChargeResponse {
+  success: boolean;
+  status?: string; // 'pay_offline' | 'success' | 'failed' | 'send_otp'
+  displayText?: string;
+  reference?: string;
+  message?: string;
+  error?: string;
+  rawResponse?: any;
+}
+
 /**
  * Helper to retrieve Paystack Secret Key safely on server side.
  */
@@ -184,3 +203,75 @@ export async function verifyPaystackTransactionApi(reference: string): Promise<P
     };
   }
 }
+
+/**
+ * Directly charges a mobile money provider (e.g. Airtel Money 'atl' or M-Pesa 'mpesa')
+ * via Paystack Charge API. This triggers the USSD prompt on the customer's phone
+ * without sending them to a third-party hosted page that might mislabel their provider.
+ */
+export async function chargePaystackMobileMoneyApi(params: ChargePaystackMobileMoneyParams): Promise<PaystackChargeResponse> {
+  const secretKey = getSecretKey();
+  const amountInSubunits = Math.round(params.amount * 100);
+
+  // Normalize phone number for Paystack (accepts e.g. 07XXXXXXXX or +2547XXXXXXXX or 2547XXXXXXXX)
+  let formattedPhone = params.phone.replace(/[^0-9+]/g, "");
+  if (formattedPhone.startsWith("+")) {
+    formattedPhone = formattedPhone.slice(1);
+  }
+  if (formattedPhone.startsWith("0")) {
+    formattedPhone = `254${formattedPhone.slice(1)}`;
+  }
+
+  const payload: any = {
+    email: params.email.trim().toLowerCase(),
+    amount: amountInSubunits,
+    currency: "KES",
+    reference: params.reference,
+    mobile_money: {
+      phone: formattedPhone,
+      provider: params.provider
+    },
+    metadata: params.metadata || {}
+  };
+
+  console.log(`[PAYSTACK CHARGE API] Initiating direct mobile charge: Provider=${params.provider}, Phone=${formattedPhone}, Amount=KES ${params.amount}, Ref=${params.reference}`);
+
+  try {
+    const response = await fetch(`${PAYSTACK_BASE_URL}/charge`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${secretKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.status) {
+      console.error("[PAYSTACK CHARGE API ERROR] Charge returned error:", data);
+      return {
+        success: false,
+        error: data.message || `Paystack Charge API error (Status ${response.status})`,
+        rawResponse: data
+      };
+    }
+
+    const txData = data.data || {};
+    return {
+      success: true,
+      status: txData.status,
+      displayText: txData.display_text || data.message || "Please check your mobile device to authorize payment.",
+      reference: txData.reference || params.reference,
+      message: data.message,
+      rawResponse: data
+    };
+  } catch (err: any) {
+    console.error("[PAYSTACK CHARGE API EXCEPTION] Network failure:", err);
+    return {
+      success: false,
+      error: err.message || "Network exception communicating with Paystack Charge API."
+    };
+  }
+}
+

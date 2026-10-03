@@ -22,41 +22,75 @@ import {
   Building,
   RefreshCw,
   Award,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
+import { toast } from "sonner";
 import { adminFetch } from "../../lib/api";
+import { adminCache } from "../../lib/cache";
+
+const getInitialCustomerData = () => {
+  const cached = adminCache.get("/api/admin/customers")?.entry?.data;
+  if (cached?.success && Array.isArray(cached.customers) && cached.customers.length > 0) {
+    return {
+      customers: cached.customers,
+      totalCount: cached.totalCount ?? cached.customers.length,
+    };
+  }
+  return null;
+};
 
 export const CustomersModule: React.FC = () => {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialCache = getInitialCustomerData();
+  const [customers, setCustomers] = useState<any[]>(() => initialCache?.customers || []);
+  const [totalCount, setTotalCount] = useState<number>(() => initialCache?.totalCount || 0);
+  const [loading, setLoading] = useState(() => !initialCache);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchCustomers = (silent = false) => {
-    if (!silent && customers.length === 0) {
+  const fetchCustomers = (bypassCache = false) => {
+    if (bypassCache) {
+      setIsRefreshing(true);
+    } else if (customers.length === 0) {
       setLoading(true);
     }
-    adminFetch("/api/admin/customers")
+
+    adminFetch("/api/admin/customers", { bypassCache })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.customers)) {
           setCustomers(data.customers);
+          setTotalCount(data.totalCount ?? data.customers.length);
           if (selectedCustomer) {
             const updated = data.customers.find((c: any) => c.id === selectedCustomer.id);
             if (updated) setSelectedCustomer(updated);
           }
         }
         setLoading(false);
+        setIsRefreshing(false);
       })
       .catch((err) => {
         console.error("Fetch customers error:", err);
         setLoading(false);
+        setIsRefreshing(false);
       });
   };
 
   useEffect(() => {
+    // If background revalidation or prefetch updates the cache, update component state seamlessly
+    const unsubscribe = adminCache.subscribe("/api/admin/customers", (cached) => {
+      if (cached?.success && Array.isArray(cached.customers)) {
+        setCustomers(cached.customers);
+        setTotalCount(cached.totalCount ?? cached.customers.length);
+        setLoading(false);
+      }
+    });
+
     fetchCustomers();
+    return () => unsubscribe();
   }, []);
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
@@ -68,33 +102,76 @@ export const CustomersModule: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
+        toast.success(`Customer status updated to ${newStatus}`);
         fetchCustomers();
+      } else {
+        toast.error(data.error || "Failed to update customer status");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Status update error:", e);
+      toast.error(e?.message || "Failed to update customer status");
     }
   };
 
   const handleDeleteCustomer = async (customer: any) => {
+    if (!customer?.id) return;
+
+    const customerId = customer.id;
+    const customerName = customer.name || "Customer account";
+    const customerEmail = customer.email || "";
+
+    // 1. Instantly close confirmation modal so the user never experiences delay
+    setCustomerToDelete(null);
+    setIsDeleting(false);
+
+    // 2. Instantly close drawer if this customer was currently being viewed
+    if (selectedCustomer?.id === customerId) {
+      setSelectedCustomer(null);
+    }
+
+    // 3. Optimistic local update: remove from list immediately and decrement count
+    const previousCustomers = [...customers];
+    const previousTotal = totalCount;
+    setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+    setTotalCount((prev) => Math.max(0, prev - 1));
+
+    // 4. Instant high-visibility feedback toast notifying admin
+    toast.success(`Customer "${customerName}" deleted from Mqulima database`, {
+      description: customerEmail
+        ? `${customerEmail} and all PostgreSQL records have been permanently purged.`
+        : "Profile, shopping orders, and account credentials permanently purged.",
+      duration: 5000,
+    });
+
     try {
       const res = await adminFetch("/api/admin/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: customer.id, action: "delete_customer" }),
+        body: JSON.stringify({ id: customerId, action: "delete_customer" }),
       });
       const data = await res.json();
+
       if (data.success) {
-        setCustomerToDelete(null);
-        if (selectedCustomer?.id === customer.id) {
-          setSelectedCustomer(null);
-        }
-        fetchCustomers();
+        // Silently re-sync fresh list from server in the background
+        fetchCustomers(true);
       } else {
-        alert(data.error || "Failed to delete customer");
+        // Revert optimistic update on backend error
+        setCustomers(previousCustomers);
+        setTotalCount(previousTotal);
+        toast.error(`Failed to delete "${customerName}" from Mqulima database`, {
+          description: data.error || "Server could not complete the deletion request.",
+          duration: 6000,
+        });
       }
     } catch (e: any) {
       console.error("Delete customer error:", e);
-      alert(e.message || "Failed to delete customer");
+      // Revert optimistic update on network error
+      setCustomers(previousCustomers);
+      setTotalCount(previousTotal);
+      toast.error(`Network error while deleting "${customerName}"`, {
+        description: e.message || "Failed to communicate with Mqulima API server.",
+        duration: 6000,
+      });
     }
   };
 
@@ -156,15 +233,15 @@ export const CustomersModule: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono bg-white border border-[#CCE5E1] text-[#0F3D3C] px-3 py-1.5 rounded-[6px] shadow-2xs font-bold">
-            Registered Profiles: <strong className="text-[#278C7B]">{customers.length}</strong>
+            Registered Profiles: <strong className="text-[#278C7B]">{totalCount || customers.length}</strong>
           </span>
           <button
-            onClick={() => fetchCustomers()}
-            disabled={loading}
+            onClick={() => fetchCustomers(true)}
+            disabled={loading || isRefreshing}
             className="p-1.5 bg-[#E8F4F1] hover:bg-[#d6ece7] text-[#0F3D3C] rounded-[6px] border border-[#CCE5E1] transition cursor-pointer"
-            title="Refresh Database"
+            title="Refresh Database (Live Fetch)"
           >
-            <RefreshCw className={`h-4 w-4 text-[#278C7B] ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 text-[#278C7B] ${loading || isRefreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -181,8 +258,13 @@ export const CustomersModule: React.FC = () => {
           />
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#4A7C79]" />
         </div>
-        <div className="text-xs text-[#4A7C79] font-mono">
-          Showing <strong>{filtered.length}</strong> of <strong>{customers.length}</strong> registered accounts
+        <div className="text-xs text-[#4A7C79] font-mono flex items-center gap-2">
+          {isRefreshing && (
+            <span className="flex items-center gap-1 text-[11px] text-[#278C7B] font-bold bg-[#E8F4F1] px-2 py-0.5 rounded-[4px]">
+              <Loader2 className="h-3 w-3 animate-spin" /> Syncing fresh data...
+            </span>
+          )}
+          Showing <strong>{filtered.length}</strong> of <strong>{totalCount || customers.length}</strong> registered accounts
         </div>
       </div>
 
@@ -200,10 +282,13 @@ export const CustomersModule: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#CCE5E1]/60 font-sans">
-            {loading ? (
+            {loading && customers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-[#4A7C79] font-mono">
-                  Loading customer registration database...
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 text-[#278C7B] animate-spin" />
+                    <span>Loading customer registration database...</span>
+                  </div>
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
@@ -577,16 +662,29 @@ export const CustomersModule: React.FC = () => {
 
             <div className="flex justify-end gap-3 pt-2">
               <button
+                disabled={isDeleting}
                 onClick={() => setCustomerToDelete(null)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-[6px] cursor-pointer"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-[6px] cursor-pointer disabled:opacity-50 transition"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteCustomer(customerToDelete)}
-                className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-[6px] cursor-pointer flex items-center gap-1.5 shadow-xs"
+                disabled={isDeleting}
+                onClick={() => {
+                  setIsDeleting(true);
+                  handleDeleteCustomer(customerToDelete);
+                }}
+                className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-[6px] cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50 transition"
               >
-                <Trash2 className="h-4 w-4" /> Permanently Delete
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" /> Permanently Delete
+                  </>
+                )}
               </button>
             </div>
           </div>

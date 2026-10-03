@@ -308,7 +308,7 @@ function AcademyComingSoonPage() {
                           autoComplete="off"
                           data-lpignore="true"
                           data-1p-ignore="true"
-                          placeholder="Mqulima001@gmail.com"
+                          placeholder="farmer@mqulima.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           disabled={loading}

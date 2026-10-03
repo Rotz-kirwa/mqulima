@@ -210,3 +210,52 @@ export async function sendSms(options: SendSmsOptions): Promise<SendSmsResult> {
     return result;
   }
 }
+
+export interface SendServiceBookingSmsParams {
+  phoneNumber: string;
+  recipientName?: string;
+  reference: string;
+  subserviceName: string;
+  scheduledDate: string;
+  location: string;
+  estimatedCost?: number;
+}
+
+/**
+ * Builds standard SMS confirmation text for service booking.
+ */
+export function buildServiceBookingSmsMessage(params: SendServiceBookingSmsParams): string {
+  const { recipientName, reference, subserviceName, scheduledDate, location } = params;
+  const namePart = recipientName && recipientName !== "Guest Farmer" ? `Habari ${recipientName}, ` : "Habari, ";
+  
+  let formattedDate = scheduledDate;
+  try {
+    const d = new Date(scheduledDate);
+    if (!isNaN(d.getTime())) {
+      formattedDate = d.toLocaleDateString("en-KE", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+  } catch {
+    // fallback
+  }
+
+  return `${namePart}your Mqulima booking for ${subserviceName} is confirmed! Ref: ${reference}. Date: ${formattedDate}. Location: ${location}. Our officer will contact you shortly to coordinate. Helpline: 0723346134 / mqulima.com`;
+}
+
+/**
+ * Dispatches service booking SMS confirmation to farmer's phone via TextSMS Kenya.
+ */
+export async function sendServiceBookingConfirmationSms(
+  params: SendServiceBookingSmsParams
+): Promise<SendSmsResult> {
+  const message = buildServiceBookingSmsMessage(params);
+  return sendSms({
+    phoneNumber: params.phoneNumber,
+    message,
+    triggerType: "service_booking_confirmation",
+  });
+}
+

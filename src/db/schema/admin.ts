@@ -76,7 +76,7 @@ export const agritechNews = pgTable("agritech_news", {
   content: text("content").notNull(),
   mediaType: varchar("media_type", { length: 20 }).default("image"),
   mediaUrl: text("media_url"),
-  category: varchar("category", { length: 100 }).default("Agri-News").notNull(),
+  category: varchar("category", { length: 100 }).default("Crop & Harvest").notNull(),
   sourceAttribution: varchar("source_attribution", { length: 255 }),
   authorId: varchar("author_id", { length: 255 }),
   status: varchar("status", { length: 50 }).default("draft").notNull(),

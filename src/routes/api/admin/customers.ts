@@ -7,6 +7,23 @@ import { eq, desc, sql } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
 
+// High-performance in-memory server cache for customer listings
+interface CustomersCacheEntry {
+  payload: {
+    success: boolean;
+    totalCount: number;
+    customers: any[];
+  };
+  timestamp: number;
+}
+
+let serverCustomersCache: CustomersCacheEntry | null = null;
+const SERVER_CUSTOMERS_CACHE_TTL = 60 * 1000; // 60 seconds
+
+export function invalidateCustomersServerCache() {
+  serverCustomersCache = null;
+}
+
 export const Route = createFileRoute("/api/admin/customers")({
   server: {
     handlers: {
@@ -14,8 +31,22 @@ export const Route = createFileRoute("/api/admin/customers")({
         const auth = await requireAdminAuth(request, "customers.read");
         if ("response" in auth) return auth.response;
         try {
-          // Fetch users merged with profiles and lifetime order totals
-          const userList = await db
+          const url = new URL(request.url);
+          const forceRefresh = url.searchParams.get("refresh") === "true" || request.headers.get("x-bypass-cache") === "true";
+
+          if (!forceRefresh && serverCustomersCache && Date.now() - serverCustomersCache.timestamp < SERVER_CUSTOMERS_CACHE_TTL) {
+            return new Response(JSON.stringify(serverCustomersCache.payload), {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Server-Cache": "HIT",
+                "Cache-Control": "private, no-cache",
+              },
+            });
+          }
+
+          // Fetch users merged with profiles and lifetime order totals in parallel
+          // Using correlated subqueries on orders avoids massive cartesian joins and expensive 27-column GROUP BY
+          const userListPromise = db
             .select({
               id: users.id,
               firstName: users.firstName,
@@ -47,48 +78,29 @@ export const Route = createFileRoute("/api/admin/customers")({
               profileIsRetailer: profiles.isRetailer,
               profileRetailerDiscountPct: profiles.retailerDiscountPct,
               profileBio: profiles.bio,
-              lifetimeValue: sql<number>`COALESCE(SUM(CASE WHEN ${orders.paymentStatus} = 'paid' OR ${orders.checkoutChannel} = 'whatsapp' THEN CAST(${orders.total} AS NUMERIC) ELSE 0 END), 0)`,
-              ordersCount: sql<number>`COUNT(DISTINCT CASE WHEN ${orders.paymentStatus} = 'paid' OR ${orders.checkoutChannel} = 'whatsapp' THEN ${orders.id} ELSE NULL END)`,
+              lifetimeValue: sql<number>`COALESCE((
+                SELECT SUM(CAST(o.total AS NUMERIC))
+                FROM orders o
+                WHERE o.user_id = ${users.id}
+                  AND o.deleted_at IS NULL
+                  AND (o.payment_status = 'paid' OR o.checkout_channel = 'whatsapp')
+              ), 0)`,
+              ordersCount: sql<number>`COALESCE((
+                SELECT COUNT(o.id)
+                FROM orders o
+                WHERE o.user_id = ${users.id}
+                  AND o.deleted_at IS NULL
+                  AND (o.payment_status = 'paid' OR o.checkout_channel = 'whatsapp')
+              ), 0)`,
             })
             .from(users)
             .leftJoin(profiles, eq(users.id, profiles.id))
-            .leftJoin(orders, eq(users.id, orders.userId))
-            .groupBy(
-              users.id,
-              users.firstName,
-              users.lastName,
-              users.email,
-              users.phoneNumber,
-              users.nationalId,
-              users.county,
-              users.deliveryLocation,
-              users.farmingType,
-              users.status,
-              users.isVerified,
-              users.createdAt,
-              profiles.id,
-              profiles.fullName,
-              profiles.phone,
-              profiles.idNumber,
-              profiles.countyRegion,
-              profiles.deliveryAddress,
-              profiles.farmingInterests,
-              profiles.crops,
-              profiles.livestock,
-              profiles.natureOfAgriculture,
-              profiles.yearsFarming,
-              profiles.role,
-              profiles.status,
-              profiles.isVerified,
-              profiles.isRetailer,
-              profiles.retailerDiscountPct,
-              profiles.bio
-            )
+            .where(sql`${users.deletedAt} IS NULL AND (${profiles.role} IS NULL OR ${profiles.role}::text NOT IN ('admin', 'super_admin', 'sales_agent', 'content_editor'))`)
             .orderBy(desc(users.createdAt))
-            .limit(100);
+            .limit(200);
 
-          // Also query profiles standalone in case some users signed up directly into profiles
-          const profileList = await db
+          // Query profiles concurrently in case some customer users signed up directly into profiles
+          const profileListPromise = db
             .select({
               id: profiles.id,
               email: profiles.email,
@@ -111,10 +123,17 @@ export const Route = createFileRoute("/api/admin/customers")({
               createdAt: profiles.createdAt,
             })
             .from(profiles)
+            .where(sql`${profiles.deletedAt} IS NULL AND ${profiles.role}::text NOT IN ('admin', 'super_admin', 'sales_agent', 'content_editor')`)
             .orderBy(desc(profiles.createdAt))
-            .limit(100);
+            .limit(200);
 
-          const existingEmails = new Set(userList.map((u) => u.email.toLowerCase()));
+          const [userList, profileList] = await Promise.all([userListPromise, profileListPromise]);
+
+          const existingEmails = new Set(
+            userList
+              .map((u) => u.email?.trim().toLowerCase())
+              .filter(Boolean)
+          );
 
           const mappedUsers = userList.map((c) => {
             const rawNationalId = (c.nationalId && c.nationalId.trim()) || (c.profileIdNumber && c.profileIdNumber.trim()) || "Not Recorded";
@@ -148,9 +167,13 @@ export const Route = createFileRoute("/api/admin/customers")({
             };
           });
 
-          // Add any customer profiles that were not matched by email in users
+          // Add any customer profiles that were not matched by email in users (excluding all admin/staff roles)
           const extraProfiles = profileList
-            .filter((p) => !existingEmails.has(p.email.toLowerCase()) && p.role !== "admin" && p.role !== "super_admin")
+            .filter((p) => {
+              if (!p.email) return false;
+              const cleanEmail = p.email.trim().toLowerCase();
+              return !existingEmails.has(cleanEmail) && !["admin", "super_admin", "sales_agent", "content_editor"].includes(p.role);
+            })
             .map((p) => {
               const rawNationalId = (p.idNumber && p.idNumber.trim()) || "Not Recorded";
               const rawFarmingType = (p.natureOfAgriculture && p.natureOfAgriculture.trim()) || "General Agriculture";
@@ -185,12 +208,27 @@ export const Route = createFileRoute("/api/admin/customers")({
 
           const combinedCustomers = [...mappedUsers, ...extraProfiles];
 
+          const payload = {
+            success: true,
+            totalCount: combinedCustomers.length,
+            customers: combinedCustomers,
+          };
+
+          // Store in high-performance server cache for sub-millisecond repeated responses
+          serverCustomersCache = {
+            payload,
+            timestamp: Date.now(),
+          };
+
           return new Response(
-            JSON.stringify({
-              success: true,
-              customers: combinedCustomers,
-            }),
-            { headers: { "Content-Type": "application/json" } }
+            JSON.stringify(payload),
+            { 
+              headers: { 
+                "Content-Type": "application/json",
+                "X-Server-Cache": "MISS",
+                "Cache-Control": "private, no-cache",
+              } 
+            }
           );
         } catch (error: any) {
           console.error("Fetch customers error:", error);
@@ -261,6 +299,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               });
             });
 
+            invalidateCustomersServerCache();
+
             return new Response(
               JSON.stringify({ success: true, message: `Customer status updated to ${status}` }),
               { headers: { "Content-Type": "application/json" } }
@@ -307,6 +347,8 @@ export const Route = createFileRoute("/api/admin/customers")({
               });
             });
 
+            invalidateCustomersServerCache();
+
             return new Response(
               JSON.stringify({ success: true, message: `Customer KYC verification set to ${isVerified}` }),
               { headers: { "Content-Type": "application/json" } }
@@ -321,47 +363,111 @@ export const Route = createFileRoute("/api/admin/customers")({
               });
             }
 
+            if (!id || typeof id !== "string") {
+              return new Response(JSON.stringify({ success: false, error: "Invalid customer ID provided." }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
+            const safeId = id.trim();
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(safeId)) {
+              return new Response(JSON.stringify({ success: false, error: "Invalid customer UUID format." }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             const { getDb } = await import("@/lib/db.server");
             const sql = getDb();
+
+            // Prevent deleting system administrators
+            const [targetProfile] = await sql`
+              SELECT role, email FROM profiles WHERE id = ${safeId}
+            `;
+            if (targetProfile && ["admin", "super_admin"].includes(targetProfile.role)) {
+              return new Response(JSON.stringify({ 
+                success: false, 
+                error: "System Security Policy: Administrator accounts cannot be deleted from Customer Management." 
+              }), {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+
             await sql.begin(async (tx: any) => {
-              // Delete order payments and items
-              await tx`DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
-              await tx`DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${id})`;
-              await tx`DELETE FROM orders WHERE user_id = ${id}`;
+              // Execute all dependent cleanups in a single, high-performance atomic block with direct index lookups
+              await tx.unsafe(`
+                DO $delete_customer_block$
+                DECLARE
+                  uid UUID := '${safeId}'::UUID;
+                BEGIN
+                  -- 1. Clean order items, payments, and orders
+                  DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE user_id = uid);
+                  DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = uid);
+                  DELETE FROM orders WHERE user_id = uid;
 
-              // Delete community forum interactions & posts
-              await tx`DELETE FROM show_likes WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
-              await tx`DELETE FROM show_bookmarks WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
-              await tx`DELETE FROM show_comments WHERE user_id = ${id} OR post_id IN (SELECT id FROM show_posts WHERE user_id = ${id})`;
-              await tx`DELETE FROM show_posts WHERE user_id = ${id}`;
+                  -- 2. Clean community forum likes, bookmarks, comments, and posts (split for direct B-tree index scans)
+                  DELETE FROM show_likes WHERE user_id = uid;
+                  DELETE FROM show_bookmarks WHERE user_id = uid;
+                  DELETE FROM show_comments WHERE user_id = uid;
+                  DELETE FROM show_likes WHERE post_id IN (SELECT id FROM show_posts WHERE user_id = uid);
+                  DELETE FROM show_bookmarks WHERE post_id IN (SELECT id FROM show_posts WHERE user_id = uid);
+                  DELETE FROM show_comments WHERE post_id IN (SELECT id FROM show_posts WHERE user_id = uid);
+                  DELETE FROM show_posts WHERE user_id = uid;
 
-              // Delete marketplace listings & service requests & diagnoses
-              await tx`DELETE FROM commodity_listings WHERE user_id = ${id}`;
-              await tx`DELETE FROM service_requests WHERE user_id = ${id}`;
-              await tx`DELETE FROM crop_diagnoses WHERE user_id = ${id}`;
-              await tx`DELETE FROM forum_reports WHERE reporter_id = ${id}`;
+                  -- 3. Clean user commodity listings, service requests, diagnoses, and reports
+                  DELETE FROM commodity_listings WHERE user_id = uid;
+                  DELETE FROM service_requests WHERE user_id = uid;
+                  DELETE FROM crop_diagnoses WHERE user_id = uid;
+                  DELETE FROM forum_reports WHERE reporter_id = uid;
 
-              // Delete user session & audit records
-              await tx`DELETE FROM user_sessions WHERE user_id = ${id}`;
-              await tx`DELETE FROM user_logs WHERE user_id = ${id}`;
-              await tx`DELETE FROM user_activity_logs WHERE user_id = ${id}`;
-              await tx`DELETE FROM notifications WHERE user_id = ${id}`;
+                  -- 4. Clean direct messages, sessions, logs, activity, notifications (resilient against table variations)
+                  BEGIN
+                    DELETE FROM direct_messages WHERE sender_id = uid OR recipient_id = uid;
+                  EXCEPTION WHEN undefined_table THEN NULL;
+                  END;
 
-              // Delete primary user profile and identity
-              await tx`DELETE FROM profiles WHERE id = ${id}`;
-              await tx`DELETE FROM users WHERE id = ${id}`;
+                  BEGIN
+                    DELETE FROM user_sessions WHERE user_id = uid;
+                  EXCEPTION WHEN undefined_table THEN NULL;
+                  END;
+
+                  BEGIN
+                    DELETE FROM user_logs WHERE user_id = uid;
+                  EXCEPTION WHEN undefined_table THEN NULL;
+                  END;
+
+                  BEGIN
+                    DELETE FROM user_activity_logs WHERE user_id = uid;
+                  EXCEPTION WHEN undefined_table THEN NULL;
+                  END;
+
+                  BEGIN
+                    DELETE FROM notifications WHERE user_id = uid;
+                  EXCEPTION WHEN undefined_table THEN NULL;
+                  END;
+
+                  -- 5. Delete core profile and user records
+                  DELETE FROM profiles WHERE id = uid;
+                  DELETE FROM users WHERE id = uid;
+                END $delete_customer_block$;
+              `);
             });
 
             await logAdminAction({
               actorId: auth.user.id,
               action: "DELETE_CUSTOMER",
               entity: "users",
-              entityId: id,
+              entityId: safeId,
               diff: { deleted: true },
             });
 
+            invalidateCustomersServerCache();
+
             return new Response(
-              JSON.stringify({ success: true, message: "Customer account permanently deleted." }),
+              JSON.stringify({ success: true, message: "Customer account permanently deleted from Mqulima database." }),
               { headers: { "Content-Type": "application/json" } }
             );
           }

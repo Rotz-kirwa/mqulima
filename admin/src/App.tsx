@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Topbar } from "./components/layout/Topbar";
 import { Sidebar, AdminTab } from "./components/layout/Sidebar";
 import { AdminLoginScreen } from "./components/auth/AdminLoginScreen";
-import { clearAdminCache } from "./lib/api";
+import { clearAdminCache, prefetchAdminData } from "./lib/api";
 import { AdminErrorBoundary } from "./components/common/AdminErrorBoundary";
 
 const DashboardHomeModule = React.lazy(() => import("./components/modules/DashboardHomeModule").then(m => ({ default: m.DashboardHomeModule })));
@@ -162,6 +162,13 @@ export const App: React.FC = () => {
     });
   }, [activeTab]);
 
+  // Proactively warm up CRM database cache as soon as an admin session is established
+  useEffect(() => {
+    if (adminSession) {
+      prefetchAdminData("/api/admin/customers");
+    }
+  }, [adminSession]);
+
   const handleLogout = (isExpired = false) => {
     if (typeof window !== "undefined") {
       const currentPath = window.location.pathname + window.location.search;
@@ -272,6 +279,8 @@ export const App: React.FC = () => {
         userRole={adminSession.role}
         userEmail={adminSession.email}
         onLogout={handleLogout}
+        onNavigateTab={setActiveTab}
+        activeTab={activeTab}
       />
       <div className="flex flex-1 pt-16">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />

@@ -44,8 +44,29 @@ export async function adminFetch(
   const isGet = method === "GET";
   const urlString = typeof finalUrl === "string" ? finalUrl : finalUrl.toString();
 
-  // 1. Handle concurrent GET request deduplication (never serve stale-while-revalidate)
+  // 1. Instant Cache (SWR): Return cached entry immediately in 0ms if available
   if (isGet && !init?.bypassCache) {
+    const { entry, isFresh } = adminCache.get(urlString);
+    if (entry) {
+      // If stale, trigger background silent revalidation to refresh cache
+      if (!isFresh) {
+        triggerBackgroundRevalidation(urlString, {
+          ...init,
+          headers,
+          credentials: "include",
+        });
+      }
+      return new Response(JSON.stringify(entry.data), {
+        status: entry.status || 200,
+        statusText: entry.statusText || "OK",
+        headers: new Headers({
+          "content-type": "application/json",
+          "x-cache": isFresh ? "HIT" : "STALE",
+          ...entry.headers,
+        }),
+      });
+    }
+
     const existingPromise = adminCache.getInFlight(urlString);
     if (existingPromise) {
       const data = await existingPromise;
@@ -55,6 +76,10 @@ export async function adminFetch(
         headers: new Headers({ "content-type": "application/json", "x-cache": "DEDUPED" }),
       });
     }
+  }
+
+  if (init?.bypassCache) {
+    headers.set("x-bypass-cache", "true");
   }
 
   // Ensure fresh responses: admin reads must never be cached by proxy or browser
@@ -125,22 +150,28 @@ export async function adminFetch(
 async function triggerBackgroundRevalidation(url: string, init: RequestInit) {
   if (adminCache.getInFlight(url)) return;
 
-  try {
-    const res = await fetch(url, init);
-    if (res.ok) {
-      const contentType = res.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        const data = await res.json();
-        adminCache.set(url, data, {
-          headers: res.headers,
-          status: res.status,
-          statusText: res.statusText,
-        });
+  const controller = new AbortController();
+  const revalidatePromise = (async () => {
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal });
+      if (res.ok) {
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          adminCache.set(url, data, {
+            headers: res.headers,
+            status: res.status,
+            statusText: res.statusText,
+          });
+          return data;
+        }
       }
+    } catch (_) {
+      // Ignore background revalidation network errors
     }
-  } catch (_) {
-    // Ignore background revalidation network errors
-  }
+  })();
+
+  adminCache.setInFlight(url, revalidatePromise, controller);
 }
 
 /**

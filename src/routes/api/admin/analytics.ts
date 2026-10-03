@@ -219,6 +219,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
             category: string;
             badgeBg: string;
             timestamp: number;
+            paymentStatus?: string;
+            statusReason?: string;
+            rawTimestamp?: string;
           }> = [];
 
           // Map real audit logs
@@ -232,6 +235,8 @@ export const Route = createFileRoute("/api/admin/analytics")({
             let subtitle = `Executed by ${actorName}`;
             let category = "Security";
             let badgeBg = "bg-[#0284C7]"; // Blue badge
+            let paymentStatus = "info";
+            let statusReason = "System event recorded";
 
             if (a.action === "order.created") {
               type = "Order Created";
@@ -242,24 +247,42 @@ export const Route = createFileRoute("/api/admin/analytics")({
               subtitle = `${total}${payment}`;
               category = "Commerce";
               badgeBg = "bg-[#EA580C]"; // Orange badge
+              // Derive payment status from diff data
+              const pStatus = String(diff.paymentStatus || diff.status || "pending").toLowerCase();
+              if (pStatus === "paid" || pStatus === "success" || pStatus === "completed") {
+                paymentStatus = "success";
+                statusReason = `Payment received via ${String(diff.paymentMethod || "card").toUpperCase()} — order confirmed`;
+              } else if (pStatus === "failed" || pStatus === "declined" || pStatus === "rejected") {
+                paymentStatus = "failed";
+                statusReason = diff.failureReason || diff.error || `Payment declined by ${String(diff.paymentMethod || "processor").toUpperCase()} — insufficient funds or card error`;
+              } else {
+                paymentStatus = "pending";
+                statusReason = `Awaiting payment confirmation via ${String(diff.paymentMethod || "checkout").toUpperCase()}`;
+              }
             } else if (a.action === "auth.login") {
               type = "User Login";
               title = `User Authentication: ${actorName}`;
               subtitle = `Signed in with role: ${diff.role || a.role || "farmer"}`;
               category = "Auth";
               badgeBg = "bg-[#0D9488]"; // Teal badge
+              paymentStatus = "success";
+              statusReason = `Authenticated successfully as ${diff.role || a.role || "farmer"}`;
             } else if (a.action === "auth.register") {
               type = "Farmer Onboarding";
               title = `New Farmer Registration: ${actorName}`;
               subtitle = "Created a new farm account on Mqulima Platform";
               category = "CRM";
               badgeBg = "bg-[#16A34A]"; // Green badge
+              paymentStatus = "success";
+              statusReason = "New farmer account created and verified";
             } else if (a.action === "DELETE_CUSTOMER") {
               type = "Account Moderation";
               title = "Farmer Account Record Removed";
               subtitle = `Profile ID ${String(a.entityId || "").slice(0, 8)} deleted by administrator`;
               category = "CRM";
               badgeBg = "bg-[#475569]"; // Slate badge
+              paymentStatus = "warning";
+              statusReason = `Account permanently removed by admin ${actorName}`;
             } else if (String(a.action).startsWith("ORDER_STATUS_")) {
               type = "Order Fulfillment";
               const statusName = String(a.action).replace("ORDER_STATUS_", "");
@@ -267,6 +290,17 @@ export const Route = createFileRoute("/api/admin/analytics")({
               subtitle = `Fulfillment status transition performed by ${actorName}`;
               category = "Logistics";
               badgeBg = "bg-[#2563EB]"; // Royal blue
+              const sName = statusName.toLowerCase();
+              if (sName === "fulfilled" || sName === "delivered" || sName === "completed") {
+                paymentStatus = "success";
+                statusReason = `Order fulfilled and marked as ${statusName} by ${actorName}`;
+              } else if (sName === "cancelled" || sName === "refunded" || sName === "returned") {
+                paymentStatus = "failed";
+                statusReason = `Order ${statusName.toLowerCase()} — ${diff.reason || "cancelled by admin or customer request"}`;
+              } else {
+                paymentStatus = "pending";
+                statusReason = `Order status changed to ${statusName} — processing`;
+              }
             }
 
             activities.push({
@@ -278,6 +312,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
               category,
               badgeBg,
               timestamp: new Date(date).getTime(),
+              paymentStatus,
+              statusReason,
+              rawTimestamp: new Date(date).toISOString(),
             });
           }
 
@@ -290,6 +327,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
               type: "Agritech News",
               title: `Article Published: "${shortTitle}"`,
               subtitle: `Category: ${n.category} • Attribution: ${n.sourceAttribution || "Mqulima Editorial Desk"}`,
+              paymentStatus: "info",
+              statusReason: "Article published to news feed successfully",
+              rawTimestamp: new Date(date).toISOString(),
               time: formatRelativeTime(date),
               category: "Market Intel",
               badgeBg: "bg-[#059669]", // Emerald badge
@@ -300,6 +340,19 @@ export const Route = createFileRoute("/api/admin/analytics")({
           // Map real service inquiries
           for (const s of serviceRows) {
             const date = s.createdAt;
+            const svcStatus = String(s.status || "pending").toLowerCase();
+            let svcPaymentStatus = "pending";
+            let svcStatusReason = `Service request awaiting review`;
+            if (svcStatus === "completed" || svcStatus === "resolved") {
+              svcPaymentStatus = "success";
+              svcStatusReason = "Service request completed successfully";
+            } else if (svcStatus === "cancelled" || svcStatus === "rejected") {
+              svcPaymentStatus = "failed";
+              svcStatusReason = `Service request ${svcStatus} — ${s.rejectionReason || "no available agronomist"}`;
+            } else if (svcStatus === "in_progress" || svcStatus === "assigned") {
+              svcPaymentStatus = "pending";
+              svcStatusReason = `Service currently ${svcStatus.replace("_", " ")} — agronomist assigned`;
+            }
             activities.push({
               id: `service-${s.id}`,
               type: "Service Request",
@@ -309,6 +362,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
               category: "Agronomy",
               badgeBg: "bg-[#4F46E5]", // Indigo badge
               timestamp: new Date(date).getTime(),
+              paymentStatus: svcPaymentStatus,
+              statusReason: svcStatusReason,
+              rawTimestamp: new Date(date).toISOString(),
             });
           }
 
@@ -321,6 +377,16 @@ export const Route = createFileRoute("/api/admin/analytics")({
             if (!existingOrderIds.has(o.id)) {
               const date = o.createdAt;
               const customer = o.customerName || o.customerEmail || "Farmer";
+              const oPStatus = String(o.paymentStatus || "pending").toLowerCase();
+              let oPaymentStatus = "pending";
+              let oStatusReason = `Awaiting payment confirmation`;
+              if (oPStatus === "paid" || oPStatus === "success" || oPStatus === "completed") {
+                oPaymentStatus = "success";
+                oStatusReason = `Payment of KSh ${Number(o.total || 0).toLocaleString()} received successfully`;
+              } else if (oPStatus === "failed" || oPStatus === "declined" || oPStatus === "rejected") {
+                oPaymentStatus = "failed";
+                oStatusReason = o.failureReason || `Payment declined — ${String(o.checkoutChannel || "processor").toUpperCase()} transaction error`;
+              }
               activities.push({
                 id: `order-${o.id}`,
                 type: "Order Purchase",
@@ -330,6 +396,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
                 category: "Commerce",
                 badgeBg: "bg-[#EA580C]",
                 timestamp: new Date(date).getTime(),
+                paymentStatus: oPaymentStatus,
+                statusReason: oStatusReason,
+                rawTimestamp: new Date(date).toISOString(),
               });
             }
           }

@@ -8,7 +8,7 @@ import { normalizeKenyanPhone, maskPhoneNumber } from "../utils/phone";
 import { generateMerchantReference } from "../utils/idempotency";
 import { sendNcbaStkPush } from "../providers/ncba/ncba.api";
 import { ParsedNcbaCallback } from "../providers/ncba/ncba.service";
-import { initializePaystackTransaction, verifyPaystackTransactionApi } from "../providers/paystack/paystack.api";
+import { initializePaystackTransaction, verifyPaystackTransactionApi, chargePaystackMobileMoneyApi } from "../providers/paystack/paystack.api";
 import { PaystackService } from "../providers/paystack/paystack.service";
 
 export interface InitiatePaymentParams {
@@ -25,6 +25,15 @@ export interface InitiatePaystackParams {
   isAdmin?: boolean;
   callbackUrl?: string;
   channels?: string[];
+}
+
+export interface InitiatePaystackMobileMoneyParams {
+  orderId: string;
+  userId: string;
+  phone: string;
+  email: string;
+  provider: "atl" | "mpesa";
+  isAdmin?: boolean;
 }
 
 export interface PaymentStatusDTO {
@@ -438,6 +447,110 @@ export class PaymentService {
       reference,
       authorizationUrl: initRes.authorizationUrl,
       amount: serverAmount
+    };
+  }
+
+  /**
+   * Initiates a direct Paystack Mobile Money Charge (e.g. Airtel Money 'atl' or M-Pesa 'mpesa').
+   * Prevents redirecting an Airtel Money user to an M-Pesa branded hosted checkout page.
+   */
+  static async chargePaystackMobileMoney(params: InitiatePaystackMobileMoneyParams) {
+    const { orderId, userId, phone, email, provider, isAdmin } = params;
+
+    if (!email || !email.includes("@")) {
+      throw new Error("Valid customer email address is required for checkout.");
+    }
+    if (!phone || phone.trim().length < 8) {
+      throw new Error("Valid mobile money phone number is required.");
+    }
+
+    const sql = getRawSql();
+
+    // 1. Fetch order from DB and verify ownership & status
+    const [order] = await sql`
+      SELECT id, user_id, total, status, payment_status
+      FROM orders
+      WHERE id = ${orderId} AND deleted_at IS NULL
+      LIMIT 1
+    `;
+
+    if (!order) {
+      throw new Error(`Order ${orderId} not found.`);
+    }
+
+    if (!isAdmin && order.user_id !== userId) {
+      throw new Error("Unauthorized: You do not have permission to pay for this order.");
+    }
+
+    if (order.payment_status === "paid" || order.status === "paid") {
+      throw new Error("This order has already been paid and completed.");
+    }
+
+    const serverAmount = parseFloat(order.total);
+    if (isNaN(serverAmount) || serverAmount <= 0) {
+      throw new Error("Invalid order total amount calculated on server.");
+    }
+
+    // 2. Generate unique reference with channel prefix
+    const timestamp = Date.now();
+    const prefix = provider === "atl" ? "MQ_AIRTEL" : "MQ_MPESA";
+    const reference = `${prefix}_${orderId.replace(/-/g, "").slice(0, 8)}_${timestamp}`;
+
+    // 3. Initiate direct mobile charge with Paystack API
+    const chargeRes = await chargePaystackMobileMoneyApi({
+      email,
+      amount: serverAmount,
+      phone,
+      provider,
+      reference,
+      metadata: {
+        order_id: orderId,
+        user_id: userId,
+        phone,
+        provider
+      }
+    });
+
+    // 4. Save pending payment record in database
+    const [insertedPayment] = await sql`
+      INSERT INTO payments (
+        order_id,
+        provider,
+        provider_ref,
+        merchant_reference,
+        customer_email,
+        phone_number,
+        currency,
+        amount,
+        status,
+        raw_payload
+      ) VALUES (
+        ${orderId},
+        'paystack',
+        ${reference},
+        ${reference},
+        ${email.trim().toLowerCase()},
+        ${phone.trim()},
+        'KES',
+        ${serverAmount},
+        'pending',
+        ${JSON.stringify({ provider, phone, chargeRes: chargeRes.rawResponse })}::jsonb
+      )
+      RETURNING id
+    `;
+
+    console.log(`[PAYSTACK MOBILE MONEY] Recorded pending mobile payment ${insertedPayment.id} for order ${orderId} (Ref: ${reference}, Provider: ${provider})`);
+
+    return {
+      success: true,
+      paymentId: insertedPayment.id,
+      reference,
+      orderId,
+      amount: serverAmount,
+      status: chargeRes.status || "pay_offline",
+      displayText: chargeRes.displayText || `Please authorize the payment prompt on your ${provider === "atl" ? "Airtel" : "M-Pesa"} line.`,
+      isDirectPromptSuccess: chargeRes.success,
+      apiError: chargeRes.error
     };
   }
 

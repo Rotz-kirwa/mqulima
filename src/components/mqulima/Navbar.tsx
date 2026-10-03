@@ -86,31 +86,6 @@ export function Navbar() {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
-  // Locale State (en / sw)
-  const [locale, setLocale] = useState<"en" | "sw">("en");
-
-  useEffect(() => {
-    try {
-      const savedLocale = localStorage.getItem("mqulima_locale") as "en" | "sw" | null;
-      if (savedLocale === "en" || savedLocale === "sw") {
-        setLocale(savedLocale);
-      }
-    } catch {}
-  }, []);
-
-  const toggleLocale = () => {
-    const nextLocale = locale === "en" ? "sw" : "en";
-    setLocale(nextLocale);
-    try {
-      localStorage.setItem("mqulima_locale", nextLocale);
-      window.dispatchEvent(new CustomEvent("mqulima_locale_change", { detail: nextLocale }));
-    } catch {}
-    toast.success(
-      nextLocale === "sw" 
-        ? "Lugha imebadilishwa: Kiswahili (Swahili)" 
-        : "Language switched: English"
-    );
-  };
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -387,20 +362,6 @@ export function Navbar() {
               <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold bg-white dark:bg-white/20 text-[#0B2117] dark:text-white rounded border border-gray-200 dark:border-white/20 shadow-2xs">
                 ⌘K
               </kbd>
-            </motion.button>
-
-            {/* Language Switcher Scaffold (EN / SW) */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleLocale}
-              title={locale === "en" ? "Badilisha lugha hadi Kiswahili" : "Switch language to English"}
-              aria-label="Toggle language"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#0B2117]/[0.04] dark:bg-white/10 hover:bg-[#0B2117]/10 dark:hover:bg-white/15 border border-[#0B2117]/10 dark:border-white/10 text-xs font-black cursor-pointer text-[#0B2117] dark:text-white transition-all shadow-xs"
-            >
-              <span className={locale === "en" ? "text-[#16A34A] dark:text-[#85CC14] font-black underline underline-offset-2" : "opacity-60"}>EN</span>
-              <span className="opacity-30 text-[10px]">/</span>
-              <span className={locale === "sw" ? "text-[#16A34A] dark:text-[#85CC14] font-black underline underline-offset-2" : "opacity-60"}>SW</span>
             </motion.button>
 
             {/* Mobile Search Icon button */}
@@ -744,10 +705,10 @@ export function Navbar() {
                         <p className="text-[10px] text-gray-500 mt-1">Direct support & order queries</p>
                         <div className="h-px bg-gray-150 my-2" />
                         <a
-                          href="mailto:Mqulima001@gmail.com"
+                          href="mailto:mqulima@mqulima.com"
                           className="block text-xs font-semibold py-1 hover:text-[#2D6A4F]"
                         >
-                          ✉️ Email: Mqulima001@gmail.com
+                          ✉️ Email: mqulima@mqulima.com
                         </a>
                       </motion.div>
                     )}
@@ -982,28 +943,6 @@ export function Navbar() {
 
               {/* Mobile Drawer Bottom Actions */}
               <div className="border-t border-white/10 pt-4 space-y-3">
-                {/* Language Switcher Scaffold */}
-                <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-white/5 border border-white/10">
-                  <span className="text-xs text-white/70 font-semibold">Lugha / Language</span>
-                  <div className="flex items-center gap-1 bg-[#16382B] p-1 rounded-xl border border-[#85CC14]/30">
-                    <button
-                      onClick={toggleLocale}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-colors ${
-                        locale === "en" ? "bg-[#85CC14] text-[#0B2117]" : "text-white/70 hover:text-white"
-                      }`}
-                    >
-                      English
-                    </button>
-                    <button
-                      onClick={toggleLocale}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-colors ${
-                        locale === "sw" ? "bg-[#85CC14] text-[#0B2117]" : "text-white/70 hover:text-white"
-                      }`}
-                    >
-                      Kiswahili
-                    </button>
-                  </div>
-                </div>
                 {user ? (
                   <>
                     <div className="text-xs text-white/60">Logged in as <strong className="text-white font-extrabold">{user.name}</strong></div>

@@ -52,7 +52,7 @@ export const NewsCMSModule: React.FC = () => {
 
   // Form Fields
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Policy & Market");
+  const [category, setCategory] = useState("");
   const [sourceAttribution, setSourceAttribution] = useState("Mqulima Editorial Desk");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [mediaInputTab, setMediaInputTab] = useState<"upload" | "url">("upload");
@@ -93,7 +93,7 @@ export const NewsCMSModule: React.FC = () => {
   const openNewArticleModal = () => {
     setEditingId(null);
     setTitle("");
-    setCategory("Policy & Market");
+    setCategory("");
     setSourceAttribution("Mqulima Editorial Desk");
     setMediaType("image");
     setMediaInputTab("upload");
@@ -108,7 +108,7 @@ export const NewsCMSModule: React.FC = () => {
   const openEditModal = async (article: Article) => {
     setEditingId(article.id);
     setTitle(article.title);
-    setCategory(article.category || "Policy & Market");
+    setCategory(article.category || "");
     setSourceAttribution(article.sourceAttribution || "Mqulima Editorial Desk");
     setMediaType(article.mediaType || "image");
     setMediaInputTab(article.mediaUrl?.startsWith("data:") ? "upload" : "url");
@@ -508,15 +508,17 @@ export const NewsCMSModule: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono font-bold uppercase text-[#0F3D3C]">Category</label>
                   <select
-                    value={category || "Policy & Market"}
+                    value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-[#F4F9F8] border border-[#CCE5E1] p-3 rounded-xl text-xs font-semibold text-[#0F3D3C] outline-none"
                   >
-                    <option value="Policy & Market">Policy & Market</option>
-                    <option value="Agronomy & Farm Tips">Agronomy & Farm Tips</option>
-                    <option value="Agri-Tech & Tools">Agri-Tech & Tools</option>
-                    <option value="Weather Advisory">Weather Advisory</option>
+                    <option value="" disabled>Select a category</option>
                     <option value="Livestock & Dairy">Livestock & Dairy</option>
+                    <option value="Crop & Harvest">Crop & Harvest</option>
+                    <option value="Special Reports">Special Reports</option>
+                    <option value="Agroeconomy">Agroeconomy</option>
+                    <option value="Markets">Markets</option>
+                    <option value="Farm Life">Farm Life</option>
                   </select>
                 </div>
 

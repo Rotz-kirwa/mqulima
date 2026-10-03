@@ -850,7 +850,7 @@ function AdminFeaturedProductsPanel() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["adminProducts"],
-    queryFn: () => getProducts({ data: { limit: 100 } }),
+    queryFn: () => getProducts({ data: { limit: 1000 } }),
   });
 
   const categories = categoriesData || [];

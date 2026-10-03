@@ -127,8 +127,8 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="mt-0.5 h-4 w-4 text-[#F5A623] shrink-0" />
-                <a href="mailto:Mqulima001@gmail.com" className="hover:text-white transition-colors font-semibold">
-                  Mqulima001@gmail.com
+                <a href="mailto:mqulima@mqulima.com" className="hover:text-white transition-colors font-semibold">
+                  mqulima@mqulima.com
                 </a>
               </li>
             </ul>

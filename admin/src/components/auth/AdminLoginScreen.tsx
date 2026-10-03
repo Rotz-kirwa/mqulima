@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { ShieldCheck, Lock, Mail, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import { getApiUrl } from "../../lib/api";
+import { MqulimaLogo } from "../shared/MqulimaLogo";
 import loginBg from "../../assets/admin-login-bg.webp";
 
 interface AdminLoginScreenProps {
@@ -70,8 +71,8 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onLoginSucce
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#17605E] to-[#0F3D3C] border border-[#278C7B]/50 flex items-center justify-center mx-auto shadow-lg text-white">
-            <ShieldCheck className="w-8 h-8 text-[#F59E0B]" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#17605E] to-[#0F3D3C] border border-[#278C7B]/50 flex items-center justify-center mx-auto shadow-lg">
+            <MqulimaLogo size={44} />
           </div>
 
           <h1 className="text-2xl font-bold font-serif text-[#0F3D3C] tracking-tight">
@@ -101,7 +102,7 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onLoginSucce
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="admin@mqulima.co.ke"
+                placeholder="mqulima@mqulima.com"
                 required
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F4F9F8] border border-[#CCE5E1] text-xs font-medium text-[#0F3D3C] placeholder-[#4A7C79] focus:outline-none focus:border-[#278C7B] focus:ring-2 focus:ring-[#278C7B]/20 transition"
               />
@@ -136,26 +137,18 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onLoginSucce
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#278C7B] to-[#1D6F61] hover:from-[#1D6F61] hover:to-[#17605E] text-white font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 mt-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-500 hover:to-amber-500 text-[#061513] font-extrabold text-xs uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-yellow-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 mt-2 active:scale-[0.99]"
           >
             {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#061513] border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-4 h-4 stroke-[2.5]" />
                 <span>Authenticate Admin Session</span>
               </>
             )}
           </button>
         </form>
-
-        {/* Demo Hint */}
-        <div className="pt-2 border-t border-[#CCE5E1]/60 text-center">
-          <p className="text-[11px] font-mono text-[#4A7C79]">
-            Default Operational Super Admin: <span className="font-bold text-[#0F3D3C]">admin@mqulima.co.ke</span> / <span className="font-bold text-[#0F3D3C]">Admin@2026!</span>
-          </p>
-        </div>
-
       </div>
     </div>
   );

@@ -68,3 +68,49 @@ export const verifyPaystackPaymentStatus = createServerFn({ method: "POST" })
       };
     }
   });
+
+const ChargeMobileMoneyInputSchema = z.object({
+  orderId: z.string().uuid("Invalid order ID format"),
+  phone: z.string().min(8, "Phone number is required"),
+  email: z.string().email("Invalid customer email address"),
+  provider: z.enum(["atl", "mpesa"])
+});
+
+/**
+ * Server function to directly charge Airtel Money (or M-Pesa) via Paystack Charge API.
+ * This sends the mobile prompt directly to the customer's phone without redirecting
+ * them to Paystack's hosted page (which can mislabel the payment provider).
+ */
+export const chargePaystackMobileMoney = createServerFn({ method: "POST" })
+  .inputValidator((val: unknown) => ChargeMobileMoneyInputSchema.parse(val || {}))
+  .handler(async ({ data }) => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        return {
+          success: false,
+          error: "You must be logged in to process payment."
+        };
+      }
+
+      const isAdmin = user.role === "admin" || user.role === "super_admin";
+
+      const result = await PaymentService.chargePaystackMobileMoney({
+        orderId: data.orderId,
+        userId: user.id,
+        phone: data.phone,
+        email: data.email || user.email,
+        provider: data.provider,
+        isAdmin
+      });
+
+      return result;
+    } catch (err: any) {
+      console.error("[CHARGE PAYSTACK MOBILE MONEY SERVER FN ERROR]:", err);
+      return {
+        success: false,
+        error: err?.message || "Failed to initiate mobile money charge."
+      };
+    }
+  });
+

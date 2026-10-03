@@ -620,7 +620,7 @@ function BlogPage() {
               {/* Newsletter footer */}
               <div className="border-t border-[#D4DDD0] pt-4 text-center text-[9px] text-[#5D6B5C]">
                 <strong>Mqulima Ecosystem Ltd</strong> — P.O Box 100-20100, Nakuru, Kenya <br />
-                For agro-support contact Mqulima001@gmail.com or use the WhatsApp hotline.
+                For agro-support contact mqulima@mqulima.com or use the WhatsApp hotline.
               </div>
 
             </div>

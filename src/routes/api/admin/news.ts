@@ -174,7 +174,7 @@ export const Route = createFileRoute("/api/admin/news")({
                 content = ${content},
                 media_type = ${mediaType},
                 media_url = ${finalMediaUrl},
-                category = ${category || "Agri-News"},
+                category = ${category || "Crop & Harvest"},
                 source_attribution = ${sourceAttribution || "Mqulima Editorial Desk"},
                 status = ${status},
                 published_at = ${status === "published" ? sql`COALESCE(published_at, NOW())` : null}
@@ -194,7 +194,7 @@ export const Route = createFileRoute("/api/admin/news")({
                 ${content},
                 ${mediaType},
                 ${finalMediaUrl},
-                ${category || "Agri-News"},
+                ${category || "Crop & Harvest"},
                 ${sourceAttribution || "Mqulima Editorial Desk"},
                 ${status},
                 ${status === "published" ? sql`NOW()` : null}

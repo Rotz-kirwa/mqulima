@@ -60,21 +60,12 @@ export const Route = createFileRoute("/shop/")({
       sort: (search.sort as string) || undefined,
     };
   },
-  loader: async ({ location }) => {
+  loader: async () => {
     try {
-      const page = Number(location.search?.page) || 1;
-      const category = location.search?.category && location.search.category !== "All" ? location.search.category : undefined;
-      const subcategory = location.search?.subcategory && location.search.subcategory !== "All" ? location.search.subcategory : undefined;
-      const q = location.search?.q || undefined;
-      const sort = location.search?.sort || undefined;
       const data = await getShopProducts({
         data: {
-          page,
-          limit: 20,
-          categoryId: category,
-          subcategoryId: subcategory,
-          q,
-          sort
+          page: 1,
+          limit: 1000,
         },
       });
       return data;
@@ -132,7 +123,7 @@ function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("Popularity");
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(24);
 
   // Search Autocomplete state
   const [searchFocused, setSearchFocused] = useState(false);
@@ -191,7 +182,7 @@ function ShopPage() {
   // Fetch products with SSR loader initialData and API endpoint fallback
   const initialData = Route.useLoaderData();
   const { data: allProductsData, isLoading: isProductsLoading } = useQuery({
-    queryKey: ["shopProducts", { page: currentPage, category: selectedCategory, subcategory: selectedSubcategory, q: searchText, sort: sortBy }],
+    queryKey: ["shopProducts"],
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -199,16 +190,12 @@ function ShopPage() {
     queryFn: async () => {
       return getShopProducts({
         data: {
-          page: currentPage,
-          limit: itemsPerPage,
-          categoryId: selectedCategory !== "All" ? selectedCategory : undefined,
-          subcategoryId: selectedSubcategory !== "All" ? selectedSubcategory : undefined,
-          q: searchText.trim() || undefined,
-          sort: sortBy
+          page: 1,
+          limit: 1000,
         }
       });
     },
-    initialData: (currentPage === (initialData?.page || 1) && !searchParams.category && !searchParams.subcategory && !searchParams.q && !searchParams.sort)
+    initialData: (initialData?.products && initialData.products.length > 0)
       ? initialData
       : undefined
   });
@@ -401,12 +388,9 @@ function ShopPage() {
   }, [filteredProducts, sortBy]);
 
   // Paginated products
-  const totalCount = allProductsData?.total || sortedProducts.length;
-  const totalPages = allProductsData?.totalPages || Math.ceil(totalCount / itemsPerPage) || 1;
+  const totalCount = sortedProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
   const paginatedProducts = useMemo(() => {
-    if (sortedProducts.length <= itemsPerPage) {
-      return sortedProducts;
-    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedProducts, currentPage, itemsPerPage]);
@@ -888,6 +872,25 @@ function ShopPage() {
                       <option value="Price Low to High">Price: Low to High</option>
                       <option value="Price High to Low">Price: High to Low</option>
                       <option value="Highest Rated">Highest Rated</option>
+                    </select>
+                  </div>
+
+                  {/* Items per page selector */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500 font-semibold hidden sm:inline">Show:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-200 focus:border-[#2D6A4F] rounded-lg px-2 py-1.5 text-xs text-gray-800 bg-white outline-none font-bold cursor-pointer"
+                      title="Items per page"
+                    >
+                      <option value={24}>24 / page</option>
+                      <option value={48}>48 / page</option>
+                      <option value={96}>96 / page</option>
+                      <option value={1000}>All ({sortedProducts.length})</option>
                     </select>
                   </div>
 

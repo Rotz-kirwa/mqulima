@@ -6,6 +6,7 @@ export const CreateBookingSchema = z.object({
   farmer_id: z.string().uuid().optional(),
   contact_name: z.string().max(100).optional(),
   contact_phone: z.string().optional(),
+  contact_email: z.string().email().optional().or(z.literal("")),
   subservice_name: z.string().max(150).optional(),
   location: z.string().min(1, "Location is required").max(200),
   farm_size_acres: z.number().positive().optional(),
@@ -34,6 +35,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     farmer_id,
     contact_name,
     contact_phone,
+    contact_email,
     subservice_name,
     location,
     farm_size_acres,
@@ -78,7 +80,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     }
   }
 
-  // 3. Contact Name & Phone Resolution + Kenyan Format Normalization
+  // 3. Contact Name, Phone & Email Resolution + Kenyan Format Normalization
   let rawPhone = contact_phone;
   let finalContactName = contact_name;
 
@@ -100,6 +102,23 @@ export async function executeServiceBooking(data: CreateBookingInput) {
 
   const { getDb } = await import("../db.server");
   const sql = getDb();
+
+  // Resolve recipient contact email
+  let finalContactEmail: string | null = null;
+  if (contact_email && contact_email.includes("@")) {
+    finalContactEmail = contact_email.trim().toLowerCase();
+  } else if (currentUser?.email && currentUser.email.includes("@")) {
+    finalContactEmail = currentUser.email.trim().toLowerCase();
+  } else if (effectiveUserId) {
+    try {
+      const [userProfile] = await sql`SELECT email FROM profiles WHERE id = ${effectiveUserId} AND deleted_at IS NULL`;
+      if (userProfile?.email && userProfile.email.includes("@")) {
+        finalContactEmail = (userProfile.email as string).trim().toLowerCase();
+      }
+    } catch {
+      // safe fallback
+    }
+  }
 
   // 4. Idempotency Check: Prevent duplicate bookings if submitted within 60 seconds
   const finalSubserviceName = subservice_name || service_type;
@@ -170,6 +189,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
         reference,
         contact_name,
         contact_phone,
+        contact_email,
         subservice_name,
         farm_scale,
         channel,
@@ -184,6 +204,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
         ${reference},
         ${finalContactName},
         ${normalizedPhone},
+        ${finalContactEmail},
         ${finalSubserviceName},
         ${finalFarmScale},
         ${channel},
@@ -199,7 +220,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
       INSERT INTO orders (user_id, items, subtotal, total, status, payment_method, payment_status, notes, checkout_channel)
       VALUES (
         ${effectiveUserId},
-        ${orderItemsJson},
+        ${orderItemsJson}::jsonb,
         ${finalAmount},
         ${finalAmount},
         'pending',
@@ -211,62 +232,117 @@ export async function executeServiceBooking(data: CreateBookingInput) {
       RETURNING id
     `;
     orderId = orderRes.id as string;
-
-    // 6c. Insert in-app notification ONLY if user is authenticated (never for guests or admins)
-    if (effectiveUserId) {
-      try {
-        const notifPayload = {
-          tag: "Booking",
-          tagClass: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-          title: `Service Booking Confirmed: ${finalSubserviceName} 🚜`,
-          desc: `Booking Ref: ${reference} (${finalSubserviceName}) scheduled for ${scheduled_date} at ${location} (${finalFarmScale}). Contact: ${normalizedPhone}. Estimated Cost: KES ${finalAmount.toLocaleString()}`,
-          details: {
-            reference,
-            bookingId,
-            orderId,
-            serviceId,
-            serviceName,
-            subserviceName: finalSubserviceName,
-            location,
-            scheduledDate: scheduled_date,
-            contactName: finalContactName,
-            contactPhone: normalizedPhone,
-            farmScale: finalFarmScale,
-            notes,
-            estimatedCost: finalAmount,
-            channel,
-            bookedAt: new Date().toISOString()
-          },
-          time: "Just now",
-          link: "/services"
-        };
-        await tx`
-          INSERT INTO notifications (user_id, type, payload)
-          VALUES (
-            ${effectiveUserId},
-            'service_request_submitted',
-            ${tx.json(notifPayload)}
-          )
-        `;
-      } catch (err) {
-        console.warn("[SERVICES] Could not create notification record:", err);
-      }
-    }
   });
 
-  // 7. Write Audit Log
-  try {
-    const { writeAuditLog } = await import("../audit.server");
-    await writeAuditLog({
-      actorId: effectiveUserId || "guest-user",
-      action: "service.created",
-      entityType: "service_request",
-      entityId: bookingId,
-      diff: { reference, serviceSlug, subserviceName: finalSubserviceName, location, channel, orderId },
-    });
-  } catch (err) {
-    console.warn("[SERVICES] Audit log write warning:", err);
+  // 6c. Insert in-app notification ONLY if user is authenticated (never for guests or admins)
+  if (effectiveUserId) {
+    try {
+      const notifPayload = {
+        tag: "Booking",
+        tagClass: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+        title: `Service Booking Confirmed: ${finalSubserviceName} 🚜`,
+        desc: `Booking Ref: ${reference} (${finalSubserviceName}) scheduled for ${scheduled_date} at ${location} (${finalFarmScale}). Contact: ${normalizedPhone}. Estimated Cost: KES ${finalAmount.toLocaleString()}`,
+        details: {
+          reference,
+          bookingId,
+          orderId,
+          serviceId,
+          serviceName,
+          subserviceName: finalSubserviceName,
+          location,
+          scheduledDate: scheduled_date,
+          contactName: finalContactName,
+          contactPhone: normalizedPhone,
+          contactEmail: finalContactEmail,
+          farmScale: finalFarmScale,
+          notes,
+          estimatedCost: finalAmount,
+          channel,
+          bookedAt: new Date().toISOString()
+        },
+        time: "Just now",
+        link: "/services"
+      };
+      await sql`
+        INSERT INTO notifications (user_id, type, payload)
+        VALUES (
+          ${effectiveUserId},
+          'service_request_submitted',
+          ${JSON.stringify(notifPayload)}::jsonb
+        )
+      `;
+    } catch (err) {
+      console.warn("[SERVICES] Could not create notification record:", err);
+    }
   }
+
+  // 7. Write Audit Log, SMS & Email asynchronously via setImmediate so response returns immediately
+  setImmediate(async () => {
+    // Audit Log
+    try {
+      const { writeAuditLog } = await import("../audit.server");
+      await writeAuditLog({
+        actorId: effectiveUserId || "00000000-0000-0000-0000-000000000000",
+        action: "service.created",
+        entityType: "service_request",
+        entityId: bookingId,
+        diff: { reference, serviceSlug, subserviceName: finalSubserviceName, location, contactEmail: finalContactEmail, channel, orderId },
+      });
+    } catch (err) {
+      console.warn("[SERVICES] Audit log write warning:", err);
+    }
+
+    // Automated SMS Confirmation Dispatch via TextSMS Kenya
+    try {
+      const { sendServiceBookingConfirmationSms } = await import("../sms-service.server");
+      const smsRes = await sendServiceBookingConfirmationSms({
+        phoneNumber: normalizedPhone,
+        recipientName: finalContactName,
+        reference,
+        subserviceName: finalSubserviceName,
+        scheduledDate: scheduled_date,
+        location,
+        estimatedCost: finalAmount,
+      });
+      if (smsRes.success) {
+        console.log(`[SERVICES] SMS confirmation sent for booking ${reference} to ${normalizedPhone}`);
+      } else {
+        console.warn(`[SERVICES] SMS confirmation could not be sent for booking ${reference}:`, smsRes.error);
+      }
+    } catch (smsErr: any) {
+      console.warn(`[SERVICES] SMS dispatch error for booking ${reference}:`, smsErr?.message || smsErr);
+    }
+
+    // Automated Email Confirmation Dispatch via Hostinger SMTP
+    if (finalContactEmail && finalContactEmail.includes("@")) {
+      try {
+        const { sendServiceBookingConfirmationEmail } = await import("../email-service.server");
+        const emailRes = await sendServiceBookingConfirmationEmail({
+          toEmail: finalContactEmail,
+          recipientName: finalContactName,
+          reference,
+          serviceName,
+          subserviceName: finalSubserviceName,
+          scheduledDate: scheduled_date,
+          location,
+          farmScale: finalFarmScale,
+          contactPhone: normalizedPhone,
+          estimatedCost: finalAmount,
+          notes: notes || undefined,
+          channel,
+        });
+        if (emailRes.success) {
+          console.log(`[SERVICES] Email confirmation sent for booking ${reference} to ${finalContactEmail}`);
+        } else {
+          console.warn(`[SERVICES] Email confirmation could not be sent for booking ${reference}:`, emailRes.error);
+        }
+      } catch (emailErr: any) {
+        console.warn(`[SERVICES] Email dispatch error for booking ${reference}:`, emailErr?.message || emailErr);
+      }
+    } else {
+      console.log(`[SERVICES] No recipient email found for booking ${reference}. Email notification skipped.`);
+    }
+  });
 
   return {
     success: true,
