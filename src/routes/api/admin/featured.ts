@@ -1,20 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { featuredItems } from "@/db/schema/admin";
-import { eq, asc } from "drizzle-orm";
+import { products } from "@/db/schema/products";
+import { eq, asc, desc, and, isNull } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 import { invalidateFeaturedCache } from "@/lib/api/products.server";
-
-
-
+import { resolveFastProductImage } from "@/lib/api/shop.server";
 
 export const Route = createFileRoute("/api/admin/featured")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
+          let list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
+
+          // If featured_items is empty, auto-seed with top active products so admin and main site are always aligned
+          if (list.length === 0) {
+            const activeProds = await db
+              .select()
+              .from(products)
+              .where(and(eq(products.status, "active"), isNull(products.deletedAt)))
+              .orderBy(desc(products.isFeatured), desc(products.createdAt))
+              .limit(8);
+
+            for (let i = 0; i < activeProds.length; i++) {
+              const p = activeProds[i];
+              const newId = `feat-prod-${p.id}`;
+              const img = resolveFastProductImage(p);
+              await db.insert(featuredItems).values({
+                id: newId,
+                entityType: "product",
+                entityId: p.id,
+                imageUrl: img,
+                title: p.name,
+                linkUrl: `/shop/product/${p.slug}`,
+                position: i,
+              });
+              await db.update(products).set({ isFeatured: true }).where(eq(products.id, p.id));
+            }
+            invalidateFeaturedCache();
+            list = await db.select().from(featuredItems).orderBy(asc(featuredItems.position));
+          }
 
           return new Response(
             JSON.stringify({
@@ -65,10 +92,25 @@ export const Route = createFileRoute("/api/admin/featured")({
             const nextPos = existing.length > 0 ? Math.max(...existing.map((e) => e.position ?? 0)) + 1 : 0;
             const newId = `feat-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
+            // Check if linkUrl points to a product slug to link entity and mark featured
+            let entityType = "image";
+            let entityId = newId;
+            if (linkUrl && linkUrl.includes("/shop/product/")) {
+              const slug = linkUrl.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "").trim();
+              if (slug) {
+                const matchedProd = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug)).limit(1);
+                if (matchedProd.length > 0) {
+                  entityType = "product";
+                  entityId = matchedProd[0].id;
+                  await db.update(products).set({ isFeatured: true }).where(eq(products.id, matchedProd[0].id));
+                }
+              }
+            }
+
             await db.insert(featuredItems).values({
               id: newId,
-              entityType: "image",
-              entityId: newId,
+              entityType,
+              entityId,
               imageUrl: imageUrl.trim(),
               title: title ? title.trim() : "Farm Essential",
               linkUrl: linkUrl ? linkUrl.trim() : "/shop",
@@ -96,6 +138,20 @@ export const Route = createFileRoute("/api/admin/featured")({
                 JSON.stringify({ success: false, error: "Item ID is required for deletion" }),
                 { status: 400, headers: { "Content-Type": "application/json" } }
               );
+            }
+
+            // Sync with products table if this was a product
+            const existing = await db.select().from(featuredItems).where(eq(featuredItems.id, id)).limit(1);
+            if (existing.length > 0) {
+              const item = existing[0];
+              if (item.entityId && item.entityId !== "custom" && !item.entityId.startsWith("feat-")) {
+                await db.update(products).set({ isFeatured: false }).where(eq(products.id, item.entityId));
+              } else if (item.linkUrl && item.linkUrl.includes("/shop/product/")) {
+                const slug = item.linkUrl.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "").trim();
+                if (slug) {
+                  await db.update(products).set({ isFeatured: false }).where(eq(products.slug, slug));
+                }
+              }
             }
 
             await db.delete(featuredItems).where(eq(featuredItems.id, id));

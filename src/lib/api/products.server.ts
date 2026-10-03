@@ -169,34 +169,52 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
     let featItems: any[] = [];
     try {
       featItems = await sql`
-        SELECT id, title, image_url, link_url, position, entity_type, entity_id
-        FROM featured_items
-        ORDER BY position ASC
+        SELECT fi.id, fi.title, fi.image_url, fi.link_url, fi.position, fi.entity_type, fi.entity_id,
+               p.id as prod_id, p.name as prod_name, p.slug as prod_slug, p.base_price, p.image_urls as prod_image_urls,
+               p.category_id, p.field_id, p.subcategory_id, p.shop_type,
+               COALESCE(sc.name, pc.name) AS category_name,
+               sf.name AS field_name,
+               ss.name AS subcategory_name
+        FROM featured_items fi
+        LEFT JOIN products p ON (
+          (fi.entity_id IS NOT NULL AND fi.entity_id != 'custom' AND fi.entity_id = p.id::text)
+          OR (p.slug IS NOT NULL AND fi.link_url LIKE '%' || p.slug)
+        )
+        LEFT JOIN shop_fields sf ON p.field_id = sf.id
+        LEFT JOIN shop_categories sc ON p.category_id = sc.id
+        LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        ORDER BY fi.position ASC
       `;
     } catch (e) {
       console.warn("[getFeaturedProducts] featured_items table query skipped or empty:", e);
     }
 
-    // Filter out dummy initial seeds if real featured products exist
+    // Map curated featured items enriched with product live data
     const customItems = featItems
       .filter((fi: any) => !fi.id?.startsWith("feat-seed-") || mappedProducts.length === 0)
       .map((fi: any) => {
-        // Try to match with existing products for pricing & slug enrichment
-        const matched = mappedProducts.find((mp: any) => 
-          (fi.link_url && mp.slug && fi.link_url.includes(mp.slug)) ||
-          (fi.title && mp.name && mp.name.toLowerCase().includes(fi.title.toLowerCase()))
-        );
+        const slug = fi.prod_slug || (fi.link_url?.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "") || "");
+        const fallbackImg = fi.prod_name ? resolveFastProductImage({
+          name: fi.prod_name,
+          category_name: fi.category_name,
+          subcategory_name: fi.subcategory_name,
+          shop_type: fi.shop_type,
+          image_urls: fi.prod_image_urls,
+        }) : "/placeholder-product.png";
 
-        const slug = matched ? matched.slug : (fi.link_url?.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "") || "");
+        const image = (fi.image_url && !fi.image_url.includes("default.png"))
+          ? fi.image_url
+          : fallbackImg;
 
         return {
           id: fi.id,
-          name: fi.title || matched?.name || "Farm Essential",
-          image: fi.image_url || matched?.image || "/placeholder-product.png",
-          imageUrls: [fi.image_url || matched?.image || "/placeholder-product.png"],
+          name: fi.title || fi.prod_name || "Farm Essential",
+          image,
+          imageUrls: [image],
           linkUrl: fi.link_url || (slug ? `/shop/product/${slug}` : "/shop"),
-          category: matched?.category || "Farm Essentials",
-          price: matched ? matched.price : 0,
+          category: fi.category_name || "Farm Essentials",
+          price: Number(fi.base_price || 0),
           slug,
           isFeatured: true,
         };

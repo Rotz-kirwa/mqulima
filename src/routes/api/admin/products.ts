@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db.server";
 import { products } from "@/db/schema/products";
+import { featuredItems } from "@/db/schema/admin";
 import { eq, desc, ilike, and, or } from "drizzle-orm";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth, hasPermission } from "@/lib/api/admin-auth.server";
@@ -284,13 +285,57 @@ export const Route = createFileRoute("/api/admin/products")({
               return new Response(JSON.stringify({ success: false, error: "Product ID required" }), { status: 400 });
             }
 
-            const current = await db.select({ isFeatured: products.isFeatured }).from(products).where(eq(products.id, id)).limit(1);
+            const current = await db
+              .select({
+                id: products.id,
+                name: products.name,
+                slug: products.slug,
+                imageUrls: products.imageUrls,
+                isFeatured: products.isFeatured,
+              })
+              .from(products)
+              .where(eq(products.id, id))
+              .limit(1);
+
             const newFeatured = current.length > 0 ? !current[0].isFeatured : true;
 
             await db
               .update(products)
               .set({ isFeatured: newFeatured, updatedAt: new Date() })
               .where(eq(products.id, id));
+
+            if (current.length > 0) {
+              const prod = current[0];
+              if (newFeatured) {
+                // Ensure synced to featured_items
+                const existingFeat = await db
+                  .select()
+                  .from(featuredItems)
+                  .where(or(eq(featuredItems.entityId, id), eq(featuredItems.linkUrl, `/shop/product/${prod.slug}`)))
+                  .limit(1);
+
+                if (existingFeat.length === 0) {
+                  const allFeat = await db.select().from(featuredItems);
+                  const nextPos = allFeat.length > 0 ? Math.max(...allFeat.map((e) => e.position ?? 0)) + 1 : 0;
+                  const newFeatId = `feat-prod-${prod.id}`;
+                  const prodImg = resolveFastProductImage(prod as any);
+                  await db.insert(featuredItems).values({
+                    id: newFeatId,
+                    entityType: "product",
+                    entityId: prod.id,
+                    imageUrl: prodImg,
+                    title: prod.name,
+                    linkUrl: `/shop/product/${prod.slug}`,
+                    position: nextPos,
+                  });
+                }
+              } else {
+                // Remove from featured_items
+                await db
+                  .delete(featuredItems)
+                  .where(or(eq(featuredItems.entityId, id), eq(featuredItems.linkUrl, `/shop/product/${prod.slug}`)));
+              }
+            }
 
             await logAdminAction({
               actorId,
@@ -331,6 +376,9 @@ export const Route = createFileRoute("/api/admin/products")({
             if (updated.length === 0) {
               return new Response(JSON.stringify({ success: false, error: "Product not found" }), { status: 404 });
             }
+
+            // Remove from featured_items if it was featured
+            await db.delete(featuredItems).where(eq(featuredItems.entityId, id));
 
             await logAdminAction({
               actorId: (auth as any).user?.id || actorId,
