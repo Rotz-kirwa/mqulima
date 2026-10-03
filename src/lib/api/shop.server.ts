@@ -249,8 +249,11 @@ const ProductsInputSchema = z.object({
   sort: z.string().optional()
 });
 
-const productsCache = new Map<string, { data: any; expiry: number }>();
-const PRODUCTS_CACHE_TTL = 60 * 1000; // 60s cache
+// PERF: stale-while-revalidate cache. Do not revert to hard expiry — see PERFORMANCE.md.
+const productsCache = new Map<string, { data: any; expiry: number; staleUntil: number }>();
+const productsInflight = new Map<string, Promise<any>>();
+const PRODUCTS_CACHE_TTL = 60 * 1000; // fresh for 60s
+const PRODUCTS_CACHE_STALE = 10 * 60 * 1000; // may be served stale for 10 min while refreshing
 
 export function invalidateProductsCache() {
   productsCache.clear();
@@ -269,6 +272,33 @@ export const getProducts = createServerFn({ method: "GET" })
       return cached.data;
     }
 
+    const refresh = () => {
+      let p = productsInflight.get(cacheKey);
+      if (!p) {
+        p = loadProductsUncached(data)
+          .then((result) => {
+            const t = Date.now();
+            productsCache.set(cacheKey, { data: result, expiry: t + PRODUCTS_CACHE_TTL, staleUntil: t + PRODUCTS_CACHE_STALE });
+            if (productsCache.size > 150) {
+              const first = productsCache.keys().next().value;
+              if (first) productsCache.delete(first);
+            }
+            return result;
+          })
+          .finally(() => productsInflight.delete(cacheKey));
+        productsInflight.set(cacheKey, p);
+      }
+      return p;
+    };
+
+    if (cached && cached.staleUntil > now) {
+      refresh().catch((e) => console.error("[getProducts] background refresh failed:", e));
+      return cached.data;
+    }
+    return refresh();
+  });
+
+async function loadProductsUncached(data: z.infer<typeof ProductsInputSchema>) {
     const { fieldId, categoryId, subcategoryId, page = 1, limit = 1000, shopType, q, sort } = data;
     const { getDb } = await import("../db.server");
     const sql = getDb();
@@ -336,14 +366,8 @@ export const getProducts = createServerFn({ method: "GET" })
       totalPages
     };
 
-    productsCache.set(cacheKey, { data: result, expiry: now + PRODUCTS_CACHE_TTL });
-    if (productsCache.size > 150) {
-      const first = productsCache.keys().next().value;
-      if (first) productsCache.delete(first);
-    }
-
     return result;
-  });
+}
 
 const CreateShopOrderSchema = z.object({
   items: z.array(z.object({
