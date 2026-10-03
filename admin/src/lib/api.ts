@@ -83,10 +83,6 @@ export async function adminFetch(
     headers.set("x-bypass-cache", "true");
   }
 
-  // Ensure fresh responses: admin reads must never be cached by proxy or browser
-  headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
-  headers.set("Pragma", "no-cache");
-
   // 2. Perform Network Request
   const controller = new AbortController();
   const signal = init?.signal || controller.signal;
@@ -94,6 +90,7 @@ export async function adminFetch(
   const fetchPromise = (async () => {
     const response = await fetch(finalUrl, {
       ...init,
+      cache: "no-store",
       headers,
       credentials: "include",
       signal,
@@ -154,7 +151,7 @@ async function triggerBackgroundRevalidation(url: string, init: RequestInit) {
   const controller = new AbortController();
   const revalidatePromise = (async () => {
     try {
-      const res = await fetch(url, { ...init, signal: controller.signal });
+      const res = await fetch(url, { ...init, cache: "no-store", signal: controller.signal });
       if (res.ok) {
         const contentType = res.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {

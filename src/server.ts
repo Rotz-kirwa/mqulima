@@ -85,6 +85,7 @@ function isOriginAllowed(origin: string): boolean {
   if (/^https:\/\/[a-zA-Z0-9_-]+\.onrender\.com$/.test(normalized)) return true;
   if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(normalized)) return true;
   if (/^http:\/\/localhost(:[0-9]+)?$/.test(normalized)) return true;
+  if (/^http:\/\/127\.0\.0\.1(:[0-9]+)?$/.test(normalized)) return true;
   return false;
 }
 
@@ -129,12 +130,19 @@ export default {
 
     if (request.method === "OPTIONS") {
       if (isAllowed) {
+        const reqHeaders = request.headers.get("access-control-request-headers");
+        const defaultHeaders =
+          "Content-Type, Authorization, X-Requested-With, Cookie, Cache-Control, Pragma, Accept, Origin, X-Bypass-Cache, X-Request-Id, Range";
+        const allowHeaders = reqHeaders
+          ? `${reqHeaders}, ${defaultHeaders}`
+          : defaultHeaders;
+
         return new Response(null, {
           status: 204,
           headers: {
             "Access-Control-Allow-Origin": normalizedOrigin,
             "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Cookie",
+            "Access-Control-Allow-Headers": allowHeaders,
             "Access-Control-Allow-Credentials": "true",
             "Access-Control-Max-Age": "86400",
           },
@@ -158,9 +166,14 @@ export default {
       if (isAllowed) {
         newHeaders.set("Access-Control-Allow-Origin", normalizedOrigin);
         newHeaders.set("Access-Control-Allow-Credentials", "true");
-        if (!newHeaders.has("Access-Control-Allow-Headers")) {
-          newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Cookie");
-        }
+        newHeaders.set(
+          "Access-Control-Allow-Headers",
+          "Content-Type, Authorization, X-Requested-With, Cookie, Cache-Control, Pragma, Accept, Origin, X-Bypass-Cache, X-Request-Id, Range"
+        );
+        newHeaders.set(
+          "Access-Control-Expose-Headers",
+          "Content-Length, Content-Range, X-Request-Id, X-Cache"
+        );
       }
 
       const durationMs = Math.round(performance.now() - requestStart);
