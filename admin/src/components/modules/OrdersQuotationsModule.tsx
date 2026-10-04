@@ -45,10 +45,11 @@ type Order = {
   items?: OrderItem[] | any;
   subtotal?: string | number;
   total: string | number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled" | string;
+  status: "confirmed" | "paid" | "processing" | "shipped" | "delivered" | "cancelled" | string;
   paymentMethod?: string;
-  paymentStatus: "pending" | "completed" | "paid" | "failed" | string;
+  paymentStatus: "paid" | "completed" | string;
   deliveryAddress?: string;
+  notes?: string;
   createdAt: string;
   updatedAt?: string;
   customerName?: string;
@@ -57,6 +58,10 @@ type Order = {
   customerIdNumber?: string;
   customerCounty?: string;
   customerFarmingType?: string;
+  paymentReceipt?: string;
+  paymentProviderRef?: string;
+  paymentProvider?: string;
+  paymentCompletedAt?: string;
 };
 
 type Quotation = {
@@ -85,6 +90,14 @@ export const OrdersQuotationsModule: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // B2B Quotation Payment Confirmation Modal State
+  const [convertingQuote, setConvertingQuote] = useState<Quotation | null>(null);
+  const [convertPaymentRef, setConvertPaymentRef] = useState("");
+  const [convertPaymentMethod, setConvertPaymentMethod] = useState("mpesa");
+  const [convertNotes, setConvertNotes] = useState("");
+  const [convertSubmitting, setConvertSubmitting] = useState(false);
+  const [convertError, setConvertError] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -171,17 +184,47 @@ export const OrdersQuotationsModule: React.FC = () => {
     }
   };
 
-  const handleConvertQuote = async (id: string) => {
+  const handleOpenConvertModal = (q: Quotation) => {
+    setConvertingQuote(q);
+    setConvertPaymentRef("");
+    setConvertPaymentMethod("mpesa");
+    setConvertNotes("");
+    setConvertError("");
+  };
+
+  const handleConfirmConvertQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!convertingQuote) return;
+    if (!convertPaymentRef.trim()) {
+      setConvertError("Payment confirmation reference (e.g. M-Pesa receipt # or Bank transaction code) is required.");
+      return;
+    }
+    setConvertSubmitting(true);
+    setConvertError("");
     try {
       const res = await adminFetch("/api/admin/quotations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "convert_to_order", id }),
+        body: JSON.stringify({
+          action: "convert_to_order",
+          id: convertingQuote.id,
+          paymentRef: convertPaymentRef.trim(),
+          paymentMethod: convertPaymentMethod,
+          notes: convertNotes.trim(),
+        }),
       });
       const data = await res.json();
-      if (data.success) fetchData();
-    } catch (e) {
-      console.error("Convert quote error:", e);
+      if (data.success) {
+        setConvertingQuote(null);
+        fetchData();
+        setActiveSubTab("orders");
+      } else {
+        setConvertError(data.error || "Failed to convert quotation");
+      }
+    } catch (e: any) {
+      setConvertError(e?.message || "Server error while converting quotation");
+    } finally {
+      setConvertSubmitting(false);
     }
   };
 
@@ -229,12 +272,12 @@ export const OrdersQuotationsModule: React.FC = () => {
     }
   };
 
-  // Counts calculation for orders
+  // Counts calculation for recorded orders
   const totalCount = orders.length;
   const { pendingCount, deliveredCount, cancelledCount } = useMemo(() => {
     let p = 0, d = 0, c = 0;
     for (const o of orders) {
-      if (o.status === "pending" || o.status === "processing" || o.status === "shipped") p++;
+      if (o.status === "confirmed" || o.status === "paid" || o.status === "processing" || o.status === "shipped") p++;
       else if (o.status === "delivered" || o.status === "completed") d++;
       else if (o.status === "cancelled") c++;
     }
@@ -253,11 +296,12 @@ export const OrdersQuotationsModule: React.FC = () => {
       const email = (o.customerEmail || "").toLowerCase();
       const phone = (o.customerPhone || "").toLowerCase();
       const id = (o.id || "").toLowerCase();
-      const matchesSearch = !q || name.includes(q) || email.includes(q) || phone.includes(q) || id.includes(q);
+      const receipt = (o.paymentReceipt || "").toLowerCase();
+      const matchesSearch = !q || name.includes(q) || email.includes(q) || phone.includes(q) || id.includes(q) || receipt.includes(q);
 
       let matchesTab = true;
       if (activeTab === "pending") {
-        matchesTab = o.status === "pending" || o.status === "processing" || o.status === "shipped";
+        matchesTab = o.status === "confirmed" || o.status === "paid" || o.status === "processing" || o.status === "shipped";
       } else if (activeTab === "delivered") {
         matchesTab = o.status === "delivered" || o.status === "completed";
       } else if (activeTab === "cancelled") {
@@ -471,7 +515,13 @@ export const OrdersQuotationsModule: React.FC = () => {
                         {/* Order Ref ID */}
                         <td className="p-3 font-mono font-bold text-[#0F3D3C]">
                           #{order.id.slice(0, 8)}
-                          <div className="text-[10px] text-[#4A7C79] font-normal uppercase mt-0.5">
+                          <div className="text-[10px] text-emerald-800 font-mono font-bold uppercase mt-0.5 flex items-center gap-1">
+                            <ShieldCheck className="h-3 w-3 text-emerald-600 shrink-0" />
+                            <span className="truncate max-w-[130px]" title={order.paymentReceipt || order.paymentProviderRef || "Confirmed"}>
+                              Receipt: {order.paymentReceipt || order.paymentProviderRef || "Verified"}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-[#4A7C79] font-normal uppercase mt-0.5">
                             {order.paymentMethod || "M-Pesa Express"}
                           </div>
                         </td>
@@ -549,16 +599,15 @@ export const OrdersQuotationsModule: React.FC = () => {
                               disabled={updatingStatusId === order.id}
                               onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                               className={`font-mono text-[11px] uppercase font-extrabold px-3 py-1.5 rounded-[6px] border cursor-pointer focus:outline-none transition-all shadow-xs ${
-                                order.status === "confirmed" || order.status === "paid" || order.status === "delivered" || order.status === "completed"
+                                order.status === "delivered" || order.status === "completed"
                                   ? "bg-emerald-100 border-emerald-400 text-emerald-950 hover:bg-emerald-200"
                                   : order.status === "cancelled"
                                   ? "bg-rose-100 border-rose-400 text-rose-950 hover:bg-rose-200"
-                                  : "bg-blue-200 border-blue-500 text-blue-950 hover:bg-blue-300 font-extrabold"
+                                  : "bg-blue-100 border-blue-400 text-blue-950 hover:bg-blue-200"
                               }`}
                             >
-                              <option value="pending" className="bg-white text-blue-900 font-bold">⏳ Pending</option>
-                              <option value="confirmed" className="bg-white text-emerald-900 font-bold">✓ Confirmed & Validated</option>
-                              <option value="processing" className="bg-white text-blue-900 font-bold">⚙ Processing</option>
+                              <option value="confirmed" className="bg-white text-emerald-900 font-bold">✓ Confirmed & Paid</option>
+                              <option value="processing" className="bg-white text-blue-900 font-bold">⚙ Processing & Packaging</option>
                               <option value="shipped" className="bg-white text-blue-900 font-bold">🚚 Dispatched</option>
                               <option value="delivered" className="bg-white text-emerald-900 font-bold">✓ Delivered</option>
                               <option value="cancelled" className="bg-white text-rose-900 font-bold">✕ Cancelled</option>
@@ -576,23 +625,14 @@ export const OrdersQuotationsModule: React.FC = () => {
                               <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
                                 <Check className="h-3.5 w-3.5 text-emerald-700" /> Delivered
                               </span>
-                            ) : order.status === "confirmed" || order.paymentStatus === "paid" ? (
-                              <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
-                                <Check className="h-3.5 w-3.5 text-emerald-700" /> Confirmed
-                              </span>
                             ) : order.status === "cancelled" ? (
                               <span className="px-2.5 py-1 bg-rose-100 border border-rose-300 text-rose-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
                                 <X className="h-3.5 w-3.5 text-rose-700" /> Cancelled
                               </span>
                             ) : (
-                              <button
-                                onClick={() => handleUpdateOrderStatus(order.id, "confirmed")}
-                                disabled={updatingStatusId === order.id}
-                                title="Validate and Confirm Order"
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-xs"
-                              >
-                                <Check className="h-3.5 w-3.5" /> Validate & Confirm
-                              </button>
+                              <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-[4px] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-2xs">
+                                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> Paid & Confirmed
+                              </span>
                             )}
 
                             {/* Full Order & Customer Details Modal Trigger */}
@@ -694,10 +734,10 @@ export const OrdersQuotationsModule: React.FC = () => {
                     <td className="p-3.5 text-right">
                       {q.status !== "converted" && (
                         <button
-                          onClick={() => handleConvertQuote(q.id)}
-                          className="px-3 py-1.5 text-xs bg-[#278C7B] text-white font-bold rounded-[4px] hover:bg-[#1E6B5E] transition cursor-pointer shadow-xs"
+                          onClick={() => handleOpenConvertModal(q)}
+                          className="px-3 py-1.5 text-xs bg-[#278C7B] text-white font-bold rounded-[4px] hover:bg-[#1E6B5E] transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
                         >
-                          Convert to Active Order
+                          <ShieldCheck className="h-3.5 w-3.5" /> Convert to Active Order
                         </button>
                       )}
                     </td>
@@ -734,6 +774,133 @@ export const OrdersQuotationsModule: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* B2B QUOTATION PAYMENT CONFIRMATION MODAL */}
+      {convertingQuote && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#CCE5E1] rounded-[10px] max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-left font-sans">
+            <div className="bg-[#0F3D3C] text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                <h3 className="font-bold text-sm tracking-wide">
+                  Record Paid Order from Quotation
+                </h3>
+                <span className="bg-[#278C7B] text-white font-mono text-[10px] px-2 py-0.5 rounded-[3px] font-bold">
+                  #{convertingQuote.id.slice(0, 8)}
+                </span>
+              </div>
+              <button
+                onClick={() => setConvertingQuote(null)}
+                disabled={convertSubmitting}
+                className="text-gray-300 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmConvertQuote} className="p-6 space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-[6px] text-xs text-emerald-900 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <CheckCircle className="h-4 w-4 text-emerald-700" /> Verification Policy
+                </div>
+                <p className="text-[11px] text-emerald-800">
+                  An order is only recorded in the system after successful payment confirmation has been received. Please verify the client payment details below.
+                </p>
+              </div>
+
+              {convertError && (
+                <div className="p-3 bg-rose-50 border border-rose-300 text-rose-800 text-xs rounded-[6px] flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                  <span>{convertError}</span>
+                </div>
+              )}
+
+              <div className="bg-[#F4F9F8] border border-[#CCE5E1] p-3 rounded-[6px] text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-[#4A7C79] font-bold">Client / Title:</span>
+                  <span className="font-bold text-[#0F3D3C]">{convertingQuote.customerName || convertingQuote.title || "B2B Client"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#4A7C79] font-bold">Quotation Total:</span>
+                  <span className="font-mono font-extrabold text-[#0F3D3C]">
+                    KSh {Number(convertingQuote.totalAmountKsh || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0F3D3C] mb-1">
+                  Payment Method <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={convertPaymentMethod}
+                  onChange={(e) => setConvertPaymentMethod(e.target.value)}
+                  className="w-full text-xs p-2 bg-white border border-[#CCE5E1] rounded-[6px] focus:outline-none focus:border-[#278C7B] text-[#0F3D3C] font-semibold"
+                >
+                  <option value="mpesa">M-Pesa (Paybill / Till / Express)</option>
+                  <option value="bank_transfer">Direct Bank Transfer / Wire</option>
+                  <option value="ncba">NCBA Bank Channel</option>
+                  <option value="paystack">Paystack Card / Transfer</option>
+                  <option value="card">Corporate Card / Cheque</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0F3D3C] mb-1">
+                  Payment Confirmation Reference / Receipt # <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. QK89123XZ or NCBA-TXN-09823"
+                  value={convertPaymentRef}
+                  onChange={(e) => setConvertPaymentRef(e.target.value)}
+                  className="w-full text-xs font-mono p-2 bg-white border border-[#CCE5E1] rounded-[6px] focus:outline-none focus:border-[#278C7B] text-[#0F3D3C]"
+                />
+                <span className="text-[10px] text-[#4A7C79] mt-0.5 block">
+                  Enter the transaction ID, receipt code, or bank clearance reference.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0F3D3C] mb-1">
+                  Confirmation Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Verified by finance desk via Safaricom portal"
+                  value={convertNotes}
+                  onChange={(e) => setConvertNotes(e.target.value)}
+                  className="w-full text-xs p-2 bg-white border border-[#CCE5E1] rounded-[6px] focus:outline-none focus:border-[#278C7B] text-[#0F3D3C]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#CCE5E1]">
+                <button
+                  type="button"
+                  onClick={() => setConvertingQuote(null)}
+                  disabled={convertSubmitting}
+                  className="px-3 py-1.5 text-xs text-[#0F3D3C] hover:bg-gray-100 rounded-[4px] border border-[#CCE5E1] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={convertSubmitting}
+                  className="px-4 py-1.5 text-xs bg-[#278C7B] hover:bg-[#1E6B5E] text-white font-bold rounded-[4px] transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                >
+                  {convertSubmitting ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                  )}
+                  {convertSubmitting ? "Recording Order..." : "Confirm Payment & Record Order"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -865,15 +1032,25 @@ export const OrdersQuotationsModule: React.FC = () => {
                     <span className="font-extrabold text-[#0F3D3C] uppercase">{selectedOrder.paymentMethod || "M-Pesa"}</span>
                   </div>
                   <div>
+                    <span className="text-[#4A7C79] font-bold">Payment Receipt: </span>
+                    <span className="font-mono font-bold text-emerald-800 uppercase">{selectedOrder.paymentReceipt || selectedOrder.paymentProviderRef || "Verified Confirmation"}</span>
+                  </div>
+                  <div>
                     <span className="text-[#4A7C79] font-bold">Payment Status: </span>
-                    <span className={`font-mono font-bold uppercase ${selectedOrder.paymentStatus === "paid" || selectedOrder.status === "confirmed" ? "text-emerald-700" : "text-amber-700"}`}>
-                      {selectedOrder.paymentStatus === "paid" || selectedOrder.status === "confirmed" ? "CONFIRMED & VALIDATED" : (selectedOrder.paymentStatus || "PENDING VALIDATION")}
+                    <span className="font-mono font-bold text-emerald-700 uppercase inline-flex items-center gap-1">
+                      <ShieldCheck className="h-3.5 w-3.5" /> CONFIRMED & VALIDATED
                     </span>
                   </div>
                   {selectedOrder.deliveryAddress && (
                     <div>
                       <span className="text-[#4A7C79] font-bold">Delivery Location: </span>
                       <span className="font-semibold text-[#0F3D3C]">{selectedOrder.deliveryAddress}</span>
+                    </div>
+                  )}
+                  {selectedOrder.notes && (
+                    <div>
+                      <span className="text-[#4A7C79] font-bold">Notes: </span>
+                      <span className="text-[#2C5E5B]">{selectedOrder.notes}</span>
                     </div>
                   )}
                 </div>
@@ -895,9 +1072,8 @@ export const OrdersQuotationsModule: React.FC = () => {
                   onChange={(e) => handleUpdateOrderStatus(selectedOrder.id, e.target.value)}
                   className="font-mono text-xs uppercase font-extrabold px-3 py-1.5 rounded-[6px] border border-[#278C7B] bg-white text-[#0F3D3C] cursor-pointer focus:outline-none"
                 >
-                  <option value="pending">⏳ Pending</option>
-                  <option value="confirmed">✓ Confirmed & Validated</option>
-                  <option value="processing">⚙ Processing</option>
+                  <option value="confirmed">✓ Confirmed & Paid</option>
+                  <option value="processing">⚙ Processing & Packaging</option>
                   <option value="shipped">🚚 Dispatched</option>
                   <option value="delivered">✓ Delivered</option>
                   <option value="cancelled">✕ Cancelled</option>
