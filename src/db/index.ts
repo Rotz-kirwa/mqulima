@@ -35,6 +35,13 @@ export function getDb() {
   if (!globalThis.__mq_drizzle_db__) {
     const sql = getRawSql();
     globalThis.__mq_drizzle_db__ = drizzle(sql, { schema });
+    // Restore postgres date serializers overridden by drizzle-orm
+    const dateSerializer = (x: any) => (x instanceof Date ? x : new Date(x)).toISOString();
+    for (const type of ["1184", "1082", "1083", "1114", "1182", "1185", "1115", "1231"]) {
+      if ((sql as any)?.options?.serializers) {
+        (sql as any).options.serializers[type] = dateSerializer;
+      }
+    }
   }
   return globalThis.__mq_drizzle_db__;
 }

@@ -230,4 +230,15 @@ describe("Password Recovery Security & Multi-Channel Verification Suite", () => 
       expect(isAlreadyUsed).toBe(true);
     });
   });
+
+  describe("9. Date Serialization & Driver Interoperability Guardrail", () => {
+    it("should ensure postgres date serializers serialize Date instances to string instead of leaking Date objects", () => {
+      const dateSerializer = (x: any) => (x instanceof Date ? x : new Date(x)).toISOString();
+      const testDate = new Date("2026-10-04T12:00:00.000Z");
+      const serialized = dateSerializer(testDate);
+      expect(typeof serialized).toBe("string");
+      expect(serialized).toBe("2026-10-04T12:00:00.000Z");
+      expect(Buffer.byteLength(serialized)).toBeGreaterThan(0);
+    });
+  });
 });

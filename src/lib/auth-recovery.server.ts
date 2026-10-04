@@ -162,7 +162,7 @@ export const requestPasswordRecovery = createServerFn({ method: "POST" })
     `;
 
     // 6. Insert new recovery record (10-minute expiry)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     await sql`
       INSERT INTO recovery_tokens (
         user_id,
