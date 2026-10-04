@@ -10,4 +10,5 @@ export * from "./marketplace";
 export * from "./services";
 export * from "./admin";
 export * from "./sms";
+export * from "./recovery";
 
