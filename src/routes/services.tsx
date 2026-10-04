@@ -163,7 +163,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Finance & Insurance",
     servicesCountText: "3 services",
     count: 3,
-    description: "We understand that money determines whether you’ll succeed or fail. We know that every planting season costs money in the form of seed, land preparation, labour and inputs. We also understand that money has to come from somewhere long before the harvest. At the same time bad seasons happen. Floods, fire, heavy rainfall, disease outbreak can wipe all the work you have done. Many farmers carry that risk entirely alone, with nowhere to turn when it happens. You need insurance to guard your farm and yourself. Mqulima's Finance & Insurance services connect you to credit built around the farming calendar, not a bank's convenience, and insurance that actually understands what a farmer does and what he stands to lose. Whether you need capital to get a season moving or protection so one disaster doesn't wipe out three good years, it's a request away. Explore Finance & Insurance and put your next season on steadier ground.",
+    description: "To succeed you need capital, and risks need to covered. Mqulima connects you to both. We get you credit that gets your season moving to insurance that protects what you’ve built, your financial future in agriculture starts here.",
     image: "/images/services/finance_insurance_cat.webp",
     icon: Coins,
     checklist: [
@@ -171,38 +171,39 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Agri insurance",
       "Financial advisory"
     ],
-    action1Text: "get financed",
+    action1Text: "Get Financed",
+    action2Text: "Learn More",
     bookingButtonText: "Get Financed",
     subservices: [
       {
         id: "agri_loans_credit",
         name: "Agri loans & Credit",
-        description: "Preparing land, buying seeds, fertilizer and labor all need MONEY before a single crop or animal is ready to sell. The gap between planting and harvest is where many good farming plans quietly stall, not for lack of skill, but for lack of capital at the right moment. Ordinary loans rarely understand that a farmer's income doesn't arrive monthly; it arrives once, at harvest, and everything before that is an investment on faith. We understand that you don’t harvest every month, it comes once, twice or thrice in a year. Mqulima connects you to agricultural credit structured around your rhythm and around the number of harvests you have. We connect you to funds sized to your farm, timed to your season, and disbursed without the long wait that ordinary lending puts you through. Request Agri Loans & Credit today, and get your season moving before the planting window closes.",
+        description: "In agriculture, we understand  harvesting isn’t every end month, so we give you access to credit built for the realities of farming- seasonal, flexible and sized to your enterprise. Get the capital moving before the planting window closes.",
         estimatedCost: "Custom Credit",
         image: "/images/services/agri_loans_credit.webp",
         icon: Coins,
-        action1Text: "Get Financed",
-        action2Text: "Remind me"
+        action1Text: "Get Credit",
+        action2Text: "Learn More"
       },
       {
         id: "agri_insurance",
         name: "Agri insurance",
-        description: "Sometimes drought, fires, floods, disease, pests and theft happen. A farmer carries deadly risks in a season and yet most farms in Kenya still operate with absolutely nothing to fall back on when disaster strikes. When a disaster happens, it isn't just the season's income that's lost; it's next season's seed money too. Mqulima Agri Insurance protects your crop, your livestock, and the investment you've already put into the ground, so that one bad season doesn't have the power to undo several good ones. Cover is matched to what you actually grow or keep, not a generic policy that misses the point. You can get more information by consulting Mqulima Agro-insurance expert via mqulima@mqulima.com, phone call at 0723346134, whatsapp @mqulima or 0723346134 or on all our Social Channels.",
+        description: "Protect your harvest, your livestock and your investment against the risks you can’t control. One bad season shouldn’t undo years of work.",
         estimatedCost: "Tailored Premium",
         image: "/images/services/agri_insurance.webp",
         icon: ShieldCheck,
         action1Text: "Get Quote",
-        action2Text: "Consult an expert"
+        action2Text: "Learn More"
       },
       {
         id: "financial_advisory",
         name: "Financial advisory",
-        description: "We understand that financial independence is the ultimate goal. We also know that income doesn't always translate into wealth. Without a proper financial knowledge and planning for what comes in and what goes out, even the strong harvest can quietly slip through a farmer's fingers by the next planting season. Most farmers never get the chance to sit with someone who actually understands both farming and money, because that kind of guidance has historically lived far from the farm. Mqulima's Financial Advisory service puts financial guidance within reach. We give real advice on managing, saving, and growing the money your farm earns. We understand both agriculture and money. Request Financial Advisory, and make every shilling your farm earns work as hard as you did to earn it.",
+        description: "Get expert guidance on managing, growing and protecting your agricultural income. Make every shilling work as hard as you do.",
         estimatedCost: "Advisory Session",
         image: "/images/self-hosted/service-business-planning.webp",
         icon: TrendingUp,
-        action1Text: "Consult an Expert",
-        action2Text: "Visit Academy"
+        action1Text: "Get Advise",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -212,7 +213,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Soil services",
     servicesCountText: "3 services",
     count: 3,
-    description: "Every strong harvest starts with soil a farmer actually understands, yet most planting decisions in Kenya are still made on guesswork. We use the same fertilizer, the same routine, season after season, regardless of what the land actually needs and expect different results. Soil that's tired, acidic, or missing key nutrients quietly caps your yield long before anything. Every farmer needs to take charge of their affairs by knowing what their farm lacks, what it needs and what will grow best. Mqulima's Soil Services bring soil testing, soil treatment and fertilizer recommendation to your farm, so every input you buy and every season you plant is based on what your land requires, not out of guesswork. Explore Soil Services and start growing from a plan instead of a guess.",
+    description: "Great harvests start below the surface. They start before any seed is bought. Mqulima’s soil services tell you exactly what your land needs and what to do about it before you plant a single seed.",
     image: "/images/services/soil.webp",
     icon: Sprout,
     checklist: [
@@ -220,38 +221,39 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Soil treatment",
       "Fertilizer recommendation"
     ],
-    action1Text: "View Services",
+    action1Text: "View Soil Services",
+    action2Text: "Learn More",
     bookingButtonText: "Soil Testing",
     subservices: [
       {
         id: "soil_testing_analysis",
         name: "Soil testing and analysis",
-        description: "You can't fix what you can't see. Most soil problems- low nitrogen, wrong pH, missing micronutrients are invisible until the crop is wilting, underperforming or struggling. Farmers who skip testing often spend a whole season fighting a problem soil testing and fertilizer recommendation could have solved from day one. Mqulima connects you to professional soil testing and analysis, with results explained in plain language, not a lab report you need a degree to understand. Request Soil Testing and Analysis, and know exactly what your land needs before you spend a single shilling on inputs.",
+        description: "Know exactly what’s in your soil before you invest in it. Precise testing turns guesswork into a plan.",
         estimatedCost: "On Request",
         image: "/images/services/soil_testing_analysis.webp",
         icon: Sprout,
-        action1Text: "Get Your soil tested",
-        action2Text: "remind me"
+        action1Text: "Test your soil",
+        action2Text: "Learn More"
       },
       {
         id: "soil_treatment",
         name: "Soil treatment",
-        description: "A soil test only matters if something is actually done with the results and correcting soil imbalances such as acidity, poor structure, or nutrient depletion is a job most farmers have never had proper support for. If left untreated, tired soil keeps yields low no matter how good the seed or how hard the season's rain. Mqulima's Soil Treatment service takes your test results and turns them into an actual action plan, delivered and applied by people who know how to fix what's wrong, not just diagnose it. Request Soil Treatment, and give your land the chance to perform the way it's supposed to.",
+        description: "Correct what your soil is missing and unlock the yield it’s capable of. Healthier soil, stronger harvests.",
         estimatedCost: "On Request",
         image: "/images/services/soil_treatment.webp",
         icon: Sprout,
-        action1Text: "Get Soil treatment",
-        action2Text: "Get advised"
+        action1Text: "Get Soil Treatment",
+        action2Text: "Learn More"
       },
       {
         id: "fertilizer_recommendation",
         name: "Fertilizer recommendation",
-        description: "Buying fertiliser without knowing exactly what your soil and your crop needs is one of the most common and most expensive mistakes in Kenyan farming, with many farmers overspending on nutrients their land already has plenty of, while missing the one it's actually short on. Mqulima's Fertiliser Recommendation service matches the right plant, in the right quantity, and correct timing precisely to your soil and your crop, based on real data rather than what the shop down the road happens to be selling. Request a Fertilizer Recommendation, and stop paying for inputs your land doesn't even need.",
+        description: "Get the right fertilizer, in the right quantity, matched precisely to your soil and your crop. Stop overspending on inputs your land doesn’t need.",
         estimatedCost: "On Request",
         image: "/images/services/fertilizer_recommendation.webp",
         icon: Wheat,
-        action1Text: "Get recommendation",
-        action2Text: "Fertilizer Academy"
+        action1Text: "See soil recommendation",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -261,7 +263,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Crop services",
     servicesCountText: "6 services",
     count: 6,
-    description: "From the land you farm on to the market you eventually sell into, growing a crop successfully involves far more than planting seed and waiting. It involves getting the land, the right machinery, proper storage, transport, and expert guidance. They all have to come together at the right moment. Mqulima's Crop Services bring all these services together, in one place. You get access to land, machinery, storage, transport and agronomy support so that your harvest doesn't fail for lack of the right support at the right time. Whatever stage of farming you are at, we make sure that whatever service you need, you get it. Because we understand that your crops won’t wait. Explore Crop Services and get every stage of your crop's journey covered in one place.",
+    description: "From the land you farm on to the market you sell into, Mqulima’s crop services cover every stage of the journey. From land preparation, through harvesting to storage, machinery, expertise and more built around getting you to harvest the best possible outcome.",
     image: "/images/services/crop_services_cat.webp",
     icon: Tractor,
     checklist: [
@@ -272,66 +274,69 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Greenhouse",
       "Consult an Agronomist"
     ],
-    action1Text: "View plant services",
+    action1Text: "View Crop Services",
+    action2Text: "Learn More",
     bookingButtonText: "Book Service",
     subservices: [
       {
         id: "lease_land",
         name: "Lease land",
-        description: "Not every farmer with the skill and ambition to grow has the land to grow crops or rear animals. In Kenya, finding land to lease has traditionally meant relying on word of mouth, uncertain terms, and a fair amount of luck. But the land exists, what doesn’t exist is the information about where and who has the land. We bridge this gap by bringing landowners and farmers into one marketplace. Mqulima's Lease Land service connects you to verified farmland available for lease where you need to farm, with clear terms from the start, so expanding your production doesn't depend on who you happen to know. Request Lease Land, and grow your operation on your own terms.",
+        description: "Don’t get caught up in land lease con game and in endless search.\n\nFind and access farmland that fits your enterprise, without the long search or the guesswork. Expand your production on your terms.",
         estimatedCost: "Per Acre / Season",
         image: "/images/services/lease_land.webp",
         icon: MapPin,
-        action1Text: "Request available lands",
-        action2Text: "Inquire on WhatsApp"
+        action1Text: "Lease Land",
+        action2Text: "Learn More"
       },
       {
         id: "rent_machinery",
         name: "Rent machinery",
-        description: "We understand that owning a tractor, a silage chopper, or a harvester is out of reach for most smallholder farmers in the agriculture industry. We also know that doing everything by hand is impossible. It costs more money, take more time, poor performance and ultimately yield less. Modern farming needs to be done quickly and affrodably. Mqulima's Rent Machinery service puts the right equipment within reach exactly when your farm needs it, without the cost of owning and maintaining it year-round. Request Machinery, and get the job done on time, every season.",
+        description: "Access the equipment your operation needs, exactly when you need it.",
         estimatedCost: "Per Acre / Hour",
         image: "/images/services/rent_machinery.webp",
         icon: Tractor,
-        action1Text: "rent machinery",
-        action2Text: "place request"
+        action1Text: "Machinery",
+        action2Text: "Learn More"
       },
       {
         id: "warehousing_cold_storage",
         name: "Warehousing and Cold storage",
-        description: "A harvest that isn't stored properly starts losing value the moment it leaves the field to pests, moisture, and spoilage. This forces farmers to sell quickly and cheaply simply because they have nowhere safe to keep produce while waiting for a better price. Mqulima's Warehousing and Cold Storage service gives your harvest a safe place where your produce can wait for better prices and get protected from loss, so you can sell on your own schedule instead of out of urgency. Request Storage, and hold onto the value of your harvest for as long as you need to.",
+        description: "Protect your harvest from loss and spoilage with storage built for agricultural produce. Sell on your schedule, not because your produce is at risk.",
         estimatedCost: "Per Crate / Month",
         image: "/images/services/warehousing_cold_storage.webp",
         icon: Warehouse,
-        action1Text: "get warehouse space",
-        action2Text: "cold storage"
+        action1Text: "Lease Storage",
+        action2Text: "Learn More"
       },
       {
         id: "transportation",
         name: "Transportation",
-        description: "Unreliable transport remains one of the most common reasons farm produce is lost or sold at a loss along the way. Farmer’s sell to middlemen at throw away prices because they have no means to getting to the market. Getting to the market doesn’t require a lorry or a pickup only. It requires reliable, scheduled farm logistics. Mqulima's Transportation service moves your produce from farm to market reliably and on time, connecting you to trusted transporters instead of leaving you to negotiate with whoever happens to be passing. Request Transportation, and stop letting distance decide your harvest's fate.",
+        description: "Move your produce from farm to market or wherever you want them reliably and on time. Distance shouldn’t be the reason a harvest goes to waste.",
         estimatedCost: "Per Trip / Ton",
         image: "/images/services/transportation.webp",
         icon: Truck,
-        action1Text: "get transport services"
+        action1Text: "Get Transport Services",
+        action2Text: "Learn More"
       },
       {
         id: "greenhouse",
         name: "Greenhouse",
-        description: "Open-field farming leaves your crop exposed to everything the weather decides to throw at it unpredictable rain, pests, extreme heat often shortening the growing season and capping how much you can actually produce. Mqulima's Greenhouse service connects you to greenhouse solutions that extend your growing season and protect your crop from the unpredictable, letting you plan production with far more confidence. Request Greenhouse Solutions, and grow more, more consistently, regardless of what the season outside is doing.",
+        description: "Access greenhouse solutions that extend your growing season and protect your crop from the unpredictable. Grow more, more consistently.",
         estimatedCost: "Turnkey Package",
         image: "/images/services/greenhouse.webp",
         icon: Sprout,
-        action1Text: "get quote",
-        action2Text: "know more"
+        action1Text: "Get Quotation",
+        action2Text: "Learn More"
       },
       {
         id: "consult_agronomist",
         name: "Consult an Agronomist",
-        description: "Every crop, soil type and season comes with its own set of decisions, and you need to get them right. The wrong planting time, the wrong spacing, a pest problem caught too late or the wrong pesticide can quietly cost a farmer the whole season's potential. Mqulima connects you directly to qualified agronomists who can guide your specific farm, not generic advice pulled from somewhere else. Request an Agronomist Consultation, and make every major planting decision an informed one.",
+        description: "Get expert crop guidance tailored to your farm, your soil and your goals. Make every planting decision an informed one.",
         estimatedCost: "On Request",
         image: "/images/services/consult_agronomist.webp",
         icon: UserCheck,
-        action1Text: "Consult agronomist"
+        action1Text: "Consult Agronomist",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -341,7 +346,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Animal & Health services",
     servicesCountText: "3 services",
     count: 3,
-    description: "A healthy herd is the foundation of everything a livestock farmer earns. Veterinary support in many parts of Kenya remains hard to reach exactly when it's needed most, often arriving too late to save an animal or a season's income. Farmers lose animals without establishing the cause of the loss to avert future losses. This needs to change. Mqulima's Animal & Health Services connect you to breeding, diagnosis, treatment and vaccination support and all other animal care services so your herd's health is planned, not gambled. Explore Animal & Health Services and give your livestock the care that protects your income too.",
+    description: "Healthy livestock is the foundation of a thriving herd. Mqulima connects you to breeding, diagnosis and treatment expertise so your animals and your income stay protected.",
     image: "/images/services/veterinary.webp",
     icon: Stethoscope,
     checklist: [
@@ -349,38 +354,39 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Veterinary Diagnosis & Treatment",
       "Vaccination"
     ],
-    action1Text: "animal services",
+    action1Text: "Browse Animal Services",
+    action2Text: "Learn More",
     bookingButtonText: "Book Vet",
     subservices: [
       {
         id: "ai_breeding",
         name: "AI & Breeding",
-        description: "Poor genetics quietly limit a herd's productivity for generations, yet access to quality artificial insemination and breeding expertise has historically been out of reach for many smallholder livestock keepers. To produce better, you need to breed better and to have better breeds, you need someone who know more about livestock breeding. Mqulima's AI & Breeding service connects you to professional breeding support that improves your herd's genetics and productivity, one generation at a time. Request AI & Breeding, and start building a stronger herd today, not just a bigger one.",
+        description: "Improve your herd’s genetics and productivity with professional artificial insemination and breeding services. Build a stronger herd, one generation at a time.",
         estimatedCost: "Per Insemination",
         image: "/images/services/ai_breeding.webp",
         icon: Activity,
-        action1Text: "ai services",
-        action2Text: "breeding services"
+        action1Text: "Get Breeding Services",
+        action2Text: "Learn More"
       },
       {
         id: "veterinary_diagnosis_treatment",
         name: "Veterinary Diagnosis & Treatment",
-        description: "Livestock is a huge investment. When an animal falls sick, every hour of delay narrows the chances of a full recovery, yet finding a qualified vet quickly remains one of the biggest frustrations for livestock farmers across the country. A farmer nolonger needs to make a million phone calls looking for a Vet and lose the animal in the long run. Mqulima makes sure your animal is attended to on time and professionally. Mqulima's Veterinary Diagnosis & Treatment service connects you to professional care fast, so a sick animal gets the right diagnosis and treatment before a small problem becomes a costly loss. Request Veterinary Care, and give your animals the timely attention they need.",
+        description: "Get fast, professional diagnosis and treatment when your animals need it most. A healthy herd starts with timely care.",
         estimatedCost: "Clinical Visit",
         image: "/images/services/veterinary_diagnosis_treatment.webp",
         icon: Stethoscope,
-        action1Text: "request veterinary service",
-        action2Text: "consult a vet"
+        action1Text: "Call Vet",
+        action2Text: "Learn More"
       },
       {
         id: "vaccination",
         name: "Vaccination",
-        description: "Diseases like Rift Valley Fever, foot-and-mouth, and other preventable outbreaks can wipe out a herd of livestock income in a matter of days, yet vaccination is still treated as optional by many farmers simply because access is inconsistent. Farmers should be at the front row fighting preventable losses through vaccination. Mqulima's Vaccination service brings professional and on-demand vaccination directly to your herd, protecting your animals against any preventable diseases and outbreaks. Request Vaccination, because prevention will always cost less than the loss it prevents.",
+        description: "Protect your livestock from preventable disease with accessible, professional vaccination services. Prevention is always cheaper than loss.",
         estimatedCost: "Per Herd / Head",
         image: "/images/self-hosted/service-livestock-vet.webp",
         icon: ShieldCheck,
-        action1Text: "get vaccination service",
-        action2Text: "download flier"
+        action1Text: "Vaccinate",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -390,7 +396,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Animal Nutrition",
     servicesCountText: "4 services",
     count: 4,
-    description: "What an animal eats determines what it gives back. Whether it’s milk, weight, egss or the offspring, all depends on what you feed the animal. However, most farmers overlook the quality of their feeds and don’t plan their feeding. This remains major parts that reduce the volume and quality of the produce a farmer gets. A farmer should do proper planning not relying on whatever pasture happens to be available that day. Mqulima's Animal Nutrition services help you formulate, source and manage the right feed for your herd's actual needs, at any scale. Explore Animal Nutrition, and stop leaving your herd's output up to chance.",
+    description: "What you feed your animals determines what they give back. Mqulima helps you formulate, source and manage the right nutrition, at the right scale, every time.",
     image: "/images/services/animal_feeds.webp",
     icon: Wheat,
     checklist: [
@@ -399,48 +405,49 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Buy/Rent machinery",
       "Advisory"
     ],
-    action1Text: "animal nutrition",
-    action2Text: "visit nutrition academy",
+    action1Text: "Nutritional Services",
+    action2Text: "Learn More",
     bookingButtonText: "Nutrition Support",
     subservices: [
       {
         id: "feed_formulation",
         name: "Feed formulation",
-        description: "Generic feed rarely matches what a specific herd actually needs at a specific stage of growth or production. This quietly limits your milk yield, beef quality, weight gain, or breeding performance without the farmer ever knowing why. Mqulima's Feed Formulation service designs feed precisely around your animals' needs and your production goals, backed by real nutritional guidance. Our experts carefully examine the stage of production, the nutritional need and give the best feed formula. Don’t rely on guesswork, make sure you are doing the right thing. Request Feed Formulation, and turn better nutrition into better, more predictable output.",
+        description: "Get feed formulated precisely for your animals’ needs and your production goals. Better nutrition, better output.",
         estimatedCost: "Formulation Plan",
         image: "/images/services/feed_formulation.webp",
         icon: Wheat,
-        action1Text: "request service",
-        action2Text: "nutrition academy"
+        action1Text: "The Formula",
+        action2Text: "Learn More"
       },
       {
         id: "silage_shredding_packing",
         name: "Silage shredding and packing",
-        description: "Good fodder is abundant in the rainy season andnowhere to be seen whe the rains stop. Without proper preservation, farmers watch a season of good grass go to waste just months before they need it most. At times, farmers see their feed go to waste because they have no way of preserving them. At Mqulima, we are changing this because we understand that all seasons are not the same. Farmers need to store their feeds for the seasons that are not very good. Mqulima's Silage Shredding and Packing service helps you preserve quality feed for the lean months ahead, so a good harvest of fodder doesn't disappear before it's needed. We cut, chop and pack your fodder, ready for your storage. Request Silage Services, and never let good grass go to waste again.",
+        description: "Preserve quality feed for the seasons when pasture runs low. Never let a good harvest of fodder go to waste.",
         estimatedCost: "Per Ton / Bale",
         image: "/images/services/silage.webp",
         icon: Layers,
-        action1Text: "request service",
-        action2Text: "enquire"
+        action1Text: "Book Service",
+        action2Text: "Learn More"
       },
       {
         id: "buy_rent_machinery_feed",
         name: "Buy/Rent machinery",
-        description: "Producing feed at scale requires you to use machinery. Work like chopping fodder, mixing feeds or packing the feeds requires equipment most livestock farmers don’t own and don’t have the financial ability to own them. Depending on a neighbour is an unreliable affair. Mqulima was built to relieve the farmer of the endless hassle looking for farm machinery. All you need at any stage of your production, is a few taps away. Mqulima's Rent Machinery service gives you access to the equipment behind efficient feed production, without the cost of owning or maintaining it. Whenever you need it in your farm, you just tap and get it working on your farm. Request Machinery Access, and scale your feed production without the capital burden of ownership.",
+        description: "Access the equipment behind efficient feed production and processing, without the cost of owning it outright.",
         estimatedCost: "Daily / Weekly",
         image: "/images/services/machinery_rental.webp",
         icon: Wrench,
-        action1Text: "rent machinery",
-        action2Text: "buy machinery"
+        action1Text: "Rent Machinery",
+        action2Text: "Learn More"
       },
       {
         id: "animal_nutrition_advisory",
         name: "Advisory",
-        description: "Even good feed can be poorly used without the right plan. Farmers often over- or under-feed, wrong timing, or feed unbalanced ration which can quietly undercut a herd's performance despite good intentions. Mqulima's Animal Nutrition Advisory connects you to expert guidance matched to your herd size, goals and budget, so every feeding decision is a deliberate one. Request Nutrition Advisory, and get a plan built around your actual herd, not a generic formula.",
+        description: "Get expert guidance on animal nutrition strategy, matched to your herd size, goals and budget.",
         estimatedCost: "On Request",
         image: "/images/services/feed_advice.webp",
         icon: MessageSquare,
-        action1Text: "consult expert"
+        action1Text: "Consult an Expert",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -450,7 +457,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Irrigation services",
     servicesCountText: "4 services",
     count: 4,
-    description: "Rain-fed farming is slowly becoming a thing of the past. It means a farmer's entire season depends on rain and praying that the rain stops when it’s too much. This is something that’s completely outside their control. When the rains fails, arrives at the wrong time or rains too much, then the harvest will never come regardless of how well everything else was done. Everything depends on the rain. Mqulima's Irrigation Services connect you to borehole drilling, irrigation system design, laying of irrigation systems and water engineering expertise. This ensures your farm's water supply becomes a plan instead of a prayer. Explore Irrigation Services, and stop letting the rains decide your season alone.",
+    description: "Water, delivered with precision. Mqulima connects you to the drilling, engineering and irrigation expertise that turns unpredictable rainfall into a farm you can rely on.",
     image: "/images/services/irrigation.webp",
     icon: Droplet,
     checklist: [
@@ -459,48 +466,49 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Water engineering",
       "Consult an irrigation expert"
     ],
-    action1Text: "view services",
-    action2Text: "irrigation academy",
+    action1Text: "Irrigation Services",
+    action2Text: "Learn More",
     bookingButtonText: "Irrigation Support",
     subservices: [
       {
         id: "borehole_sinking",
         name: "Borehole sinking",
-        description: "Depending entirely on rainfall means every dry spell puts your entire crop at risk, and by the time the ground visibly cracks, it's usually too late to do anything about it that season. Every farmer needs to take charge of their farming by drilling their borehole. By drilling a borehole, you get to decide when to plant, not planting because the rain is almost falling. Mqulima's Borehole Sinking service connects you to professional drilling that secures a reliable water source for your farm, built to last a lifetime and affordably. Request Borehole Sinking, and stop depending entirely on the rains to decide your outcome.",
+        description: "Secure a reliable water source for your farm, professionally drilled and built to last. You don’t need to go through an entire ocean of lies and promises that never come true. Get plugged today",
         estimatedCost: "Survey & Sinking",
         image: "/images/services/borehole_sinking.webp",
         icon: Droplet,
-        action1Text: "Get quote",
-        action2Text: "Remind me"
+        action1Text: "Sink Borehole",
+        action2Text: "Learn More"
       },
       {
         id: "irrigation_irrigation_systems",
         name: "Irrigation & irrigation systems",
-        description: "Even with water available, delivering it efficiently to a crop — without waste, without drowning some plants while others go dry requires a properly designed system, not a hose and a good guess. Mqulima goes beyond guiding you to ensure that water is drawn from the river, lake, borehole or the dam all the way to the farm and properly connected to the plants, without a waste or damage to the crops. Mqulima's Irrigation & Irrigation Systems service designs and installs irrigation matched to your specific land and crop, so water reaches exactly where and when it's needed. Request Irrigation Systems, and turn consistent water into consistent yields.",
+        description: "Get irrigation systems designed and installed for your specific land and crop. Your vision deserves precision and at Mqulima we give life to your vision.",
         estimatedCost: "Per Acre Setup",
         image: "/images/services/irrigation_systems.webp",
         icon: Droplet,
-        action1Text: "Get quote",
-        action2Text: "Remind me"
+        action1Text: "Book Service",
+        action2Text: "Learn More"
       },
       {
         id: "water_engineering",
         name: "Water engineering",
-        description: "Water infrastructure need to be properly planned. The wrong pump, badly routed pipes, an unreliable source tends to fail exactly when a farmer can least afford it, often costing more in repeated fixes than proper engineering would have from the start. Mqulima's Water Engineering service connects you to professional expertise for water systems built to serve your farm reliably, for years, not just one good season. Water engineering services let’s you focus on important issues because the water lines have been done well. Request Water Engineering, and build water infrastructure that's built to last.",
+        description: "Access professional engineering expertise for water systems built to serve you long-term.",
         estimatedCost: "Engineering Assessment",
         image: "/images/services/water_engineering.webp",
         icon: Wrench,
-        action1Text: "hire engineer",
-        action2Text: "get quote"
+        action1Text: "Get Water",
+        action2Text: "Learn More"
       },
       {
         id: "consult_irrigation_expert",
         name: "Consult an irrigation expert",
-        description: "Choose the right irrigation approach for your land, your crop, and within your budget. You don’t need to make an expensive mistake to discover after the investment is already in the ground. Mqulima connects you to irrigation experts who can guide that decision before you commit a single shilling, matching the right approach to your specific farm. Request an Irrigation Consultation, and invest in water with confidence, not guesswork.",
+        description: "Get expert advice on the right irrigation approach for your land, crop and budget, before you invest a shilling.",
         estimatedCost: "On Request",
         image: "/images/services/consult_irrigation_expert.webp",
         icon: UserCheck,
-        action1Text: "ask an expert"
+        action1Text: "Consult an Expert",
+        action2Text: "Learn More"
       }
     ]
   },
@@ -510,35 +518,35 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Value Addition",
     servicesCountText: "2 services",
     count: 2,
-    description: "Raw produce sold straight off the farm almost always earns the lowest possible price, while the same produce, processed and packaged, can be worth several times more. However, this is a gap most smallholder farmers never get the chance to close. Value addition is essential to get better prices, better value for money and tilt the scales in your favour. Mqulima's Value Addition services teach and support you in turning raw harvest into higher-value products. We guide and help you to keep more of the value on your side of the transaction. Explore Value Addition, and stop selling your harvest at its lowest possible price.",
+    description: "Raw produce earns raw prices. Mqulima helps you learn and apply value addition so what leaves your farm is worth more than what you planted. It doesn’t end at learning, it ends at the market and success.",
     image: "/images/services/value_addition.webp",
     icon: Factory,
     checklist: [
       "Get Coaching",
       "Learn Value addition"
     ],
-    action1Text: "browse services",
-    action2Text: "Value addition academy",
+    action1Text: "See Services",
+    action2Text: "Learn More",
     bookingButtonText: "Value Coaching",
     subservices: [
       {
         id: "get_coaching",
         name: "Get Coaching",
-        description: "You might know that value addition is profitable but you don’t know how to do it well. Most farmers have never had access to someone who's done it successfully themselves. To start adding value to anything, you need the knowledge and experience of doing the value addition. Mqulima connects you to experts inn value addition so that you can kick off and become successful in adding value. Mqulima's Get Coaching service connects you directly with professionals who can guide you through turning raw produce into a more profitable product, step by step. Request Coaching, and learn value addition from people who've actually done it.",
+        description: "Learn directly from professionals who can help you turn raw produce into a more profitable product.",
         estimatedCost: "Coaching Sessions",
         image: "/images/services/get_coaching.webp",
         icon: UserCheck,
-        action1Text: "ask an expert"
+        action1Text: "Consult an Expert",
+        action2Text: "Learn More"
       },
       {
         id: "learn_value_addition",
         name: "Learn Value addition",
-        description: "Processing, packaging and positioning a product for a better price all require specific knowledge that isn't taught in most farming communities, leaving a lot of potential value sitting untapped on the farm. Mqulima's Learn Value Addition resources give you structured, practical knowledge on processing and packaging your produce for higher returns, at your own pace. Explore Value Addition Learning, and start turning knowledge into extra income.",
+        description: "Access structured knowledge on processing, packaging and positioning your produce for higher returns.",
         estimatedCost: "Academy Access",
         image: "/images/services/learn_value_addition.webp",
         icon: BookOpen,
-        action1Text: "Visit Academy",
-        action2Text: "Go back"
+        action1Text: "Learn Value Addition"
       }
     ]
   },
@@ -548,7 +556,7 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
     title: "Important Services",
     servicesCountText: "4 services",
     count: 4,
-    description: "Not every essential need on a farm fit neatly into one category, but from infrastructure to innovation, these are the services that quietly determine whether an operation thrives or simply survives. Mqulima's Important Services bring these essential but often hard-to-find needs within easy reach, whatever they happen to be. Explore Important Services, and cover the gaps other categories don't.",
+    description: "Some needs don’t fit neatly into a single category — but they still shape your success. From infrastructure to innovation, Mqulima brings these essential services within reach.",
     image: "/images/services/other_services.webp",
     icon: Wrench,
     checklist: [
@@ -557,46 +565,49 @@ const CATEGORIES_CONFIG: ServiceCategoryConfig[] = [
       "Buy machinery",
       "Incubation"
     ],
-    action1Text: "see services",
+    action1Text: "See What’s Important",
+    action2Text: "Learn More",
     bookingButtonText: "Book Service",
     subservices: [
       {
         id: "shed_construction",
         name: "Shed Construction",
-        description: "Properly built animal structures are a secret ingredient to increased production. Poorly built storage, livestock houses, or processing sheds cost farmers dearly in losses. Losses to weather, pests, and spoilage. This is often because proper construction support was simply never accessible. Mqulima's Shed Construction service connects you to professional builders who understand exactly what a farm structure needs to do its job well. Request Shed Construction, and build infrastructure that protects what you've worked hard to produce.",
+        description: "Get professional construction support for the storage, livestock or processing sheds your operation needs.",
         estimatedCost: "Per Structure",
         image: "/images/services/shed_construction.webp",
         icon: Building,
-        action1Text: "construct shed"
+        action1Text: "Construct Shed",
+        action2Text: "Learn More"
       },
       {
         id: "climate_smart_agriculture",
         name: "Climate Smart Agriculture",
-        description: "Kenya's weather has grown less predictable by the season, and farming methods that worked reliably a decade ago increasingly leave farmers exposed to droughts, floods, and everything in between. Mqulima's Climate Smart Agriculture service connects you to practices and expertise that help your farm stay productive and resilient as the climate around it keeps changing. Request Climate Smart Guidance, and farm for the weather that's actually coming, not the one you're used to.",
+        description: "Access practices and expertise that help your farm stay productive and resilient as the climate changes around it.",
         estimatedCost: "Advisory Protocol",
         image: "/images/services/crop_production.webp",
         icon: Sun,
-        action1Text: "Learn Climate Smart Agriculture",
-        action2Text: "Consult an Expert"
+        action1Text: "Become Climate Smart",
+        action2Text: "Learn More"
       },
       {
         id: "buy_machinery",
         name: "Buy machinery",
-        description: "Manual farming methods cap how much a farm can produce, yet mechanisation has historically felt out of reach for smallholders without the capital to buy equipment outright. You don’t need the biggest tractor, but you need your farm mechanized. Mqulima is your plug to making work easier in your farm. Mqulima's Buy Machinery service gives you access to agricultural machinery that moves your operation from manual effort toward genuine mechanised efficiency. Request Machinery, and scale your production without waiting to save for it alone.",
+        description: "Access agricultural machinery built to move your operation from manual effort to mechanised efficiency.",
         estimatedCost: "Market Price",
         image: "/images/services/buy_machinery.webp",
         icon: Tractor,
-        action1Text: "browse listings",
-        action2Text: "rent instead"
+        action1Text: "BrowseListings",
+        action2Text: "Learn More"
       },
       {
         id: "incubation",
         name: "Incubation",
-        description: "A promising agricultural idea often stalls not for lack of potential, but for lack of the structured support needed to turn it into an actual, functioning business. Mqulima's Incubation service gives agricultural entrepreneurs the structured guidance needed to take an idea from concept to a real enterprise. Request Incubation Support, and get the support your idea needs to actually get off the ground.",
+        description: "Get structured support to take an agricultural idea or enterprise from concept to a functioning business.",
         estimatedCost: "Cohort Program",
         image: "/images/services/incubation.webp",
         icon: Sparkles,
-        action1Text: "incubation services"
+        action1Text: "Incubation Services",
+        action2Text: "Learn More"
       }
     ]
   }
@@ -619,54 +630,55 @@ const TOOLS_CONFIG: ToolConfig[] = [
     id: "live_markets",
     number: 38,
     name: "Live Markets",
-    description: "Selling blindly without knowing what your produce is actually fetching in the market puts farmers at the mercy of whoever happens to be buying that day. They often sell for far less than fair value. Mqulima Live Markets shows you real-time prices across markets before you sell or buy, so every transaction is made with full information. Try Live Markets, and never sell short of what your harvest is actually worth again.",
+    description: "See real-time prices across markets before you sell or buy, so every transaction is made with full information, not guesswork.",
     icon: TrendingUp,
-    action1Text: "Live Markets"
+    action1Text: "View Markets",
+    action2Text: "Learn More"
   },
   {
     id: "field_mapping",
     number: 39,
     name: "Field mapping",
-    description: "Managing a farm by memory and guesswork gets harder as it grows, making it difficult to track boundaries, plan planting, or spot problems early enough to act on them. Mqulima Field Mapping lets you map your farm precisely and manage it with a level of detail guesswork could never give you. Try Field Mapping, and finally see your farm the way it actually is.",
+    description: "Map your farm precisely and manage it with confidence. Success starts with you knowing how big you need to jump.",
     icon: Compass,
-    action1Text: "Measure farm",
-    action2Text: "Go back"
+    action1Text: "Map Your Farm",
+    action2Text: "Learn More"
   },
   {
     id: "weather_forecast",
     number: 40,
     name: "Weather Forecast",
-    description: "Farming decisions — planting, spraying, harvesting — are made with weather in mind, yet many farmers are still relying on the sky itself, and their own intuition, to make that call. Mqulima Weather Forecast gives you reliable, farmer-focused forecasts, so you know what the sky is planning before it happens. Try Weather Forecast, and plan your season around real data, not guesswork.",
+    description: "Know beyond 10-day weather forecast\n\nKnow what the sky is planning before planning for your farm. Plan planting, spraying and harvesting around forecasts built for farmers.",
     icon: Sun,
     action1Text: "Weather Forecast",
-    action2Text: "Weather Advise"
+    action2Text: "Learn More"
   },
   {
     id: "weather_advisory",
     number: 41,
     name: "Weather Advisory",
-    description: "Knowing tomorrow's forecast is only useful if you know what to actually do about it, and most weather apps stop at the number, leaving the decision entirely up to the farmer. Mqulima Weather Advisory translates today's and this week's forecast into practical guidance for your specific farming decisions. Try Weather Advisory, and turn a forecast into an actual plan.",
+    description: "Get practical, farmer-focused guidance on what today’s, next week’s and next year’s weather means for your specific agriculture decisions.",
     icon: Activity,
-    action1Text: "Weather Forecast",
-    action2Text: "Weather Advise"
+    action1Text: "Consult Expert",
+    action2Text: "Learn More"
   },
   {
     id: "mqulima_trace",
     number: 42,
     name: "Mqulima Trace",
-    description: "Buyers increasingly want to know where their food actually comes from, and farmers who can't answer that question lose out on better markets and better prices, regardless of how good their produce actually is. Mqulima Trace gives your produce a verifiable story — from farm to consumer — building the kind of trust that unlocks better markets. Try Mqulima Trace, and let your produce's journey speak for its quality.",
+    description: "Give your produce a verifiable story. A story from your lovely farm to the esteemed consumer that builds trust and unlocks better markets.",
     icon: ShieldCheck,
     action1Text: "Become Traceable",
-    action2Text: "Consult an expert"
+    action2Text: "Learn More"
   },
   {
     id: "mqulima_ai",
     number: 43,
     name: "Mqulima AI",
-    description: "Not every farming question can wait for the next market day or the next agronomist visit, and small, timely answers can be the difference between catching a problem early and losing a crop to it. Mqulima AI gives you instant, intelligent answers to your agricultural questions, built specifically for African farming conditions. Try Mqulima AI, and get expert guidance any time you need it, not just when someone's available.",
+    description: "Get instant, intelligent answers to your agricultural questions, powered by AI built specifically for your agriculture.",
     icon: Sparkles,
-    action1Text: "Ask Mqulima",
-    action2Text: "Go back"
+    action1Text: "Ask MqulimaAI",
+    action2Text: "Learn More"
   }
 ];
 
@@ -978,7 +990,14 @@ function ServicesPage() {
       act === "view plant services" ||
       act === "get financed" ||
       act === "animal services" ||
-      act === "animal nutrition"
+      act === "animal nutrition" ||
+      act === "view soil services" ||
+      act === "view crop services" ||
+      act === "browse animal services" ||
+      act === "nutritional services" ||
+      act === "irrigation services" ||
+      act === "see what’s important" ||
+      act === "see what's important"
     ) {
       if (context?.category) {
         const subservicesEl = document.getElementById(`subservices-${context.category.id}`);
@@ -1002,6 +1021,34 @@ function ServicesPage() {
         navigate({ to: "/services" });
       }
       return;
+    }
+
+    // 1b. Learn More handler for Category vs Subservice vs Tools
+    if (act === "learn more") {
+      if (context?.category && !context?.subservice) {
+        const subservicesEl = document.getElementById(`subservices-${context.category.id}`);
+        if (subservicesEl) {
+          subservicesEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+      }
+      if (context?.subservice) {
+        openWhatsAppQuotation(context.subservice.name, {
+          notes: `I would like to learn more about ${context.subservice.name} under ${context.categoryTitle || "Mqulima Services"}.`
+        });
+        return;
+      }
+      if (context?.serviceName) {
+        openWhatsAppQuotation(context.serviceName, {
+          notes: `I would like to learn more about ${context.serviceName}.`
+        });
+        return;
+      }
+      const el = document.getElementById("our-services-grid");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
     }
 
 
@@ -1029,15 +1076,15 @@ function ServicesPage() {
     }
 
     // 5. Toolbox / Digital Tools navigation
-    if (act === "view toolbox") {
+    if (act === "view toolbox" || act === "see toolbox") {
       navigate({ to: "/tools" });
       return;
     }
-    if (act === "live markets") {
+    if (act === "live markets" || act === "view markets") {
       navigate({ to: "/tools", search: { tab: "markets" } as any });
       return;
     }
-    if (act === "measure farm") {
+    if (act === "measure farm" || act === "map your farm") {
       navigate({ to: "/tools", search: { tab: "mapping" } as any });
       return;
     }
@@ -1045,7 +1092,7 @@ function ServicesPage() {
       navigate({ to: "/tools", search: { tab: "weather" } as any });
       return;
     }
-    if (act === "ask mqulima") {
+    if (act === "ask mqulima" || act === "ask mqulimaai" || act === "ask mqulima ai") {
       navigate({ to: "/ai" });
       return;
     }
@@ -1055,7 +1102,7 @@ function ServicesPage() {
     }
 
     // 6. Academy routes
-    if (act.includes("academy") || act === "visit academy") {
+    if (act.includes("academy") || act === "visit academy" || act === "learn value addition") {
       navigate({ to: "/academy" });
       return;
     }
@@ -1074,9 +1121,11 @@ function ServicesPage() {
       }
       if (
         act === "browse listings" ||
+        act === "browselistings" ||
         act === "request available lands" ||
         act === "request available land" ||
-        act === "place request"
+        act === "place request" ||
+        act === "lease land"
       ) {
         openBookingModal({
           id: "lease_land",
@@ -1090,19 +1139,27 @@ function ServicesPage() {
     }
 
     // 7. Shop / listings
-    if (act === "browse listings") {
+    if (act === "browse listings" || act === "browselistings") {
       navigate({ to: "/shop" });
       return;
     }
 
-    // 8. Flier download
+    // 8. Urgent Vet Call
+    if (act === "call vet") {
+      openWhatsAppQuotation("Veterinary Diagnosis & Treatment", {
+        notes: "Urgent veterinary care requested. Please connect me with an on-call veterinarian."
+      });
+      return;
+    }
+
+    // 9. Flier download
     if (act === "download flier") {
       toast.success("Downloading Mqulima Livestock Vaccination Schedule (PDF)...");
       window.open("/docs/vaccination-schedule.pdf", "_blank");
       return;
     }
 
-    // 9. Remind me notification
+    // 10. Remind me notification
     if (act === "remind me") {
       toast.success(
         `Reminder set! We will send you an SMS/WhatsApp reminder for ${context?.serviceName || "this service"} before the season starts.`
@@ -1110,7 +1167,7 @@ function ServicesPage() {
       return;
     }
 
-    // 10. Consult / Expert / Quote / Hire / Advise / Enquire
+    // 11. Consult / Expert / Quote / Hire / Advise / Enquire
     if (
       act.includes("expert") ||
       act.includes("quote") ||
@@ -1198,7 +1255,7 @@ function ServicesPage() {
 
               {/* Subheading Summarized Description */}
               <p className="mt-3 text-sm sm:text-base text-white/90 leading-relaxed font-normal max-w-2xl">
-                All essential agricultural services in one place. Connect with verified regional specialists for soil analysis, veterinary care, machinery leasing, and farm support — booked in minutes at transparent rates.
+                Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.
               </p>
 
               {/* Action Buttons Row */}
@@ -1692,23 +1749,23 @@ function ServicesPage() {
                 <span className="text-[#85CC14]">information behind them</span>
               </h2>
               <p className="mt-4 text-sm sm:text-base text-white/85 font-normal leading-relaxed">
-                For too long, Kenyan farmers have had to make major calls on what to plant, when to sell and how to manage a farm without the same tools bigger players have always had access to. Mqulima Tools puts real-time markets, weather, mapping, records and AI-powered guidance directly in your hands, so every decision is backed by information, not guesswork. Explore Mqulima Tools, and start farming with the same information advantage the big players have always had.
+                Mqulima Tools puts the pulse of the market, the sky above your farm, and the story behind every product literally in your hands. Plan smarter, farm sharper, and prove what you’ve built. Win
               </p>
 
               {/* Tools Header Action Buttons */}
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => handleActionButton("view toolbox")}
+                  onClick={() => handleActionButton("See Toolbox")}
                   className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] text-[#0B2117] font-extrabold text-xs sm:text-sm hover:brightness-110 shadow-md shadow-[#85CC14]/20 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
                 >
-                  <span>view toolbox</span>
+                  <span>See Toolbox</span>
                   <ArrowRight className="h-4 w-4 stroke-[2.5]" />
                 </button>
                 <button
-                  onClick={() => handleActionButton("view services")}
+                  onClick={() => handleActionButton("Learn More", { serviceName: "Mqulima Tools" })}
                   className="px-6 py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white font-bold text-xs sm:text-sm hover:bg-white/25 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
                 >
-                  <span>view services</span>
+                  <span>Learn More</span>
                 </button>
               </div>
             </div>
