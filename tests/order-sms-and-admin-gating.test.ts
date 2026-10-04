@@ -77,21 +77,129 @@ describe("Order Confirmation SMS Formatting", () => {
   });
 });
 
-describe("Admin Dashboard Order Visibility Logic", () => {
-  it("determines whether an order should be recorded/visible in admin dashboard", () => {
-    const shouldRecordInAdmin = (order: { paymentStatus: string; checkoutChannel: string }) => {
-      return order.paymentStatus === "paid" || order.checkoutChannel === "whatsapp";
+describe("Admin Orders & Quotations Desk Recording & Confirmation Gating", () => {
+  it("strictly enforces that an order is recorded ONLY after successful payment confirmation has been received", () => {
+    const isOrderRecorded = (order: {
+      status: string;
+      paymentStatus: string;
+      paymentReceipt?: string | null;
+      deletedAt?: string | null;
+    }) => {
+      if (order.deletedAt) return false;
+      if (order.paymentStatus !== "paid") return false;
+      const validStatuses = ["confirmed", "paid", "processing", "shipped", "delivered"];
+      if (!validStatuses.includes(order.status)) return false;
+      if (!order.paymentReceipt || order.paymentReceipt.trim().length === 0) return false;
+      return true;
     };
 
-    // Unpaid website checkout - should NOT be recorded/visible in admin
-    expect(shouldRecordInAdmin({ paymentStatus: "pending", checkoutChannel: "website" })).toBe(false);
-    expect(shouldRecordInAdmin({ paymentStatus: "failed", checkoutChannel: "website" })).toBe(false);
+    // 1. Unpaid pending checkout attempt (should NOT be recorded)
+    expect(isOrderRecorded({
+      status: "pending",
+      paymentStatus: "pending",
+      paymentReceipt: null,
+      deletedAt: null
+    })).toBe(false);
 
-    // Confirmed paid website checkout - MUST be recorded/visible in admin
-    expect(shouldRecordInAdmin({ paymentStatus: "paid", checkoutChannel: "website" })).toBe(true);
+    // 2. Failed payment attempt (should NOT be recorded)
+    expect(isOrderRecorded({
+      status: "cancelled",
+      paymentStatus: "failed",
+      paymentReceipt: null,
+      deletedAt: null
+    })).toBe(false);
 
-    // WhatsApp checkout (unpaid/pending online) - MUST be recorded/visible in admin
-    expect(shouldRecordInAdmin({ paymentStatus: "pending", checkoutChannel: "whatsapp" })).toBe(true);
-    expect(shouldRecordInAdmin({ paymentStatus: "paid", checkoutChannel: "whatsapp" })).toBe(true);
+    // 3. Soft-deleted order (should NOT be recorded)
+    expect(isOrderRecorded({
+      status: "confirmed",
+      paymentStatus: "paid",
+      paymentReceipt: "MPESA-Q78129",
+      deletedAt: "2026-10-04T07:00:00Z"
+    })).toBe(false);
+
+    // 4. Order marked confirmed but without actual payment receipt (should NOT be recorded)
+    expect(isOrderRecorded({
+      status: "confirmed",
+      paymentStatus: "paid",
+      paymentReceipt: null,
+      deletedAt: null
+    })).toBe(false);
+
+    // 5. Genuine paid & confirmed order with M-Pesa receipt confirmation (MUST be recorded)
+    expect(isOrderRecorded({
+      status: "confirmed",
+      paymentStatus: "paid",
+      paymentReceipt: "TI78XYZ123",
+      deletedAt: null
+    })).toBe(true);
+
+    // 6. Genuine paid & confirmed order in fulfillment pipeline (MUST be recorded)
+    expect(isOrderRecorded({
+      status: "processing",
+      paymentStatus: "paid",
+      paymentReceipt: "PSTK-REF-9920",
+      deletedAt: null
+    })).toBe(true);
+
+    expect(isOrderRecorded({
+      status: "delivered",
+      paymentStatus: "paid",
+      paymentReceipt: "NCBA-TXN-0831",
+      deletedAt: null
+    })).toBe(true);
+  });
+
+  it("strictly validates that B2B Quotations can only be converted and recorded as orders with payment confirmation", () => {
+    const validateQuotationConversion = (payload: {
+      action: string;
+      id: string;
+      paymentRef?: string | null;
+      paymentMethod?: string;
+    }) => {
+      if (payload.action !== "convert_to_order") {
+        return { valid: false, error: "Invalid action" };
+      }
+      if (!payload.paymentRef || payload.paymentRef.trim().length < 3) {
+        return {
+          valid: false,
+          error: "Payment confirmation reference (e.g. M-Pesa receipt # or Bank confirmation code) is required before converting a quotation to an active recorded order."
+        };
+      }
+      return { valid: true };
+    };
+
+    // Conversion attempt without payment reference - REJECTED
+    expect(validateQuotationConversion({
+      action: "convert_to_order",
+      id: "quote-123",
+      paymentRef: ""
+    })).toEqual({
+      valid: false,
+      error: "Payment confirmation reference (e.g. M-Pesa receipt # or Bank confirmation code) is required before converting a quotation to an active recorded order."
+    });
+
+    expect(validateQuotationConversion({
+      action: "convert_to_order",
+      id: "quote-123",
+      paymentRef: null
+    })).toEqual({
+      valid: false,
+      error: "Payment confirmation reference (e.g. M-Pesa receipt # or Bank confirmation code) is required before converting a quotation to an active recorded order."
+    });
+
+    // Conversion attempt with valid payment confirmation - ACCEPTED
+    expect(validateQuotationConversion({
+      action: "convert_to_order",
+      id: "quote-123",
+      paymentRef: "MPESA-QK89123XZ",
+      paymentMethod: "mpesa"
+    })).toEqual({ valid: true });
+
+    expect(validateQuotationConversion({
+      action: "convert_to_order",
+      id: "quote-123",
+      paymentRef: "NCBA-WIRE-778899",
+      paymentMethod: "bank_transfer"
+    })).toEqual({ valid: true });
   });
 });
