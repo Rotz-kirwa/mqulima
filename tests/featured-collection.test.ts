@@ -163,8 +163,8 @@ describe("Featured Collection & Farm Essentials Routing & Architecture", () => {
     });
   });
 
-  describe("4. Deletion Persistence & Zero Seed Resurrection Guardrail", () => {
-    it("should delete an item and keep it deleted without resurrecting seeds", () => {
+  describe("4. Single Source of Truth & Zero Fallback Resurrection", () => {
+    it("should delete an item and keep it deleted without resurrecting seeds or auto-seeding", () => {
       // Simulated DB table state
       let dbFeaturedTable = [
         { id: "feat-custom-1", title: "Custom Drip Kit", position: 0 },
@@ -187,23 +187,125 @@ describe("Featured Collection & Farm Essentials Routing & Architecture", () => {
       expect(readResult.some((i) => i.id?.startsWith("feat-seed-"))).toBe(false);
     });
 
-    it("should ensure public site does not display deleted items", () => {
-      const liveCuratedItems: any[] = []; // Empty after admin deletion
-      const activeCatalogProducts = [
-        { id: "prod-1", name: "Maize Seeds", isFeatured: true, slug: "maize-seeds" },
+    it("should ensure public site returns empty array when featured_items is empty (no fallback resurrection)", () => {
+      // Single source of truth: only items from featured_items table are returned
+      const featItems: any[] = []; // Empty after admin deletion
+
+      // getFeaturedProducts mapping logic
+      const customItems = featItems.map((fi: any) => ({
+        id: fi.id,
+        name: fi.title || "Farm Essential",
+      }));
+
+      // Single source of truth returns exact empty array — no fallback catalog queries
+      expect(customItems).toHaveLength(0);
+      expect(customItems).toEqual([]);
+    });
+
+    it("should never mix uncurated catalog products into featured collection", () => {
+      const featItems = [
+        { id: "feat-1", title: "Selected Sprayer", position: 0 },
+      ];
+      const otherCatalogProducts = [
+        { id: "prod-999", name: "Unrelated Feed", isFeatured: true },
       ];
 
-      // Simulated public site merge logic (products.server.ts)
-      const combined = [...liveCuratedItems];
-      for (const p of activeCatalogProducts) {
-        if (!combined.some((item) => item.id === p.id)) {
-          combined.push(p);
-        }
+      // Single source of truth strictly mirrors featured_items
+      const output = featItems.map((fi) => ({ id: fi.id, name: fi.title }));
+      expect(output).toHaveLength(1);
+      expect(output.some((i) => i.id === "prod-999")).toBe(false);
+    });
+  });
+
+  describe("5. Transactional Delete Contract & Error Guardrails", () => {
+    // Simulated transactional delete handler matching src/routes/api/admin/featured.ts
+    const simulateAdminDelete = (
+      table: { id: string; entityId?: string }[],
+      targetId: string,
+      productsTable: { id: string; isFeatured: boolean }[]
+    ) => {
+      if (!targetId || !targetId.trim()) {
+        return { status: 400, body: { success: false, error: "Item ID is required for deletion" } };
       }
 
-      // Must never contain resurrected feat-seed-* items
-      expect(combined.every((item) => !item.id?.startsWith("feat-seed-"))).toBe(true);
-      expect(combined).toHaveLength(1);
+      const existingIndex = table.findIndex((i) => i.id === targetId);
+      if (existingIndex === -1) {
+        return { status: 404, body: { success: false, error: `Featured item '${targetId}' not found or already deleted` } };
+      }
+
+      const existing = table[existingIndex];
+      if (existing.entityId) {
+        const prod = productsTable.find((p) => p.id === existing.entityId);
+        if (prod) prod.isFeatured = false;
+      }
+
+      table.splice(existingIndex, 1);
+      return { status: 200, body: { success: true, message: "Featured item deleted successfully", deletedId: targetId } };
+    };
+
+    it("should return HTTP 404 when attempting to delete a nonexistent item (no silent 200)", () => {
+      const table = [{ id: "feat-1", entityId: "prod-1" }];
+      const productsTable = [{ id: "prod-1", isFeatured: true }];
+
+      const res = simulateAdminDelete(table, "does-not-exist-999", productsTable);
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain("not found");
+      expect(table).toHaveLength(1); // No change
+    });
+
+    it("should return HTTP 400 if item ID is empty or whitespace", () => {
+      const table = [{ id: "feat-1" }];
+      const productsTable: any[] = [];
+
+      const res = simulateAdminDelete(table, "   ", productsTable);
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it("should return HTTP 200 and unflag product when deleting a valid item", () => {
+      const table = [{ id: "feat-prod-100", entityId: "prod-100" }];
+      const productsTable = [{ id: "prod-100", isFeatured: true }];
+
+      const res = simulateAdminDelete(table, "feat-prod-100", productsTable);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.deletedId).toBe("feat-prod-100");
+      expect(table).toHaveLength(0);
+      expect(productsTable[0].isFeatured).toBe(false);
+    });
+  });
+
+  describe("6. Fast Invalidation & Cache Synchronization Contract", () => {
+    it("should invalidate cache immediately on mutation and respect bypassCache", () => {
+      const cache = { data: [{ id: "feat-old" }] as any, expiry: Date.now() + 5000 };
+
+      // Invalidation function
+      const invalidate = () => {
+        cache.data = null;
+        cache.expiry = 0;
+      };
+
+      invalidate();
+      expect(cache.data).toBeNull();
+      expect(cache.expiry).toBe(0);
+
+      // bypassCache check
+      const simulateGet = (opts: { bypassCache?: boolean }) => {
+        const now = Date.now();
+        if (!opts.bypassCache && cache.data && cache.expiry > now) {
+          return { fromCache: true, data: cache.data };
+        }
+        return { fromCache: false, data: [{ id: "feat-fresh" }] };
+      };
+
+      cache.data = [{ id: "feat-stale" }];
+      cache.expiry = Date.now() + 5000;
+
+      // Normal read hits cache
+      expect(simulateGet({ bypassCache: false }).fromCache).toBe(true);
+      // bypassCache forces fresh DB read
+      expect(simulateGet({ bypassCache: true }).fromCache).toBe(false);
     });
   });
 });

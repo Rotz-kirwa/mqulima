@@ -642,12 +642,13 @@ function Index() {
       {/* ══════════════════════════════════════════
           3. FEATURED PRODUCTS (Auto-Sliding Group - 3s Interval)
       ══════════════════════════════════════════ */}
-      <section 
-        className="bg-[#FAFBF9] py-6 sm:py-8 md:py-12 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
-        onMouseEnter={() => setIsFeaturedHovered(true)}
-        onMouseLeave={() => setIsFeaturedHovered(false)}
-      >
-        <div className="container-px mx-auto max-w-7xl">
+      {featuredProducts.length > 0 && (
+        <section 
+          className="bg-[#FAFBF9] py-6 sm:py-8 md:py-12 text-[#0F291E] overflow-hidden border-b border-slate-200/60"
+          onMouseEnter={() => setIsFeaturedHovered(true)}
+          onMouseLeave={() => setIsFeaturedHovered(false)}
+        >
+          <div className="container-px mx-auto max-w-7xl">
           
           {/* Header Row with Clean Title and Navigation Controls */}
           <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4 text-left">
@@ -799,6 +800,7 @@ function Index() {
 
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════
           4. MQULIMA SERVICES CATEGORIES GRID (Pixel-matched to Services Page)

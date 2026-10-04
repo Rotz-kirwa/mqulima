@@ -45,6 +45,7 @@ export const featuredItems = pgTable("featured_items", {
   activeFrom: timestamp("active_from"),
   activeTo: timestamp("active_to"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const marketPriceOverrides = pgTable("market_price_overrides", {

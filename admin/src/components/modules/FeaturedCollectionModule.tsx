@@ -30,7 +30,7 @@ export const FeaturedCollectionModule: React.FC = () => {
 
   const fetchFeatured = (silent = false) => {
     if (!silent && items.length === 0) setLoading(true);
-    adminFetch("/api/admin/featured")
+    adminFetch("/api/admin/featured", { bypassCache: true })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -131,6 +131,7 @@ export const FeaturedCollectionModule: React.FC = () => {
           title: title.trim() || "Farm Essential",
           linkUrl: linkUrl.trim() || "/shop",
         }),
+        bypassCache: true,
       });
 
       const data = await res.json();

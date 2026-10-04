@@ -119,7 +119,7 @@ export const getProducts = createServerFn({ method: "GET" })
   });
 
 const featuredCache = { data: null as any, expiry: 0 };
-const FEATURED_CACHE_TTL = 5 * 60 * 1000;
+const FEATURED_CACHE_TTL = 5 * 1000; // 5 seconds: ultra-fast cross-deployment synchronization
 
 export function invalidateFeaturedCache() {
   featuredCache.data = null;
@@ -127,45 +127,18 @@ export function invalidateFeaturedCache() {
 }
 
 export const getFeaturedProducts = createServerFn({ method: "GET" })
-  .handler(async () => {
+  .inputValidator((val: unknown) => (val as { bypassCache?: boolean } | undefined) || {})
+  .handler(async ({ data }) => {
+    const bypassCache = data?.bypassCache === true;
     const now = Date.now();
-    if (featuredCache.data && featuredCache.expiry > now) {
+    if (!bypassCache && featuredCache.data && featuredCache.expiry > now) {
       return featuredCache.data;
     }
 
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    // 1. Fetch active products marked as featured in products table
-    let dbProducts: any[] = [];
-    try {
-      dbProducts = await sql`
-        SELECT p.*,
-               COALESCE(sc.name, pc.name) AS category_name,
-               sf.name AS field_name,
-               ss.name AS subcategory_name
-        FROM products p
-        LEFT JOIN shop_fields sf ON p.field_id = sf.id
-        LEFT JOIN shop_categories sc ON p.category_id = sc.id
-        LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
-        LEFT JOIN product_categories pc ON p.category_id = pc.id
-        WHERE p.status = 'active' AND p.is_featured = true AND p.deleted_at IS NULL
-        ORDER BY p.created_at DESC
-        LIMIT 12
-      `;
-    } catch (e) {
-      console.error("[getFeaturedProducts] Failed to query products table:", e);
-    }
-
-    const mappedProducts = dbProducts.map((p: any) => {
-      const mapped = mapDbProduct(p);
-      return {
-        ...mapped,
-        linkUrl: `/shop/product/${mapped.slug}`,
-      };
-    });
-
-    // 2. Fetch curated items from featured_items table (managed via Admin FeaturedCollectionModule)
+    // Single source of truth: curated featured_items table (Farm Essentials collection)
     let featItems: any[] = [];
     try {
       featItems = await sql`
@@ -187,80 +160,42 @@ export const getFeaturedProducts = createServerFn({ method: "GET" })
         ORDER BY fi.position ASC
       `;
     } catch (e) {
-      console.warn("[getFeaturedProducts] featured_items table query skipped or empty:", e);
+      console.warn("[getFeaturedProducts] featured_items query error:", e);
     }
 
     // Map curated featured items enriched with product live data
-    const customItems = featItems
-      .filter((fi: any) => !fi.id?.startsWith("feat-seed-") || mappedProducts.length === 0)
-      .map((fi: any) => {
-        const slug = fi.prod_slug || (fi.link_url?.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "") || "");
-        const fallbackImg = fi.prod_name ? resolveFastProductImage({
-          name: fi.prod_name,
-          category_name: fi.category_name,
-          subcategory_name: fi.subcategory_name,
-          shop_type: fi.shop_type,
-          image_urls: fi.prod_image_urls,
-        }) : "/placeholder-product.png";
+    // If featured_items is empty, return [] cleanly — no fallback resurrection
+    const customItems = featItems.map((fi: any) => {
+      const slug = fi.prod_slug || (fi.link_url?.replace(/^.*\/shop\/product\//, "").replace(/\/$/, "") || "");
+      const fallbackImg = fi.prod_name ? resolveFastProductImage({
+        name: fi.prod_name,
+        category_name: fi.category_name,
+        subcategory_name: fi.subcategory_name,
+        shop_type: fi.shop_type,
+        image_urls: fi.prod_image_urls,
+      }) : "/placeholder-product.png";
 
-        const image = (fi.image_url && !fi.image_url.includes("default.png"))
-          ? fi.image_url
-          : fallbackImg;
+      const image = (fi.image_url && !fi.image_url.includes("default.png"))
+        ? fi.image_url
+        : fallbackImg;
 
-        return {
-          id: fi.id,
-          name: fi.title || fi.prod_name || "Farm Essential",
-          image,
-          imageUrls: [image],
-          linkUrl: fi.link_url || (slug ? `/shop/product/${slug}` : "/shop"),
-          category: fi.category_name || "Farm Essentials",
-          price: Number(fi.base_price || 0),
-          slug,
-          isFeatured: true,
-        };
-      });
+      return {
+        id: fi.id,
+        name: fi.title || fi.prod_name || "Farm Essential",
+        image,
+        imageUrls: [image],
+        linkUrl: fi.link_url || (slug ? `/shop/product/${slug}` : "/shop"),
+        category: fi.category_name || "Farm Essentials",
+        price: Number(fi.base_price || 0),
+        slug,
+        isFeatured: true,
+        position: fi.position,
+      };
+    });
 
-    // Merge: custom curated items first, followed by active featured products
-    const combined: any[] = [...customItems];
-    for (const p of mappedProducts) {
-      if (!combined.some((item) => (item.slug && item.slug === p.slug) || item.id === p.id)) {
-        combined.push(p);
-      }
-    }
-
-    // 3. Fallback: If no products marked featured, fetch latest active products
-    if (combined.length === 0) {
-      try {
-        const fallbackProducts = await sql`
-          SELECT p.*,
-                 COALESCE(sc.name, pc.name) AS category_name,
-                 sf.name AS field_name,
-                 ss.name AS subcategory_name
-          FROM products p
-          LEFT JOIN shop_fields sf ON p.field_id = sf.id
-          LEFT JOIN shop_categories sc ON p.category_id = sc.id
-          LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
-          LEFT JOIN product_categories pc ON p.category_id = pc.id
-          WHERE p.status = 'active' AND p.deleted_at IS NULL
-          ORDER BY p.created_at DESC
-          LIMIT 8
-        `;
-        const fallbackMapped = fallbackProducts.map((p: any) => {
-          const mapped = mapDbProduct(p);
-          return {
-            ...mapped,
-            linkUrl: `/shop/product/${mapped.slug}`,
-          };
-        });
-        combined.push(...fallbackMapped);
-      } catch (e) {
-        console.error("[getFeaturedProducts] Fallback catalog query error:", e);
-      }
-    }
-
-    featuredCache.data = combined;
+    featuredCache.data = customItems;
     featuredCache.expiry = now + FEATURED_CACHE_TTL;
-    return combined;
+    return customItems;
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
