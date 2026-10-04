@@ -35,9 +35,6 @@ export function HomeHero() {
           height={720}
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
-        {/* Rich dark gradient overlay for crystal-clear text readability over photography */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/35 md:from-black/80 md:via-black/55 md:to-black/30 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
       </div>
 
       {/* ── Main Layout Container ── */}
@@ -53,7 +50,7 @@ export function HomeHero() {
               className="space-y-6"
             >
               {/* Premium micro badge */}
-              <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md px-3.5 py-1.5 w-fit">
+              <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 backdrop-blur-md px-3.5 py-1.5 w-fit">
                 <Sparkles className="h-3.5 w-3.5 text-[#52B788]" />
                 <span className="text-[10px] md:text-xs font-black tracking-widest text-[#52B788] uppercase">
                   Taking you first class
@@ -63,7 +60,7 @@ export function HomeHero() {
               {/* Title Statement */}
               <motion.h1
                 variants={itemVariants}
-                className="text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl uppercase"
+                className="text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl uppercase drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
               >
                 Agriculture and{" "}
                 <span className="bg-gradient-to-r from-[#52B788] via-[#8FD0A3] to-[#F5A623] bg-clip-text text-transparent">
