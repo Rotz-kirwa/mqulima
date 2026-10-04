@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 // ============================================================================
-// E-E-A-T AUTHOR PROFILES (Certified Kenyan Agronomists & Agricultural Experts)
+// AUTHOR PROFILES (Mqulima Editorial & Agronomy Desk)
 // ============================================================================
 
 export interface AuthorProfile {
@@ -13,48 +13,48 @@ export interface AuthorProfile {
   bio: string;
 }
 
-export const EXPERT_AUTHORS: Record<string, AuthorProfile> = {
-  grace: {
-    name: "Dr. Grace Wambui",
-    role: "Senior Agronomist & Soil Specialist",
-    avatar: "/images/farmer_grace.webp",
-    avatarInitials: "GW",
-    bio: "Lead Crop Scientist and Agricultural Extension Expert with 12+ years field experience in Rift Valley & Central Kenya.",
-  },
-  david: {
-    name: "David Kiprop",
-    role: "Precision Horticulture Consultant",
-    avatar: "/images/farmer_david.webp",
-    avatarInitials: "DK",
-    bio: "Specialist in horticultural value chains, drip irrigation systems, and post-harvest grain handling in Kenya.",
-  },
-  joy: {
-    name: "Joy Muthoni",
-    role: "Livestock & Biosecurity Expert",
-    avatar: "/images/farmer_joy.webp",
-    avatarInitials: "JM",
-    bio: "Veterinary Technologist focusing on smallholder dairy production, fodder preservation, and herd biosecurity.",
-  },
-  samuel: {
-    name: "Samuel Omondi",
-    role: "Agricultural Economist & Policy Analyst",
-    avatar: "/images/farmer_samuel.webp",
-    avatarInitials: "SO",
-    bio: "Agricultural economist and climate resilience researcher focusing on East African grain corridors and market access.",
-  },
+export const MQULIMA_DESK_AUTHOR: AuthorProfile = {
+  name: "Mqulima Desk",
+  role: "Editorial Desk",
+  avatar: "/icon-192.png",
+  avatarInitials: "MD",
+  bio: "Official agricultural reports, market intelligence, and farmer advisories curated and published directly by the Mqulima Desk.",
 };
 
-export function resolveAuthor(sourceAttribution?: string | null, idStr?: string): AuthorProfile {
-  const text = (sourceAttribution || "").toLowerCase();
-  if (text.includes("grace") || text.includes("wambui")) return EXPERT_AUTHORS.grace;
-  if (text.includes("david") || text.includes("kiprop")) return EXPERT_AUTHORS.david;
-  if (text.includes("joy") || text.includes("muthoni")) return EXPERT_AUTHORS.joy;
-  if (text.includes("samuel") || text.includes("omondi")) return EXPERT_AUTHORS.samuel;
+export const EXPERT_AUTHORS: Record<string, AuthorProfile> = {
+  desk: MQULIMA_DESK_AUTHOR,
+  mqulima: MQULIMA_DESK_AUTHOR,
+};
 
-  // Distribute authoritatively based on deterministic hash
-  const keys = Object.keys(EXPERT_AUTHORS);
-  const hash = (idStr || "default").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return EXPERT_AUTHORS[keys[hash % keys.length]];
+export function resolveAuthor(sourceAttribution?: string | null, _idStr?: string): AuthorProfile {
+  const text = (sourceAttribution || "").trim();
+  if (
+    !text ||
+    text.toLowerCase().includes("desk") ||
+    text.toLowerCase().includes("mqulima") ||
+    text.toLowerCase().includes("grace") ||
+    text.toLowerCase().includes("wambui") ||
+    text.toLowerCase().includes("kiprop") ||
+    text.toLowerCase().includes("muthoni") ||
+    text.toLowerCase().includes("omondi")
+  ) {
+    return MQULIMA_DESK_AUTHOR;
+  }
+
+  const initials = text
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "MD";
+
+  return {
+    name: text,
+    role: "Editorial Contributor",
+    avatar: "/icon-192.png",
+    avatarInitials: initials,
+    bio: `Content and intelligence contribution from ${text}.`,
+  };
 }
 
 // ============================================================================
@@ -159,7 +159,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
         viewCount: typeof row.viewCount === "number" ? row.viewCount : 0,
         readTime: `${Math.max(2, Math.ceil(excerpt.split(/\s+/).length / 25))} min read`,
         author,
-        reviewedBy: "Dr. Grace Wambui (Senior Agronomist, Nakuru)",
+        reviewedBy: "Mqulima Agronomy & Intelligence Desk",
       };
     });
 
@@ -351,7 +351,7 @@ export const getBlogPostBySlug = createServerFn({ method: "GET" })
       viewCount: typeof row.viewCount === "number" ? row.viewCount : 0,
       readTime: `${Math.max(2, Math.ceil(bodyStr.split(/\s+/).length / 160))} min read`,
       author,
-      reviewedBy: "Dr. Grace Wambui (Senior Agronomist, Nakuru County, KE)",
+      reviewedBy: "Mqulima Agronomy & Intelligence Desk",
       relatedPosts,
       relatedProduct,
       relatedService,

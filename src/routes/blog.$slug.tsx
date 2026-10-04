@@ -68,10 +68,9 @@ export const Route = createFileRoute("/blog/$slug")({
         "@id": url,
       },
       "author": {
-        "@type": "Person",
+        "@type": "Organization",
         "name": post.author.name,
-        "jobTitle": post.author.role,
-        "description": post.author.bio,
+        "url": "https://www.mqulima.com",
       },
       "publisher": {
         "@type": "Organization",
@@ -230,7 +229,7 @@ function BlogPostDetailRoute() {
                   <div className="flex items-center gap-1.5">
                     <strong className="text-sm font-bold text-[#1A3A1A]">{post.author.name}</strong>
                     <span className="bg-emerald-100 text-[#1A5438] text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                      Verified Author
+                      Verified Publisher
                     </span>
                   </div>
                   <span className="text-xs text-slate-600 block">{post.author.role}</span>
