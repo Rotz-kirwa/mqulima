@@ -1511,7 +1511,7 @@ function ServicesPage() {
                                     categoryTitle: category.title,
                                   })
                                 }
-                                className="py-3.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 border border-slate-300 min-w-[100px]"
+                                className="py-3.5 px-5 bg-[#FACC15] hover:bg-[#EAB308] text-[#0B2117] font-extrabold text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 border border-[#EAB308] min-w-[100px] shadow-xs hover:brightness-105"
                               >
                                 <span>{category.action2Text}</span>
                               </button>
@@ -1710,7 +1710,7 @@ function ServicesPage() {
                                           categoryTitle: category.title,
                                         })
                                       }
-                                      className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition duration-150 flex items-center justify-center cursor-pointer border border-slate-200 active:scale-98"
+                                      className="py-2.5 px-3.5 bg-[#FACC15] hover:bg-[#EAB308] text-[#0B2117] font-extrabold text-xs sm:text-sm transition duration-150 flex items-center justify-center cursor-pointer border border-[#EAB308] active:scale-98 shadow-xs hover:brightness-105"
                                     >
                                       <span>{sub.action2Text}</span>
                                     </button>
@@ -1813,7 +1813,7 @@ function ServicesPage() {
                       {tool.action2Text && tool.action2Text.toLowerCase().trim() !== "go home" && (
                         <button
                           onClick={() => handleActionButton(tool.action2Text!, { serviceName: tool.name })}
-                          className="py-2.5 px-4 rounded-none bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition duration-200 flex items-center justify-center cursor-pointer active:scale-98 border border-white/20"
+                          className="py-2.5 px-4 rounded-none bg-[#FACC15] hover:bg-[#EAB308] text-[#0B2117] font-extrabold text-xs sm:text-sm transition duration-200 flex items-center justify-center cursor-pointer active:scale-98 border border-[#EAB308] shadow-xs hover:brightness-105"
                         >
                           <span>{tool.action2Text}</span>
                         </button>
@@ -1933,7 +1933,7 @@ function ServicesPage() {
                                   categoryTitle: selectedCategory.title,
                                 });
                               }}
-                              className="py-2.5 px-3.5 rounded-none bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer border border-slate-300"
+                              className="py-2.5 px-3.5 rounded-none bg-[#FACC15] hover:bg-[#EAB308] text-[#0B2117] text-xs font-extrabold transition flex items-center justify-center gap-1 cursor-pointer border border-[#EAB308] shadow-xs hover:brightness-105"
                             >
                               <span>{sub.action2Text}</span>
                             </button>
