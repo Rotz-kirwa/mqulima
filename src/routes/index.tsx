@@ -818,7 +818,7 @@ function Index() {
               <span className="text-[#6EA810]">in one place</span>
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
-              Explore six specialist categories delivered by vetted professionals. Pick a category, view the services and get a quotation on WhatsApp in minutes.
+              Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.
             </p>
           </div>
 

@@ -73,12 +73,12 @@ export const Route = createFileRoute("/services")({
       { title: "Services — Professional Agricultural Support & Specialists | Mqulima" },
       {
         name: "description",
-        content: "Book vetted agricultural professionals across Kenya: soil testing, veterinary diagnostics, silage shredding, AI breeding, greenhouses, and borehole drilling.",
+        content: "Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.",
       },
       { property: "og:title", content: "Services — Professional Agricultural Support & Specialists | Mqulima" },
       {
         property: "og:description",
-        content: "Book vetted agricultural professionals across Kenya: soil testing, veterinary diagnostics, silage shredding, AI breeding, greenhouses, and borehole drilling.",
+        content: "Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.",
       },
       { property: "og:url", content: "https://www.mqulima.com/services" },
       { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
@@ -1240,7 +1240,7 @@ function ServicesPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117] via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 mx-auto w-full max-w-[1480px] px-4 sm:px-6 lg:px-8 xl:px-10 pt-6 pb-6 md:pt-8 md:pb-8">
-            <div className="max-w-2xl text-left">
+            <div className="max-w-3xl text-left">
               
               {/* Top Pill Badge */}
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white/90 border border-white/15 mb-2.5">
@@ -1254,7 +1254,7 @@ function ServicesPage() {
               </h1>
 
               {/* Subheading Summarized Description */}
-              <p className="mt-3 text-sm sm:text-base text-white/90 leading-relaxed font-normal max-w-2xl">
+              <p className="mt-3 text-sm sm:text-base md:text-lg text-white/90 leading-relaxed font-normal max-w-3xl">
                 Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.
               </p>
 
