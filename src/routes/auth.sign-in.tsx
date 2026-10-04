@@ -5,7 +5,16 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SproutLogo, WaveDivider } from "@/components/auth/AuthMockupAssets";
 
+type SignInSearch = {
+  redirect?: string;
+};
+
 export const Route = createFileRoute("/auth/sign-in")({
+  validateSearch: (search: Record<string, unknown>): SignInSearch => {
+    return {
+      redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Log In · Mqulima Hub" },
@@ -17,7 +26,10 @@ export const Route = createFileRoute("/auth/sign-in")({
 
 function SignIn() {
   const { login } = useAuth();
+  const search = Route.useSearch();
   const navigate = useNavigate();
+  const redirectParam = search.redirect || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null);
+
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -58,9 +70,17 @@ function SignIn() {
         throw new Error("Invalid credentials. Please verify your email and password.");
       }
       toast.success("Welcome back! Signed in successfully.");
-      const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-      const redirectUrl = searchParams.get("redirect") || "/";
-      navigate({ to: redirectUrl as any });
+      const redirectUrl = redirectParam || "/";
+      if (redirectUrl.includes("?")) {
+        const [pathname, searchStr] = redirectUrl.split("?");
+        const searchObj: Record<string, string> = {};
+        new URLSearchParams(searchStr).forEach((val, key) => {
+          searchObj[key] = val;
+        });
+        navigate({ to: pathname as any, search: searchObj as any });
+      } else {
+        navigate({ to: redirectUrl as any });
+      }
     } catch (err: any) {
       const msg = err.message || "Invalid credentials. Please try again.";
       setErrorMsg(msg);
@@ -73,8 +93,6 @@ function SignIn() {
   const handleForgotPassword = () => {
     toast.info("Password reset instructions will be sent to your registered email or phone.");
   };
-
-  const redirectParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
 
   return (
     <div className="w-full max-w-[390px] mx-auto rounded-[36px] bg-[#FAF8F0] shadow-[0_25px_60px_-15px_rgba(4,40,25,0.25)] overflow-hidden transition-all duration-300 border border-[#E9E4D4]/60">
@@ -94,6 +112,17 @@ function SignIn() {
         <h1 className="text-2xl sm:text-[26px] font-black text-white text-center tracking-tight mb-5 drop-shadow-xs">
           Log In
         </h1>
+
+        {/* CONTEXTUAL BANNER FOR REDIRECTS */}
+        {redirectParam && (
+          <div className="mb-4 p-2.5 rounded-xl bg-[#85CC14]/20 border border-[#85CC14]/40 text-[#FAF8F0] text-xs font-semibold text-center animate-fadeIn">
+            {redirectParam.includes("services")
+              ? "🌿 Sign in to view and track your Booked Services"
+              : redirectParam.includes("orders")
+              ? "📦 Sign in to view and track your Shop Orders"
+              : "👋 Please log in to continue to your dashboard"}
+          </div>
+        )}
 
         {/* INLINE ERROR IF PRESENT */}
         {errorMsg && (

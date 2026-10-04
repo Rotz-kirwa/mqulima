@@ -9,7 +9,16 @@ import { SignUpSchema } from "@/lib/auth-shop-shared";
 import { useAuth } from "@/hooks/useAuth";
 import { WaveDivider, SproutLogo } from "@/components/auth/AuthMockupAssets";
 
+type SignUpSearch = {
+  redirect?: string;
+};
+
 export const Route = createFileRoute("/auth/sign-up")({
+  validateSearch: (search: Record<string, unknown>): SignUpSearch => {
+    return {
+      redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Create Account · Mqulima Hub" },
@@ -214,7 +223,16 @@ function SignUp() {
       toast.success("Account created successfully! Welcome to Mqulima Hub.");
       const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
       const redirectUrl = searchParams.get("redirect") || "/";
-      navigate({ to: redirectUrl as any });
+      if (redirectUrl.includes("?")) {
+        const [pathname, searchStr] = redirectUrl.split("?");
+        const searchObj: Record<string, string> = {};
+        new URLSearchParams(searchStr).forEach((val, key) => {
+          searchObj[key] = val;
+        });
+        navigate({ to: pathname as any, search: searchObj as any });
+      } else {
+        navigate({ to: redirectUrl as any });
+      }
     } catch (err: any) {
       try {
         const parsed = JSON.parse(err.message);

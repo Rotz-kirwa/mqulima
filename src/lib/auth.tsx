@@ -21,17 +21,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { ensureCsrfToken } = await import("./csrf-client");
         await ensureCsrfToken();
-        const currentUser = await getCurrentUser();
+
+        const storedToken = typeof window !== "undefined" ? localStorage.getItem("mq_token") : null;
+        const cachedAccount = typeof window !== "undefined" ? localStorage.getItem("mqulima_user_account") : null;
+
+        let currentUser: User | null = null;
+        try {
+          currentUser = await getCurrentUser({ data: { token: storedToken || undefined } });
+        } catch (fetchErr) {
+          console.warn("Session verification network blip:", fetchErr);
+        }
+
         if (currentUser) {
           setUser(currentUser);
           if (typeof window !== "undefined") {
             localStorage.setItem("mqulima_user_account", JSON.stringify(currentUser));
           }
-        } else {
+        } else if (storedToken) {
+          // Token was explicitly provided but invalidated/expired by server
           setUser(null);
           if (typeof window !== "undefined") {
             localStorage.removeItem("mqulima_user_account");
+            localStorage.removeItem("mq_token");
           }
+        } else if (cachedAccount) {
+          // Keep cached user on mobile devices / Safari ITP rather than wiping their session
+          try {
+            const parsed = JSON.parse(cachedAccount);
+            if (parsed && parsed.id) {
+              setUser(parsed);
+            }
+          } catch (e) {}
+        } else {
+          setUser(null);
         }
       } catch (error) {
         // Keep cached user on transient network failure
@@ -47,19 +69,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const csrfToken = await ensureCsrfToken();
     const response = await loginUser({ data: { identifier, password, csrfToken, rememberMe } });
     if (response && response.success) {
+      if (response.token && typeof window !== "undefined") {
+        localStorage.setItem("mq_token", response.token);
+      }
+
       let currentUser: User | null = null;
       try {
-        currentUser = await getCurrentUser();
+        currentUser = await getCurrentUser({ data: { token: response.token } });
       } catch (e) {}
 
       const finalUser: User = currentUser || {
         id: response.user?.id || "user",
         name: response.user?.name || "Farmer",
         email: response.user?.email || identifier,
-        county: "",
-        farmSize: "",
-        crops: "",
-        livestock: "",
+        county: response.user?.county || "",
+        farmSize: response.user?.farmSize || "",
+        crops: response.user?.crops || "",
+        livestock: response.user?.livestock || "",
         role: (response.user?.role as any) || "farmer",
       };
 
@@ -82,9 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
     if (response && response.success) {
+      if (response.token && typeof window !== "undefined") {
+        localStorage.setItem("mq_token", response.token);
+      }
+
       let currentUser: User | null = null;
       try {
-        currentUser = await getCurrentUser();
+        currentUser = await getCurrentUser({ data: { token: response.token } });
       } catch (e) {}
 
       const finalUser: User = currentUser || (response.user as User) || {
@@ -118,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       if (typeof window !== "undefined") {
         localStorage.removeItem("mqulima_user_account");
+        localStorage.removeItem("mq_token");
         localStorage.removeItem("mqulima_post_draft");
         sessionStorage.clear();
       }

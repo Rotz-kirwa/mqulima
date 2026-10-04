@@ -980,13 +980,35 @@ export function Navbar() {
                     </div>
                   </>
                 ) : (
-                  <Link
-                    to="/auth/sign-in"
-                    onClick={() => setOpen(false)}
-                    className="block text-center rounded-2xl bg-[#85CC14] py-3.5 text-xs font-black text-[#0B2117] shadow-lg hover:bg-[#74B510] transition-colors uppercase tracking-wider"
-                  >
-                    Sign In to Account
-                  </Link>
+                  <div className="space-y-2">
+                    <Link
+                      to="/auth/sign-in"
+                      onClick={() => setOpen(false)}
+                      className="block text-center rounded-2xl bg-[#85CC14] py-3.5 text-xs font-black text-[#0B2117] shadow-lg hover:bg-[#74B510] transition-colors uppercase tracking-wider"
+                    >
+                      Sign In to Account
+                    </Link>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "orders" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 py-2.5 px-2 text-[11px] font-bold text-white/90 border border-white/10 transition-colors"
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5 text-[#85CC14]" />
+                        <span>Shop Orders</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "services" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 py-2.5 px-2 text-[11px] font-bold text-white/90 border border-white/10 transition-colors"
+                      >
+                        <Briefcase className="h-3.5 w-3.5 text-[#85CC14]" />
+                        <span>Booked Services</span>
+                      </Link>
+                    </div>
+                  </div>
                 )}
                 {isInstallable && (
                   <button

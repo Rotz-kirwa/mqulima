@@ -45,7 +45,7 @@ export const loginUser = createServerFn({ method: "POST" })
     if (ident.includes("@")) {
       const cleanEmail = ident.toLowerCase();
       [dbUser] = await sql`
-        SELECT id, email, password_hash, full_name, role
+        SELECT id, email, password_hash, full_name, role, county_region, years_farming, crops, livestock
         FROM profiles
         WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
       `;
@@ -54,7 +54,7 @@ export const loginUser = createServerFn({ method: "POST" })
       const cleanPhone = ident.replace(/\s+/g, "");
       const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
       [dbUser] = await sql`
-        SELECT id, email, password_hash, full_name, role
+        SELECT id, email, password_hash, full_name, role, county_region, years_farming, crops, livestock
         FROM profiles
         WHERE (
           phone = ${cleanPhone}
@@ -95,11 +95,22 @@ export const loginUser = createServerFn({ method: "POST" })
       .setExpirationTime(rememberMe ? "30d" : "7d")
       .sign(secret);
 
+    let cookieDomain: string | undefined = undefined;
+    try {
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const headers = getRequestHeaders();
+      const host = headers?.get("host") || "";
+      if (host.includes("mqulima.com")) {
+        cookieDomain = ".mqulima.com";
+      }
+    } catch (e) {}
+
     // Set cookie
     setCookie(COOKIE_NAME, jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: cookieDomain,
       path: "/",
       maxAge: rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
     });
@@ -116,11 +127,16 @@ export const loginUser = createServerFn({ method: "POST" })
 
     return {
       success: true,
+      token: jwt,
       user: {
         id: dbUser.id,
         name: dbUser.full_name,
         email: dbUser.email,
         role: dbUser.role,
+        county: dbUser.county_region || "",
+        farmSize: `${dbUser.years_farming || 0} years`,
+        crops: dbUser.crops ? (Array.isArray(dbUser.crops) ? dbUser.crops.join(", ") : String(dbUser.crops)) : "",
+        livestock: dbUser.livestock ? (Array.isArray(dbUser.livestock) ? dbUser.livestock.join(", ") : String(dbUser.livestock)) : "",
       }
     };
   });
@@ -167,10 +183,21 @@ export const registerUser = createServerFn({ method: "POST" })
       .setExpirationTime("7d")
       .sign(secret);
 
+    let cookieDomain: string | undefined = undefined;
+    try {
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const headers = getRequestHeaders();
+      const host = headers?.get("host") || "";
+      if (host.includes("mqulima.com")) {
+        cookieDomain = ".mqulima.com";
+      }
+    } catch (e) {}
+
     setCookie(COOKIE_NAME, jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: cookieDomain,
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
     });
@@ -180,6 +207,7 @@ export const registerUser = createServerFn({ method: "POST" })
 
     return {
       success: true,
+      token: jwt,
       userId: res.userId,
       user: {
         id: res.userId!,
@@ -199,7 +227,26 @@ export const logoutUser = createServerFn({ method: "POST" })
     csrfToken: z.string().optional()
   }).optional())
   .handler(async () => {
-    // Unconditionally purge session and csrf cookies
+    let cookieDomain: string | undefined = undefined;
+    try {
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const headers = getRequestHeaders();
+      const host = headers?.get("host") || "";
+      if (host.includes("mqulima.com")) {
+        cookieDomain = ".mqulima.com";
+      }
+    } catch (e) {}
+
+    // Unconditionally purge session and csrf cookies (both host and domain)
+    setCookie(COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      domain: cookieDomain,
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     setCookie(COOKIE_NAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -213,6 +260,15 @@ export const logoutUser = createServerFn({ method: "POST" })
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: cookieDomain,
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    setCookie("mq_csrf", "", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: 0,
       expires: new Date(0),
@@ -222,15 +278,22 @@ export const logoutUser = createServerFn({ method: "POST" })
   });
 
 export const getCurrentUser = createServerFn({ method: "GET" })
-  .handler(async () => {
-    let rawToken: any = null;
-    try {
-      rawToken = getCookie(COOKIE_NAME);
-    } catch (e) {
-      // Safe fallback outside HTTP request context
-    }
+  .inputValidator(z.object({
+    token: z.string().optional()
+  }).optional())
+  .handler(async ({ data }) => {
+    let token: string | null = (data && data.token) ? data.token.trim() : null;
 
-    let token: string | null = Array.isArray(rawToken) ? String(rawToken[0] || "") : (typeof rawToken === "string" ? rawToken : (rawToken ? String(rawToken) : null));
+    if (!token) {
+      let rawToken: any = null;
+      try {
+        rawToken = getCookie(COOKIE_NAME);
+      } catch (e) {
+        // Safe fallback outside HTTP request context
+      }
+
+      token = Array.isArray(rawToken) ? String(rawToken[0] || "") : (typeof rawToken === "string" ? rawToken : (rawToken ? String(rawToken) : null));
+    }
 
     if (!token) {
       try {
@@ -312,8 +375,8 @@ export const getCurrentUser = createServerFn({ method: "GET" })
         email: dbUser.email,
         county: dbUser.county_region || "",
         farmSize: `${dbUser.years_farming || 0} years`,
-        crops: dbUser.crops ? dbUser.crops.join(", ") : "",
-        livestock: dbUser.livestock ? dbUser.livestock.join(", ") : "",
+        crops: dbUser.crops ? (Array.isArray(dbUser.crops) ? dbUser.crops.join(", ") : String(dbUser.crops)) : "",
+        livestock: dbUser.livestock ? (Array.isArray(dbUser.livestock) ? dbUser.livestock.join(", ") : String(dbUser.livestock)) : "",
         role: dbUser.role,
       };
 

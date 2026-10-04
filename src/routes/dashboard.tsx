@@ -98,19 +98,19 @@ function Dashboard() {
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["userOrders", activeUser?.id],
     queryFn: () => getUserOrders({ data: { userId: activeUser!.id } }),
-    enabled: !!activeUser?.id
+    enabled: !!activeUser?.id && activeUser.id !== "user"
   });
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery({
     queryKey: ["userBookings", activeUser?.id],
     queryFn: () => getUserServiceBookings({ data: activeUser!.id }),
-    enabled: !!activeUser?.id
+    enabled: !!activeUser?.id && activeUser.id !== "user"
   });
 
   const { data: notifications, isLoading: notificationsLoading } = useQuery({
     queryKey: ["userNotifications", activeUser?.id],
     queryFn: () => getUserNotifications({ data: activeUser!.id }),
-    enabled: !!activeUser?.id
+    enabled: !!activeUser?.id && activeUser.id !== "user"
   });
 
   const markReadMutation = useMutation({
@@ -150,7 +150,8 @@ function Dashboard() {
   }
 
   if (!activeUser) {
-    return <Navigate to="/auth/sign-in" />;
+    const redirectTarget = `/dashboard?tab=${activeTab}`;
+    return <Navigate to="/auth/sign-in" search={{ redirect: redirectTarget } as any} />;
   }
 
   const handleToggleChannel = async (key: "sowing" | "market" | "weather", value: boolean) => {
