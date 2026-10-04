@@ -21,12 +21,22 @@ const FeaturedThumbnail: React.FC<{ src?: string; alt?: string; className?: stri
   alt = "Featured Item",
   className = "h-full w-full object-cover",
 }) => {
+  const [currentSrc, setCurrentSrc] = useState<string>(() => resolveAdminImageUrl(src));
   const [hasError, setHasError] = useState(false);
-  const resolvedUrl = resolveAdminImageUrl(src);
 
   useEffect(() => {
+    setCurrentSrc(resolveAdminImageUrl(src));
     setHasError(false);
   }, [src]);
+
+  const handleError = () => {
+    // If CDN fails, try local relative path on current host
+    if (src && currentSrc.startsWith(MAIN_SITE_CDN) && src.startsWith("/")) {
+      setCurrentSrc(src);
+    } else {
+      setHasError(true);
+    }
+  };
 
   if (hasError || !src) {
     return (
@@ -38,12 +48,12 @@ const FeaturedThumbnail: React.FC<{ src?: string; alt?: string; className?: stri
 
   return (
     <img
-      src={resolvedUrl}
+      src={currentSrc}
       alt={alt}
       loading="lazy"
       decoding="async"
       className={className}
-      onError={() => setHasError(true)}
+      onError={handleError}
     />
   );
 };
