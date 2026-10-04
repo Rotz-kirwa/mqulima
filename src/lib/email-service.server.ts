@@ -676,3 +676,286 @@ export async function sendServiceBookingConfirmationEmail(
   }
 }
 
+export interface SendPasswordRecoveryEmailOptions {
+  toEmail: string;
+  recipientName?: string;
+  otpCode: string;
+  magicLinkUrl: string;
+  expiresInMinutes?: number;
+}
+
+export function renderPasswordRecoveryEmailHtml(params: {
+  otpCode: string;
+  magicLinkUrl: string;
+  recipientName?: string;
+  expiresInMinutes?: number;
+}): string {
+  const { otpCode, magicLinkUrl, recipientName, expiresInMinutes = 10 } = params;
+  const nameGreeting = recipientName ? `Hello <strong>${recipientName}</strong>,` : "Hello,";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset your Mqulima password</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FAF8F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FAF8F0; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #EAE5D9;">
+          <!-- Top Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #056B3A 0%, #034525 100%); padding: 30px 24px; text-align: center;">
+              <div style="font-family: monospace; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #FFFFFF; text-transform: uppercase;">
+                MQULIMA<span style="color: #80E6A7;">HUB</span>
+              </div>
+              <div style="color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500; margin-top: 6px;">
+                Secure Password Recovery
+              </div>
+            </td>
+          </tr>
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 35px 30px 25px 30px; background-color: #FFFFFF;">
+              <h2 style="color: #0F2D1F; font-size: 20px; font-weight: 800; margin-top: 0; margin-bottom: 14px;">
+                Sign In to Reset Your Password
+              </h2>
+              <p style="font-size: 14px; line-height: 22px; color: #4A5568; margin-bottom: 24px;">
+                ${nameGreeting}<br><br>
+                We received a request to recover access to your Mqulima account. You can sign in immediately using either the <strong>one-tap link</strong> or the <strong>6-digit code</strong> below:
+              </p>
+
+              <!-- One-Tap Action Button -->
+              <div style="text-align: center; margin: 25px 0 30px 0;">
+                <a href="${magicLinkUrl}" target="_blank" style="display: inline-block; background-color: #056B3A; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 800; padding: 14px 34px; border-radius: 12px; box-shadow: 0 4px 14px rgba(5,107,58,0.35);">
+                  🔐 Sign In to Your Account (One-Tap)
+                </a>
+                <div style="font-size: 11px; color: #718096; margin-top: 8px;">
+                  Tapping this link will securely authenticate your session immediately.
+                </div>
+              </div>
+
+              <!-- 6-Digit Code Highlight Box -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 25px 0;">
+                <tr>
+                  <td align="center" style="background-color: #FAF8F0; border: 2px dashed #056B3A; border-radius: 14px; padding: 20px 10px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #056B3A; font-weight: 800; margin-bottom: 8px;">
+                      Or Enter This 6-Digit Code
+                    </div>
+                    <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #0F2D1F; padding-left: 10px;">
+                      ${otpCode}
+                    </div>
+                    <div style="font-size: 12px; color: #718096; margin-top: 8px; font-weight: 600;">
+                      ⏱️ Valid for <strong>${expiresInMinutes} minutes</strong> • Single use only
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Security Notice -->
+              <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 14px 16px; border-radius: 6px; margin: 24px 0 15px 0;">
+                <p style="margin: 0; font-size: 12px; line-height: 18px; color: #92400E; font-weight: 600;">
+                  ⚠️ <strong>Security Notice:</strong> Never share this code or link with anyone. Mqulima staff and agents will NEVER ask for your password or recovery code.
+                </p>
+              </div>
+
+              <p style="font-size: 13px; line-height: 20px; color: #718096; margin-top: 22px; margin-bottom: 0;">
+                If you did not request password recovery, please ignore this email. Your password has not been changed.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F8FAF6; border-top: 1px solid #EAEFE6; padding: 24px 30px; text-align: center;">
+              <p style="font-size: 12px; color: #718096; margin: 0 0 6px 0;">
+                Smart Farming. Better Decisions.
+              </p>
+              <p style="font-size: 11px; color: #A0AEC0; margin: 0;">
+                © ${new Date().getFullYear()} Mqulima Hub Kenya. All rights reserved.<br>
+                Official communication from <strong>mqulima@mqulima.com</strong>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export function renderPasswordRecoveryEmailText(params: {
+  otpCode: string;
+  magicLinkUrl: string;
+  recipientName?: string;
+  expiresInMinutes?: number;
+}): string {
+  const { otpCode, magicLinkUrl, recipientName, expiresInMinutes = 10 } = params;
+  const nameGreeting = recipientName ? `Hello ${recipientName},` : "Hello,";
+
+  return `${nameGreeting}
+
+You requested to recover access to your Mqulima account.
+
+ONE-TAP SIGN IN:
+${magicLinkUrl}
+
+OR ENTER YOUR 6-DIGIT CODE:
+=========================================
+               ${otpCode}
+=========================================
+
+This code and link are valid for ${expiresInMinutes} minutes and can only be used once.
+
+SECURITY NOTICE:
+Never share this code or link with anyone. Mqulima staff will never ask for your code.
+If you did not make this request, you can safely ignore this email.
+
+--
+Mqulima Hub Kenya
+mqulima@mqulima.com`;
+}
+
+/**
+ * Dispatches password recovery email with 6-digit OTP code and one-tap magic sign-in link.
+ */
+export async function sendPasswordRecoveryEmail(
+  options: SendPasswordRecoveryEmailOptions
+): Promise<SendEmailResult> {
+  const { toEmail, recipientName, otpCode, magicLinkUrl, expiresInMinutes = 10 } = options;
+
+  if (!toEmail || !toEmail.includes("@")) {
+    return { success: false, error: "Invalid recipient email address" };
+  }
+
+  const config = getServerConfig();
+  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
+  const isMockMode =
+    config.SMTP_MOCK ||
+    config.NODE_ENV === "test" ||
+    !pass;
+
+  const senderAddress = `Mqulima Security <${config.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const subject = "Your Mqulima password recovery code and sign-in link";
+
+  if (isMockMode) {
+    const maskedEmail = toEmail.replace(/^(.)(.*)(@.*)$/, (_, first, middle, rest) => `${first}***${rest}`);
+    console.log(`[EMAIL SERVICE MOCK] Recovery email simulated to ${maskedEmail}. Code: [REDACTED].`);
+    return {
+      success: true,
+      mocked: true,
+      messageId: `mock_recovery_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+    };
+  }
+
+  try {
+    const transporter = getMailTransporter();
+    if (!transporter) {
+      throw new Error("SMTP Transporter could not be initialized");
+    }
+
+    const html = renderPasswordRecoveryEmailHtml({ otpCode, magicLinkUrl, recipientName, expiresInMinutes });
+    const text = renderPasswordRecoveryEmailText({ otpCode, magicLinkUrl, recipientName, expiresInMinutes });
+
+    const info = await transporter.sendMail({
+      from: senderAddress,
+      to: toEmail,
+      subject,
+      text,
+      html,
+      attachments: getEmailLogoAttachments(),
+    });
+
+    const maskedEmail = toEmail.replace(/^(.)(.*)(@.*)$/, (_, first, middle, rest) => `${first}***${rest}`);
+    console.log(`[EMAIL SERVICE] Recovery email dispatched to ${maskedEmail}. Message ID: ${info.messageId}`);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (err: any) {
+    const maskedEmail = toEmail.replace(/^(.)(.*)(@.*)$/, (_, first, middle, rest) => `${first}***${rest}`);
+    console.error(`[EMAIL SERVICE] Failed to dispatch recovery email to ${maskedEmail}:`, err?.message || err);
+    return {
+      success: false,
+      error: err?.message || "Failed to dispatch recovery email",
+    };
+  }
+}
+
+/**
+ * Dispatches a security notice email after recovery sign-in.
+ */
+export async function sendRecoverySecurityNoticeEmail(params: {
+  toEmail: string;
+  recipientName?: string;
+  loginTime: string;
+}): Promise<SendEmailResult> {
+  const { toEmail, recipientName, loginTime } = params;
+
+  if (!toEmail || !toEmail.includes("@")) {
+    return { success: false, error: "Invalid recipient email address" };
+  }
+
+  const config = getServerConfig();
+  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
+  const isMockMode = config.SMTP_MOCK || config.NODE_ENV === "test" || !pass;
+
+  const senderAddress = `Mqulima Security <${config.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const subject = "Security Alert: Your Mqulima account was accessed via password recovery";
+
+  const greeting = recipientName ? `Hello ${recipientName},` : "Hello,";
+  const text = `${greeting}
+
+Your Mqulima account was recently accessed via password recovery at ${loginTime}.
+
+If this was you, you can continue using your account normally.
+If this wasn't you, please contact support immediately at mqulima@mqulima.com or +254 723 346 134 to secure your account.
+
+--
+Mqulima Security Team`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FAF8F0; padding: 20px;">
+  <div style="max-width: 520px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; padding: 30px; border: 1px solid #EAE5D9;">
+    <h2 style="color: #0F2D1F; margin-top: 0;">Security Alert</h2>
+    <p style="font-size: 14px; color: #4A5568; line-height: 22px;">
+      ${greeting}<br><br>
+      Your account was accessed via password recovery on <strong>${loginTime}</strong>.
+    </p>
+    <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 13px; color: #92400E; font-weight: 600;">
+        If this wasn't you, please contact support immediately to lock and protect your account.
+      </p>
+    </div>
+    <p style="font-size: 12px; color: #718096; margin-top: 25px;">
+      Support Hotline: +254 723 346 134 • Email: mqulima@mqulima.com
+    </p>
+  </div>
+</body>
+</html>`;
+
+  if (isMockMode) {
+    return { success: true, mocked: true, messageId: `mock_notice_${Date.now()}` };
+  }
+
+  try {
+    const transporter = getMailTransporter();
+    if (!transporter) throw new Error("SMTP Transporter could not be initialized");
+
+    const info = await transporter.sendMail({
+      from: senderAddress,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
+    return { success: true, messageId: info.messageId };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to dispatch notice email" };
+  }
+}
+

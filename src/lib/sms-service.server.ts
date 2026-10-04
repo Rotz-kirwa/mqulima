@@ -44,6 +44,14 @@ export function normalizeKenyanPhone(phone: string): string {
   return cleaned;
 }
 
+/**
+ * Normalizes Kenyan phone numbers into international E.164 format (+254XXXXXXXXX).
+ */
+export function formatKenyanPhoneE164(phone: string): string {
+  const normalized = normalizeKenyanPhone(phone);
+  return `+${normalized}`;
+}
+
 export function redactSensitiveMessage(msg: string): string {
   if (!msg) return "";
   return msg
@@ -152,6 +160,12 @@ export async function sendSms(options: SendSmsOptions): Promise<SendSmsResult> {
     return mockResult;
   }
 
+  // Check if Africa's Talking is configured
+  const atApiKey = process.env.AT_API_KEY;
+  if (atApiKey && atApiKey !== "your_at_api_key_here") {
+    return sendAfricasTalkingSms(`+${normalizedPhone}`, message, triggerType);
+  }
+
   const apiKey = process.env.TEXTSMS_API_KEY || "82b5401f7d2d708f19d78f405cb4acab";
   const partnerId = process.env.TEXTSMS_PARTNER_ID || "16948";
   const senderId = process.env.TEXTSMS_SENDER_ID || "KIRGIT_AGRI";
@@ -256,6 +270,113 @@ export async function sendServiceBookingConfirmationSms(
     phoneNumber: params.phoneNumber,
     message,
     triggerType: "service_booking_confirmation",
+  });
+}
+
+/**
+ * Dispatches transactional SMS via Africa's Talking API.
+ */
+async function sendAfricasTalkingSms(
+  e164Phone: string,
+  message: string,
+  triggerType: string
+): Promise<SendSmsResult> {
+  const apiKey = process.env.AT_API_KEY!;
+  const username = process.env.AT_USERNAME || "sandbox";
+  const senderId = process.env.AT_SENDER_ID;
+  const isSandbox = username.toLowerCase() === "sandbox";
+  const apiUrl = isSandbox
+    ? "https://api.sandbox.africastalking.com/version1/messaging"
+    : "https://api.africastalking.com/version1/messaging";
+
+  const formParams = new URLSearchParams();
+  formParams.append("username", username);
+  formParams.append("to", e164Phone);
+  formParams.append("message", message);
+  if (senderId) {
+    formParams.append("from", senderId);
+  }
+
+  try {
+    console.log(`[SMS SERVICE] Dispatching SMS to ${e164Phone} via Africa's Talking (Username: ${username})...`);
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        apiKey: apiKey,
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formParams.toString(),
+    });
+
+    const bodyText = await response.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(bodyText);
+    } catch {
+      data = { rawText: bodyText };
+    }
+
+    const recipientData = data.SMSMessageData?.Recipients?.[0];
+    const isSuccess =
+      response.ok &&
+      recipientData?.status &&
+      ["success", "sent"].includes(String(recipientData.status).toLowerCase());
+
+    if (isSuccess) {
+      const messageId = String(recipientData?.messageId || Date.now());
+      console.log(`[SMS SERVICE] Africa's Talking SMS delivered to ${e164Phone}. ID: ${messageId}`);
+      const result: SendSmsResult = { success: true, messageId };
+      await logSmsAttempt(e164Phone, message, triggerType, "success", data);
+      return result;
+    } else {
+      const errorMsg =
+        recipientData?.status ||
+        data.SMSMessageData?.Message ||
+        `Africa's Talking returned HTTP ${response.status}`;
+      console.error(`[SMS SERVICE] Africa's Talking rejected dispatch to ${e164Phone}:`, errorMsg);
+      const result: SendSmsResult = { success: false, error: errorMsg };
+      await logSmsAttempt(e164Phone, message, triggerType, "failed", data);
+      return result;
+    }
+  } catch (err: any) {
+    const errorMsg = err?.message || "Failed to reach Africa's Talking API";
+    console.error(`[SMS SERVICE] Africa's Talking exception for ${e164Phone}:`, errorMsg);
+    const result: SendSmsResult = { success: false, error: errorMsg };
+    await logSmsAttempt(e164Phone, message, triggerType, "failed", { error: errorMsg });
+    return result;
+  }
+}
+
+/**
+ * Dispatches 6-digit recovery code SMS strictly matching required template:
+ * "Mqulima: your code is 123456. Valid 10 min. Never share it."
+ */
+export async function sendRecoverySms(
+  phoneNumber: string,
+  code: string,
+  shortLink?: string
+): Promise<SendSmsResult> {
+  const linkPart = shortLink ? ` Link: ${shortLink}` : "";
+  const message = `Mqulima: your code is ${code}. Valid 10 min. Never share it.${linkPart}`;
+  return sendSms({
+    phoneNumber,
+    message,
+    triggerType: "password_recovery_otp",
+  });
+}
+
+/**
+ * Dispatches security notice SMS after account is accessed via recovery.
+ */
+export async function sendRecoverySecurityNoticeSms(
+  phoneNumber: string
+): Promise<SendSmsResult> {
+  const message = "Mqulima: Your account was accessed via password recovery. If this wasn't you, contact support.";
+  return sendSms({
+    phoneNumber,
+    message,
+    triggerType: "recovery_security_notice",
   });
 }
 

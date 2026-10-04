@@ -122,10 +122,17 @@ const fallbackLoginLimiter = new InMemorySlidingWindowLimiter(10, 15 * 60 * 1000
 const fallbackSignupLimiter = new InMemorySlidingWindowLimiter(20, 15 * 60 * 1000);
 const fallbackAccountLimiter = new InMemorySlidingWindowLimiter(10, 15 * 60 * 1000);
 const fallbackApiLimiter = new InMemorySlidingWindowLimiter(100, 60 * 1000);
+// Recovery Limiters: Max 3/hr per account, 10/hr per IP, 5 attempts per verification code
+const fallbackRecoveryIpLimiter = new InMemorySlidingWindowLimiter(10, 60 * 60 * 1000);
+const fallbackRecoveryAccountLimiter = new InMemorySlidingWindowLimiter(3, 60 * 60 * 1000);
+const fallbackRecoveryVerifyLimiter = new InMemorySlidingWindowLimiter(5, 10 * 60 * 1000);
 
 let redis: Redis | null = null;
 let loginLimiter: Ratelimit | null = null;
 let apiLimiter: Ratelimit | null = null;
+let recoveryIpLimiter: Ratelimit | null = null;
+let recoveryAccountLimiter: Ratelimit | null = null;
+let recoveryVerifyLimiter: Ratelimit | null = null;
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -149,6 +156,27 @@ if (redisUrl && redisToken) {
       limiter: Ratelimit.slidingWindow(100, "1 m"),
       analytics: true,
       prefix: "mq_limit_api",
+    });
+
+    recoveryIpLimiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "1 h"),
+      analytics: true,
+      prefix: "mq_limit_rec_ip",
+    });
+
+    recoveryAccountLimiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, "1 h"),
+      analytics: true,
+      prefix: "mq_limit_rec_acc",
+    });
+
+    recoveryVerifyLimiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, "10 m"),
+      analytics: true,
+      prefix: "mq_limit_rec_ver",
     });
   } catch (err) {
     console.warn("[RATE LIMIT] Upstash Redis initialization failed. Using in-memory rate limiting fallback.");
@@ -235,4 +263,95 @@ export async function checkApiRateLimit(ip: string): Promise<void> {
   if (!success) {
     throw new Error("Too many requests. Please try again later.");
   }
+}
+
+/**
+ * Rate limit check for password recovery request:
+ * - Max 10 requests per hour per IP
+ * - Max 3 requests per hour per account
+ */
+export async function checkRecoveryRequestRateLimit(
+  ip: string,
+  identifier?: string
+): Promise<{ success: boolean; error?: string }> {
+  // 1. IP rate limiting (10 per hour)
+  if (!isLocalhostIp(ip)) {
+    if (recoveryIpLimiter) {
+      try {
+        const { success } = await recoveryIpLimiter.limit(ip);
+        if (!success) {
+          return {
+            success: false,
+            error: "Too many recovery attempts from this network. Please wait an hour before trying again.",
+          };
+        }
+      } catch (err) {
+        console.warn("[RATE LIMIT] Upstash recovery IP check error:", err);
+      }
+    }
+    const ipRes = fallbackRecoveryIpLimiter.limit(ip);
+    if (!ipRes.success) {
+      return {
+        success: false,
+        error: "Too many recovery attempts from this network. Please wait an hour before trying again.",
+      };
+    }
+  }
+
+  // 2. Account rate limiting (3 per hour)
+  if (identifier) {
+    const cleanId = identifier.trim().toLowerCase();
+    const accountKey = `acc:${cleanId}`;
+    if (recoveryAccountLimiter) {
+      try {
+        const { success } = await recoveryAccountLimiter.limit(accountKey);
+        if (!success) {
+          return {
+            success: false,
+            error: "Too many password recovery requests for this account. Maximum 3 requests per hour allowed.",
+          };
+        }
+      } catch (err) {
+        console.warn("[RATE LIMIT] Upstash recovery account check error:", err);
+      }
+    }
+    const accRes = fallbackRecoveryAccountLimiter.limit(accountKey);
+    if (!accRes.success) {
+      return {
+        success: false,
+        error: "Too many password recovery requests for this account. Maximum 3 requests per hour allowed.",
+      };
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * Rate limit check for wrong code attempts (Max 5 attempts)
+ */
+export async function checkRecoveryAttemptRateLimit(codeKey: string): Promise<{ success: boolean; error?: string }> {
+  if (recoveryVerifyLimiter) {
+    try {
+      const { success } = await recoveryVerifyLimiter.limit(codeKey);
+      if (!success) {
+        return {
+          success: false,
+          error: "Maximum verification attempts exceeded. This recovery code has been locked.",
+        };
+      }
+    } catch (err) {
+      console.warn("[RATE LIMIT] Upstash recovery verify check error:", err);
+    }
+  }
+
+  const verRes = fallbackRecoveryVerifyLimiter.limit(codeKey);
+  if (!verRes.success) {
+    return {
+      success: false,
+      error: "Maximum verification attempts exceeded. This recovery code has been locked.",
+    };
+  }
+
+  return { success: true };
 }
