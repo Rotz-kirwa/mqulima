@@ -26,9 +26,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop/index'
 import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AuthVerifyRecoveryRouteImport } from './routes/auth.verify-recovery'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthMagicLoginRouteImport } from './routes/auth.magic-login'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiProductsRouteImport } from './routes/api/products'
 import { Route as ApiPostsRouteImport } from './routes/api/posts'
@@ -149,6 +153,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthVerifyRecoveryRoute = AuthVerifyRecoveryRouteImport.update({
+  id: '/verify-recovery',
+  path: '/verify-recovery',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
@@ -162,6 +171,21 @@ const AuthSignUpRoute = AuthSignUpRouteImport.update({
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMagicLoginRoute = AuthMagicLoginRouteImport.update({
+  id: '/magic-login',
+  path: '/magic-login',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AuthRoute,
 } as any)
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
@@ -357,9 +381,13 @@ export interface FileRoutesByFullPath {
   '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-login': typeof AuthMagicLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/verify-recovery': typeof AuthVerifyRecoveryRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
@@ -413,9 +441,13 @@ export interface FileRoutesByTo {
   '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-login': typeof AuthMagicLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/verify-recovery': typeof AuthVerifyRecoveryRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop': typeof ShopIndexRoute
@@ -470,9 +502,13 @@ export interface FileRoutesById {
   '/api/posts': typeof ApiPostsRoute
   '/api/products': typeof ApiProductsRouteWithChildren
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-login': typeof AuthMagicLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/verify-recovery': typeof AuthVerifyRecoveryRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/shop/': typeof ShopIndexRoute
@@ -528,9 +564,13 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/products'
     | '/api/subscribe'
+    | '/auth/forgot-password'
+    | '/auth/magic-login'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/auth/verify-recovery'
     | '/blog/$slug'
     | '/shop/$productId'
     | '/shop/'
@@ -584,9 +624,13 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/products'
     | '/api/subscribe'
+    | '/auth/forgot-password'
+    | '/auth/magic-login'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/auth/verify-recovery'
     | '/blog/$slug'
     | '/shop/$productId'
     | '/shop'
@@ -640,9 +684,13 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/products'
     | '/api/subscribe'
+    | '/auth/forgot-password'
+    | '/auth/magic-login'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/verify'
+    | '/auth/verify-recovery'
     | '/blog/$slug'
     | '/shop/$productId'
     | '/shop/'
@@ -849,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/auth/verify-recovery': {
+      id: '/auth/verify-recovery'
+      path: '/verify-recovery'
+      fullPath: '/auth/verify-recovery'
+      preLoaderRoute: typeof AuthVerifyRecoveryRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/auth/verify': {
       id: '/auth/verify'
       path: '/verify'
@@ -868,6 +923,27 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/auth/sign-in'
       preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/magic-login': {
+      id: '/auth/magic-login'
+      path: '/magic-login'
+      fullPath: '/auth/magic-login'
+      preLoaderRoute: typeof AuthMagicLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
     '/api/subscribe': {
@@ -1112,15 +1188,23 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthRouteChildren {
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthMagicLoginRoute: typeof AuthMagicLoginRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  AuthVerifyRecoveryRoute: typeof AuthVerifyRecoveryRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthMagicLoginRoute: AuthMagicLoginRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  AuthVerifyRecoveryRoute: AuthVerifyRecoveryRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

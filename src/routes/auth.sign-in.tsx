@@ -193,13 +193,12 @@ function SignIn() {
               <span>Remember me</span>
             </label>
 
-            <button
-              type="button"
-              onClick={handleForgotPassword}
+            <Link
+              to="/auth/forgot-password"
               className="font-medium text-[#80E6A7] hover:text-white transition-colors cursor-pointer"
             >
               Forgot password?
-            </button>
+            </Link>
           </div>
 
           {/* LOG IN BUTTON (VIBRANT YELLOW PILL - CENTERED & COMPACT) */}
