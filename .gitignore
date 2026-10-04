@@ -41,3 +41,4 @@ temp_admin_credentials.txt
 
 # Local Database Backups
 backups/
+scratch/
