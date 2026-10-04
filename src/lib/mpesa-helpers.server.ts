@@ -154,17 +154,26 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
         orderPaymentState = "partial_payment";
       }
 
-      // Update payment to 'paid' or 'partial_paid'
+      // Update payment to 'paid' or 'partial_paid' with verified receipt number and success code
       await tx`
         UPDATE payments
-        SET status = ${paymentState}, provider_ref = ${receiptNumber || CheckoutRequestID}, raw_payload = ${tx.json(payload)}
+        SET status = ${paymentState}, 
+            provider_ref = ${receiptNumber || CheckoutRequestID}, 
+            receipt_number = ${receiptNumber || null},
+            result_code = '0',
+            result_description = 'Payment confirmed via M-Pesa Daraja',
+            completed_at = NOW(),
+            updated_at = NOW(),
+            raw_payload = ${tx.json(payload)}
         WHERE id = ${currentPayment.id}
       `;
 
-      // Update orders table status
+      // Update orders table status to confirmed and paid
       await tx`
         UPDATE orders
-        SET payment_status = ${orderPaymentState}
+        SET payment_status = ${orderPaymentState},
+            status = 'confirmed',
+            updated_at = NOW()
         WHERE id = ${currentPayment.order_id}
       `;
 

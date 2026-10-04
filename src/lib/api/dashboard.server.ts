@@ -82,7 +82,9 @@ export const getUserOrders = createServerFn({ method: "GET" })
     const orders = await sql`
       SELECT id, items, subtotal, total, status, payment_method, payment_status, delivery_address, notes, created_at
       FROM orders
-      WHERE user_id = ${userId} AND deleted_at IS NULL
+      WHERE user_id = ${userId} 
+        AND deleted_at IS NULL
+        AND (payment_status = 'paid' OR status IN ('confirmed', 'paid', 'processing', 'shipped', 'delivered'))
       ORDER BY created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;

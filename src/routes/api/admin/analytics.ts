@@ -143,16 +143,16 @@ async function computeAnalytics() {
     serviceRows,
     orderRows,
   ] = await Promise.all([
-    // 1. Single-pass aggregated order metrics (revenue strictly confirmed & validated)
+    // 1. Single-pass aggregated order metrics (strictly paid and confirmed)
     sqlClient`
       SELECT 
-        COUNT(*) FILTER (WHERE status != 'cancelled')::int AS "totalOrdersCount",
-        COALESCE(SUM(CAST(total AS NUMERIC)) FILTER (WHERE (payment_status = 'paid' OR status = 'confirmed') AND status != 'cancelled'), 0)::numeric AS "totalRevenue",
-        COUNT(*) FILTER (WHERE status = 'delivered')::int AS "deliveredCount",
-        COUNT(*) FILTER (WHERE status = 'shipped')::int AS "shippedCount",
-        COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingCount",
-        COUNT(*) FILTER (WHERE status = 'processing')::int AS "processingCount",
-        COUNT(*) FILTER (WHERE status = 'cancelled')::int AS "cancelledCount"
+        COUNT(*) FILTER (WHERE status != 'cancelled' AND payment_status = 'paid' AND deleted_at IS NULL)::int AS "totalOrdersCount",
+        COALESCE(SUM(CAST(total AS NUMERIC)) FILTER (WHERE payment_status = 'paid' AND status != 'cancelled' AND deleted_at IS NULL), 0)::numeric AS "totalRevenue",
+        COUNT(*) FILTER (WHERE status = 'delivered' AND payment_status = 'paid' AND deleted_at IS NULL)::int AS "deliveredCount",
+        COUNT(*) FILTER (WHERE status = 'shipped' AND payment_status = 'paid' AND deleted_at IS NULL)::int AS "shippedCount",
+        COUNT(*) FILTER (WHERE status = 'pending' AND payment_status = 'paid' AND deleted_at IS NULL)::int AS "pendingCount",
+        COUNT(*) FILTER (WHERE (status = 'processing' OR status = 'confirmed') AND payment_status = 'paid' AND deleted_at IS NULL)::int AS "processingCount",
+        COUNT(*) FILTER (WHERE status = 'cancelled' AND deleted_at IS NULL)::int AS "cancelledCount"
       FROM orders
     `,
 
@@ -203,19 +203,22 @@ async function computeAnalytics() {
         EXTRACT(MONTH FROM created_at)::int AS "monthNum",
         COALESCE(SUM(CAST(total AS NUMERIC)), 0)::numeric AS revenue
       FROM orders
-      WHERE (payment_status = 'paid' OR status = 'confirmed')
+      WHERE payment_status = 'paid'
         AND status != 'cancelled'
+        AND deleted_at IS NULL
       GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
       ORDER BY "monthNum" ASC
     `,
 
-    // 7. Weekly Order Volume (all active orders)
+    // 7. Weekly Order Volume (confirmed paid orders)
     sqlClient`
       SELECT 
         EXTRACT(DOW FROM created_at)::int AS dow,
         COUNT(*)::int AS "orderCount"
       FROM orders
-      WHERE status != 'cancelled'
+      WHERE payment_status = 'paid' 
+        AND status != 'cancelled'
+        AND deleted_at IS NULL
       GROUP BY EXTRACT(DOW FROM created_at)
       ORDER BY dow ASC
     `,

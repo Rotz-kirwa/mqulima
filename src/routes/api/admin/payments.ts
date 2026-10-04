@@ -34,69 +34,11 @@ export const Route = createFileRoute("/api/admin/payments")({
               u.county
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
-            WHERE o.payment_status = 'paid' OR o.checkout_channel = 'whatsapp'
+            WHERE o.payment_status = 'paid' AND o.deleted_at IS NULL
             ORDER BY o.created_at DESC
           `;
 
-          // 2. Fetch payments records
-          const paymentsList = await sql`
-            SELECT 
-              p.id as payment_id,
-              p.order_id,
-              p.amount,
-              p.status as payment_status,
-              p.provider,
-              p.provider_ref,
-              p.raw_payload,
-              p.created_at as payment_created_at
-            FROM payments p
-            ORDER BY p.created_at DESC
-          `;
-
-          const paymentByOrderId: Record<string, any> = {};
-          for (const p of paymentsList) {
-            if (p.order_id) {
-              paymentByOrderId[p.order_id] = p;
-            }
-          }
-
-          // 3. Auto-sync missing orders into payments ledger if needed
-          for (const ord of ordersList) {
-            if (!paymentByOrderId[ord.order_id]) {
-              const pId = crypto.randomUUID();
-              const transRef = `MPESA-STK-${ord.order_id.slice(0, 6).toUpperCase()}`;
-              const amountStr = String(ord.total || "0.00");
-              const payStatus = ord.payment_status === "completed" || ord.payment_status === "paid" ? "paid" : "pending";
-
-              await sql`
-                INSERT INTO payments (id, order_id, amount, status, provider, provider_ref, raw_payload, created_at)
-                VALUES (
-                  ${pId},
-                  ${ord.order_id},
-                  ${amountStr},
-                  ${payStatus},
-                  ${ord.payment_method || "M-Pesa Express"},
-                  ${transRef},
-                  ${JSON.stringify({ phone: ord.phone_number || "+254700000000", channel: "website_checkout" })},
-                  ${ord.order_created_at || new Date()}
-                )
-                ON CONFLICT (id) DO NOTHING
-              `.catch(() => {});
-
-              paymentByOrderId[ord.order_id] = {
-                payment_id: pId,
-                order_id: ord.order_id,
-                amount: amountStr,
-                payment_status: payStatus,
-                provider: ord.payment_method || "M-Pesa Express",
-                provider_ref: transRef,
-                raw_payload: { phone: ord.phone_number || "+254700000000" },
-                payment_created_at: ord.order_created_at,
-              };
-            }
-          }
-
-          // Re-query payments after sync
+          // 2. Fetch payments records directly
           const finalPayments = await sql`
             SELECT 
               p.id as payment_id,
