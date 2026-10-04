@@ -1497,7 +1497,7 @@ function ServicesPage() {
                                   categoryTitle: category.title,
                                 })
                               }
-                              className="py-3.5 px-6 bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-extrabold text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm flex-1 min-w-[130px]"
+                              className="py-3.5 px-6 bg-[#0F291E] hover:bg-[#1a4231] text-white font-extrabold text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm flex-1 min-w-[130px]"
                             >
                               <span>{category.action1Text}</span>
                               <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
@@ -1695,7 +1695,7 @@ function ServicesPage() {
                                         categoryTitle: category.title,
                                       })
                                     }
-                                    className="flex-1 min-w-[120px] py-2.5 px-4 bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-extrabold text-xs sm:text-sm transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-xs"
+                                    className="flex-1 min-w-[120px] py-2.5 px-4 bg-[#0F291E] hover:bg-[#1a4231] text-white font-extrabold text-xs sm:text-sm transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-xs"
                                   >
                                     <span>{sub.action1Text}</span>
                                     <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -1805,7 +1805,7 @@ function ServicesPage() {
                     <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2.5">
                       <button
                         onClick={() => handleActionButton(tool.action1Text, { serviceName: tool.name })}
-                        className="flex-1 min-w-[120px] py-2.5 px-4 rounded-none bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-sm"
+                        className="flex-1 min-w-[120px] py-2.5 px-4 rounded-none bg-[#0F291E] hover:bg-[#1a4231] text-white font-extrabold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-sm border border-white/20"
                       >
                         <span>{tool.action1Text}</span>
                         <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -1918,7 +1918,7 @@ function ServicesPage() {
                                 categoryTitle: selectedCategory.title,
                               });
                             }}
-                            className="flex-1 min-w-[120px] py-2.5 px-3.5 rounded-none bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                            className="flex-1 min-w-[120px] py-2.5 px-3.5 rounded-none bg-[#0F291E] hover:bg-[#1a4231] text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-98"
                           >
                             <span>{sub.action1Text}</span>
                             <ArrowUpRight className="h-3.5 w-3.5" />
