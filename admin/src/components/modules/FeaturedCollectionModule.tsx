@@ -2,6 +2,52 @@ import React, { useState, useEffect, useRef } from "react";
 import { Star, ArrowUp, ArrowDown, Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Upload, Check, AlertCircle, Pencil, X } from "lucide-react";
 import { adminFetch } from "../../lib/api";
 
+const MAIN_SITE_CDN = "https://www.mqulima.com";
+
+function resolveAdminImageUrl(url: string | null | undefined): string {
+  if (!url || !url.trim()) return `${MAIN_SITE_CDN}/placeholder-product.png`;
+  const clean = url.trim();
+  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("data:")) {
+    return clean;
+  }
+  if (clean.startsWith("/")) {
+    return `${MAIN_SITE_CDN}${clean}`;
+  }
+  return `${MAIN_SITE_CDN}/${clean}`;
+}
+
+const FeaturedThumbnail: React.FC<{ src?: string; alt?: string; className?: string }> = ({
+  src,
+  alt = "Featured Item",
+  className = "h-full w-full object-cover",
+}) => {
+  const [hasError, setHasError] = useState(false);
+  const resolvedUrl = resolveAdminImageUrl(src);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  if (hasError || !src) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#E8F4F1] text-[#278C7B]">
+        <ImageIcon className="h-5 w-5 stroke-[1.5]" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={resolvedUrl}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 export const FeaturedCollectionModule: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -447,8 +493,8 @@ export const FeaturedCollectionModule: React.FC = () => {
           {/* Live Preview Box */}
           {imagePreview && (
             <div className="p-3 bg-[#FAFBF9] border border-[#CCE5E1] rounded-[6px] flex items-center gap-4">
-              <div className="h-16 w-16 shrink-0 bg-slate-200 border border-slate-300 rounded-[2px] overflow-hidden">
-                <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+              <div className="h-16 w-16 shrink-0 bg-white border border-slate-300 rounded-[2px] overflow-hidden flex items-center justify-center">
+                <FeaturedThumbnail src={imagePreview} alt="Preview" />
               </div>
               <div className="text-xs text-[#0F3D3C]">
                 <span className="font-bold block">Preview Selected Image</span>
@@ -496,16 +542,8 @@ export const FeaturedCollectionModule: React.FC = () => {
                   </span>
 
                   {/* Thumbnail */}
-                  <div className="h-12 w-12 shrink-0 bg-white border border-[#CCE5E1] overflow-hidden rounded-[2px]">
-                    <img
-                      src={item.imageUrl || "/placeholder-product.png"}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/placeholder-product.png";
-                      }}
-                    />
+                  <div className="h-12 w-12 shrink-0 bg-white border border-[#CCE5E1] overflow-hidden rounded-[2px] flex items-center justify-center">
+                    <FeaturedThumbnail src={item.imageUrl} alt={item.title} />
                   </div>
 
                   <div className="min-w-0">
@@ -670,16 +708,8 @@ export const FeaturedCollectionModule: React.FC = () => {
               {/* Live Preview Box */}
               {editImagePreview && (
                 <div className="p-3 bg-[#FAFBF9] border border-[#CCE5E1] rounded-[6px] flex items-center gap-4">
-                  <div className="h-16 w-16 shrink-0 bg-slate-200 border border-slate-300 rounded-[2px] overflow-hidden">
-                    <img
-                      src={editImagePreview}
-                      alt="Preview"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/placeholder-product.png";
-                      }}
-                    />
+                  <div className="h-16 w-16 shrink-0 bg-white border border-slate-300 rounded-[2px] overflow-hidden flex items-center justify-center">
+                    <FeaturedThumbnail src={editImagePreview} alt="Preview" />
                   </div>
                   <div className="text-xs text-[#0F3D3C] min-w-0">
                     <span className="font-bold block">Current Image Preview</span>
