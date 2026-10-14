@@ -23,8 +23,20 @@ import { sanitizeHtml } from "@/lib/sanitization";
 
 export const Route = createFileRoute("/blog")({
   loader: async () => {
+    const withSafeTimeout = async <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
+      let timer: any;
+      const timeout = new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      });
+      return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+    };
+
     try {
-      const posts = await getPublishedBlogPosts();
+      const posts = await withSafeTimeout(
+        getPublishedBlogPosts().catch(() => []),
+        4500,
+        []
+      );
       return { posts: posts || [] };
     } catch (e) {
       console.error("Failed to load blog posts in loader:", e);
