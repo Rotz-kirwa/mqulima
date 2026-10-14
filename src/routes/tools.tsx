@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { trackEvent } from "@/lib/events";
 import {
   CloudSun,
   TrendingUp,
@@ -70,6 +71,21 @@ function ToolsPage() {
 
   const countyList = Object.keys(KENYA_COUNTIES) as CountyName[];
   const currentCounty = location.type === "county" ? location.county : "Nairobi";
+
+  const lastTrackedTabRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = `${activeTab}_${currentCounty}`;
+    if (lastTrackedTabRef.current !== key) {
+      lastTrackedTabRef.current = key;
+      if (activeTab === "weather") {
+        trackEvent("weather_forecast_viewed", { county: currentCounty });
+      } else if (activeTab === "markets") {
+        trackEvent("market_price_viewed", { commodity_category: "wholesale_kamis" });
+      } else if (activeTab === "doctor") {
+        trackEvent("ai_assistant_used", { feature_name: "crop_doctor" });
+      }
+    }
+  }, [activeTab, currentCounty]);
 
   return (
     <AppLayout>

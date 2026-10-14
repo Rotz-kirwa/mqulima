@@ -13,6 +13,7 @@ import { type ShopProduct } from "@/lib/shop-data";
 import { searchProducts } from "@/lib/api/products.server";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/lib/toast";
+import { trackEvent } from "@/lib/events";
 
 import {
   getUserNotifications,
@@ -201,6 +202,12 @@ export function Navbar() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchQuery.trim()) {
+      trackEvent("site_search", {
+        search_term: searchQuery.trim(),
+        search_type: "general",
+      });
+    }
     setShowSuggestions(false);
     setSearchModalOpen(false);
     navigate({
@@ -312,6 +319,13 @@ export function Navbar() {
                   key={n.to}
                   to={n.to}
                   preload="intent"
+                  onClick={() => {
+                    trackEvent("navigation_clicked", {
+                      link_name: n.label,
+                      destination_url: n.to,
+                      menu_location: "topbar",
+                    });
+                  }}
                   className="relative px-4 py-2 text-xs font-extrabold tracking-wide uppercase transition-colors duration-200 rounded-full whitespace-nowrap cursor-pointer outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#85CC14] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B2117]"
                 >
                   {/* Floating active pill highlight */}
@@ -385,7 +399,7 @@ export function Navbar() {
                 className="relative grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full bg-[#0B2117]/[0.04] dark:bg-white/10 hover:bg-[#0B2117]/10 dark:hover:bg-white/20 text-[#0B2117] dark:text-white transition-all duration-200 cursor-pointer border border-[#0B2117]/10 dark:border-white/10"
               >
                 <Bell className="h-4 w-4 text-[#0B2117] dark:text-white" />
-                {unreadNotifCount > 0 && (
+                {mounted && unreadNotifCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#F57016] ring-2 ring-white dark:ring-[#0B2117] animate-pulse" />
                 )}
               </motion.button>
@@ -522,11 +536,17 @@ export function Navbar() {
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-gray-200 dark:border-white/15 bg-white dark:bg-white/10 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer"
               >
-                <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-[#85CC14]/50">
-                  {user ? user.name.charAt(0).toUpperCase() : <User className="h-3.5 w-3.5" />}
+                <div
+                  className="h-7 w-7 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-[#85CC14]/50"
+                  suppressHydrationWarning
+                >
+                  {mounted && user ? user.name.charAt(0).toUpperCase() : <User className="h-3.5 w-3.5" />}
                 </div>
-                <span className="text-xs font-bold text-[#0B2117] dark:text-white max-w-[100px] truncate">
-                  {user ? user.name.split(" ")[0] : "Account"}
+                <span
+                  className="text-xs font-bold text-[#0B2117] dark:text-white max-w-[100px] truncate"
+                  suppressHydrationWarning
+                >
+                  {mounted && user ? user.name.split(" ")[0] : "Account"}
                 </span>
                 <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
               </motion.button>
@@ -921,7 +941,14 @@ export function Navbar() {
                         key={n.to}
                         to={n.to}
                         preload="intent"
-                        onClick={() => setOpen(false)}
+                        onClick={() => {
+                          trackEvent("navigation_clicked", {
+                            link_name: n.label,
+                            destination_url: n.to,
+                            menu_location: "mobile_menu",
+                          });
+                          setOpen(false);
+                        }}
                         className={`flex items-center gap-3.5 rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-200 whitespace-nowrap outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#85CC14] ${
                           active
                             ? "bg-[#16382B] text-[#85CC14] border-l-4 border-[#85CC14] shadow-md"

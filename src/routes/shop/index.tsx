@@ -34,6 +34,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { submitStockSourcingRequest } from "@/lib/api/contact-partnership.server";
 import { ProductQuickViewModal } from "@/components/shop/ProductQuickViewModal";
 import { ShopSkeleton } from "@/components/mqulima/RouteSkeletons";
+import { trackEvent } from "@/lib/events";
 
 
 type ShopSearch = {
@@ -61,13 +62,25 @@ export const Route = createFileRoute("/shop/")({
     };
   },
   loader: async () => {
-    try {
-      const data = await getShopProducts({
-        data: {
-          page: 1,
-          limit: 1000,
-        },
+    const withSafeTimeout = async <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
+      let timer: any;
+      const timeout = new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
       });
+      return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+    };
+
+    try {
+      const data = await withSafeTimeout(
+        getShopProducts({
+          data: {
+            page: 1,
+            limit: 1000,
+          },
+        }),
+        4500,
+        { products: [], total: 0, page: 1, totalPages: 1 }
+      );
       return data;
     } catch (e) {
       console.error("Failed to load products in shop loader:", e);
@@ -86,8 +99,8 @@ export const Route = createFileRoute("/shop/")({
         property: "og:description",
         content: "Buy certified seeds, fertilizers, crop protection chemicals, and farm tools directly from verified agrodealers across Kenya with secure M-Pesa escrow.",
       },
-      { property: "og:url", content: "https://www.mqulima.com/shop" },
-      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:url", content: "https://mqulima.com/shop" },
+      { property: "og:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "AgroShop — Certified Farm Inputs, Seeds & Equipment | Mqulima" },
@@ -95,10 +108,10 @@ export const Route = createFileRoute("/shop/")({
         name: "twitter:description",
         content: "Buy certified seeds, fertilizers, crop protection chemicals, and farm tools directly from verified agrodealers across Kenya with secure M-Pesa escrow.",
       },
-      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { name: "twitter:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
     ],
     links: [
-      { rel: "canonical", href: "https://www.mqulima.com/shop" },
+      { rel: "canonical", href: "https://mqulima.com/shop" },
     ],
   }),
   component: ShopPage,
@@ -145,6 +158,35 @@ function ShopPage() {
 
   // Wishlist state
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+
+  // Analytics tracking for marketplace and category exploration
+  useEffect(() => {
+    trackEvent("marketplace_opened");
+  }, []);
+
+  const prevCategoryRef = useRef<string>("All");
+  useEffect(() => {
+    if (selectedCategory !== prevCategoryRef.current) {
+      prevCategoryRef.current = selectedCategory;
+      if (selectedCategory !== "All") {
+        trackEvent("product_category_selected", {
+          category: selectedCategory,
+        });
+      }
+    }
+  }, [selectedCategory]);
+
+  const lastSearchQueryRef = useRef<string>("");
+  useEffect(() => {
+    const q = (searchParams.q || "").trim();
+    if (q && q !== lastSearchQueryRef.current) {
+      lastSearchQueryRef.current = q;
+      trackEvent("product_search_performed", {
+        search_term: q,
+        search_type: "products",
+      });
+    }
+  }, [searchParams.q]);
 
   // Recently Viewed & Recommendations states
   const [recentlyViewed, setRecentlyViewed] = useState<ShopProduct[]>([]);
@@ -201,14 +243,14 @@ function ShopPage() {
   });
 
   const rawProductsList = useMemo(() => {
+    let list: any[] = [];
     if (allProductsData?.products && allProductsData.products.length > 0) {
-      return allProductsData.products;
+      list = allProductsData.products;
+    } else if (initialData?.products && initialData.products.length > 0) {
+      list = initialData.products;
     }
-    if (initialData?.products && initialData.products.length > 0) {
-      return initialData.products;
-    }
-    // Never fall back to static shopProducts - return empty to avoid showing mock data
-    return [];
+    // Only allow products that are fetched by WooCommerce / POS API (externalProductId is present)
+    return list.filter((p: any) => p && p.externalProductId != null && String(p.externalProductId).trim() !== "");
   }, [allProductsData, initialData]);
 
 
@@ -1068,7 +1110,7 @@ function ShopPage() {
                               } else if (cat.includes("seed")) {
                                 e.currentTarget.src = '/images/placeholders/seeds.webp';
                               } else if (cat.includes("equipment") || cat.includes("tools")) {
-                                e.currentTarget.src = '/images/placeholders/equipment.webp';
+                                e.currentTarget.src = '/images/placeholders/farm_tools.webp';
                               } else {
                                 e.currentTarget.src = '/images/placeholders/agrochemical.webp';
                               }

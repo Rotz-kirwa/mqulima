@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/admin/quotations")({
                 VALUES (
                   ${newOrderId},
                   ${targetQ.customerId || null},
-                  ${JSON.stringify(targetQ.items || [])}::jsonb,
+                  ${JSON.stringify(targetQ.itemsJson || [])}::jsonb,
                   ${targetQ.totalAmountKsh},
                   ${targetQ.totalAmountKsh},
                   'confirmed',

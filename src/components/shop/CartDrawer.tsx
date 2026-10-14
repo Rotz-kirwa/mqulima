@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/hooks/useAuth";
+import { trackEvent } from "@/lib/events";
 import {
   ALL_KENYA_COUNTIES,
   getMajorTownsForCounty
@@ -279,6 +280,13 @@ export function CartDrawer() {
         if (res.success && res.paid) {
           setAirtelPaid(true);
           clearInterval(interval);
+          trackEvent("purchase_completed", {
+            order_id: airtelPromptData.reference,
+            transaction_id: airtelPromptData.reference,
+            value: grandTotal,
+            currency: "KES",
+            payment_method: "airtel",
+          });
           toast.success("Airtel Money payment confirmed!");
           setTimeout(() => {
             setShowAirtelModal(false);
@@ -303,6 +311,13 @@ export function CartDrawer() {
       });
       if (res.success && res.paid) {
         setAirtelPaid(true);
+        trackEvent("purchase_completed", {
+          order_id: airtelPromptData.reference,
+          transaction_id: airtelPromptData.reference,
+          value: grandTotal,
+          currency: "KES",
+          payment_method: "airtel",
+        });
         toast.success("Payment confirmed!");
         setTimeout(() => {
           setShowAirtelModal(false);
@@ -414,6 +429,13 @@ export function CartDrawer() {
 
     if (!validateForm()) return;
 
+    trackEvent("checkout_started", {
+      value: grandTotal,
+      currency: "KES",
+      items_count: cartItems.length,
+      payment_method: paymentMethod,
+    });
+
     setIsSubmitting(true);
 
     try {
@@ -490,6 +512,12 @@ export function CartDrawer() {
             provider: "atl"
           }
         });
+
+        if (!chargeRes.success) {
+          setIsSubmitting(false);
+          toast.error((chargeRes as any).error || "Failed to initiate Airtel Money charge. Please try again.");
+          return;
+        }
 
         setAirtelPromptData({
           orderId: res.orderId,

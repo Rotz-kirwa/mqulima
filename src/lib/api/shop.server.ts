@@ -61,7 +61,7 @@ function getCategoryPlaceholder(p: any): string {
     nameLower.includes("pipe") || nameLower.includes("trigger") ||
     nameLower.includes("panga") || nameLower.includes("hand spray")
   ) {
-    return "/images/placeholders/equipment.webp";
+    return "/images/placeholders/farm_tools.webp";
   }
 
   // Crop Protection (Agrochemicals) — default for most POS products
@@ -174,7 +174,7 @@ export const getShopFields = createServerFn({ method: "GET" })
         COUNT(DISTINCT p.id)::int as product_count
       FROM shop_fields sf
       LEFT JOIN products p ON p.field_id = sf.id 
-        AND p.status = ${active} AND p.deleted_at IS NULL
+        AND p.status = ${active} AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL
       GROUP BY sf.id
       ORDER BY sf.sort_order
     `;
@@ -199,7 +199,7 @@ export const getCategoriesByField = createServerFn({ method: "GET" })
         COUNT(DISTINCT p.id)::int as product_count
       FROM shop_categories sc
       LEFT JOIN products p ON p.category_id = sc.id 
-        AND p.status = ${active} AND p.deleted_at IS NULL
+        AND p.status = ${active} AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL
       WHERE sc.field_id = ${fieldId}
       GROUP BY sc.id
       ORDER BY sc.sort_order
@@ -224,7 +224,7 @@ export const getSubcategoriesByCategory = createServerFn({ method: "GET" })
         COUNT(DISTINCT p.id)::int as product_count
       FROM shop_subcategories ss
       LEFT JOIN products p ON p.subcategory_id = ss.id 
-        AND p.status = ${active} AND p.deleted_at IS NULL
+        AND p.status = ${active} AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL
       WHERE ss.category_id = ${categoryId}
       GROUP BY ss.id
       ORDER BY ss.sort_order
@@ -305,7 +305,7 @@ async function loadProductsUncached(data: z.infer<typeof ProductsInputSchema>) {
     const offset = (page - 1) * limit;
     const active = "active";
 
-    let whereClause = sql`p.status = ${active} AND p.deleted_at IS NULL`;
+    let whereClause = sql`p.status = ${active} AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL`;
 
     if (fieldId) {
       whereClause = sql`${whereClause} AND p.field_id = ${fieldId}`;

@@ -186,7 +186,7 @@ async function computeAnalytics() {
     sqlClient`
       SELECT COUNT(*)::int AS count 
       FROM products 
-      WHERE deleted_at IS NULL
+      WHERE deleted_at IS NULL AND external_product_id IS NOT NULL
     `,
 
     // 5. Pending service requests count

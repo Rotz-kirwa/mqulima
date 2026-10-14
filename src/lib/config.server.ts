@@ -32,6 +32,14 @@ const ServerEnvSchema = z.object({
   PAYSTACK_PUBLIC_KEY: z.string().optional().or(z.literal("")),
   PAYSTACK_CALLBACK_URL: z.string().optional().or(z.literal("")),
   PAYSTACK_WEBHOOK_URL: z.string().optional().or(z.literal("")),
+  GA4_PROPERTY_ID: z.string().optional().or(z.literal("")),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional().or(z.literal("")),
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().optional().or(z.literal("")),
+  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: z.string().optional().or(z.literal("")),
+  GOOGLE_SERVICE_ACCOUNT_KEY_BASE64: z.string().optional().or(z.literal("")),
+  SMTP_USER: z.string().optional().or(z.literal("")),
+  SMTP_PASSWORD: z.string().optional().or(z.literal("")),
+  SMTP_MOCK: z.union([z.boolean(), z.string().transform((v) => v === "true")]).optional(),
 });
 
 export type ServerEnv = z.infer<typeof ServerEnvSchema>;
@@ -78,6 +86,11 @@ export function getServerConfig(): ServerEnv {
     PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || Buffer.from("cGtfbGl2ZV82MDlkZGU4ZWZiNTI4Njg3OWVhNDdmNDJkOGZmZWM3NDlkNmU3NTBl", "base64").toString("utf-8"),
     PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || "https://mqulima.com/payments/paystack/callback",
     PAYSTACK_WEBHOOK_URL: process.env.PAYSTACK_WEBHOOK_URL || "https://mqulima.com/api/payments/paystack/webhook",
+    GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID || "",
+    GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
+    GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "",
+    GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "",
+    GOOGLE_SERVICE_ACCOUNT_KEY_BASE64: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64 || "",
   };
 
   const result = ServerEnvSchema.safeParse(rawEnv);

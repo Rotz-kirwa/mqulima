@@ -187,6 +187,8 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
               : (categoryName || "Verified Input");
             const unit = item.unit || "Unit";
 
+            const extId = String(item.pos_id || item.id || item.sku || "").trim();
+
             return {
               name,
               rawSlug,
@@ -198,6 +200,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
               brand,
               unit,
               categoryName,
+              externalProductId: extId || null,
             };
           });
 
@@ -215,9 +218,9 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
 
           const existingBySlug = new Map<string, { id: string; slug: string }>();
           const existingByName = new Map<string, { id: string; slug: string }>();
-          for (const row of existingRows) {
-            if (row.slug) existingBySlug.set(row.slug, row);
-            if (row.lower_name) existingByName.set(row.lower_name, row);
+          for (const row of existingRows as any[]) {
+            if (row.slug) existingBySlug.set(row.slug, { id: row.id, slug: row.slug });
+            if (row.lower_name) existingByName.set(row.lower_name, { id: row.id, slug: row.slug });
           }
 
           // Build batch rows with deduplication
@@ -259,6 +262,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
               shop_type: "Agrovet",
               subcategory: item.categoryName,
               is_featured: false,
+              external_product_id: item.externalProductId || id,
               created_at: new Date(),
               updated_at: new Date(),
             });
@@ -274,8 +278,8 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
 
           // Single atomic batch upsert with WHERE IS DISTINCT FROM
           if (batchRows.length > 0) {
-            await sql`
-              INSERT INTO products ${sql(
+            await (sql as any)`
+              INSERT INTO products ${(sql as any)(
                 batchRows,
                 "id",
                 "name",
@@ -292,6 +296,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
                 "shop_type",
                 "subcategory",
                 "is_featured",
+                "external_product_id",
                 "created_at",
                 "updated_at"
               )}
@@ -303,6 +308,7 @@ export const Route = createFileRoute("/api/shop/pos-sync")({
                 image_urls = EXCLUDED.image_urls,
                 brand = EXCLUDED.brand,
                 unit = EXCLUDED.unit,
+                external_product_id = COALESCE(EXCLUDED.external_product_id, products.external_product_id),
                 updated_at = NOW()
               WHERE products.base_price IS DISTINCT FROM EXCLUDED.base_price
                  OR products.stock_qty IS DISTINCT FROM EXCLUDED.stock_qty

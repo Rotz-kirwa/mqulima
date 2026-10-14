@@ -104,6 +104,34 @@ export default {
       });
     }
 
+    if (url.pathname === "/robots.txt") {
+      const robotsContent = `User-agent: *
+Allow: /
+
+# Administrative & Console Routes
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+
+# Authentication & Sensitive Transaction Routes
+Disallow: /auth/
+Disallow: /login
+Disallow: /payments/
+
+# Canonical XML Sitemap
+Sitemap: https://mqulima.com/sitemap.xml
+`;
+      return new Response(robotsContent, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400, s-maxage=86400",
+        },
+      });
+    }
+
     if (url.pathname === "/sitemap.xml") {
       try {
         const { generateSitemapXml } = await import("./lib/sitemap.server");
@@ -117,11 +145,21 @@ export default {
         });
       } catch (err) {
         console.error("[SERVER] Error generating sitemap.xml:", err);
-        return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://www.mqulima.com/</loc></urlset>", {
+        const { getFallbackSitemapXml } = await import("./lib/sitemap.server");
+        return new Response(getFallbackSitemapXml(), {
           status: 200,
-          headers: { "Content-Type": "application/xml; charset=utf-8" },
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            "Cache-Control": "public, max-age=300",
+          },
         });
       }
+    }
+
+    if (url.pathname === "/admin" || (url.pathname.startsWith("/admin/") && !url.pathname.startsWith("/api/"))) {
+      const adminBase = process.env.ADMIN_URL || (import.meta.env.DEV ? "http://localhost:8081" : "https://www.mqulimaadmin.org");
+      const subPath = url.pathname.replace(/^\/admin/, "") || "/";
+      return Response.redirect(`${adminBase}${subPath}${url.search}`, 302);
     }
 
     const origin = request.headers.get("origin") || "";

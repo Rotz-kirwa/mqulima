@@ -2,17 +2,10 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AuthContext } from "./auth-context";
 import { type User } from "./auth-types";
 import { loginUser, logoutUser, getCurrentUser, registerUser } from "./auth-server";
+import { trackEvent } from "./events";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("mqulima_user_account");
-        if (cached) return JSON.parse(cached);
-      } catch (e) {}
-    }
-    return null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check current session and initialize CSRF token on mount
@@ -145,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Logout server error:", error);
     } finally {
+      trackEvent("logout_completed");
       setUser(null);
       if (typeof window !== "undefined") {
         localStorage.removeItem("mqulima_user_account");

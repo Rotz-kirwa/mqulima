@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/lib/toast";
 import { type ShopProduct } from "./shop-data";
+import { trackEvent } from "./events";
 
 export type CartItem = {
   product: ShopProduct;
@@ -92,6 +93,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
       return [...prev, { product: cartProduct, quantity }];
+    });
+    trackEvent("add_to_cart", {
+      product_id: cartProduct.id,
+      product_name: cartProduct.name,
+      category: cartProduct.category || "General Agriculture",
+      value: cartProduct.price * quantity,
+      currency: "KES",
     });
     toast.success(`Added ${cartProduct.name} to cart!`);
   };

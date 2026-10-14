@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, defer, Await, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, defer, Await } from "@tanstack/react-router";
 import React, { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { 
   MessageSquare, 
@@ -70,6 +70,7 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/lib/toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { trackEvent } from "@/lib/events";
 
 const LazyPostComposerModal = React.lazy(() => import("@/features/community/components/LazyPostComposerModal"));
 const LazyPostCommentThread = React.lazy(() => import("@/features/community/components/LazyPostCommentThread"));
@@ -99,6 +100,12 @@ import { getCsrfTokenFromCookie } from "@/lib/csrf-client";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { CommunitySkeleton } from "@/components/mqulima/RouteSkeletons";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
+import { 
+  DEFAULT_SHOWCASE_POSTS, 
+  DEFAULT_SOKO_LISTINGS, 
+  DEFAULT_PULSE_POSTS, 
+  DEFAULT_SUGGESTED_FARMERS 
+} from "@/features/community/data/community-defaults";
 import "@/styles/community-forum.css";
 
 export const Route = createFileRoute("/community")({
@@ -110,20 +117,20 @@ export const Route = createFileRoute("/community")({
       const snapshot = await getForumSnapshot();
       return {
         snapshot: snapshot || {
-          showPosts: [],
-          sokoListings: [],
-          pulsePosts: [],
-          suggestedFarmers: [],
+          showPosts: DEFAULT_SHOWCASE_POSTS,
+          sokoListings: DEFAULT_SOKO_LISTINGS,
+          pulsePosts: DEFAULT_PULSE_POSTS,
+          suggestedFarmers: DEFAULT_SUGGESTED_FARMERS,
         },
       };
     } catch (e) {
       console.error("Failed to load forum snapshot in loader:", e);
       return {
         snapshot: {
-          showPosts: [],
-          sokoListings: [],
-          pulsePosts: [],
-          suggestedFarmers: [],
+          showPosts: DEFAULT_SHOWCASE_POSTS,
+          sokoListings: DEFAULT_SOKO_LISTINGS,
+          pulsePosts: DEFAULT_PULSE_POSTS,
+          suggestedFarmers: DEFAULT_SUGGESTED_FARMERS,
         },
       };
     }
@@ -140,8 +147,8 @@ export const Route = createFileRoute("/community")({
         property: "og:description",
         content: "Connect with certified Kenyan agronomists, veterinary doctors, and progressive growers on Mqulima Forum. Peer knowledge, live commodity market discussions, and farm management advice.",
       },
-      { property: "og:url", content: "https://www.mqulima.com/community" },
-      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:url", content: "https://mqulima.com/community" },
+      { property: "og:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Forum — Farmer Community & Peer Intelligence | Mqulima" },
@@ -149,10 +156,10 @@ export const Route = createFileRoute("/community")({
         name: "twitter:description",
         content: "Connect with certified Kenyan agronomists, veterinary doctors, and progressive growers on Mqulima Forum. Peer knowledge, live commodity market discussions, and farm management advice.",
       },
-      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { name: "twitter:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
     ],
     links: [
-      { rel: "canonical", href: "https://www.mqulima.com/community" },
+      { rel: "canonical", href: "https://mqulima.com/community" },
       { rel: "preconnect", href: "https://api.dicebear.com" },
     ],
   }),
@@ -161,10 +168,15 @@ export const Route = createFileRoute("/community")({
 
 function CommunityRoute() {
   const { snapshot } = Route.useLoaderData();
-  const isPendingNavigation = useRouterState({ select: (s) => s.status === "pending" });
+
+  useEffect(() => {
+    trackEvent("community_post_viewed", {
+      community_section: "main_forum_feed",
+    });
+  }, []);
 
   return (
-    <ForumSubdomainPage initialSnapshot={snapshot} isPendingNavigation={isPendingNavigation} />
+    <ForumSubdomainPage initialSnapshot={snapshot} />
   );
 }
 
@@ -272,10 +284,10 @@ const defaultGuestFarmer: FarmerProfile = {
   coverImage: ""
 };
 
-const initialFarmers: FarmerProfile[] = [];
-const initialCommunityPosts: CommunityPost[] = [];
-const initialSokoListings: SokoListing[] = [];
-const initialPulsePosts: PulsePost[] = [];
+const initialFarmers: FarmerProfile[] = DEFAULT_SUGGESTED_FARMERS as FarmerProfile[];
+const initialCommunityPosts: CommunityPost[] = DEFAULT_SHOWCASE_POSTS as CommunityPost[];
+const initialSokoListings: SokoListing[] = DEFAULT_SOKO_LISTINGS as SokoListing[];
+const initialPulsePosts: PulsePost[] = DEFAULT_PULSE_POSTS as PulsePost[];
 
 function mapSnapshotToPosts(showPosts: any[]): CommunityPost[] {
   if (!showPosts || !Array.isArray(showPosts) || showPosts.length === 0) return [];
@@ -356,7 +368,7 @@ function isPostByFarmer(post: CommunityPost, farmer?: FarmerProfile | null): boo
   return false;
 }
 
-function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialSnapshot?: any; isPendingNavigation?: boolean }) {
+function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [subpage, setSubpageState] = useState<"posts" | "soko" | "consult" | "konnekt" | "saved" | "profile" | "network">("posts");
@@ -474,63 +486,67 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
     }
   };
 
-  // Persistent client cache helper for instant zero-latency loads on repeat visits
-  const effectiveSnapshot = useMemo(() => {
-    if (initialSnapshot?.showPosts && initialSnapshot.showPosts.length > 0) {
-      return initialSnapshot;
-    }
-    if (typeof window !== "undefined") {
+  // Database States initialized immediately from loader snapshot for exact SSR hydration match
+  const [farmers, setFarmers] = useState<FarmerProfile[]>(() => 
+    (initialSnapshot?.suggestedFarmers?.length ? initialSnapshot.suggestedFarmers : initialFarmers) as FarmerProfile[]
+  );
+  const [posts, setPosts] = useState<CommunityPost[]>(() => 
+    initialSnapshot?.showPosts?.length ? mapSnapshotToPosts(initialSnapshot.showPosts) : initialCommunityPosts
+  );
+  const [sokoListings, setSokoListings] = useState<SokoListing[]>(() => 
+    initialSnapshot?.sokoListings?.length ? mapSnapshotToSoko(initialSnapshot.sokoListings) : initialSokoListings
+  );
+  const [pulsePosts, setPulsePosts] = useState<PulsePost[]>(() => 
+    (initialSnapshot?.pulsePosts?.length ? initialSnapshot.pulsePosts : initialPulsePosts) as PulsePost[]
+  );
+  const [communityDataSource, setCommunityDataSource] = useState<"loading" | "database" | "curated">("database");
+
+  const [realNewsPosts, setRealNewsPosts] = useState<any[]>([]);
+
+  // Client-side cache persistence and hydration sync (runs only on client after hydration)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (initialSnapshot?.showPosts?.length) {
+      // Save fresh server snapshot to localStorage
+      try {
+        localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(initialSnapshot));
+      } catch {}
+    } else {
+      // If server returned empty, safely restore from client cache after mount
       try {
         const raw = localStorage.getItem("mqulima_community_cached_snapshot");
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.showPosts) && parsed.showPosts.length > 0) {
-            return parsed;
+            setPosts(mapSnapshotToPosts(parsed.showPosts));
+            if (parsed.sokoListings?.length) setSokoListings(mapSnapshotToSoko(parsed.sokoListings));
+            if (parsed.pulsePosts?.length) setPulsePosts(parsed.pulsePosts as PulsePost[]);
+            if (parsed.suggestedFarmers?.length) setFarmers(parsed.suggestedFarmers as FarmerProfile[]);
+            setCommunityDataSource("database");
           }
         }
       } catch {}
     }
-    return initialSnapshot;
   }, [initialSnapshot]);
-
-  // Save snapshot to local storage on receive
-  useEffect(() => {
-    if (typeof window !== "undefined" && initialSnapshot?.showPosts?.length) {
-      try {
-        localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(initialSnapshot));
-      } catch {}
-    }
-  }, [initialSnapshot]);
-
-  // Database States initialized immediately from loader snapshot or persistent client cache
-  const [farmers, setFarmers] = useState<FarmerProfile[]>(() => (effectiveSnapshot?.suggestedFarmers || []) as FarmerProfile[]);
-  const [posts, setPosts] = useState<CommunityPost[]>(() => mapSnapshotToPosts(effectiveSnapshot?.showPosts || []));
-  const [sokoListings, setSokoListings] = useState<SokoListing[]>(() => mapSnapshotToSoko(effectiveSnapshot?.sokoListings || []));
-  const [pulsePosts, setPulsePosts] = useState<PulsePost[]>(() => (effectiveSnapshot?.pulsePosts || []) as PulsePost[]);
-  const [communityDataSource, setCommunityDataSource] = useState<"loading" | "database" | "curated">(
-    effectiveSnapshot?.showPosts?.length ? "database" : "loading"
-  );
-  const [realNewsPosts, setRealNewsPosts] = useState<any[]>([]);
 
   // Active viewing profile username & tab navigation states
   const [selectedProfileUsername, setSelectedProfileUsername] = useState<string | null>(null);
   const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "about" | "farm" | "products" | "media">("posts");
   
-  // Social Follow state tracking with validation against live farmers
-  const [followedUsernames, setFollowedUsernames] = useState<string[]>(() => {
+  // Social Follow state tracking loaded safely after mount
+  const [followedUsernames, setFollowedUsernames] = useState<string[]>([]);
+  useEffect(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("mqulima_followed_users");
-        // Clear old testing fallback strings if present
-        if (!stored) return [];
-        const parsed = JSON.parse(stored);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) setFollowedUsernames(parsed);
+        }
+      } catch {}
     }
-    return [];
-  });
+  }, []);
 
   const validFollowedUsernames = useMemo(() => {
     return followedUsernames.filter((u) =>
@@ -873,7 +889,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
       });
 
     // Skip redundant network fetch if already seeded from loader or persistent client cache
-    if (!effectiveSnapshot?.showPosts || effectiveSnapshot.showPosts.length === 0) {
+    if (!initialSnapshot?.showPosts || initialSnapshot.showPosts.length === 0) {
       reloadForum();
     }
 
@@ -1031,7 +1047,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
   const triggerManualSync = () => {
     if (offlineQueue.length === 0) return;
     setIsSyncing(true);
-    toast.loading("Synchronizing outbox payload to Supabase Realtime channel...");
+    toast.info("Synchronizing outbox payload to Supabase Realtime channel...");
 
     setTimeout(() => {
       setChats(prevChats => {
@@ -1193,7 +1209,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
           setCurrentUser(prev => prev ? { ...prev, avatarUrl: dataUriString } : null);
           setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, avatarUrl: dataUriString } : f));
           try {
-            toast.loading("Saving avatar...");
+            toast.info("Saving avatar...");
             const res = await updateFarmerProfile({
               data: {
                 name: currentUser.name,
@@ -1226,7 +1242,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
           setCurrentUser(prev => prev ? { ...prev, coverImage: dataUriString } : null);
           setFarmers(prev => prev.map(f => f.username === currentUser.username ? { ...f, coverImage: dataUriString } : f));
           try {
-            toast.loading("Saving cover photo...");
+            toast.info("Saving cover photo...");
             const res = await updateFarmerProfile({
               data: {
                 name: currentUser.name,
@@ -1911,7 +1927,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
   const partner = activeChat?.farmer;  return (
     <AppLayout>
       <div 
-        className={`forum-page min-h-screen antialiased selection:bg-[#0B2117] selection:text-[#85CC14] relative transition-opacity duration-200 ${isPendingNavigation ? "opacity-60 pointer-events-none" : "opacity-100"}`}
+        className="forum-page min-h-screen antialiased selection:bg-[#0B2117] selection:text-[#85CC14] relative"
         style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", backgroundColor: '#FAFBF9' }}
       >
 
@@ -2391,16 +2407,12 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
                   
                   {/* High-Resolution Cover Image with Overlay */}
                   <div className="h-44 sm:h-56 relative overflow-hidden bg-gradient-to-r from-[#0B2117] via-[#16382B] to-[#0F291E]">
-                    {viewingFarmer.coverImage ? (
-                      <img 
-                        src={viewingFarmer.coverImage} 
-                        alt="cover" 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-radial from-emerald-800/40 via-transparent to-black/30" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    <img 
+                      src={viewingFarmer.coverImage || "/images/mkulima_hero_farm.webp"} 
+                      alt="cover" 
+                      className={`w-full h-full object-cover ${viewingFarmer.coverImage ? "" : "opacity-50"}`} 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     
                     {/* Top Right Quick Header Actions */}
                     <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
@@ -3267,8 +3279,8 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
                     >
                       <div className="h-32 w-full md:w-44 rounded-xl overflow-hidden bg-stone-100 border border-stone-100 shrink-0">
                         <img 
-                          src={listing.images[0]} 
-                          alt="listing" 
+                          src={listing.images?.[0] || "/images/farm_tools.webp"} 
+                          alt={listing.commodity} 
                           className="w-full h-full object-cover" 
                         />
                       </div>
@@ -3782,9 +3794,11 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
                         <div>
                           {/* Banner & Cover Image */}
                           <div className="h-28 relative bg-gradient-to-r from-[#0B2117] via-[#16382B] to-[#0F291E] p-3 flex justify-between items-start">
-                            {farmer.coverImage && (
-                              <img src={farmer.coverImage} alt="cover" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                            )}
+                            <img 
+                              src={farmer.coverImage || "/images/mkulima_hero_farm.webp"} 
+                              alt="cover" 
+                              className="absolute inset-0 w-full h-full object-cover opacity-50" 
+                            />
                             <div className="relative z-10 bg-black/40 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/20">
                               <MapPin className="h-3 w-3 text-emerald-300" />
                               <span>{farmer.county || "Kenya"}</span>
@@ -4605,102 +4619,131 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
                   )}
                 </AnimatePresence>
 
-                {/* Refined Premium Onboarding Experience for Guests */}
+                {/* Refined Premium Onboarding Experience for Guests with Hero Visual */}
                 {!currentUser && subpage === "posts" && (
-                  <div className="bg-gradient-to-b from-[#FBFDFB] via-[#F4F7F4] to-[#EAEFEA] rounded-3xl p-6 sm:p-8 text-left border border-stone-200/90 shadow-xs relative overflow-hidden space-y-6">
-                    
+                  <div className="bg-gradient-to-br from-[#0B2117] via-[#16382B] to-[#0F291E] rounded-3xl p-6 sm:p-8 text-left border border-emerald-800/80 shadow-xl relative overflow-hidden space-y-6 text-white">
+                    {/* Decorative brand gradient accent line */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#85CC14] via-[#52B788] to-[#2D6A4F]" />
+
                     {/* Subtle background glow pattern */}
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-100/40 rounded-full blur-3xl -z-0 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-100/30 rounded-full blur-3xl -z-0 pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-lime-500/10 rounded-full blur-3xl pointer-events-none" />
 
                     <div className="relative z-10 space-y-6">
                       
-                      {/* Top Header Row: Eyebrow + Community Avatar Stack */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200/70 text-[#1B4332] text-[11px] font-bold tracking-wider uppercase self-start sm:self-auto">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                          <span>Mqulima Agricultural Community</span>
+                      {/* 2-Column Hero: Headline & CTA on Left, Hero Visual Showcase on Right */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                        
+                        <div className="lg:col-span-7 space-y-3.5">
+                          {/* Eyebrow badge */}
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold tracking-wider uppercase self-start">
+                            <span className="h-2 w-2 rounded-full bg-[#85CC14] animate-pulse" />
+                            <span>Mqulima Agricultural Community</span>
+                          </div>
+
+                          {/* Editorial Headline & Description */}
+                          <h2 className="text-2xl sm:text-3xl font-serif font-extrabold text-white tracking-tight leading-snug">
+                            Where Farmers Connect, Share, and Grow Together
+                          </h2>
+                          <p className="text-xs sm:text-sm text-emerald-100/85 leading-relaxed font-normal max-w-xl">
+                            Join Kenya’s dedicated farming identity platform. Share real-time crop & harvest updates, discover verified agricultural practices, and build lasting professional connections with fellow farmers across all 47 counties.
+                          </p>
+
+                          {/* Prominent CTA Button & Micro-copy */}
+                          <div className="flex flex-wrap items-center gap-3 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!currentUser) {
+                                  navigate({ to: "/auth/sign-up", search: { redirect: "/community" } as any });
+                                } else {
+                                  setIsRegisteringProfile(true);
+                                }
+                              }}
+                              className="px-6 py-3 bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] active:scale-[0.98] rounded-full text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-[#85CC14]/30 flex items-center gap-2 cursor-pointer hover:scale-105"
+                            >
+                              <UserCheck className="h-4 w-4 text-[#0B2117]" />
+                              <span>Create Your Farmer Profile</span>
+                              <ArrowRight className="h-3.5 w-3.5 ml-1 stroke-[3]" />
+                            </button>
+
+                            <div className="flex items-center gap-1.5 text-[11px] text-emerald-200/90 font-medium">
+                              <Check className="h-3.5 w-3.5 text-[#85CC14] shrink-0" />
+                              <span>Set up in under a minute • Free forever</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Editorial Headline & Description */}
-                      <div className="space-y-2 max-w-xl">
-                        <h2 className="text-xl sm:text-2xl font-serif font-extrabold text-stone-900 tracking-tight leading-snug">
-                          Where Farmers Connect, Share, and Grow Together
-                        </h2>
-                        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-normal">
-                          Join Kenya’s dedicated farming identity platform. Share real-time crop & harvest updates, discover verified agricultural practices, and build lasting professional connections with fellow farmers.
-                        </p>
-                      </div>
-
-                      {/* Prominent CTA Button & Micro-copy */}
-                      <div className="flex flex-wrap items-center gap-3 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!currentUser) {
-                              navigate({ to: "/auth/sign-up", search: { redirect: "/community" } as any });
-                            } else {
-                              setIsRegisteringProfile(true);
-                            }
-                          }}
-                          className="px-7 py-3 bg-[#1B4332] hover:bg-[#2D6A4F] text-white active:scale-[0.98] rounded-full text-xs font-bold transition-all shadow-md shadow-[#1B4332]/20 flex items-center gap-2 cursor-pointer"
-                        >
-                          <UserCheck className="h-4 w-4 text-emerald-400" />
-                          <span>Create Your Farmer Profile</span>
-                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                        </button>
-
-                        <div className="flex items-center gap-1.5 text-[11px] text-stone-500 font-medium">
-                          <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                          <span>Set up in under a minute • Free forever</span>
+                        {/* Right Hero Image Card */}
+                        <div className="lg:col-span-5 relative">
+                          <div className="relative rounded-2xl overflow-hidden border border-emerald-700/60 shadow-2xl bg-black/40 group">
+                            <OptimizedImage
+                              src="/images/farmers_illustration.webp"
+                              alt="Kenyan farmers community"
+                              aspectRatio="16/10"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              priority
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-bold">
+                              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                                <Users className="h-3.5 w-3.5 text-[#85CC14]" />
+                                <span>5,000+ Active Farmers</span>
+                              </div>
+                              <div className="flex items-center gap-1 bg-emerald-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-300">
+                                <ShieldCheck className="h-3.5 w-3.5 text-[#85CC14]" />
+                                <span>47 Counties</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
+
                       </div>
 
                       {/* Elegant 01 -> 02 -> 03 Journey Flow */}
-                      <div className="border-t border-stone-250/70 pt-5">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
+                      <div className="border-t border-emerald-800/60 pt-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                           
-                          <div className="flex items-start gap-3">
-                            <span className="text-xs font-serif font-bold text-emerald-800 bg-emerald-100/70 rounded-lg px-2 py-1 shrink-0">
+                          <div className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition">
+                            <span className="text-xs font-serif font-black text-[#0B2117] bg-[#85CC14] rounded-lg px-2 py-1 shrink-0">
                               01
                             </span>
                             <div className="space-y-1">
-                              <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5 text-emerald-700" />
+                              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <User className="h-3.5 w-3.5 text-emerald-300" />
                                 <span>Build Your Profile</span>
                               </h4>
-                              <p className="text-[11px] text-stone-500 leading-relaxed">
+                              <p className="text-[11px] text-emerald-200/80 leading-relaxed">
                                 Share details about your farm, location, and main agricultural focus areas.
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-start gap-3">
-                            <span className="text-xs font-serif font-bold text-emerald-800 bg-emerald-100/70 rounded-lg px-2 py-1 shrink-0">
+                          <div className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition">
+                            <span className="text-xs font-serif font-black text-[#0B2117] bg-[#85CC14] rounded-lg px-2 py-1 shrink-0">
                               02
                             </span>
                             <div className="space-y-1">
-                              <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                                 <span>Share Your Journey</span>
                               </h4>
-                              <p className="text-[11px] text-stone-500 leading-relaxed">
+                              <p className="text-[11px] text-emerald-200/80 leading-relaxed">
                                 Post farm progress, harvest achievements, crop photos, and ask questions.
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-start gap-3">
-                            <span className="text-xs font-serif font-bold text-emerald-800 bg-emerald-100/70 rounded-lg px-2 py-1 shrink-0">
+                          <div className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition">
+                            <span className="text-xs font-serif font-black text-[#0B2117] bg-[#85CC14] rounded-lg px-2 py-1 shrink-0">
                               03
                             </span>
                             <div className="space-y-1">
-                              <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                                <TrendingUp className="h-3.5 w-3.5 text-blue-600" />
+                              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <TrendingUp className="h-3.5 w-3.5 text-teal-300" />
                                 <span>Grow Your Network</span>
                               </h4>
-                              <p className="text-[11px] text-stone-500 leading-relaxed">
+                              <p className="text-[11px] text-emerald-200/80 leading-relaxed">
                                 Connect with buyers, agronomists, and peers to earn community reputation.
                               </p>
                             </div>
@@ -4720,7 +4763,7 @@ function ForumSubdomainPage({ initialSnapshot, isPendingNavigation }: { initialS
                   <h2 className="text-[15px] font-bold text-[#2D3436]" style={{ letterSpacing: '-0.02em' }}>
                     {subpage === "posts" ? "Community Discussion & Posts" : "Saved Posts"}
                   </h2>
-                  <span className="text-[12px] text-[#636E72] font-medium">{filteredPosts.length} posts</span>
+                  <span suppressHydrationWarning className="text-[12px] text-[#636E72] font-medium">{`${filteredPosts.length} posts`}</span>
                 </div>
 
                 {/* Posts Feed */}

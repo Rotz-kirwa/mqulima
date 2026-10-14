@@ -16,24 +16,30 @@ export async function ensureSuperAdminUser() {
 
     if (!existing) {
       console.log("[ADMIN BOOTSTRAP] Provisioning default super admin (mqulima@mqulima.com)...");
-      await sql`
-        INSERT INTO profiles (
-          id, email, password_hash, full_name, username,
-          phone, role, country, restriction_status, status, 
-          is_verified, reputation_score, county_region, created_at, updated_at
-        ) VALUES (
-          ${adminId}, ${email}, ${passwordHash}, 'Mqulima Administrator', 'mqulima_admin',
-          '+254700000000', 'super_admin', 'Kenya', 'active', 'active',
-          true, 100, 'Nairobi', NOW(), NOW()
-        )
-        ON CONFLICT (id) DO UPDATE SET
-          email = ${email},
-          password_hash = ${passwordHash},
-          role = 'super_admin',
-          status = 'active',
-          deleted_at = NULL,
-          updated_at = NOW()
+      const updated = await sql`
+        UPDATE profiles
+        SET email = ${email},
+            password_hash = ${passwordHash},
+            role = 'super_admin',
+            status = 'active',
+            deleted_at = NULL,
+            updated_at = NOW()
+        WHERE username = 'mqulima_admin' OR id = ${adminId}
       `;
+
+      if (!updated || updated.count === 0) {
+        await sql`
+          INSERT INTO profiles (
+            id, email, password_hash, full_name, username,
+            phone, role, country, restriction_status, status, 
+            is_verified, reputation_score, county_region, created_at, updated_at
+          ) VALUES (
+            ${adminId}, ${email}, ${passwordHash}, 'Mqulima Administrator', 'mqulima_admin',
+            '+254700000000', 'super_admin', 'Kenya', 'active', 'active',
+            true, 100, 'Nairobi', NOW(), NOW()
+          )
+        `;
+      }
 
       await sql`
         INSERT INTO users (

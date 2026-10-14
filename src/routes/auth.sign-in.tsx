@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SproutLogo, WaveDivider } from "@/components/auth/AuthMockupAssets";
+import { trackEvent } from "@/lib/events";
 
 type SignInSearch = {
   redirect?: string;
@@ -69,6 +70,9 @@ function SignIn() {
       if (!success) {
         throw new Error("Invalid credentials. Please verify your email and password.");
       }
+      trackEvent("login_completed", {
+        method: formData.identifier.includes("@") ? "email" : "phone",
+      });
       toast.success("Welcome back! Signed in successfully.");
       const redirectUrl = redirectParam || "/";
       if (redirectUrl.includes("?")) {

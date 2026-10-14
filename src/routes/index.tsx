@@ -48,11 +48,23 @@ import { HomeSkeleton } from "@/components/mqulima/RouteSkeletons";
 export const Route = createFileRoute("/")({
   pendingComponent: HomeSkeleton,
   loader: async () => {
+    const withSafeTimeout = async <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
+      let timer: any;
+      const timeout = new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      });
+      return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+    };
+
     try {
-      const [featProducts, pubArticles] = await Promise.all([
-        getFeaturedProducts().catch(() => []),
-        getPublishedBlogPosts({ data: { limit: 3 } }).catch(() => []),
-      ]);
+      const [featProducts, pubArticles] = await withSafeTimeout(
+        Promise.all([
+          getFeaturedProducts().catch(() => []),
+          getPublishedBlogPosts({ data: { limit: 3 } }).catch(() => []),
+        ]),
+        4500,
+        [[], []]
+      );
       return {
         featuredProducts: featProducts || [],
         publishedArticles: pubArticles || [],
@@ -73,8 +85,8 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
       },
-      { property: "og:url", content: "https://www.mqulima.com/" },
-      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:url", content: "https://mqulima.com/" },
+      { property: "og:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Home — Agriculture for the Future | Mqulima" },
@@ -82,16 +94,16 @@ export const Route = createFileRoute("/")({
         name: "twitter:description",
         content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
       },
-      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { name: "twitter:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
     ],
     links: [
-      { rel: "canonical", href: "https://www.mqulima.com/" },
+      { rel: "canonical", href: "https://mqulima.com/" },
       {
         rel: "preload",
         as: "image",
         href: heroCinematic640,
         type: "image/webp",
-        fetchpriority: "high",
+        fetchPriority: "high" as const,
       },
     ],
     scripts: [
@@ -102,10 +114,10 @@ export const Route = createFileRoute("/")({
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://www.mqulima.com/#organization",
+              "@id": "https://mqulima.com/#organization",
               "name": "Mqulima",
-              "url": "https://www.mqulima.com",
-              "logo": "https://www.mqulima.com/icon-192.png",
+              "url": "https://mqulima.com",
+              "logo": "https://mqulima.com/icon-192.png",
               "description": "Africa's 360° agricultural ecosystem connecting farmers to agrodealers, veterinary doctors, and certified market intelligence.",
               "address": {
                 "@type": "PostalAddress",
@@ -121,10 +133,10 @@ export const Route = createFileRoute("/")({
             },
             {
               "@type": "WebSite",
-              "@id": "https://www.mqulima.com/#website",
-              "url": "https://www.mqulima.com",
+              "@id": "https://mqulima.com/#website",
+              "url": "https://mqulima.com",
               "name": "Mqulima",
-              "publisher": { "@id": "https://www.mqulima.com/#organization" },
+              "publisher": { "@id": "https://mqulima.com/#organization" },
             },
           ],
         }),
@@ -717,7 +729,7 @@ function Index() {
                         decoding="async"
                         width={300}
                         height={400}
-                        className="h-full w-full object-contain object-center p-2.5 sm:p-4 pb-12 sm:pb-14 transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full object-contain object-center p-2.5 sm:p-4 pb-8 sm:pb-10 transition-transform duration-500 group-hover:scale-105"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = "/placeholder-product.png";
@@ -728,11 +740,6 @@ function Index() {
                           <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0F291E] font-['Outfit',sans-serif] line-clamp-2 tracking-tight leading-tight">
                             {p.name}
                           </h3>
-                          {p.price > 0 && (
-                            <span className="text-[11px] sm:text-xs font-bold text-[#16A34A] block mt-0.5 font-mono">
-                              KSh {Number(p.price).toLocaleString()}
-                            </span>
-                          )}
                         </div>
                       )}
                     </>

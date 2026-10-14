@@ -54,6 +54,7 @@ import { AppLayout } from "@/components/mqulima/AppLayout";
 import { motion, AnimatePresence } from "framer-motion";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { ServicesSkeleton } from "@/components/mqulima/RouteSkeletons";
+import { trackEvent } from "@/lib/events";
 
 type ServicesSearch = {
   serviceId?: string;
@@ -80,8 +81,8 @@ export const Route = createFileRoute("/services")({
         property: "og:description",
         content: "Because farming doesn’t stop at the field and no one can do everything by themselves, Mqulima Services puts every kind of support agriculture needs into one platform, one tap away. From finance to feed formulation one request away. Anything you need, just place a request and mqulima will send an expert because we understand how hectic it can be to manouver the search on your own.",
       },
-      { property: "og:url", content: "https://www.mqulima.com/services" },
-      { property: "og:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:url", content: "https://mqulima.com/services" },
+      { property: "og:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Services — Professional Agricultural Support & Specialists | Mqulima" },
@@ -89,16 +90,16 @@ export const Route = createFileRoute("/services")({
         name: "twitter:description",
         content: "Book vetted agricultural professionals across Kenya: soil testing, veterinary diagnostics, silage shredding, AI breeding, greenhouses, and borehole drilling.",
       },
-      { name: "twitter:image", content: "https://www.mqulima.com/images/mkulima_hero_farm.webp" },
+      { name: "twitter:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
     ],
     links: [
-      { rel: "canonical", href: "https://www.mqulima.com/services" },
+      { rel: "canonical", href: "https://mqulima.com/services" },
       {
         rel: "preload",
         as: "image",
         href: "/images/self-hosted/farm-field-banner-640w.webp",
         type: "image/webp",
-        fetchPriority: "high",
+        fetchPriority: "high" as const,
       },
     ],
   }),
@@ -775,6 +776,11 @@ function ServicesPage() {
     setBookingStep(1);
     setBookingReference(null);
     setSelectedSubservice(subservice);
+    trackEvent("agricultural_service_viewed", {
+      service_id: subservice.id,
+      service_name: subservice.name,
+      service_category: subservice.categoryTitle || "Agricultural Specialist Support",
+    });
   }, [user]);
 
   const closeBookingModal = useCallback(() => {
@@ -951,6 +957,12 @@ function ServicesPage() {
 
       if (res.success && res.reference) {
         setBookingReference(res.reference);
+        trackEvent("quotation_requested", {
+          service_name: selectedSubservice?.name || "Agricultural Service",
+          county: county || undefined,
+          value: costNumeric,
+          currency: "KES",
+        });
         setBookingStep(3); // Success step
         toast.success(`Service Booking Submitted! Ref: ${res.reference}`);
 

@@ -188,7 +188,7 @@ Return ONLY valid JSON with this exact schema:
       matchedProducts = await sql`
         SELECT id, name, base_price::float as price, slug
         FROM products
-        WHERE status = 'active' AND deleted_at IS NULL AND (
+        WHERE status = 'active' AND deleted_at IS NULL AND external_product_id IS NOT NULL AND (
           name ILIKE ANY(${searchTerms}) OR brand ILIKE ANY(${searchTerms}) OR subcategory ILIKE ANY(${searchTerms})
         )
         ORDER BY is_featured DESC, avg_rating DESC
@@ -200,7 +200,7 @@ Return ONLY valid JSON with this exact schema:
       matchedProducts = await sql`
         SELECT id, name, base_price::float as price, slug
         FROM products
-        WHERE status = 'active' AND deleted_at IS NULL
+        WHERE status = 'active' AND deleted_at IS NULL AND external_product_id IS NOT NULL
         ORDER BY is_featured DESC
         LIMIT 4
       `;

@@ -46,6 +46,7 @@ import { Route as ApiProductsIdRouteImport } from './routes/api/products/$id'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiMpesaCallbackRouteImport } from './routes/api/mpesa/callback'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
+import { Route as ApiAdminVisitorAnalyticsRouteImport } from './routes/api/admin/visitor-analytics'
 import { Route as ApiAdminServicesRouteImport } from './routes/api/admin/services'
 import { Route as ApiAdminQuotationsRouteImport } from './routes/api/admin/quotations'
 import { Route as ApiAdminProductsRouteImport } from './routes/api/admin/products'
@@ -254,6 +255,12 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
   path: '/api/ai/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminVisitorAnalyticsRoute =
+  ApiAdminVisitorAnalyticsRouteImport.update({
+    id: '/api/admin/visitor-analytics',
+    path: '/api/admin/visitor-analytics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminServicesRoute = ApiAdminServicesRouteImport.update({
   id: '/api/admin/services',
   path: '/api/admin/services',
@@ -408,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
+  '/api/admin/visitor-analytics': typeof ApiAdminVisitorAnalyticsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -468,6 +476,7 @@ export interface FileRoutesByTo {
   '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
+  '/api/admin/visitor-analytics': typeof ApiAdminVisitorAnalyticsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -529,6 +538,7 @@ export interface FileRoutesById {
   '/api/admin/products': typeof ApiAdminProductsRouteWithChildren
   '/api/admin/quotations': typeof ApiAdminQuotationsRoute
   '/api/admin/services': typeof ApiAdminServicesRoute
+  '/api/admin/visitor-analytics': typeof ApiAdminVisitorAnalyticsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
   '/api/mpesa/callback': typeof ApiMpesaCallbackRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -591,6 +601,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/quotations'
     | '/api/admin/services'
+    | '/api/admin/visitor-analytics'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
     | '/api/payments/status'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/quotations'
     | '/api/admin/services'
+    | '/api/admin/visitor-analytics'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
     | '/api/payments/status'
@@ -711,6 +723,7 @@ export interface FileRouteTypes {
     | '/api/admin/products'
     | '/api/admin/quotations'
     | '/api/admin/services'
+    | '/api/admin/visitor-analytics'
     | '/api/ai/chat'
     | '/api/mpesa/callback'
     | '/api/payments/status'
@@ -764,6 +777,7 @@ export interface RootRouteChildren {
   ApiAdminProductsRoute: typeof ApiAdminProductsRouteWithChildren
   ApiAdminQuotationsRoute: typeof ApiAdminQuotationsRoute
   ApiAdminServicesRoute: typeof ApiAdminServicesRoute
+  ApiAdminVisitorAnalyticsRoute: typeof ApiAdminVisitorAnalyticsRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiMpesaCallbackRoute: typeof ApiMpesaCallbackRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
@@ -1037,6 +1051,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/visitor-analytics': {
+      id: '/api/admin/visitor-analytics'
+      path: '/api/admin/visitor-analytics'
+      fullPath: '/api/admin/visitor-analytics'
+      preLoaderRoute: typeof ApiAdminVisitorAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/services': {
       id: '/api/admin/services'
       path: '/api/admin/services'
@@ -1281,6 +1302,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminProductsRoute: ApiAdminProductsRouteWithChildren,
   ApiAdminQuotationsRoute: ApiAdminQuotationsRoute,
   ApiAdminServicesRoute: ApiAdminServicesRoute,
+  ApiAdminVisitorAnalyticsRoute: ApiAdminVisitorAnalyticsRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiMpesaCallbackRoute: ApiMpesaCallbackRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,

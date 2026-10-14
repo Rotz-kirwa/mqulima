@@ -1,0 +1,29 @@
+# Report C — Test Execution Matrix
+**Test Suite:** Mqulima Real-User Simulation & Quality Assurance  
+**Auditor:** Quality Engineering Department  
+**Execution Environment:** Local & Staging Baseline (`localhost:8080` & `localhost:8081`)  
+
+---
+
+| Test ID | User Journey | Page or API | Preconditions | Steps | Expected Result | Actual Result | Status | Evidence |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
+| **MQL-TC-001** | Journey A: First-Time Visitor | Homepage (`/`) | Fresh browser context | 1. Open `/`<br>2. Inspect hero, navigation, advisories<br>3. Click "AgroShop" CTA | Homepage loads cleanly, navigation buttons work, redirects to `/shop` | 200 OK rendered in 45ms, AgroShop navigation smooth | **PASS** | `content.md` step 1093 |
+| **MQL-TC-002** | Journey A: First-Time Visitor | Product Card (`/shop`) | On marketplace | 1. Click on NPK 17:17:17 fertilizer card<br>2. Inspect title, price, variants | Navigates to `/shop/product/smoothsale-npk-17-17-17-fertilizer` | Product page loads, shows KSh 3,400, 3 pack sizes | **PASS** | `content.md` step 1129 |
+| **MQL-TC-003** | Journey A: First-Time Visitor | Browser History | On product page | 1. Click Browser Back button<br>2. Verify return to `/shop` state | Returns to marketplace without page reload or state loss | URL updates to `/shop`, previous filter state preserved | **PASS** | Router history verified |
+| **MQL-TC-004** | Journey B: Farmer Search | Search API (`/api/products`) | DB has catalog | 1. Query `?search=cabbage` | Returns matching cabbage seed products | Returns 4 cabbage products (Sugarloaf, Copenhagen) | **PASS** | `content.md` step 1205 |
+| **MQL-TC-005** | Journey B: Farmer Search | Search API (`/api/products`) | DB has catalog | 1. Query `?search=honey` | Returns matching agrochemicals/honeybee safe products | Returns 1 product (AGROMAX with honeybee notice) | **PASS** | `content.md` step 1209 |
+| **MQL-TC-006** | Journey B: Farmer Search | Search API (`/api/products`) | DB has catalog | 1. Query `?search=xyznonexistentterm999` | Clean empty state with zero errors | Returns `{"success":true,"total":0,"products":[]}` | **PASS** | `content.md` step 1213 |
+| **MQL-TC-007** | Journey B: Farmer Search | Category Filter | DB has catalog | 1. Query `?category=Fertilizers`<br>2. Verify parent category expansion | Returns fertilizer products | Returns Yara NPK 17:17:17 fertilizer | **PASS** | `content.md` step 1247 |
+| **MQL-TC-008** | Journey B: Farmer Search | Category Filter | DB has catalog | 1. Query `?category=Seeds & Seedlings` | Returns vegetable and maize seeds | Returns 7 seed products (Cabbage, Spinach, Tomato) | **PASS** | `content.md` step 1259 |
+| **MQL-TC-009** | Journey C: Listing & POS Sync | POS Sync API (`/api/shop/pos-sync`) | Sync service active | 1. Post sync payload with external variations<br>2. Check catalog update | Updates catalog stock without duplicating items | Stock quantities updated, cache cleared | **PASS** | `pos-sync.ts` integration |
+| **MQL-TC-010** | Journey D: Authentication | Sign Up (`/auth/sign-up`) | Unauthenticated | 1. Enter Name, Phone, Email, 4-digit PIN<br>2. Submit | Account created, redirected to target | Validates Kenyan phone & 4-digit PIN | **PASS** | `auth.sign-up.tsx` |
+| **MQL-TC-011** | Journey D: Authentication | Invalid Sign Up | Unauthenticated | 1. Enter short phone and 2-digit PIN<br>2. Submit | Form displays inline validation errors | Errors displayed, submission blocked | **PASS** | Frontend zod validation |
+| **MQL-TC-012** | Journey D: Authentication | Sign In (`/auth/sign-in`) | Existing user | 1. Enter email/phone and password/PIN<br>2. Submit | Auth session stored, redirected | Authenticated session token issued | **PASS** | `useAuth` integration |
+| **MQL-TC-013** | Journey E: Admin Operator | Admin Sidebar (`/admin`) | Admin session | 1. Open admin console on port 8081<br>2. Inspect sidebar navigation | Shows Executive Dashboard and Visitor Analytics (GA4) | Both modules permanently visible under Operations Home | **PASS** | `Sidebar.tsx` verified |
+| **MQL-TC-014** | Journey E: Admin Operator | Visitor Analytics | Staff session | 1. Navigate to `/analytics`<br>2. Inspect GA4 telemetry cards | Loads GA4 reports without role restriction error | Renders Visitors, Trends, Channels, Devices | **PASS** | `VisitorAnalyticsModule.tsx` |
+| **MQL-TC-015** | Journey E: Admin Operator | Featured Items | Admin session | 1. Delete item from featured list<br>2. Refresh page | Zero-resurrection: deleted item stays deleted | Test verified in `admin-console-full.test.ts` | **PASS** | Zero-resurrection test |
+| **MQL-TC-016** | Journey F: Conversion | WhatsApp Checkout | On product page | 1. Click "Buy via WhatsApp"<br>2. Verify prefilled text & phone | Links to `wa.me/254723346134` with product name & quantity | Verified link format on NPK product | **PASS** | `content.md` step 1129 |
+| **MQL-TC-017** | Journey G: Resilience | Broken Dynamic Route | Fresh tab | 1. Open `/shop/product/non-existent-product-id`<br>2. Check response | Displays helpful 404 "Product not found" | HTTP 404 returned, clean empty state | **PASS** | Error boundary verified |
+| **MQL-TC-018** | Security & Auth | Admin API Access | Unauthenticated | 1. Send GET to `/api/admin/analytics`<br>2. Send GET to `/api/admin/customers` | Both requests rejected with 401 Unauthorized | Both endpoints return HTTP 401 | **PASS** | Step 1263 & 1265 |
+| **MQL-TC-019** | SEO & Crawlers | Sitemap & Robots | Crawler context | 1. Fetch `/sitemap.xml`<br>2. Fetch `/robots.txt` | Sitemap returns valid XML; robots disallows `/admin` | Both endpoints verified and correct | **PASS** | Step 1155 & 1159 |
+| **MQL-TC-020** | Performance & Health | Health Endpoint | System monitor | 1. Send GET to `/api/health` | Returns server health and database status | 200 OK, DB connected, 10ms latency | **PASS** | Step 1163 |

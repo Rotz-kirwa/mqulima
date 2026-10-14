@@ -23,7 +23,7 @@ export function getRawSql() {
     globalThis.__mq_raw_sql__ = postgres(connectionString, {
       max: isServerless ? 2 : 5,
       idle_timeout: 10,
-      connect_timeout: 10,
+      connect_timeout: isServerless ? 4 : 8,
       ssl: requiresSsl ? { rejectUnauthorized: false } : false,
       onnotice: () => {},
     });

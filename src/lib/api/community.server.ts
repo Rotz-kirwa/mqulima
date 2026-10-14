@@ -1,4 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { 
+  DEFAULT_SHOWCASE_POSTS, 
+  DEFAULT_SOKO_LISTINGS, 
+  DEFAULT_PULSE_POSTS, 
+  DEFAULT_SUGGESTED_FARMERS 
+} from "@/features/community/data/community-defaults";
 
 function resolveAvatar(avatarUrl: string | null, name: string) {
   if (avatarUrl && (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:"))) {
@@ -108,7 +114,7 @@ async function loadPublicForumSnapshot() {
         sp.comment_count,
         sp.tags,
         sp.created_at,
-        COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-[#a-zA-Z0-9]', '', 'g')))) AS username,
+        COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
         COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
         COALESCE(p.country, 'Kenya') AS country,
         COALESCE(p.county_region, u.county, 'Kenya') AS county_region,
@@ -293,46 +299,56 @@ async function loadPublicForumSnapshot() {
       learning: "Farming Tips"
     };
 
+    const mappedPosts = posts.length > 0 ? posts.map((post: any) => ({
+      id: post.id,
+      author: toFarmer(post),
+      title: post.title || "Untitled discussion",
+      body: post.caption || "",
+      type: post.type === "harvest" ? "gallery" : post.type === "story" ? "story" : "update",
+      category: typeToCategoryMap[post.type] || "Farm Progress",
+      images: post.media_urls || [],
+      likes: post.like_count || 0,
+      relates: post.relate_count || 0,
+      hasLiked: false,
+      hasSaved: false,
+      comments: commentsByPost.get(post.id) || [],
+      tags: normalizeTags(post.tags),
+      createdAt: post.created_at ? new Date(post.created_at).toISOString().split("T")[0] : "2024-01-01",
+    })) : DEFAULT_SHOWCASE_POSTS;
+
+    const mappedListings = listings.length > 0 ? listings.map((listing: any) => ({
+      id: listing.id,
+      author: toFarmer(listing),
+      commodity: listing.commodity,
+      type: /cow|goat|sheep|poultry|pig|fish|milk|egg/i.test(listing.commodity) ? "livestock" : "crop",
+      price: listing.asking_price,
+      quantity: `${listing.quantity} ${listing.unit}`,
+      location: listing.location || listing.county_region || "Kenya",
+      images: listing.image_urls || [],
+      description: listing.description || "Verified community listing.",
+      phone: listing.contact_phone || listing.farmer_phone || "",
+      status: listing.status === "sold" ? "sold" : "available",
+      createdAt: listing.created_at ? new Date(listing.created_at).toISOString().split("T")[0] : "2024-01-01",
+    })) : DEFAULT_SOKO_LISTINGS;
+
+    const mappedPulse = pulse.length > 0 ? pulse.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      content: item.body,
+      category: item.category || "Agronomy Alert",
+      source: item.source_url,
+      date: item.published_at ? new Date(item.published_at).toISOString().split("T")[0] : "2024-01-01",
+    })) : DEFAULT_PULSE_POSTS;
+
+    const mappedSuggested = suggestedProfiles.length > 0 
+      ? suggestedProfiles.map(toFarmer) 
+      : DEFAULT_SUGGESTED_FARMERS;
+
     return {
-      showPosts: posts.map((post: any) => ({
-        id: post.id,
-        author: toFarmer(post),
-        title: post.title || "Untitled discussion",
-        body: post.caption || "",
-        type: post.type === "harvest" ? "gallery" : post.type === "story" ? "story" : "update",
-        category: typeToCategoryMap[post.type] || "Farm Progress",
-        images: post.media_urls || [],
-        likes: post.like_count || 0,
-        relates: post.relate_count || 0,
-        hasLiked: false,
-        hasSaved: false,
-        comments: commentsByPost.get(post.id) || [],
-        tags: normalizeTags(post.tags),
-        createdAt: post.created_at ? new Date(post.created_at).toISOString().split("T")[0] : "2024-01-01",
-      })),
-      sokoListings: listings.map((listing: any) => ({
-        id: listing.id,
-        author: toFarmer(listing),
-        commodity: listing.commodity,
-        type: /cow|goat|sheep|poultry|pig|fish|milk|egg/i.test(listing.commodity) ? "livestock" : "crop",
-        price: listing.asking_price,
-        quantity: `${listing.quantity} ${listing.unit}`,
-        location: listing.location || listing.county_region || "Kenya",
-        images: listing.image_urls || [],
-        description: listing.description || "Verified community listing.",
-        phone: listing.contact_phone || listing.farmer_phone || "",
-        status: listing.status === "sold" ? "sold" : "available",
-        createdAt: listing.created_at ? new Date(listing.created_at).toISOString().split("T")[0] : "2024-01-01",
-      })),
-      pulsePosts: pulse.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        content: item.body,
-        category: item.category || "Agronomy Alert",
-        source: item.source_url,
-        date: item.published_at ? new Date(item.published_at).toISOString().split("T")[0] : "2024-01-01",
-      })),
-      suggestedFarmers: suggestedProfiles.map(toFarmer),
+      showPosts: mappedPosts,
+      sokoListings: mappedListings,
+      pulsePosts: mappedPulse,
+      suggestedFarmers: mappedSuggested,
     };
 }
 

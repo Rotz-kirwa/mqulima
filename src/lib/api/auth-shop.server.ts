@@ -117,7 +117,10 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   const passwordHash = await bcrypt.hash(data.password, 10);
 
   // Atomic insertion into both users and profiles tables for sync architecture
-  const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
+  const cleanLastName = (data.lastName || "").trim() || data.firstName.trim();
+  const fullName = (data.lastName && data.lastName.trim()) 
+    ? `${data.firstName.trim()} ${data.lastName.trim()}` 
+    : data.firstName.trim();
   const cleanFirstName = data.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const username = `mqulima_${cleanFirstName || "user"}_${Date.now().toString().slice(-4)}`;
   const defaultCounty = data.county?.trim() || "Nairobi";
@@ -142,7 +145,7 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
         password_hash
       ) VALUES (
         ${data.firstName.trim()},
-        ${data.lastName.trim()},
+        ${cleanLastName},
         ${cleanPhone},
         ${cleanEmail},
         ${cleanId},

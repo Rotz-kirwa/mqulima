@@ -129,7 +129,8 @@ export type AdminPermission =
   | "content.update"
   | "content.delete"
   | "inquiries.read"
-  | "inquiries.update";
+  | "inquiries.update"
+  | "analytics.read";
 
 export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
   super_admin: [
@@ -139,6 +140,7 @@ export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
     "payments.read", "payments.reconcile",
     "content.read", "content.create", "content.update", "content.delete",
     "inquiries.read", "inquiries.update",
+    "analytics.read",
   ],
   admin: [
     "customers.read", "customers.update", "customers.delete",
@@ -147,6 +149,7 @@ export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
     "payments.read", "payments.reconcile",
     "content.read", "content.create", "content.update", "content.delete",
     "inquiries.read", "inquiries.update",
+    "analytics.read",
   ],
   sales_agent: [
     "customers.read",
@@ -173,7 +176,8 @@ export function hasPermission(
   roleOrUser: string | AdminUserContext | AdminUser,
   permission: AdminPermission
 ): boolean {
-  const role = typeof roleOrUser === "string" ? roleOrUser : roleOrUser?.role;
+  const rawRole = typeof roleOrUser === "string" ? roleOrUser : roleOrUser?.role || "";
+  const role = rawRole.toLowerCase().replace(/[\s-]+/g, "_");
   const permissions = ROLE_PERMISSIONS[role] || [];
   return permissions.includes(permission);
 }

@@ -38,6 +38,8 @@ admin/.env
 temp_admin_credentials.txt
 .vercel
 .env*
+!.env.example
+!admin/.env.example
 
 # Local Database Backups
 backups/

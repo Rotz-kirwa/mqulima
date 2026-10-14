@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, Mail, Phone } from "lucide-react";
 import { SproutLogo, WaveDivider } from "@/components/auth/AuthMockupAssets";
 import { requestPasswordRecovery } from "@/lib/auth-recovery.server";
+import { trackEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/auth/forgot-password")({
   head: () => ({
@@ -52,6 +53,9 @@ function ForgotPasswordPage() {
       });
 
       toast.success("Recovery code dispatched!");
+      trackEvent("password_reset_requested", {
+        method: clean.includes("@") ? "email" : "phone",
+      });
       // Navigate to verification screen with identifier and hint query params
       navigate({
         to: "/auth/verify-recovery",

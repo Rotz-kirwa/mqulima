@@ -65,43 +65,34 @@ export const Route = createFileRoute("/api/admin/login")({
             const defaultPasswordHash = await bcrypt.hash("mqulima$", 10);
 
             try {
-              [dbAdmin] = await sql`
-                INSERT INTO profiles (
-                  id, email, password_hash, full_name, username,
-                  phone, role, country, restriction_status, status, 
-                  is_verified, reputation_score, county_region, created_at, updated_at
-                ) VALUES (
-                  ${adminId}, 'mqulima@mqulima.com', ${defaultPasswordHash}, 'Mqulima Administrator', 'mqulima_admin',
-                  '+254700000000', 'super_admin', 'Kenya', 'active', 'active',
-                  true, 100, 'Nairobi', NOW(), NOW()
-                )
-                ON CONFLICT (id) DO UPDATE SET
-                  email = 'mqulima@mqulima.com',
-                  password_hash = ${defaultPasswordHash},
-                  role = 'super_admin',
-                  status = 'active',
-                  deleted_at = NULL,
-                  updated_at = NOW()
+              const updated = await sql`
+                UPDATE profiles
+                SET email = 'mqulima@mqulima.com',
+                    password_hash = ${defaultPasswordHash},
+                    role = 'super_admin',
+                    status = 'active',
+                    deleted_at = NULL,
+                    updated_at = NOW()
+                WHERE username = 'mqulima_admin' OR LOWER(email) = 'mqulima@mqulima.com' OR id = ${adminId}
                 RETURNING id, email, password_hash, full_name, role
               `;
 
-              await sql`
-                INSERT INTO users (
-                  id, email, password_hash, first_name, last_name, 
-                  phone_number, national_id, county, delivery_location, 
-                  farming_type, status, is_verified, created_at
-                ) VALUES (
-                  ${adminId}, 'mqulima@mqulima.com', ${defaultPasswordHash}, 'Mqulima', 'Admin',
-                  '+254700000000', '00000000', 'Nairobi', 'Mqulima HQ, Nairobi',
-                  'Executive Administrator', 'active', true, NOW()
-                )
-                ON CONFLICT (id) DO UPDATE SET
-                  email = 'mqulima@mqulima.com',
-                  password_hash = ${defaultPasswordHash},
-                  status = 'active',
-                  deleted_at = NULL,
-                  updated_at = NOW()
-              `.catch(() => {});
+              if (updated && updated.length > 0) {
+                dbAdmin = updated[0];
+              } else {
+                [dbAdmin] = await sql`
+                  INSERT INTO profiles (
+                    id, email, password_hash, full_name, username,
+                    phone, role, country, restriction_status, status, 
+                    is_verified, reputation_score, county_region, created_at, updated_at
+                  ) VALUES (
+                    ${adminId}, 'mqulima@mqulima.com', ${defaultPasswordHash}, 'Mqulima Administrator', 'mqulima_admin',
+                    '+254700000000', 'super_admin', 'Kenya', 'active', 'active',
+                    true, 100, 'Nairobi', NOW(), NOW()
+                  )
+                  RETURNING id, email, password_hash, full_name, role
+                `;
+              }
             } catch (err) {
               console.error("[ADMIN LOGIN] Failed to self-heal admin record:", err);
             }

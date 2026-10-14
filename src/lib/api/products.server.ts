@@ -71,6 +71,7 @@ export const getProducts = createServerFn({ method: "GET" })
         WHERE p.status = 'active'
           AND COALESCE(sc.name, pc.name) = ${category}
           AND p.deleted_at IS NULL
+          AND p.external_product_id IS NOT NULL
         ORDER BY p.is_featured DESC, p.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -83,6 +84,7 @@ export const getProducts = createServerFn({ method: "GET" })
         WHERE p.status = 'active'
           AND COALESCE(sc.name, pc.name) = ${category}
           AND p.deleted_at IS NULL
+          AND p.external_product_id IS NOT NULL
       `;
     } else {
       products = await sql`
@@ -95,7 +97,7 @@ export const getProducts = createServerFn({ method: "GET" })
         LEFT JOIN shop_categories sc ON p.category_id = sc.id
         LEFT JOIN shop_subcategories ss ON p.subcategory_id = ss.id
         LEFT JOIN product_categories pc ON p.category_id = pc.id
-        WHERE p.status = 'active' AND p.deleted_at IS NULL
+        WHERE p.status = 'active' AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL
         ORDER BY p.is_featured DESC, p.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -103,7 +105,7 @@ export const getProducts = createServerFn({ method: "GET" })
       totalCountRes = await sql`
         SELECT COUNT(*) as count
         FROM products p
-        WHERE p.status = 'active' AND p.deleted_at IS NULL
+        WHERE p.status = 'active' AND p.deleted_at IS NULL AND p.external_product_id IS NOT NULL
       `;
     }
 
@@ -220,6 +222,7 @@ export const getProductBySlug = createServerFn({ method: "GET" })
           WHERE (p.id = ${identifier} OR p.slug = ${identifier})
             AND p.status = 'active'
             AND p.deleted_at IS NULL
+            AND p.external_product_id IS NOT NULL
           LIMIT 1
         `
       : await sql`
@@ -235,6 +238,7 @@ export const getProductBySlug = createServerFn({ method: "GET" })
           WHERE p.slug = ${identifier}
             AND p.status = 'active'
             AND p.deleted_at IS NULL
+            AND p.external_product_id IS NOT NULL
           LIMIT 1
         `;
 

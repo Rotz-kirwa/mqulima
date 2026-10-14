@@ -17,6 +17,12 @@ const Toaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ defau
 const PWAInstallBanner = lazy(() =>
   import("@/components/mqulima/PWAInstallBanner").then((m) => ({ default: m.PWAInstallBanner }))
 );
+const AnalyticsConsentBanner = lazy(() =>
+  import("@/components/events/ConsentBanner").then((m) => ({ default: m.ConsentBanner }))
+);
+const AnalyticsRouteTracker = lazy(() =>
+  import("@/components/events/RouteViewObserver").then((m) => ({ default: m.RouteViewObserver }))
+);
 import { usePWA } from "@/hooks/usePWA";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-context";
@@ -106,6 +112,11 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){if(typeof window==='undefined')return;function isNoise(m){if(!m)return false;var s=String(m);return s.includes('unknown host')||s.includes('contentscript')||s.includes('Could not establish connection')||s.includes('Receiving end does not exist')||s.includes('AI chart')||s.includes('chat.js');}window.addEventListener('unhandledrejection',function(e){var r=(e&&e.reason&&(e.reason.message||e.reason))||'';if(isNoise(r)){e.preventDefault();if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();}},true);window.addEventListener('error',function(e){var m=(e&&(e.message||(e.error&&e.error.message)))||'';if(isNoise(m)){e.preventDefault();if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();}},true);try{var oe=console.error,ow=console.warn;console.error=function(){var a=Array.prototype.slice.call(arguments).join(' ');if(isNoise(a))return;oe.apply(console,arguments);};console.warn=function(){var a=Array.prototype.slice.call(arguments).join(' ');if(isNoise(a))return;ow.apply(console,arguments);};}catch(_){}})();`,
+          }}
+        />
         <HeadContent />
       </head>
       <body suppressHydrationWarning>{children}<Scripts /></body>
@@ -146,6 +157,8 @@ function RootComponent() {
             <Outlet />
             {mounted && (
               <Suspense fallback={null}>
+                <AnalyticsRouteTracker />
+                <AnalyticsConsentBanner />
                 <Toaster richColors position="top-right" />
                 <PWAInstallBanner />
               </Suspense>

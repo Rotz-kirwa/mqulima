@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Mail, CheckCircle2, ShieldAlert, ShoppingBag, Instagram, Sparkles, ArrowRight } from "lucide-react";
+import { trackEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/academy")({
   head: () => ({
@@ -102,6 +103,10 @@ function AcademyComingSoonPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    trackEvent("academy_course_viewed", {
+      course_title: "Mqulima Farmer Academy Preview",
+      course_category: "Agribusiness Curriculum",
+    });
     const isSubscribed = localStorage.getItem("mqulima_academy_subscribed") === "true";
     if (isSubscribed) {
       setSubscribed(true);

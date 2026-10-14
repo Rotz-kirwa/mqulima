@@ -3,7 +3,7 @@ import { getDrizzleDb } from "@/lib/db.server";
 import { products, productVariants, productCategories } from "@/db/schema/products";
 import { eq, desc, sql, inArray, or } from "drizzle-orm";
 import { resolveFastProductImage } from "@/lib/api/shop.server";
-import { mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
+import { mapToNewTaxonomy, cleanDescriptionText, AGRICULTURE_TAXONOMY } from "@/lib/shop-data";
 
 // PERF: in-memory listing cache with stale-while-revalidate. Do not remove —
 // see PERFORMANCE.md. Invalidated by admin product mutations and POS sync.
@@ -121,9 +121,52 @@ export const Route = createFileRoute("/api/products")({
           ];
 
           if (category && category !== "All") {
-            andConditions.push(
-              sql`(LOWER(${products.subcategory}) = LOWER(${category}) OR LOWER(${products.shopType}) = LOWER(${category}))`
-            );
+            const catLower = category.trim().toLowerCase();
+            const matchingSubs: string[] = [catLower];
+
+            for (const [parentCat, subcats] of Object.entries(AGRICULTURE_TAXONOMY)) {
+              if (parentCat.toLowerCase() === catLower) {
+                if (Array.isArray(subcats)) {
+                  matchingSubs.push(...subcats.map((s) => s.toLowerCase()));
+                } else if (typeof subcats === "object" && subcats !== null) {
+                  for (const [subGroup, leafList] of Object.entries(subcats)) {
+                    matchingSubs.push(subGroup.toLowerCase());
+                    if (Array.isArray(leafList)) {
+                      matchingSubs.push(...leafList.map((l) => l.toLowerCase()));
+                    }
+                  }
+                }
+              }
+            }
+
+            const uniqueSubs = Array.from(new Set(matchingSubs));
+            const subConds = uniqueSubs.map((s) => sql`LOWER(${products.subcategory}) = ${s}`);
+            const fieldConds = uniqueSubs.map((s) => sql`LOWER(${products.field}) = ${s}`);
+            const allCatConds = [
+              ...subConds,
+              ...fieldConds,
+              sql`LOWER(${products.shopType}) = ${catLower}`,
+              sql`LOWER(${products.field}) LIKE ${'%' + catLower + '%'}`,
+            ];
+            if (catLower.includes("seed")) {
+              allCatConds.push(
+                sql`(LOWER(${products.name}) LIKE '%seed%' OR LOWER(${products.name}) LIKE '%spinach%' OR LOWER(${products.name}) LIKE '%cabbage%' OR LOWER(${products.name}) LIKE '%tomato%' OR LOWER(${products.name}) LIKE '%onion%' OR LOWER(${products.name}) LIKE '%maize%')`
+              );
+            } else if (catLower.includes("protect") || catLower.includes("chem")) {
+              allCatConds.push(
+                sql`(LOWER(${products.name}) LIKE '%cide%' OR LOWER(${products.name}) LIKE '%weedal%' OR LOWER(${products.name}) LIKE '%zetanil%' OR LOWER(${products.name}) LIKE '%macarena%' OR LOWER(${products.name}) LIKE '%aquawet%')`
+              );
+            } else if (catLower.includes("animal")) {
+              allCatConds.push(
+                sql`(LOWER(${products.name}) LIKE '%feed%' OR LOWER(${products.name}) LIKE '%mash%' OR LOWER(${products.name}) LIKE '%lick%' OR LOWER(${products.name}) LIKE '%salve%' OR LOWER(${products.name}) LIKE '%kupe%' OR LOWER(${products.name}) LIKE '%nilzan%')`
+              );
+            } else if (catLower.includes("equip") || catLower.includes("tool")) {
+              allCatConds.push(
+                sql`(LOWER(${products.name}) LIKE '%sprayer%' OR LOWER(${products.name}) LIKE '%knapsack%' OR LOWER(${products.name}) LIKE '%panga%' OR LOWER(${products.name}) LIKE '%pipe%' OR LOWER(${products.name}) LIKE '%nozzle%')`
+              );
+            }
+
+            andConditions.push(sql`(${sql.join(allCatConds, sql` OR `)})`);
           }
 
           if (search && search.trim()) {

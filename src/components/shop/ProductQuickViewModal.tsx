@@ -4,6 +4,7 @@ import { X, Check, ShoppingBag, ShieldCheck, MapPin, Store, Tag, Sparkles, Alert
 import { useCart } from "@/lib/cart-context";
 import { toast } from "sonner";
 import { cleanDescriptionText } from "@/lib/shop-data";
+import { trackEvent } from "@/lib/events";
 
 export interface Variation {
   id: string;
@@ -56,8 +57,18 @@ export function ProductQuickViewModal({ isOpen, onClose, product }: ProductDetai
       setQuantity(1);
       const img = product.imageUrl || (product.images && product.images[0]) || "/placeholder-product.png";
       setSelectedImage(img);
+
+      if (isOpen) {
+        trackEvent("product_viewed", {
+          product_id: product.id,
+          product_name: product.name,
+          product_category: product.category || "Agriculture",
+          price: product.price || product.basePrice || 0,
+          currency: "KES",
+        });
+      }
     }
-  }, [product]);
+  }, [product, isOpen]);
 
   if (!isOpen || !product) return null;
 

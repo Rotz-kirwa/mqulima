@@ -4,6 +4,7 @@ import { X, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { AIIcon } from "./AIIcon";
+import { trackEvent } from "@/lib/events";
 
 type Message = {
   role: "user" | "model";
@@ -16,12 +17,7 @@ export function FloatingAIChat() {
   const isShop = location.pathname.startsWith("/shop");
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard");
 
-  if (isAdmin) {
-    return null;
-  }
-
   const [isOpen, setIsOpen] = useState(false);
-
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -44,6 +40,10 @@ export function FloatingAIChat() {
     }
   }, [messages, isGenerating, isOpen]);
 
+  if (isAdmin) {
+    return null;
+  }
+
   const suggestions = [
     { label: "🌿 Diagnose Crop", text: "How do I diagnose Sukuma Wiki leaves turning yellow?" },
     { label: "🌤️ Weather Forecast", text: "What is the optimal sowing window for maize based on local weather?" },
@@ -58,6 +58,7 @@ export function FloatingAIChat() {
     setMessages((prev) => [...prev, userMsg]);
     setPrompt("");
     setIsGenerating(true);
+    trackEvent("ai_assistant_used", { feature_name: "floating_chat_prompt" });
 
     const controller = new AbortController();
     abortControllerRef.current = controller;

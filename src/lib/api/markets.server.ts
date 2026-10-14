@@ -69,3 +69,7 @@ export const getMarketPrices = createServerFn({ method: "POST" }).handler(
     return Object.values(map);
   }
 );
+
+export function invalidateMarketPricesCache() {
+  // Database-backed; no-op hook for cache invalidation
+}

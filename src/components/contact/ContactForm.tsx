@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitContactForm } from "@/lib/api/contact-partnership.server";
+import { trackEvent } from "@/lib/events";
 import { 
   Check, 
   User, 
@@ -72,7 +73,14 @@ export function ContactForm() {
     validateField(field, value);
   };
 
+  const formStartedRef = useRef(false);
+
   const handleChange = (field: string, value: any) => {
+    if (!formStartedRef.current) {
+      formStartedRef.current = true;
+      trackEvent("contact_form_started");
+    }
+
     if (field === "fullName") setFullName(value);
     if (field === "email") setEmail(value);
     if (field === "phone") setPhone(value);
@@ -148,6 +156,10 @@ export function ContactForm() {
 
       if (res && res.success) {
         setSuccess(true);
+        trackEvent("contact_form_submitted", {
+          user_type: userType,
+          subject_category: subject || "General Inquiry",
+        });
         // Reset form fields
         setFullName("");
         setEmail("");
@@ -158,9 +170,15 @@ export function ContactForm() {
         setTouched({});
         setErrors({});
       } else {
+        trackEvent("contact_form_failed", {
+          reason: "server_submission_rejected",
+        });
         setErrors({ submit: "Failed to submit contact request. Please try again." });
       }
     } catch (err: any) {
+      trackEvent("contact_form_failed", {
+        reason: "network_or_exception",
+      });
       setErrors({ submit: err?.message || "An unexpected error occurred." });
     } finally {
       setSubmitting(false);

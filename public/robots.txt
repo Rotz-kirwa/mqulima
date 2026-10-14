@@ -1,5 +1,17 @@
 User-agent: *
-Disallow: /admin
-Disallow: /dashboard
-Disallow: /api/
 Allow: /
+
+# Administrative & Console Routes
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+
+# Authentication & Sensitive Transaction Routes
+Disallow: /auth/
+Disallow: /login
+Disallow: /payments/
+
+# Canonical XML Sitemap
+Sitemap: https://mqulima.com/sitemap.xml

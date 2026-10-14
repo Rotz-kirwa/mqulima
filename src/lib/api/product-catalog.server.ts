@@ -72,6 +72,7 @@ export async function searchProductsCatalog(params: ProductCatalogSearchParams):
     LEFT JOIN product_categories pc ON p.category_id = pc.id
     WHERE p.status = 'active'
       AND p.deleted_at IS NULL
+      AND p.external_product_id IS NOT NULL
       ${params.inStockOnly !== false ? sql`AND p.stock_qty > 0` : sql``}
       AND (
         p.name ILIKE ANY(${likeClauses})

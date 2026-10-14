@@ -25,6 +25,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@google-analytics/data": "^6.1.0",
     "@google/genai": "^2.10.0",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/vite-tanstack-config": "^2.1.1",

@@ -42,6 +42,7 @@ import { useCart } from "@/lib/cart-context";
 import { useQuery } from "@tanstack/react-query";
 import { getProductBySlug, getProducts } from "@/lib/api/products.server";
 import { ProductDetailSkeleton } from "@/components/mqulima/RouteSkeletons";
+import { trackEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/shop/product/$slug")({
   pendingComponent: ProductDetailSkeleton,
@@ -63,9 +64,9 @@ export const Route = createFileRoute("/shop/product/$slug")({
 
     const title = `${product.name} | AgroShop Mqulima`;
     const cleanDesc = (product.description || "Certified agricultural inputs on Mqulima.").replace(/<[^>]*>?/gm, "").slice(0, 155);
-    const url = `https://www.mqulima.com/shop/product/${product.slug || product.id}`;
-    const imgUrl = (product.imageUrls && product.imageUrls[0]) || product.image || "https://www.mqulima.com/placeholder-product.png";
-    const fullImg = imgUrl.startsWith("http") ? imgUrl : `https://www.mqulima.com${imgUrl}`;
+    const url = `https://mqulima.com/shop/product/${product.slug || product.id}`;
+    const imgUrl = (product.imageUrls && product.imageUrls[0]) || product.image || "https://mqulima.com/placeholder-product.png";
+    const fullImg = imgUrl.startsWith("http") ? imgUrl : `https://mqulima.com${imgUrl}`;
 
     const jsonLd = {
       "@context": "https://schema.org/",
@@ -106,7 +107,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
       ],
       links: [
         { rel: "canonical", href: url },
-        ...(fullImg ? [{ rel: "preload", as: "image", href: fullImg, fetchpriority: "high" as const }] : []),
+        ...(fullImg ? [{ rel: "preload", as: "image", href: fullImg, fetchPriority: "high" as const }] : []),
       ],
       scripts: [
         {
@@ -173,12 +174,26 @@ function ProductDetailPage() {
   // Selected size variation
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Set default size when product loads
+  // Set default size and track product view when product loads
+  const trackedProductIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (product && product.sizes && product.sizes.length > 0) {
-      setSelectedSize(product.sizes[0].name);
-    } else {
-      setSelectedSize(null);
+    if (product) {
+      if (trackedProductIdRef.current !== product.id) {
+        trackedProductIdRef.current = product.id;
+        trackEvent("product_viewed", {
+          product_id: product.id,
+          product_name: product.name,
+          category: product.category || "General Agriculture",
+          value: product.price,
+          currency: "KES",
+        });
+      }
+
+      if (product.sizes && product.sizes.length > 0) {
+        setSelectedSize(product.sizes[0].name);
+      } else {
+        setSelectedSize(null);
+      }
     }
   }, [product]);
 

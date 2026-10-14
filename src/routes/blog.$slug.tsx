@@ -50,10 +50,10 @@ export const Route = createFileRoute("/blog/$slug")({
 
     const title = `${post.title} | Mqulima News`;
     const description = post.excerpt.length > 155 ? `${post.excerpt.slice(0, 152)}...` : post.excerpt;
-    const url = `https://www.mqulima.com/blog/${post.slug}`;
+    const url = `https://mqulima.com/blog/${post.slug}`;
     const image = post.coverImage.startsWith("http") 
       ? post.coverImage 
-      : `https://www.mqulima.com${post.coverImage}`;
+      : `https://mqulima.com${post.coverImage}`;
 
     const jsonLd = {
       "@context": "https://schema.org",
@@ -70,15 +70,15 @@ export const Route = createFileRoute("/blog/$slug")({
       "author": {
         "@type": "Organization",
         "name": post.author.name,
-        "url": "https://www.mqulima.com",
+        "url": "https://mqulima.com",
       },
       "publisher": {
         "@type": "Organization",
         "name": "Mqulima",
-        "url": "https://www.mqulima.com",
+        "url": "https://mqulima.com",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://www.mqulima.com/icon-192.png",
+          "url": "https://mqulima.com/icon-192.png",
         },
       },
     };
@@ -106,7 +106,7 @@ export const Route = createFileRoute("/blog/$slug")({
                 as: "image",
                 href: post.coverImage,
                 type: "image/webp",
-                fetchPriority: "high",
+                fetchPriority: "high" as const,
               },
             ]
           : []),
@@ -123,7 +123,8 @@ export const Route = createFileRoute("/blog/$slug")({
 });
 
 function BlogPostDetailRoute() {
-  const { post } = Route.useLoaderData();
+  const loaderData = Route.useLoaderData() as { post?: any };
+  const post = loaderData?.post;
   const [copied, setCopied] = useState(false);
 
   React.useEffect(() => {
@@ -146,7 +147,8 @@ function BlogPostDetailRoute() {
     );
   }
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : `https://www.mqulima.com/blog/${post.slug}`;
+  const canonicalUrl = `https://mqulima.com/blog/${post.slug}`;
+  const shareUrl = typeof window !== "undefined" ? window.location.href : canonicalUrl;
 
   const handleCopyLink = () => {
     if (navigator.clipboard) {
@@ -173,7 +175,7 @@ function BlogPostDetailRoute() {
     }
   };
 
-  const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${post.title} — ${shareUrl}`)}`;
+  const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${post.title} — ${canonicalUrl}`)}`;
 
   return (
     <AppLayout>

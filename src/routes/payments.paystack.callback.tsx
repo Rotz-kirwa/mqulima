@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, Loader2, ArrowLeft, ShoppingBag, ShieldCheck, FileText } from "lucide-react";
 import { verifyPaystackPaymentStatus } from "@/lib/api/paystack.server";
+import { trackEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/payments/paystack/callback")({
   head: () => ({
@@ -48,6 +49,12 @@ function PaystackCallbackPage() {
             orderId: result.orderId,
             amount: result.amount,
             currency: result.currency || "KES"
+          });
+          trackEvent("purchase_completed", {
+            transaction_id: reference,
+            order_id: result.orderId || undefined,
+            value: result.amount || 0,
+            currency: result.currency || "KES",
           });
         } else {
           setSuccess(false);

@@ -10,6 +10,7 @@ describe("Admin Console Integration & Reliability Suite", () => {
     it("should correctly map URL pathname and search parameters to valid admin tabs", () => {
       const VALID_TABS = [
         "dashboard",
+        "analytics",
         "customers",
         "products",
         "featured",
@@ -34,6 +35,7 @@ describe("Admin Console Integration & Reliability Suite", () => {
         return "dashboard";
       }
 
+      expect(parseTab("/analytics")).toBe("analytics");
       expect(parseTab("/products")).toBe("products");
       expect(parseTab("/orders")).toBe("orders");
       expect(parseTab("/featured")).toBe("featured");

@@ -35,7 +35,7 @@ function getResponsiveSrcSet(src: string): { webpSrcSet?: string; fallbackSrc: s
 
   if (isResponsiveTarget) {
     const webpSrcSet = `${basePath}-320w.webp 320w, ${basePath}-640w.webp 640w, ${basePath}-960w.webp 960w, ${basePath}.webp 1280w`;
-    const fallbackSrc = ext === "webp" ? `${basePath}.jpg` : src;
+    const fallbackSrc = src;
     return { webpSrcSet, fallbackSrc };
   }
 
@@ -58,6 +58,15 @@ export function OptimizedImage({
   ...props
 }: OptimizedImageProps) {
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
+
+  React.useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [src]);
+
   const { webpSrcSet, fallbackSrc } = getResponsiveSrcSet(src);
 
   // Tiny blur placeholder path
@@ -74,7 +83,7 @@ export function OptimizedImage({
       }}
     >
       {/* CSS Shimmer / Blur Placeholder before load */}
-      {!loaded && (
+      {!loaded && !hasError && (
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-stone-100 dark:bg-stone-800 animate-pulse pointer-events-none transition-opacity duration-300 z-0"
@@ -89,8 +98,14 @@ export function OptimizedImage({
       )}
 
       <picture className="w-full h-full">
-        {webpSrcSet && <source type="image/webp" srcSet={webpSrcSet} sizes={sizes} />}
+        {webpSrcSet && !hasError && <source type="image/webp" srcSet={webpSrcSet} sizes={sizes} />}
         <img
+          ref={(node) => {
+            imgRef.current = node;
+            if (node?.complete && node.naturalWidth > 0) {
+              setLoaded(true);
+            }
+          }}
           src={fallbackSrc || src}
           alt={alt}
           loading={priority ? "eager" : "lazy"}
@@ -99,6 +114,10 @@ export function OptimizedImage({
           width={width}
           height={height}
           onLoad={() => setLoaded(true)}
+          onError={() => {
+            setHasError(true);
+            setLoaded(true);
+          }}
           className={`relative z-10 transition-opacity duration-300 ${
             loaded ? "opacity-100" : "opacity-0"
           } ${className}`}

@@ -269,6 +269,8 @@ export const getBlogPostBySlug = createServerFn({ method: "GET" })
         SELECT id, name, slug, base_price AS price, image_urls AS "imageUrls", badge
         FROM products
         WHERE (LOWER(status) = 'active' OR status IS NULL)
+          AND deleted_at IS NULL
+          AND external_product_id IS NOT NULL
         ORDER BY is_featured DESC NULLS LAST, created_at DESC
         LIMIT 1
       `,

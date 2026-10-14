@@ -17,6 +17,7 @@ import {
   WeatherState
 } from "@/features/ai";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { trackEvent } from "@/lib/events";
 
 const countyCoords: Record<string, { lat: number; lon: number }> = {
   "Mombasa": { lat: -4.0547, lon: 39.6636 },
@@ -179,7 +180,10 @@ function MqulimaAIWorkspace() {
             isSpeaking={isSpeaking !== null}
             onToggleSpeechInput={() => toggleSpeechInput((text) => setPrompt(prompt ? `${prompt} ${text}` : text))}
             onToggleSpeechOutput={toggleSpeechOutput}
-            onSendMessage={handleSendMessage}
+            onSendMessage={(textToSend) => {
+              trackEvent("ai_assistant_used", { feature_name: "chat_prompt" });
+              handleSendMessage(textToSend);
+            }}
             onStopGeneration={handleStopGeneration}
             onDeleteMessage={handleDeleteMessage}
             onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
