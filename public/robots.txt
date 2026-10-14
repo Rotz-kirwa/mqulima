@@ -13,5 +13,6 @@ Disallow: /auth/
 Disallow: /login
 Disallow: /payments/
 
-# Canonical XML Sitemap
+# Canonical XML Sitemaps
 Sitemap: https://mqulima.com/sitemap.xml
+Sitemap: https://mqulima.com/sitemap-index.xml
