@@ -3,7 +3,11 @@ import fs from "fs";
 import path from "path";
 
 async function main() {
-  const dbUrl = process.env.DATABASE_URL || "postgresql://mqulima_db_user:NqL9Sdlti39Oa5aILYm944MjvJV9cEB4@dpg-d95kng28qa3s73e4sue0-a.ohio-postgres.render.com/mqulima_db?sslmode=require";
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.error("DATABASE_URL environment variable is required.");
+    process.exit(1);
+  }
   console.log("Connecting to Database...");
   const sql = postgres(dbUrl, { ssl: { rejectUnauthorized: false }, max: 1, idle_timeout: 5 });
 

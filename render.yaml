@@ -3,7 +3,7 @@ services:
     name: mqulima-web
     runtime: node
     plan: starter
-    region: ohio
+    region: oregon
     buildCommand: npm install --include=dev && NITRO_PRESET=node-server npm run build
     startCommand: npm run start
     autoDeploy: true

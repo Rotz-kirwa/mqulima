@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const localDbUrl = "postgresql://mqulima:password@localhost:5432/mqulima_dev";
-const prodDbUrl = "postgresql://mqulima_db_user:NqL9Sdlti39Oa5aILYm944MjvJV9cEB4@dpg-d95kng28qa3s73e4sue0-a.ohio-postgres.render.com/mqulima_db";
+const prodDbUrl = process.env.DATABASE_URL;
 
 async function purgeMockData(url, label) {
   console.log(`\n🧹 Purging mock data on ${label} database...`);
