@@ -58,10 +58,16 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  const captured = consumeLastCapturedError();
+  const capturedStr = captured instanceof Error ? (captured.stack || captured.message) : String(captured || "");
+  console.error(captured ?? new Error(`h3 swallowed SSR error: ${body}`));
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-ssr-body": Buffer.from(body.slice(0, 300)).toString("base64"),
+      "x-ssr-captured": Buffer.from(capturedStr.slice(0, 300)).toString("base64"),
+    },
   });
 }
 
@@ -346,10 +352,12 @@ Sitemap: https://mqulima.com/sitemap-index.xml
       });
     } catch (error) {
       const durationMs = Math.round(performance.now() - requestStart);
+      const errMsg = (error as Error)?.stack || (error as Error)?.message || String(error);
       console.error(`[SERVER ERROR] [${requestId}] ${request.method} ${url.pathname} threw after ${durationMs}ms:`, error);
       const errorHeaders = new Headers({ 
         "content-type": "text/html; charset=utf-8",
         "X-Request-Id": requestId,
+        "x-ssr-threw": Buffer.from(errMsg.slice(0, 300)).toString("base64"),
       });
       if (isAllowed) {
         errorHeaders.set("Access-Control-Allow-Origin", normalizedOrigin);
