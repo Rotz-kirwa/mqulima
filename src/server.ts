@@ -1,3 +1,13 @@
+// ESM Shims for CommonJS dependencies (prevents ReferenceError: __dirname is not defined in ES module scope)
+if (typeof globalThis !== "undefined") {
+  if (typeof (globalThis as any).__dirname === "undefined") {
+    (globalThis as any).__dirname = process.cwd();
+  }
+  if (typeof (globalThis as any).__filename === "undefined") {
+    (globalThis as any).__filename = process.cwd() + "/server.mjs";
+  }
+}
+
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";

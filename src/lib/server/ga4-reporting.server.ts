@@ -1,4 +1,4 @@
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import type { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { getServerConfig } from "@/lib/config.server";
 
 export type DateRangePreset = "today" | "7d" | "28d" | "30d" | "90d" | "custom";
@@ -160,7 +160,7 @@ export function getGA4ConfigStatus(): GA4ConfigStatus {
 /**
  * Initialize the official GA4 Data API Client
  */
-function createAnalyticsClient(): BetaAnalyticsDataClient | null {
+async function createAnalyticsClient(): Promise<BetaAnalyticsDataClient | null> {
   const status = getGA4ConfigStatus();
   if (!status.isConfigured) return null;
 
@@ -171,6 +171,7 @@ function createAnalyticsClient(): BetaAnalyticsDataClient | null {
   let privateKey = config.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
 
   try {
+    const { BetaAnalyticsDataClient } = await import("@google-analytics/data");
     if (base64Key) {
       const decoded = Buffer.from(base64Key, "base64").toString("utf-8");
       const credentials = JSON.parse(decoded);
@@ -298,7 +299,7 @@ export async function fetchGA4AnalyticsReport(
     return createUnconfiguredReport(query, ranges);
   }
 
-  const client = createAnalyticsClient();
+  const client = await createAnalyticsClient();
   if (!client) {
     return createUnconfiguredReport(query, ranges);
   }
