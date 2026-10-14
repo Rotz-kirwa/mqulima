@@ -8,8 +8,13 @@ declare global {
 const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
 export function initProductSyncJob() {
+  const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+  if (isServerless) {
+    // In serverless environments, background persistent timers are unsupported and prevent clean lambda freeze.
+    return;
+  }
+
   if (globalThis.__pos_sync_job_initialized__) {
-    console.log("[PRODUCT SYNC JOB] Background sync job is already active.");
     return;
   }
 
@@ -17,7 +22,7 @@ export function initProductSyncJob() {
   console.log(`[PRODUCT SYNC JOB] Initializing Smooth Sale POS background sync job (Interval: 30 minutes)...`);
 
   // Optionally execute initial sync check 10 seconds after server start
-  setTimeout(async () => {
+  const startupTimer = setTimeout(async () => {
     try {
       console.log("[PRODUCT SYNC JOB] Executing initial startup inventory sync check...");
       await ProductSyncController.triggerManualSync("smooth_sale_startup");
@@ -25,6 +30,7 @@ export function initProductSyncJob() {
       console.error("[PRODUCT SYNC JOB] Initial startup sync error:", err);
     }
   }, 10000);
+  startupTimer?.unref?.();
 
   // Set recurring 30-minute interval
   globalThis.__pos_sync_job_interval__ = setInterval(async () => {
@@ -36,6 +42,7 @@ export function initProductSyncJob() {
       console.error("[PRODUCT SYNC JOB] Recurring 30-minute sync error:", err);
     }
   }, SYNC_INTERVAL_MS);
+  globalThis.__pos_sync_job_interval__?.unref?.();
 
   if (typeof process !== "undefined" && process.on) {
     process.on("SIGINT", stopProductSyncJob);

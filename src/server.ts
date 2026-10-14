@@ -10,11 +10,13 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
-// Initialize Smooth Sale POS 30-minute background sync job
-try {
-  initProductSyncJob();
-} catch (e) {
-  console.error("[SERVER] Failed to initialize product sync background job:", e);
+// Initialize Smooth Sale POS 30-minute background sync job (only on dedicated persistent servers, not ephemeral serverless lambdas)
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  try {
+    initProductSyncJob();
+  } catch (e) {
+    console.error("[SERVER] Failed to initialize product sync background job:", e);
+  }
 }
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
@@ -104,6 +106,27 @@ export default {
       });
     }
 
+    // Intercept WordPress / PHP probe scans early to prevent expensive SSR 500 mutation errors
+    if (
+      url.pathname === "/xmlrpc.php" ||
+      url.pathname === "/wp/xmlrpc.php" ||
+      url.pathname === "/wp-login.php" ||
+      url.pathname.startsWith("/wp-admin") ||
+      url.pathname.startsWith("/wp-content") ||
+      url.pathname.startsWith("/wp-includes") ||
+      url.pathname === "/.env" ||
+      url.pathname.startsWith("/.env.") ||
+      url.pathname.startsWith("/.git")
+    ) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
+    }
+
     if (url.pathname === "/robots.txt") {
       const robotsContent = `User-agent: *
 Allow: /
@@ -120,8 +143,9 @@ Disallow: /auth/
 Disallow: /login
 Disallow: /payments/
 
-# Canonical XML Sitemap
+# Canonical XML Sitemaps
 Sitemap: https://mqulima.com/sitemap.xml
+Sitemap: https://mqulima.com/sitemap-index.xml
 `;
       return new Response(robotsContent, {
         status: 200,
@@ -140,19 +164,100 @@ Sitemap: https://mqulima.com/sitemap.xml
           status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
-            "Cache-Control": "public, max-age=3600, s-maxage=3600",
+            "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
           },
         });
       } catch (err) {
         console.error("[SERVER] Error generating sitemap.xml:", err);
-        const { getFallbackSitemapXml } = await import("./lib/sitemap.server");
-        return new Response(getFallbackSitemapXml(), {
+        // Explicit failure: Return 503 Service Unavailable so search engines retain indexes rather than de-indexing
+        return new Response(
+          `<?xml version="1.0" encoding="UTF-8"?>\n<error><code>DATABASE_UNAVAILABLE</code><message>Sitemap generation temporarily unavailable. Please retry in 120 seconds.</message></error>`,
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "application/xml; charset=utf-8",
+              "Retry-After": "120",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "X-Sitemap-Error": "DatabaseUnavailable",
+            },
+          }
+        );
+      }
+    }
+
+    if (url.pathname === "/sitemap-index.xml") {
+      const { generateSitemapIndexXml } = await import("./lib/sitemap.server");
+      const indexXml = generateSitemapIndexXml();
+      return new Response(indexXml, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Cache-Control": "public, max-age=86400, s-maxage=86400",
+        },
+      });
+    }
+
+    if (url.pathname === "/sitemap-pages.xml") {
+      const { generateSitemapPagesXml } = await import("./lib/sitemap.server");
+      const pagesXml = generateSitemapPagesXml();
+      return new Response(pagesXml, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Cache-Control": "public, max-age=86400, s-maxage=86400",
+        },
+      });
+    }
+
+    if (url.pathname === "/sitemap-products.xml") {
+      try {
+        const { generateSitemapProductsXml } = await import("./lib/sitemap.server");
+        const productsXml = await generateSitemapProductsXml();
+        return new Response(productsXml, {
           status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
-            "Cache-Control": "public, max-age=300",
+            "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
           },
         });
+      } catch (err) {
+        return new Response(
+          `<?xml version="1.0" encoding="UTF-8"?>\n<error><code>DATABASE_UNAVAILABLE</code><message>Products sitemap temporarily unavailable.</message></error>`,
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "application/xml; charset=utf-8",
+              "Retry-After": "120",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          }
+        );
+      }
+    }
+
+    if (url.pathname === "/sitemap-blog.xml") {
+      try {
+        const { generateSitemapBlogXml } = await import("./lib/sitemap.server");
+        const blogXml = await generateSitemapBlogXml();
+        return new Response(blogXml, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        });
+      } catch (err) {
+        return new Response(
+          `<?xml version="1.0" encoding="UTF-8"?>\n<error><code>DATABASE_UNAVAILABLE</code><message>Blog sitemap temporarily unavailable.</message></error>`,
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "application/xml; charset=utf-8",
+              "Retry-After": "120",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          }
+        );
       }
     }
 

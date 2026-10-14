@@ -24,6 +24,9 @@ export function getRawSql() {
       max: isServerless ? 2 : 5,
       idle_timeout: 10,
       connect_timeout: isServerless ? 4 : 8,
+      connection: {
+        statement_timeout: isServerless ? 10000 : 30000,
+      },
       ssl: requiresSsl ? { rejectUnauthorized: false } : false,
       onnotice: () => {},
     });
