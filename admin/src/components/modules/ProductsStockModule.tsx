@@ -277,7 +277,9 @@ export const ProductsStockModule: React.FC = () => {
     "Seeds & Seedlings": "https://images.unsplash.com/photo-1592417817098-8f3d6eb231fc?w=300&auto=format&fit=crop&q=80",
     "Fertilizers & Soil Health": "https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=300&auto=format&fit=crop&q=80",
     "Agrochemicals & Crop Protection": "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=300&auto=format&fit=crop&q=80",
-    "Farm Tools & Machinery": "https://images.unsplash.com/photo-1595246140625-573b715d11dc?w=300&auto=format&fit=crop&q=80",
+    "Farm Tools & Machinery": "/images/placeholders/farm_tools.webp",
+    "Farm Tools": "/images/placeholders/farm_tools.webp",
+    "Tools": "/images/placeholders/farm_tools.webp",
     "Animal Feeds & Veterinary": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=300&auto=format&fit=crop&q=80",
     "Fresh Farm Produce": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=300&auto=format&fit=crop&q=80",
   };

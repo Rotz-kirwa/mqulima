@@ -6,6 +6,7 @@ import {
   Package, 
   ShoppingCart, 
   LayoutDashboard, 
+  BarChart3,
   CreditCard, 
   Wrench, 
   LineChart, 
@@ -44,6 +45,7 @@ interface SearchItem {
 
 const STATIC_MODULES: SearchItem[] = [
   { id: "mod-dashboard", title: "Executive Dashboard", subtitle: "Real-time metrics, revenue, active orders, live feeds", category: "Modules", tab: "dashboard", icon: LayoutDashboard },
+  { id: "mod-analytics", title: "Visitor Analytics (GA4)", subtitle: "Google Analytics 4 telemetry, traffic acquisition, customer interactions", category: "Modules", tab: "analytics", icon: BarChart3 },
   { id: "mod-customers", title: "Customer & Farmer CRM", subtitle: "National IDs, delivery locations, crops, KYC statuses", category: "Modules", tab: "customers", icon: Users },
   { id: "mod-products", title: "Products & Stock Inventory", subtitle: "Catalog, prices, inventory levels, SKUs, categories", category: "Modules", tab: "products", icon: Package },
   { id: "mod-featured", title: "Featured Collection", subtitle: "Curated hero promotions & seasonal campaigns", category: "Modules", tab: "featured", icon: Star },

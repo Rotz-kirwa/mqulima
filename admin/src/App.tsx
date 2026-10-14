@@ -6,6 +6,7 @@ import { clearAdminCache, prefetchAdminData } from "./lib/api";
 import { AdminErrorBoundary } from "./components/common/AdminErrorBoundary";
 
 const DashboardHomeModule = React.lazy(() => import("./components/modules/DashboardHomeModule").then(m => ({ default: m.DashboardHomeModule })));
+const VisitorAnalyticsModule = React.lazy(() => import("./components/modules/VisitorAnalyticsModule").then(m => ({ default: m.VisitorAnalyticsModule })));
 const CustomersModule = React.lazy(() => import("./components/modules/CustomersModule").then(m => ({ default: m.CustomersModule })));
 const ProductsStockModule = React.lazy(() => import("./components/modules/ProductsStockModule").then(m => ({ default: m.ProductsStockModule })));
 const FeaturedCollectionModule = React.lazy(() => import("./components/modules/FeaturedCollectionModule").then(m => ({ default: m.FeaturedCollectionModule })));
@@ -73,6 +74,7 @@ const ModuleLoadingSkeleton: React.FC = () => (
 
 const VALID_TABS: AdminTab[] = [
   "dashboard",
+  "analytics",
   "customers",
   "products",
   "featured",
@@ -244,6 +246,8 @@ export const App: React.FC = () => {
     switch (tab) {
       case "dashboard":
         return <DashboardHomeModule onNavigateTab={setActiveTab} />;
+      case "analytics":
+        return <VisitorAnalyticsModule />;
       case "customers":
         return <CustomersModule />;
       case "products":
@@ -283,7 +287,7 @@ export const App: React.FC = () => {
         activeTab={activeTab}
       />
       <div className="flex flex-1 pt-16">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={adminSession.role} />
         <main className="flex-1 ml-60 p-6 overflow-y-auto min-h-[calc(100vh-4rem)] text-left">
           {Array.from(visitedTabs).map((tab) => (
             <div

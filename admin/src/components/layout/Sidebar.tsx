@@ -1,6 +1,7 @@
 import React from "react";
 import {
   LayoutDashboard,
+  BarChart3,
   Users,
   Package,
   ShoppingCart,
@@ -19,6 +20,7 @@ import { prefetchAdminData } from "../../lib/api";
 
 export type AdminTab =
   | "dashboard"
+  | "analytics"
   | "customers"
   | "products"
   | "featured"
@@ -34,6 +36,7 @@ export type AdminTab =
 interface SidebarProps {
   activeTab: AdminTab;
   setActiveTab: (tab: AdminTab) => void;
+  userRole?: string;
 }
 
 interface NavItem {
@@ -50,6 +53,7 @@ interface NavGroup {
 
 const MODULE_LOADERS: Record<AdminTab, () => Promise<any>> = {
   dashboard: () => Promise.resolve(),
+  analytics: () => import("../modules/VisitorAnalyticsModule"),
   customers: () => import("../modules/CustomersModule"),
   products: () => import("../modules/ProductsStockModule"),
   featured: () => import("../modules/FeaturedCollectionModule"),
@@ -65,6 +69,7 @@ const MODULE_LOADERS: Record<AdminTab, () => Promise<any>> = {
 
 const TAB_DATA_ENDPOINTS: Record<AdminTab, string[]> = {
   dashboard: ["/api/admin/analytics", "/api/admin/market-prices"],
+  analytics: ["/api/admin/visitor-analytics"],
   customers: ["/api/admin/customers"],
   products: ["/api/admin/products"],
   featured: ["/api/admin/featured"],
@@ -78,7 +83,7 @@ const TAB_DATA_ENDPOINTS: Record<AdminTab, string[]> = {
   news: ["/api/admin/news"],
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole }) => {
   const handlePreload = (tabId: AdminTab) => {
     try {
       MODULE_LOADERS[tabId]?.();
@@ -97,6 +102,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           label: "Executive Dashboard",
           icon: LayoutDashboard,
           badgeBg: "bg-[#F59E0B]", // Solid Amber Gold
+        },
+        {
+          id: "analytics",
+          label: "Visitor Analytics (GA4)",
+          icon: BarChart3,
+          badgeBg: "bg-[#278C7B]", // Solid Deep Teal
         },
       ],
     },
@@ -190,12 +201,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           MENU
         </div>
 
-        {groups.map((group, groupIdx) => (
-          <div key={groupIdx} className="space-y-1">
-            <div className="px-3 text-[11px] font-mono uppercase tracking-widest text-[#041E1C] font-black pt-2 pb-1 border-t border-[#31B09E]/50">
-              {group.groupName}
-            </div>
-            {group.items.map((item) => {
+        {groups.map((group, groupIdx) => {
+          if (group.items.length === 0) return null;
+
+          return (
+            <div key={groupIdx} className="space-y-1">
+              <div className="px-3 text-[11px] font-mono uppercase tracking-widest text-[#041E1C] font-black pt-2 pb-1 border-t border-[#31B09E]/50">
+                {group.groupName}
+              </div>
+              {group.items.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -220,8 +234,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 </button>
               );
             })}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Sidebar Footer */}

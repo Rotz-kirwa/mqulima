@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import {
   LayoutDashboard,
+  BarChart3,
   Users,
   Package,
   ShoppingCart,
@@ -34,6 +35,7 @@ interface ModuleDef {
 
 const MODULES: ModuleDef[] = [
   { id: "dashboard", label: "Executive Dashboard", desc: "Overview & key metrics", icon: LayoutDashboard, bg: "bg-[#F59E0B]" },
+  { id: "analytics", label: "Visitor Analytics (GA4)", desc: "Traffic telemetry & visitors", icon: BarChart3, bg: "bg-[#278C7B]" },
   { id: "customers", label: "Customer & Farmer CRM", desc: "IDs, locations, crops & KYC", icon: Users, bg: "bg-[#0D9488]" },
   { id: "products", label: "Products & Stock", desc: "Inventory & price management", icon: Package, bg: "bg-[#2563EB]" },
   { id: "featured", label: "Featured Collection", desc: "Promotions & hero banners", icon: Star, bg: "bg-[#D97706]" },

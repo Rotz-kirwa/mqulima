@@ -12,6 +12,7 @@ import {
   Zap,
   Bell,
   RefreshCw,
+  BarChart3,
 } from "lucide-react";
 import { AdminTab } from "../layout/Sidebar";
 import { adminFetch } from "../../lib/api";
@@ -168,6 +169,14 @@ export const DashboardHomeModule: React.FC<DashboardHomeModuleProps> = ({ onNavi
             <span className="h-2 w-2 rounded-full bg-[#278C7B] animate-pulse" />
             <span>System Status: <strong className="text-[#278C7B]">Optimal (Production DB)</strong></span>
           </div>
+          <button
+            onClick={() => onNavigateTab("analytics")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#278C7B] hover:bg-[#1D6C60] text-white text-xs font-bold rounded-[4px] shadow-xs transition cursor-pointer"
+            title="Open Google Analytics 4 (GA4) & Website Visitor Telemetry"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>Visitor Analytics (GA4)</span>
+          </button>
           <button
             onClick={() => fetchAnalytics(false, true)}
             disabled={loading}
