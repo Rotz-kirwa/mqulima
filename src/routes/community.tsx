@@ -829,13 +829,38 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   // Commodity price billboard loaded from database
   const [billboardPrices, setBillboardPrices] = useState<{ crop: string; region: string; price: number; prevPrice: number }[]>([]);
 
-  const reloadForum = () => {
-    getForumSnapshot()
+  const reloadForum = (options?: { bypassCache?: boolean }) => {
+    return getForumSnapshot({ data: options })
       .then((snapshot) => {
         if (snapshot.showPosts && snapshot.showPosts.length > 0) {
-          setPosts(mapSnapshotToPosts(snapshot.showPosts));
+          const incomingPosts = mapSnapshotToPosts(snapshot.showPosts);
+          setPosts((prev) => {
+            const incomingIds = new Set(incomingPosts.map((p) => p.id));
+            // Preserve recent optimistic posts that are not yet in the incoming snapshot
+            const pendingPosts = prev.filter(
+              (p) => !incomingIds.has(p.id) && (p.createdAt === "Just now" || (p as any)._isOptimistic)
+            );
+
+            // For posts present in incoming, preserve any optimistic comments that aren't yet in snapshot
+            const mergedIncoming = incomingPosts.map((incPost) => {
+              const prevPost = prev.find((p) => p.id === incPost.id);
+              if (!prevPost) return incPost;
+              const incCommentIds = new Set(incPost.comments.map((c) => c.id));
+              const pendingComments = prevPost.comments.filter((c) => !incCommentIds.has(c.id));
+              if (pendingComments.length > 0) {
+                return {
+                  ...incPost,
+                  comments: [...incPost.comments, ...pendingComments],
+                };
+              }
+              return incPost;
+            });
+
+            return [...pendingPosts, ...mergedIncoming];
+          });
         } else {
-          setPosts([]);
+          // Keep optimistic posts if server returns empty
+          setPosts((prev) => prev.filter((p) => p.createdAt === "Just now" || (p as any)._isOptimistic));
         }
         
         if (snapshot.sokoListings && snapshot.sokoListings.length > 0) {
@@ -856,6 +881,10 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
           setFarmers([]);
         }
         setCommunityDataSource("database");
+        try {
+          localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(snapshot));
+        } catch {}
+        return snapshot;
       })
       .catch((e) => {
         console.error("Error loading forum snapshot:", e);
@@ -1421,7 +1450,8 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
           cropsTagged: cropTags,
           livestockTagged: [],
           location: currentUser?.county || "Kenya",
-          createdAt: "Just now"
+          createdAt: "Just now",
+          ...({ _isOptimistic: true } as any)
         };
 
         setPosts(prev => [newPostItem, ...prev.filter(p => p.id !== newPostItem.id)]);
@@ -1437,7 +1467,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         if (typeof window !== "undefined") {
           localStorage.removeItem("mqulima_post_draft");
         }
-        setTimeout(() => reloadForum(), 600);
+        reloadForum({ bypassCache: true });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to share post. Are you logged in?");
@@ -1808,7 +1838,8 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       authorAvatar: avatarUrl,
       text: textToSubmit,
       time: "Just now",
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...({ _isOptimistic: true } as any)
     };
 
     // Optimistically append comment to UI post state immediately
@@ -1837,7 +1868,18 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         }
       });
       if (res && res.success) {
-        setTimeout(() => reloadForum(), 600);
+        if (res.commentId) {
+          setPosts(prev => prev.map(p => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                comments: p.comments.map(c => c.id === tempCommentId ? { ...c, id: res.commentId, _isOptimistic: false } : c)
+              };
+            }
+            return p;
+          }));
+        }
+        reloadForum({ bypassCache: true });
       }
     } catch (err: any) {
       // Revert optimistic comment on failure

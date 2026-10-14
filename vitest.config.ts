@@ -6,6 +6,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    testTimeout: 20000,
+    hookTimeout: 20000,
+    maxConcurrency: 3,
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },

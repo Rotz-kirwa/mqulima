@@ -225,9 +225,9 @@ function ShopPage() {
   const initialData = Route.useLoaderData();
   const { data: allProductsData, isLoading: isProductsLoading } = useQuery({
     queryKey: ["shopProducts"],
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       return getShopProducts({

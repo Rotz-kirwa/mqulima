@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -83,14 +84,16 @@ type BlogPost = {
   coverImage: string;
   bodyImages?: string[];
   isFeatured?: boolean;
+  slug: string;
 };
 
 
 function BlogPage() {
   const loaderData = Route.useLoaderData();
-  const initialPosts = (loaderData?.posts && loaderData.posts.length > 0) ? (loaderData.posts as BlogPost[]) : [];
-  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
-  const [postsLoading, setPostsLoading] = useState(initialPosts.length === 0);
+  const initialPosts = useMemo(
+    () => (loaderData?.posts && loaderData.posts.length > 0 ? (loaderData.posts as BlogPost[]) : []),
+    [loaderData?.posts]
+  );
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -103,21 +106,33 @@ function BlogPage() {
   // Active Reading Post Modal State
   const [activeReadingPost, setActiveReadingPost] = useState<BlogPost | null>(null);
 
-  // Fallback / refresh loader
-  useEffect(() => {
-    if (posts.length === 0) {
-      setPostsLoading(true);
-      getPublishedBlogPosts()
-        .then((data) => {
-          setPosts(data as BlogPost[]);
-        })
-        .catch((err) => {
-          console.error("Failed to load blog posts:", err);
-          toast.error("Could not load news articles.");
-        })
-        .finally(() => setPostsLoading(false));
-    }
-  }, [posts.length]);
+  // Real-time synchronization & revalidation via TanStack Query
+  const {
+    data: fetchedPosts,
+    isLoading: isQueryLoading,
+  } = useQuery({
+    queryKey: ["blogPosts", selectedCategory, searchQuery],
+    queryFn: async () => {
+      const data = await getPublishedBlogPosts({
+        data: {
+          category: selectedCategory === "All" ? undefined : selectedCategory,
+          search: searchQuery.trim() || undefined,
+          limit: 50,
+        }
+      });
+      return (data || []) as BlogPost[];
+    },
+    initialData: (!searchQuery && selectedCategory === "All" && initialPosts.length > 0) ? initialPosts : undefined,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const posts = useMemo(() => {
+    if (fetchedPosts && fetchedPosts.length > 0) return fetchedPosts as BlogPost[];
+    if (selectedCategory === "All" && !searchQuery) return initialPosts;
+    return [];
+  }, [fetchedPosts, selectedCategory, searchQuery, initialPosts]);
+  const postsLoading = isQueryLoading && posts.length === 0;
 
   // Fetch registered user name
   useEffect(() => {
@@ -233,7 +248,7 @@ function BlogPage() {
         return (
           p.title.toLowerCase().includes(q) ||
           p.excerpt.toLowerCase().includes(q) ||
-          p.body.toLowerCase().includes(q) ||
+          Boolean(p.body && p.body.toLowerCase().includes(q)) ||
           (p.category && p.category.toLowerCase().includes(q))
         );
       }
@@ -734,7 +749,14 @@ function BlogPage() {
             </div>
 
             {/* Actions */}
-            <div className="mt-6 border-t border-gray-150 pt-4 flex justify-end gap-2">
+            <div className="mt-6 border-t border-gray-150 pt-4 flex flex-wrap items-center justify-between gap-3">
+              <Link
+                to="/blog/$slug"
+                params={{ slug: activeReadingPost.slug }}
+                className="text-xs font-bold text-[#1A5438] hover:text-[#0F766E] hover:underline flex items-center gap-1"
+              >
+                Read on Dedicated Page & Comments →
+              </Link>
               <button
                 onClick={() => setActiveReadingPost(null)}
                 className="px-5 py-2 bg-[#1A5438] hover:bg-[#113B26] rounded-lg text-xs font-bold text-white transition"

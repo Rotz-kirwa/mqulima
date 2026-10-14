@@ -67,20 +67,21 @@ const BlogQuerySchema = z.object({
   category: z.string().optional(),
   search: z.string().optional(),
   sort: z.enum(["newest", "oldest"]).optional().default("newest"),
+  bypassCache: z.boolean().optional(),
 });
 
 export type BlogQueryInput = z.infer<typeof BlogQuerySchema>;
 
 const blogCache = new Map<string, { data: any; expiry: number }>();
-const BLOG_CACHE_TTL = 5 * 60 * 1000; // 5 min cache
+const BLOG_CACHE_TTL = 30 * 1000; // 30s fresh cache with instant admin invalidation
 
 export function invalidateBlogCache() {
   blogCache.clear();
 }
 
 /**
- * Fetch published blog post cards (lightweight, trimmed — NO full body payload).
- * Used by /blog, / (home), and community previews to keep SSR HTML under 150KB.
+ * Fetch published blog post cards (lightweight, trimmed).
+ * Used by /blog, / (home), and community previews.
  */
 export const getPublishedBlogPosts = createServerFn({ method: "GET" })
   .inputValidator(BlogQuerySchema.optional())
@@ -88,7 +89,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
     const cacheKey = `posts:${JSON.stringify(data || {})}`;
     const now = Date.now();
     const cached = blogCache.get(cacheKey);
-    if (cached && cached.expiry > now) {
+    if (!data?.bypassCache && cached && cached.expiry > now) {
       return cached.data;
     }
 
@@ -112,13 +113,13 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       ? sql`ORDER BY published_at ASC NULLS LAST, created_at ASC`
       : sql`ORDER BY published_at DESC NULLS LAST, created_at DESC`;
 
-    // Fetch ONLY card fields (no heavy HTML content/body in listing)
     const agritechArticles = await sql`
       SELECT
         id,
         title,
         slug,
         summary AS excerpt,
+        content AS body,
         media_type AS "mediaType",
         media_url AS "mediaUrl",
         category,
@@ -137,6 +138,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       const media = (row.mediaUrl as string) || "";
       const isVideo = row.mediaType === "video";
       const excerpt = (row.excerpt as string) || "";
+      const body = (row.body as string) || excerpt;
       const author = resolveAuthor(row.authorName as string, row.id as string);
 
       const pubDate = row.publishedAt ? new Date(row.publishedAt as string) : new Date(row.createdAt as string);
@@ -149,6 +151,7 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
         mediaType: (isVideo ? "video" : "image") as "image" | "video",
         mediaUrl: isVideo ? media : "",
         excerpt,
+        body,
         category: (row.category as string) || "Policy & Market",
         publishedAt: pubDate.toLocaleDateString("en-US", {
           year: "numeric",
@@ -213,12 +216,12 @@ export const getBlogCategoryCounts = createServerFn({ method: "GET" })
  * Fetch a single published article by slug with full body & content-to-commerce embeds.
  */
 export const getBlogPostBySlug = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ slug: z.string() }))
+  .inputValidator(z.object({ slug: z.string(), bypassCache: z.boolean().optional() }))
   .handler(async ({ data }) => {
     const cacheKey = `slug:${data.slug}`;
     const cached = blogCache.get(cacheKey);
     const now = Date.now();
-    if (cached && now < cached.expiry) {
+    if (!data?.bypassCache && cached && now < cached.expiry) {
       return cached.data;
     }
 

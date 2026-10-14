@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { 
   DEFAULT_SHOWCASE_POSTS, 
   DEFAULT_SOKO_LISTINGS, 
@@ -20,8 +21,8 @@ function normalizeTags(tags: unknown): string[] {
 
 // PERF: forum snapshot cache (public data only; per-user likes/bookmarks are always live).
 // Every forum write must invalidate via withForumInvalidation(). See PERFORMANCE.md.
-const FORUM_FRESH_MS = 15_000;
-const FORUM_STALE_MS = 120_000;
+const FORUM_FRESH_MS = 5_000;
+const FORUM_STALE_MS = 15_000;
 let forumGen = 0;
 let forumCache: { data: any; freshUntil: number; staleUntil: number } | null = null;
 let forumInflight: { gen: number; promise: Promise<any> } | null = null;
@@ -39,10 +40,10 @@ async function withForumInvalidation<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-function getPublicForumSnapshot(): Promise<any> {
+function getPublicForumSnapshot(bypassCache = false): Promise<any> {
   const now = Date.now();
   const refresh = () => {
-    if (forumInflight && forumInflight.gen === forumGen) return forumInflight.promise;
+    if (!bypassCache && forumInflight && forumInflight.gen === forumGen) return forumInflight.promise;
     const gen = forumGen;
     const promise = loadPublicForumSnapshot()
       .then((data) => {
@@ -56,14 +57,16 @@ function getPublicForumSnapshot(): Promise<any> {
       .finally(() => {
         if (forumInflight?.promise === promise) forumInflight = null;
       });
-    forumInflight = { gen, promise };
+    if (!bypassCache) forumInflight = { gen, promise };
     return promise;
   };
-  if (forumCache && forumCache.freshUntil > now) return Promise.resolve(forumCache.data);
-  if (forumCache && forumCache.staleUntil > now) {
-    const stale = forumCache.data;
-    refresh().catch((e) => console.error("[forum] background refresh failed:", e));
-    return Promise.resolve(stale);
+  if (!bypassCache) {
+    if (forumCache && forumCache.freshUntil > now) return Promise.resolve(forumCache.data);
+    if (forumCache && forumCache.staleUntil > now) {
+      const stale = forumCache.data;
+      refresh().catch((e) => console.error("[forum] background refresh failed:", e));
+      return Promise.resolve(stale);
+    }
   }
   return refresh();
 }
@@ -86,8 +89,12 @@ async function loadUserForumSets() {
 }
 
 export const getForumSnapshot = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const [snap, userSets] = await Promise.all([getPublicForumSnapshot(), loadUserForumSets()]);
+  .inputValidator(z.object({ bypassCache: z.boolean().optional() }).optional())
+  .handler(async ({ data }) => {
+    const [snap, userSets] = await Promise.all([
+      getPublicForumSnapshot(Boolean(data?.bypassCache)),
+      loadUserForumSets()
+    ]);
     return {
       ...snap,
       showPosts: snap.showPosts.map((post: any) => ({
@@ -351,8 +358,6 @@ async function loadPublicForumSnapshot() {
       suggestedFarmers: mappedSuggested,
     };
 }
-
-import { z } from "zod";
 
 export const getCurrentFarmerProfile = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -651,7 +656,7 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    let [profile] = await sql`
+    const [profile] = await sql`
       SELECT restriction_status FROM profiles WHERE id = ${user.id}
     `;
     if (!profile) {

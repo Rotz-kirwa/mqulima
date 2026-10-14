@@ -4,15 +4,14 @@ import { requireAdminAuth } from "@/lib/api/admin-auth.server";
 import fs from "node:fs";
 import path from "node:path";
 
+import { invalidateBlogCache } from "@/lib/api/blog.server";
+
 function flushNewsCaches() {
   try {
-    const { invalidateNewsApiCache } = require("@/routes/api/news");
-    invalidateNewsApiCache();
-  } catch (e) {}
-  try {
-    const { invalidateBlogCache } = require("@/lib/api/blog.server");
     invalidateBlogCache();
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Failed to invalidate blog cache:", e);
+  }
 }
 
 export const Route = createFileRoute("/api/admin/news")({
