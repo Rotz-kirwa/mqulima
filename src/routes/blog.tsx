@@ -106,6 +106,19 @@ function BlogPage() {
   // Active Reading Post Modal State
   const [activeReadingPost, setActiveReadingPost] = useState<BlogPost | null>(null);
 
+  // Keyboard shortcut: Escape exits active article reading modal or newsletter modal
+  useEffect(() => {
+    if (!activeReadingPost && !newsletterModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveReadingPost(null);
+        setNewsletterModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeReadingPost, newsletterModalOpen]);
+
   // Real-time synchronization & revalidation via TanStack Query
   const {
     data: fetchedPosts,
@@ -586,7 +599,12 @@ function BlogPage() {
           WEEKLY NEWSLETTER COMBINED VIEW MODAL
       ══════════════════════════════════════════ */}
       {newsletterModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setNewsletterModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+        >
           <div className="bg-[#FAF9F5] rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative border border-[#D4DDD0] flex flex-col text-left max-h-[90vh] overflow-y-auto">
             
             {/* Header */}
@@ -599,9 +617,12 @@ function BlogPage() {
               </div>
               <button 
                 onClick={() => setNewsletterModalOpen(false)}
-                className="p-1 hover:bg-gray-100 rounded-full transition text-[#5D6B5C] hover:text-[#1A3A1A]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-lg text-xs font-bold transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
+                aria-label="Exit newsletter"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 group-hover:scale-110 transition-transform text-slate-500 group-hover:text-rose-600" />
+                <span>Exit</span>
+                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1 py-0.2 rounded font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
               </button>
             </div>
 
@@ -662,9 +683,10 @@ function BlogPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewsletterModalOpen(false)}
-                  className="px-4 py-2 border border-[#D4DDD0] rounded-lg text-xs font-bold text-[#5D6B5C] hover:bg-gray-50 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#D4DDD0] hover:border-slate-400 rounded-lg text-xs font-bold text-[#5D6B5C] hover:text-[#1A3A1A] hover:bg-gray-50 transition cursor-pointer"
                 >
-                  Close
+                  <X className="h-4 w-4" />
+                  <span>Exit Newsletter</span>
                 </button>
                 <button
                   onClick={() => {
@@ -687,16 +709,34 @@ function BlogPage() {
           ACTIVE ARTICLE READER MODAL
       ══════════════════════════════════════════ */}
       {activeReadingPost && (
-        <div className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveReadingPost(null);
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+        >
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative border border-gray-100 flex flex-col text-left max-h-[90vh] overflow-y-auto">
             
-            {/* Close */}
-            <button 
-              onClick={() => setActiveReadingPost(null)}
-              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full transition text-[#5D6B5C]"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {/* Top Modal Exit Bar */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#E8F4F1] text-[#1A5438]">
+                  {activeReadingPost.category}
+                </span>
+                <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
+                  • Reading Mode
+                </span>
+              </div>
+              <button 
+                onClick={() => setActiveReadingPost(null)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
+                aria-label="Exit article reader"
+              >
+                <X className="h-4 w-4 group-hover:scale-110 transition-transform text-slate-500 group-hover:text-rose-600" />
+                <span>Exit Article</span>
+                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1.5 py-0.5 rounded font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
+              </button>
+            </div>
 
             {/* Article Detail */}
             <div className="space-y-4">
@@ -759,9 +799,11 @@ function BlogPage() {
               </Link>
               <button
                 onClick={() => setActiveReadingPost(null)}
-                className="px-5 py-2 bg-[#1A5438] hover:bg-[#113B26] rounded-lg text-xs font-bold text-white transition"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1A5438] hover:bg-[#113B26] rounded-xl text-xs font-bold text-white transition shadow-sm hover:shadow group cursor-pointer"
+                aria-label="Exit article reader"
               >
-                Close Article
+                <X className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span>Exit Article</span>
               </button>
             </div>
 

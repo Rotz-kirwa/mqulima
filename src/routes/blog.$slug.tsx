@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
-  BookOpen
+  BookOpen,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -125,7 +126,29 @@ export const Route = createFileRoute("/blog/$slug")({
 function BlogPostDetailRoute() {
   const loaderData = Route.useLoaderData() as { post?: any };
   const post = loaderData?.post;
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [showFloatingExit, setShowFloatingExit] = useState(false);
+
+  // Monitor scroll depth to reveal floating exit button when reading
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingExit(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Keyboard shortcut: Pressing Escape exits reading mode and returns to News
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        navigate({ to: "/blog" });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
 
   React.useEffect(() => {
     if (post?.id) {
@@ -139,8 +162,9 @@ function BlogPostDetailRoute() {
         <div className="py-24 text-center max-w-md mx-auto px-4">
           <h1 className="text-2xl font-black text-[#1A3A1A]">Article Not Found</h1>
           <p className="text-sm text-slate-600 mt-2">The requested agricultural intelligence report could not be found.</p>
-          <Link to="/blog" className="mt-6 inline-block px-5 py-2.5 bg-[#1A5438] text-white rounded-xl text-xs font-bold">
-            Back to News
+          <Link to="/blog" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A5438] text-white rounded-xl text-xs font-bold hover:bg-[#113B26] transition">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Exit to News</span>
           </Link>
         </div>
       </AppLayout>
@@ -179,17 +203,30 @@ function BlogPostDetailRoute() {
 
   return (
     <AppLayout>
-      <div className="bg-[#FAFBF9] min-h-screen text-[#1A261C] py-8 selection:bg-[#85CC14] selection:text-white">
+      <div className="bg-[#FAFBF9] min-h-screen text-[#1A261C] py-8 selection:bg-[#85CC14] selection:text-white relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
-          {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 flex-wrap">
-            <Link to="/" className="hover:text-[#1A5438] transition">Home</Link>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <Link to="/blog" className="hover:text-[#1A5438] transition">News</Link>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="text-[#0F766E] truncate max-w-[200px] sm:max-w-xs">{post.category}</span>
-          </nav>
+          {/* Top Breadcrumb & Exit Navigation Bar */}
+          <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-bold text-slate-500 flex-wrap">
+              <Link to="/" className="hover:text-[#1A5438] transition">Home</Link>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <Link to="/blog" className="hover:text-[#1A5438] transition">News</Link>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="text-[#0F766E] truncate max-w-[180px] sm:max-w-xs">{post.category}</span>
+            </nav>
+
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-slate-700 hover:text-[#1A5438] border border-slate-200 hover:border-emerald-200 text-xs font-bold shadow-2xs hover:shadow-xs transition-all duration-200 group"
+              aria-label="Exit article and return to all news"
+              title="Exit article and return to news (Esc)"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform text-[#1A5438]" />
+              <span>Exit Article</span>
+              <kbd className="hidden sm:inline-block text-[10px] bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-[#1A5438] px-1.5 py-0.5 rounded font-mono border border-slate-200">Esc</kbd>
+            </Link>
+          </div>
 
           {/* Article Header */}
           <header className="mb-8">
@@ -423,18 +460,39 @@ function BlogPostDetailRoute() {
             </section>
           )}
 
-          {/* Back to Blog */}
-          <div className="mt-12 text-center">
+          {/* Exit Article & Back to News Footer CTA */}
+          <div className="mt-12 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <span className="text-xs font-semibold text-slate-500 block">Done reading this article?</span>
+              <p className="text-sm font-bold text-[#1A3A1A]">Return to agricultural intelligence, guides & market news</p>
+            </div>
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-slate-300 text-xs font-bold text-slate-700 hover:bg-white transition"
+              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#1A5438] hover:bg-[#113B26] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all duration-200 group"
+              aria-label="Exit article and return to all news"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to all News & Insights</span>
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+              <span>Exit Article & Back to News</span>
             </Link>
           </div>
 
         </div>
+
+        {/* Floating Quick-Exit Button (active while scrolling through article) */}
+        {showFloatingExit && (
+          <div className="fixed bottom-6 left-4 sm:left-6 z-40 animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1A3A1A]/95 hover:bg-[#1A5438] text-white shadow-xl hover:shadow-2xl text-xs font-bold backdrop-blur-md border border-white/20 transition-all duration-200 group hover:scale-[1.02] active:scale-95"
+              aria-label="Exit article and return to all news"
+              title="Exit article and return to news (Esc)"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform text-[#85CC14]" />
+              <span>Exit Article</span>
+              <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full font-medium text-white/90">News</span>
+            </Link>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
