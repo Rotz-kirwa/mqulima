@@ -487,9 +487,11 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   };
 
   // Database States initialized immediately from loader snapshot for exact SSR hydration match
-  const [farmers, setFarmers] = useState<FarmerProfile[]>(() => 
-    (initialSnapshot?.suggestedFarmers?.length ? initialSnapshot.suggestedFarmers : initialFarmers) as FarmerProfile[]
-  );
+  const [farmers, setFarmers] = useState<FarmerProfile[]>(() => {
+    const raw = initialSnapshot?.suggestedFarmers?.length ? initialSnapshot.suggestedFarmers : initialFarmers;
+    const sanitized = (raw || []).filter((f: any) => !/wanjiku|mutiso|samuel_kirwa|nduku|@mqulima_wanjiku|@mqulima_mutiso|@mqulima_samuel|@mqulima_nduku|@mqulima_kiprono$/i.test(f?.username || "") && !/Mary Wanjiku|Grace Mutiso|Samuel Kirwa|Catherine Nduku|David Kiprono/i.test(f?.name || ""));
+    return (sanitized.length > 0 ? sanitized : DEFAULT_SUGGESTED_FARMERS) as FarmerProfile[];
+  });
   const [posts, setPosts] = useState<CommunityPost[]>(() => 
     initialSnapshot?.showPosts?.length ? mapSnapshotToPosts(initialSnapshot.showPosts) : initialCommunityPosts
   );
@@ -507,22 +509,44 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Purge legacy mock cache snapshots from user devices
+    try {
+      localStorage.removeItem("mqulima_community_cached_snapshot");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v1");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v2");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v3");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v4");
+    } catch {}
+
+    const isMock = (f: any) =>
+      /wanjiku|mutiso|samuel_kirwa|nduku|@mqulima_wanjiku|@mqulima_mutiso|@mqulima_samuel|@mqulima_nduku|@mqulima_kiprono$/i.test(f?.username || "") ||
+      /Mary Wanjiku|Grace Mutiso|Samuel Kirwa|Catherine Nduku|David Kiprono/i.test(f?.name || "");
+
     if (initialSnapshot?.showPosts?.length) {
-      // Save fresh server snapshot to localStorage
+      // Save fresh server snapshot to localStorage v5
       try {
-        localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(initialSnapshot));
+        const sanitizedSnapshot = {
+          ...initialSnapshot,
+          suggestedFarmers: (initialSnapshot.suggestedFarmers || []).filter((f: any) => !isMock(f))
+        };
+        localStorage.setItem("mqulima_community_cached_snapshot_v5", JSON.stringify(sanitizedSnapshot));
       } catch {}
     } else {
       // If server returned empty, safely restore from client cache after mount
       try {
-        const raw = localStorage.getItem("mqulima_community_cached_snapshot");
+        const raw = localStorage.getItem("mqulima_community_cached_snapshot_v5");
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.showPosts) && parsed.showPosts.length > 0) {
             setPosts(mapSnapshotToPosts(parsed.showPosts));
             if (parsed.sokoListings?.length) setSokoListings(mapSnapshotToSoko(parsed.sokoListings));
             if (parsed.pulsePosts?.length) setPulsePosts(parsed.pulsePosts as PulsePost[]);
-            if (parsed.suggestedFarmers?.length) setFarmers(parsed.suggestedFarmers as FarmerProfile[]);
+            const sanitizedSuggested = (parsed.suggestedFarmers || []).filter((f: any) => !isMock(f));
+            if (sanitizedSuggested.length > 0) {
+              setFarmers(sanitizedSuggested as FarmerProfile[]);
+            } else {
+              setFarmers(DEFAULT_SUGGESTED_FARMERS as FarmerProfile[]);
+            }
             setCommunityDataSource("database");
           }
         }
@@ -5811,7 +5835,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                       <input 
                         type="text" 
                         required
-                        placeholder="e.g. Mary Wanjiku"
+                        placeholder="e.g. Kosgei Kiprono"
                         value={consultName}
                         onChange={(e) => setConsultName(e.target.value)}
                         className="w-full bg-[#F5F5F0] border border-black/[0.06] focus:border-[#1B4332] rounded-xl px-3.5 py-2 text-xs text-[#2D3436] outline-none"

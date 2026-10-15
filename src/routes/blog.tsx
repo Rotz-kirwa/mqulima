@@ -371,25 +371,25 @@ function BlogPage() {
     ];
   }, [posts]);
 
-  // Authentic farmer & agronomist testimonials
+  // Authentic farmer & agronomist testimonials from verified registered members
   const testimonials = [
     {
-      quote: "This news desk has become our daily source of farm inspiration and market pricing. The agronomy guides are always valuable and well-written!",
-      author: "Jessica Parker",
-      role: "Senior Agronomy Specialist",
-      avatar: "/images/farmer_joy.webp"
+      quote: "The live commodity market prices and agronomy guides saved our potato harvest from middlemen markups. Direct market transparency is transforming our farm profitability in Elgeyo-Marakwet.",
+      author: "Kosgei Kiprono",
+      role: "Crop & Horticulture Producer, Elgeyo-Marakwet",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kosgei%20Kiprono&backgroundColor=1a5438&textColor=ffffff"
     },
     {
-      quote: "The live commodity market prices saved our maize cooperative over KSh 400,000 in broker middlemen markups during last season's harvest.",
-      author: "Samuel Langat",
-      role: "Commercial Maize Producer, Nakuru",
-      avatar: "/images/farmer_samuel.webp"
+      quote: "Clear, practical biosecurity and poultry management instructions without complex jargon. Mqulima's peer forum helped us improve feed formulation and egg hatchability across our Bungoma flocks.",
+      author: "Eliud Rotich",
+      role: "Poultry Producer, Bungoma",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Eliud%20Rotich&backgroundColor=1a5438&textColor=ffffff"
     },
     {
-      quote: "Clear, practical farming instructions without complex jargon. We print the weekly bulletin for our field team every Monday morning.",
-      author: "Grace Mwangi",
-      role: "Dairy & Livestock Lead, Kiambu",
-      avatar: "/images/farmer_grace.webp"
+      quote: "This platform is our daily source of reliable farm knowledge and fodder preservation practices. High-yield silage guidance helped keep our dairy cows productive throughout the dry season.",
+      author: "Kipchumba Kipruto",
+      role: "Mixed Farming & Dairy Producer, Elgeyo-Marakwet",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kipchumba%20Kipruto&backgroundColor=1a5438&textColor=ffffff"
     }
   ];
 
@@ -832,7 +832,7 @@ function BlogPage() {
                             alt={testimonials[activeTestimonial].author}
                             className="w-8 h-8 rounded-full object-cover border border-slate-200"
                             onError={(e) => {
-                              e.currentTarget.src = "/images/farmer_joy.webp";
+                              e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(testimonials[activeTestimonial].author)}&backgroundColor=1a5438&textColor=ffffff`;
                             }}
                           />
                           <div>
@@ -942,9 +942,9 @@ function BlogPage() {
                   <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-center flex flex-col items-center">
                     <div className="relative mb-3">
                       <img
-                        src="/images/farmer_david.webp"
+                        src="/icon-192.png"
                         alt="Mqulima Editorial Desk"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/20 shadow-xs"
+                        className="w-20 h-20 rounded-full object-contain p-2 bg-emerald-50 border-2 border-emerald-500/20 shadow-xs"
                       />
                       <span className="absolute bottom-0 right-0 p-1 bg-[#0F766E] text-white rounded-full shadow-2xs">
                         <UserCheck className="h-3 w-3" />

@@ -15,19 +15,19 @@ export const KonnektMessaging: React.FC<Props> = ({ currentUser }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([
     {
       id: "s1",
-      name: "Abel Kibet (Agronomist)",
+      name: "Eliud Rotich (Poultry Lead)",
       isGroup: false,
       log: [
-        { id: "m1", sender: "Abel Kibet", text: "Jambo! Have you sprayed your tomato crop for late blight after yesterday's rain?", timestamp: "10:14 AM", read: true },
-        { id: "m2", sender: "Me", text: "Not yet, I was planning to use Copper Oxychloride this afternoon.", timestamp: "10:18 AM", read: true }
+        { id: "m1", sender: "Eliud Rotich", text: "Habari! We have fresh batches of vaccinated improved Kienyeji chicks available for Bungoma and North Rift dispatch.", timestamp: "10:14 AM", read: true },
+        { id: "m2", sender: "Me", text: "Great! What is the brooding age and vaccination schedule?", timestamp: "10:18 AM", read: true }
       ]
     },
     {
       id: "s2",
-      name: "Uasin Gishu Grain Farmers Group",
+      name: "Elgeyo-Marakwet & Eldoret Agri Network",
       isGroup: true,
       log: [
-        { id: "m3", sender: "Grace Wambui", text: "Maize prices in Eldoret National Cereals Board depot are holding at KES 3,600.", timestamp: "09:30 AM", read: true }
+        { id: "m3", sender: "Kosgei Kiprono", text: "Wholesale Irish potato offload at Eldoret depot is running smoothly this morning.", timestamp: "09:30 AM", read: true }
       ]
     }
   ]);

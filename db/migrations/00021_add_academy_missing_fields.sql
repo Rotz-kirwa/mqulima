@@ -17,8 +17,8 @@ ALTER TABLE courses
 UPDATE courses
   SET 
     category = 'CROP PRODUCTION',
-    instructor_name = 'Samuel Kiprono',
-    instructor_title = 'Lead Horticulturist & Agronomy Extension Officer',
+    instructor_name = 'Kosgei Kiprono',
+    instructor_title = 'Commercial Horticulture Specialist',
     rating = 4.80,
     student_count = 1240,
     has_certificate = true,
@@ -29,8 +29,8 @@ UPDATE courses
 UPDATE courses
   SET 
     category = 'CROP PRODUCTION',
-    instructor_name = 'Samuel Kiprono',
-    instructor_title = 'Lead Horticulturist & Agronomy Extension Officer',
+    instructor_name = 'Kosgei Kiprono',
+    instructor_title = 'Commercial Horticulture Specialist',
     rating = 4.90,
     student_count = 850,
     has_certificate = true,
@@ -41,8 +41,8 @@ UPDATE courses
 UPDATE courses
   SET 
     category = 'LIVESTOCK PRODUCTION',
-    instructor_name = 'Grace Mutiso',
-    instructor_title = 'Veterinary Specialist & Dairy Lead',
+    instructor_name = 'Kipchumba Kipruto',
+    instructor_title = 'Mixed Farming & Dairy Specialist',
     rating = 4.70,
     student_count = 940,
     has_certificate = true,
@@ -53,8 +53,8 @@ UPDATE courses
 UPDATE courses
   SET 
     category = 'LIVESTOCK PRODUCTION',
-    instructor_name = 'Grace Mutiso',
-    instructor_title = 'Veterinary Specialist & Poultry Lead',
+    instructor_name = 'Eliud Rotich',
+    instructor_title = 'Poultry Farming Specialist',
     rating = 4.60,
     student_count = 1120,
     has_certificate = true,

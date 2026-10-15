@@ -3,43 +3,14 @@ import { Users, ShieldCheck, MapPin, UserPlus } from "lucide-react";
 import { FarmerProfile } from "../types/community.types";
 import { resolveAvatar } from "@/shared/utils/avatar.utils";
 
+import { DEFAULT_SUGGESTED_FARMERS } from "../data/community-defaults";
+
 interface Props {
   farmers: FarmerProfile[];
 }
 
 export const FarmerDirectory: React.FC<Props> = ({ farmers }) => {
-  const defaultFarmers: FarmerProfile[] = [
-    {
-      username: "@grace_wambui",
-      name: "Grace Wambui",
-      country: "Kenya",
-      county: "Kiambu",
-      interests: ["Avocado Farming", "Organic Pest Control"],
-      crops: ["Hass Avocado", "Macadamia"],
-      livestock: ["Dairy Cows"],
-      yearsFarming: 8,
-      certifications: ["GlobalGAP Certified"],
-      reputationScore: 480,
-      followersCount: 142,
-      followers: [],
-    },
-    {
-      username: "@abel_kibet",
-      name: "Abel Kibet",
-      country: "Kenya",
-      county: "Uasin Gishu",
-      interests: ["Grain Storage", "Drip Irrigation"],
-      crops: ["Maize", "Wheat"],
-      livestock: [],
-      yearsFarming: 12,
-      certifications: ["KEPHIS Seed Grower"],
-      reputationScore: 890,
-      followersCount: 310,
-      followers: [],
-    }
-  ];
-
-  const farmerList = farmers && farmers.length > 0 ? farmers : defaultFarmers;
+  const farmerList = farmers && farmers.length > 0 ? farmers : DEFAULT_SUGGESTED_FARMERS;
 
   return (
     <div className="space-y-4">

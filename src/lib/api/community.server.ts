@@ -347,8 +347,13 @@ async function loadPublicForumSnapshot() {
       date: item.published_at ? new Date(item.published_at).toISOString().split("T")[0] : "2024-01-01",
     })) : DEFAULT_PULSE_POSTS;
 
-    const mappedSuggested = suggestedProfiles.length > 0 
-      ? suggestedProfiles.map(toFarmer) 
+    const isMockUser = (r: any) =>
+      /wanjiku|mutiso|samuel_kirwa|nduku|@mqulima_wanjiku|@mqulima_mutiso|@mqulima_samuel|@mqulima_nduku|@mqulima_kiprono$/i.test(r?.username || "") ||
+      /Mary Wanjiku|Grace Mutiso|Samuel Kirwa|Catherine Nduku|David Kiprono/i.test(r?.full_name || r?.name || "");
+
+    const filteredSuggested = (suggestedProfiles || []).filter((p: any) => !isMockUser(p));
+    const mappedSuggested = filteredSuggested.length > 0 
+      ? filteredSuggested.map(toFarmer) 
       : DEFAULT_SUGGESTED_FARMERS;
 
     return {
