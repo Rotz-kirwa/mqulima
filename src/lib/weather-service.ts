@@ -232,7 +232,9 @@ export function buildViewModel(raw: OpenMeteoResponse): WeatherViewModel {
     };
   });
 
-  const isDay = daily7[0]
+  const isDay = current.is_day !== undefined
+    ? current.is_day === 1
+    : daily7[0]
     ? computeIsDay(daily7[0].sunrise, daily7[0].sunset)
     : true;
 
@@ -276,6 +278,7 @@ function buildForecastUrl(lat: number, lon: number): string {
     "temperature_2m",
     "relative_humidity_2m",
     "apparent_temperature",
+    "is_day",
     "precipitation",
     "rain",
     "wind_speed_10m",
@@ -289,6 +292,8 @@ function buildForecastUrl(lat: number, lon: number): string {
   url.searchParams.set("hourly", [
     "temperature_2m",
     "precipitation_probability",
+    "weather_code",
+    "is_day",
     "soil_temperature_0cm",
     "soil_moisture_0_to_1cm",
     "shortwave_radiation",

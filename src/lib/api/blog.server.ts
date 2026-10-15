@@ -93,8 +93,8 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       return cached.data;
     }
 
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
+    const { getDb, resetDbPool } = await import("../db.server");
+    let sql = getDb();
     const { limit = 9, offset = 0, category, search, sort = "newest" } = data || {};
 
     let queryCondition = sql`WHERE LOWER(status) = 'published'`;
@@ -113,26 +113,38 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       ? sql`ORDER BY published_at ASC NULLS LAST, created_at ASC`
       : sql`ORDER BY published_at DESC NULLS LAST, created_at DESC`;
 
-    const agritechArticles = await sql`
-      SELECT
-        id,
-        title,
-        slug,
-        summary AS excerpt,
-        content AS body,
-        media_type AS "mediaType",
-        media_url AS "mediaUrl",
-        category,
-        source_attribution AS "authorName",
-        view_count AS "viewCount",
-        published_at AS "publishedAt",
-        created_at AS "createdAt"
-      FROM agritech_news
-      ${queryCondition}
-      ${orderBy}
-      LIMIT ${limit}
-      OFFSET ${offset}
-    `;
+    const fetchArticles = async (client: typeof sql) => {
+      return client`
+        SELECT
+          id,
+          title,
+          slug,
+          summary AS excerpt,
+          content AS body,
+          media_type AS "mediaType",
+          media_url AS "mediaUrl",
+          category,
+          source_attribution AS "authorName",
+          view_count AS "viewCount",
+          published_at AS "publishedAt",
+          created_at AS "createdAt"
+        FROM agritech_news
+        ${queryCondition}
+        ${orderBy}
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `;
+    };
+
+    let agritechArticles;
+    try {
+      agritechArticles = await fetchArticles(sql);
+    } catch (err: any) {
+      console.warn("[BLOG] Retrying getPublishedBlogPosts after connection issue:", err?.message);
+      resetDbPool();
+      sql = getDb();
+      agritechArticles = await fetchArticles(sql);
+    }
 
     const result = agritechArticles.map((row) => {
       const media = (row.mediaUrl as string) || "";
@@ -225,27 +237,40 @@ export const getBlogPostBySlug = createServerFn({ method: "GET" })
       return cached.data;
     }
 
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
+    const { getDb, resetDbPool } = await import("../db.server");
+    let sql = getDb();
 
-    const [row] = await sql`
-      SELECT
-        id,
-        title,
-        slug,
-        summary AS excerpt,
-        content AS body,
-        media_type AS "mediaType",
-        media_url AS "mediaUrl",
-        category,
-        source_attribution AS "authorName",
-        view_count AS "viewCount",
-        published_at AS "publishedAt",
-        created_at AS "createdAt"
-      FROM agritech_news
-      WHERE slug = ${data.slug} AND LOWER(status) = 'published'
-      LIMIT 1
-    `;
+    const fetchPost = async (client: typeof sql) => {
+      const rows = await client`
+        SELECT
+          id,
+          title,
+          slug,
+          summary AS excerpt,
+          content AS body,
+          media_type AS "mediaType",
+          media_url AS "mediaUrl",
+          category,
+          source_attribution AS "authorName",
+          view_count AS "viewCount",
+          published_at AS "publishedAt",
+          created_at AS "createdAt"
+        FROM agritech_news
+        WHERE slug = ${data.slug} AND LOWER(status) = 'published'
+        LIMIT 1
+      `;
+      return rows[0];
+    };
+
+    let row;
+    try {
+      row = await fetchPost(sql);
+    } catch (err: any) {
+      console.warn("[BLOG] Retrying getBlogPostBySlug after connection issue:", err?.message);
+      resetDbPool();
+      sql = getDb();
+      row = await fetchPost(sql);
+    }
 
     if (!row) return null;
 
@@ -398,4 +423,144 @@ export const incrementBlogViewCount = createServerFn({ method: "POST" })
       console.error("Increment blog view count error:", err);
     }
     return { success: true };
+  });
+
+/**
+ * Fetch agronomy discussion comments for an article.
+ */
+export const getArticleComments = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ articleSlug: z.string().optional(), articleId: z.string().optional() }))
+  .handler(async ({ data }) => {
+    try {
+      const { getDb, resetDbPool } = await import("../db.server");
+      let sql = getDb();
+
+      const fetchComments = async (client: typeof sql) => {
+        return client`
+          SELECT
+            id,
+            article_id AS "articleId",
+            article_slug AS "articleSlug",
+            author_name AS "authorName",
+            author_location AS "authorLocation",
+            author_avatar AS "authorAvatar",
+            content,
+            is_agronomist_reply AS "isAgronomistReply",
+            agronomist_title AS "agronomistTitle",
+            parent_id AS "parentId",
+            likes_count AS "likesCount",
+            created_at AS "createdAt"
+          FROM agritech_news_comments
+          WHERE (${data.articleSlug ? sql`article_slug = ${data.articleSlug}` : sql`1=1`}
+             OR ${data.articleId ? sql`article_id = ${data.articleId}` : sql`1=0`})
+            AND LOWER(status) = 'published'
+          ORDER BY created_at ASC
+        `;
+      };
+
+      try {
+        const rows = await fetchComments(sql);
+        return rows;
+      } catch (err: any) {
+        resetDbPool();
+        sql = getDb();
+        return await fetchComments(sql);
+      }
+    } catch (e) {
+      console.error("[BLOG] Failed to get comments:", e);
+      return [];
+    }
+  });
+
+/**
+ * Post a new question or comment to an article.
+ */
+export const postArticleComment = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      articleId: z.string(),
+      articleSlug: z.string(),
+      authorName: z.string().min(2, "Name must be at least 2 characters"),
+      authorLocation: z.string().optional().default("Kenya"),
+      content: z.string().min(5, "Comment must be at least 5 characters"),
+    })
+  )
+  .handler(async ({ data }) => {
+    const { getDb, resetDbPool } = await import("../db.server");
+    let sql = getDb();
+
+    const insertComment = async (client: typeof sql) => {
+      const [inserted] = await client`
+        INSERT INTO agritech_news_comments (
+          article_id,
+          article_slug,
+          author_name,
+          author_location,
+          content,
+          is_agronomist_reply,
+          likes_count,
+          status
+        ) VALUES (
+          ${data.articleId},
+          ${data.articleSlug},
+          ${data.authorName.trim()},
+          ${(data.authorLocation || "Kenya").trim()},
+          ${data.content.trim()},
+          false,
+          0,
+          'published'
+        )
+        RETURNING
+          id,
+          article_id AS "articleId",
+          article_slug AS "articleSlug",
+          author_name AS "authorName",
+          author_location AS "authorLocation",
+          content,
+          is_agronomist_reply AS "isAgronomistReply",
+          likes_count AS "likesCount",
+          created_at AS "createdAt"
+      `;
+      return inserted;
+    };
+
+    try {
+      return await insertComment(sql);
+    } catch (err: any) {
+      resetDbPool();
+      sql = getDb();
+      return await insertComment(sql);
+    }
+  });
+
+/**
+ * Like a comment on an article.
+ */
+export const likeArticleComment = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ commentId: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      const { getDb, resetDbPool } = await import("../db.server");
+      let sql = getDb();
+
+      const runLike = async (client: typeof sql) => {
+        await client`
+          UPDATE agritech_news_comments
+          SET likes_count = COALESCE(likes_count, 0) + 1
+          WHERE id = ${data.commentId}::uuid
+        `;
+      };
+
+      try {
+        await runLike(sql);
+      } catch {
+        resetDbPool();
+        sql = getDb();
+        await runLike(sql);
+      }
+      return { success: true };
+    } catch (e) {
+      console.error("[BLOG] Failed to like comment:", e);
+      return { success: false };
+    }
   });

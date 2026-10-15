@@ -39,6 +39,12 @@ export type DiagnoseInput = z.infer<typeof DiagnoseInputSchema>;
 export const runAIPathogenDiagnostics = createServerFn({ method: "POST" })
   .inputValidator((val: unknown) => DiagnoseInputSchema.parse(val))
   .handler(async ({ data }) => {
+    // 0. Enforce Authentication
+    const user = await getAuthUser();
+    if (!user) {
+      throw new Error("Authentication required: Please sign in or create an account to use the AI Crop Doctor.");
+    }
+
     const { crop, symptoms, imageBase64, county, subCounty, cropAge, plantingDate, currentWeather, farmerQuestion } = data;
 
     // 1. File Type and Size Validation
@@ -255,8 +261,7 @@ Return ONLY valid JSON with this exact schema:
       recommendedProducts,
     };
 
-    // 5. Persist to History if Authenticated
-    const user = await getAuthUser();
+    // 5. Persist to History for Authenticated User
     let savedDiagnosisId: string | null = null;
     if (user) {
       const [inserted] = await sql`
@@ -307,4 +312,85 @@ export const getDiagnosisHistory = createServerFn({ method: "POST" })
       createdAt: row.created_at,
       resultJson: row.result_json,
     }));
+  });
+
+const ChatInputSchema = z.object({
+  message: z.string().min(1, "Message is required"),
+  crop: z.string().optional(),
+  county: z.string().optional(),
+  currentDiagnosis: z.any().optional(),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      })
+    )
+    .optional(),
+});
+
+export const askAICropDoctorChat = createServerFn({ method: "POST" })
+  .inputValidator((val: unknown) => ChatInputSchema.parse(val))
+  .handler(async ({ data }) => {
+    const { message, crop, county, currentDiagnosis, history = [] } = data;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return {
+        reply: `Samahani! AI agronomist intelligence is currently operating in offline mode. For ${crop || "your crops"} in ${county || "Kenya"}, ensure proper field drainage, maintain recommended plant spacing, scout early mornings for foliar pests, and apply certified agrovet treatments during calm, dry weather.`,
+      };
+    }
+
+    try {
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey });
+
+      const diagnosisContext = currentDiagnosis
+        ? `\nCurrent Active Diagnosis Context:\n- Condition: ${currentDiagnosis.disease || currentDiagnosis.possibleCondition}\n- Scientific Name: ${currentDiagnosis.scientificDisease || "N/A"}\n- Crop: ${currentDiagnosis.crop}\n- Severity: ${currentDiagnosis.severity}\n- Organic Solutions: ${(currentDiagnosis.organicTreatment || []).join("; ")}\n- Chemical Options: ${(currentDiagnosis.chemicalTreatment || []).join("; ")}`
+        : "";
+
+      const systemInstruction = `You are "Daktari wa Mimea" (Mqulima AI Chief Agronomist & East African Crop Pathologist).
+You assist Kenyan farmers (smallholders, greenhouse growers, and commercial farms) with practical, field-proven agricultural science.
+Your answers are concise, well-structured (bullet points, clear steps), and culturally relevant to Kenyan agriculture (you understand English and Swahili terms like 'shamba', 'mbolea', 'wadudu', 'dawa', 'sukuma', 'mahindi', 'nyanya', 'fungicide', 'knapsack').
+
+Guidelines:
+1. Always give actionable, precise instructions: e.g. exact knapsack dilution rates (e.g., 20ml per 20L knapsack sprayer), ideal spray times (6:00 AM - 9:00 AM or 5:00 PM - 6:30 PM), and pre-harvest intervals (PHI).
+2. Recommend BOTH organic/cultural practices (neem seed extract, ash, companion planting, crop rotation) AND registered active agrovet compounds commonly stocked in Kenyan agrovets.
+3. Be direct, helpful, and concise. Avoid rambling fluff.
+${diagnosisContext}`;
+
+      const contents: any[] = [];
+      for (const turn of history.slice(-6)) {
+        contents.push({
+          role: turn.role === "assistant" ? "model" : "user",
+          parts: [{ text: turn.content }],
+        });
+      }
+
+      contents.push({
+        role: "user",
+        parts: [
+          {
+            text: `County/Location: ${county || "Kenya"} | Target Crop: ${crop || "General Agricultural"}\n\nFarmer Question:\n${message}`,
+          },
+        ],
+      });
+
+      const response = await ai.models.generateContent({
+        model: process.env.GEMINI_MODEL_NAME || "gemini-2.5-flash",
+        contents,
+        config: {
+          systemInstruction,
+          maxOutputTokens: 1024,
+        },
+      });
+
+      return {
+        reply: response.text || "I have analyzed your query. Please inspect your crop leaf underside and consult your nearest agrovet officer if symptoms continue.",
+      };
+    } catch (err: any) {
+      console.error("AI Crop Doctor Chat Error:", err);
+      return {
+        reply: `Samahani, an error occurred while consulting the agronomic neural core: ${err?.message || "Please check your network connection and ask again."}`,
+      };
+    }
   });

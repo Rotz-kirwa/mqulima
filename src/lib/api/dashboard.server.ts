@@ -21,51 +21,15 @@ async function ensureAuthenticated(userId: string) {
     user = await getCurrentUser();
   } catch (e) {}
 
-  if (user && (user.id === userId || user.role === "admin" || user.role === "super_admin")) {
-    return user;
+  if (!user) {
+    throw new Error("Unauthorized: Please sign in to access your dashboard records");
   }
 
-  // Database verification fallback
-  const { getDb } = await import("../db.server");
-  const sql = getDb();
-  let [dbUser] = await sql`
-    SELECT id, email, full_name, role, phone
-    FROM profiles
-    WHERE id = ${userId} AND deleted_at IS NULL
-  `;
-
-  if (!dbUser) {
-    const [rawUser] = await sql`
-      SELECT id, email, first_name, last_name, phone_number
-      FROM users
-      WHERE id = ${userId}
-    `;
-    if (rawUser) {
-      dbUser = {
-        id: rawUser.id,
-        email: rawUser.email,
-        full_name: `${rawUser.first_name || ""} ${rawUser.last_name || ""}`.trim(),
-        role: "farmer",
-        phone: rawUser.phone_number
-      };
-    }
+  if (user.id !== userId && user.role !== "admin" && user.role !== "super_admin") {
+    throw new Error("Forbidden: You cannot access another user's dashboard records");
   }
 
-  if (!dbUser) {
-    throw new Error("Unauthorized");
-  }
-
-  return {
-    id: dbUser.id,
-    name: dbUser.full_name,
-    email: dbUser.email,
-    county: "",
-    farmSize: "",
-    crops: "",
-    livestock: "",
-    role: dbUser.role || "farmer",
-    phone: dbUser.phone
-  };
+  return user;
 }
 
 export const getUserOrders = createServerFn({ method: "GET" })

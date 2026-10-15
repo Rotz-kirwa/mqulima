@@ -1,4 +1,4 @@
-import { db, getDb as getDrizzleDb, getRawSql } from "../db";
+import { db, getDb as getDrizzleDb, getRawSql, resetRawSql } from "../db";
 
 // Export Drizzle ORM client instance directly for type-safe queries
 export { db, getDrizzleDb };
@@ -9,12 +9,7 @@ export function getDb() {
 }
 
 export function resetDbPool() {
-  const sql = getRawSql();
-  if (sql) {
-    try {
-      sql.end();
-    } catch {}
-  }
+  resetRawSql();
 }
 
 export type Sql = ReturnType<typeof getRawSql>;

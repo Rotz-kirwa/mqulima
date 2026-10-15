@@ -1,10 +1,14 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { MqulimaLogo } from "@/components/mqulima/MqulimaLogo";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { 
   getBlogPostBySlug, 
-  incrementBlogViewCount 
+  incrementBlogViewCount,
+  getArticleComments,
+  postArticleComment,
+  likeArticleComment
 } from "@/lib/api/blog.server";
 import { sanitizeHtml } from "@/lib/sanitization";
 import { 
@@ -17,11 +21,16 @@ import {
   ShoppingBag, 
   Briefcase, 
   Calculator, 
-  ArrowLeft,
-  ArrowRight,
-  Eye,
-  BookOpen,
-  X
+  ArrowLeft, 
+  ArrowRight, 
+  Eye, 
+  BookOpen, 
+  X,
+  ThumbsUp,
+  MessageSquare,
+  Send,
+  Heart,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -32,11 +41,14 @@ export const Route = createFileRoute("/blog/$slug")({
   pendingMs: 0,
   loader: async ({ params }) => {
     try {
-      const post = await getBlogPostBySlug({ data: { slug: params.slug } });
+      const [post, comments] = await Promise.all([
+        getBlogPostBySlug({ data: { slug: params.slug } }),
+        getArticleComments({ data: { articleSlug: params.slug } }).catch(() => []),
+      ]);
       if (!post) {
         throw notFound();
       }
-      return { post };
+      return { post, initialComments: comments || [] };
     } catch (e) {
       throw notFound();
     }
@@ -124,16 +136,38 @@ export const Route = createFileRoute("/blog/$slug")({
 });
 
 function BlogPostDetailRoute() {
-  const loaderData = Route.useLoaderData() as { post?: any };
+  const loaderData = Route.useLoaderData() as { post?: any; initialComments?: any[] };
   const post = loaderData?.post;
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [showFloatingExit, setShowFloatingExit] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [helpfulCount, setHelpfulCount] = useState(post?.viewCount ? Math.max(12, Math.floor(post.viewCount * 0.45)) : 18);
+  const [hasVotedHelpful, setHasVotedHelpful] = useState(false);
+  const [comments, setComments] = useState<any[]>(loaderData?.initialComments || []);
+  const [authorName, setAuthorName] = useState("");
+  const [authorLocation, setAuthorLocation] = useState("");
+  const [commentContent, setCommentContent] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set());
 
-  // Monitor scroll depth to reveal floating exit button when reading
+  // Monitor scroll depth for floating exit & top reading progress indicator
   React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("mqulima_user_account");
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name) setAuthorName(u.name);
+        if (u.county || u.location) setAuthorLocation(u.county || u.location);
+      }
+    } catch {}
+
     const handleScroll = () => {
       setShowFloatingExit(window.scrollY > 300);
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0) {
+        setScrollProgress(Math.min(100, Math.max(0, (window.scrollY / docHeight) * 100)));
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -162,7 +196,7 @@ function BlogPostDetailRoute() {
         <div className="py-24 text-center max-w-md mx-auto px-4">
           <h1 className="text-2xl font-black text-[#1A3A1A]">Article Not Found</h1>
           <p className="text-sm text-slate-600 mt-2">The requested agricultural intelligence report could not be found.</p>
-          <Link to="/blog" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A5438] text-white rounded-xl text-xs font-bold hover:bg-[#113B26] transition">
+          <Link to="/blog" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#0B2117] hover:bg-[#0F766E] text-white rounded-none text-xs font-black uppercase tracking-wider transition shadow-sm">
             <ArrowLeft className="h-4 w-4" />
             <span>Exit to News</span>
           </Link>
@@ -199,10 +233,72 @@ function BlogPostDetailRoute() {
     }
   };
 
+  const handleVoteHelpful = () => {
+    if (hasVotedHelpful) {
+      toast.info("You already marked this intelligence report as helpful.");
+      return;
+    }
+    setHasVotedHelpful(true);
+    setHelpfulCount((prev) => prev + 1);
+    toast.success("Thank you! Your feedback helps our agronomists tailor actionable farm reports.");
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentContent.trim() || commentContent.trim().length < 5) {
+      toast.error("Please enter a question or comment of at least 5 characters.");
+      return;
+    }
+    if (!authorName.trim() || authorName.trim().length < 2) {
+      toast.error("Please enter your name.");
+      return;
+    }
+    setIsSubmittingComment(true);
+    try {
+      const newComment = await postArticleComment({
+        data: {
+          articleId: post.id,
+          articleSlug: post.slug,
+          authorName: authorName.trim(),
+          authorLocation: authorLocation.trim() || "Kenya",
+          content: commentContent.trim(),
+        },
+      });
+      if (newComment) {
+        setComments((prev) => [...prev, newComment]);
+        setCommentContent("");
+        toast.success("Your question/comment has been posted! The Mqulima Agronomy Desk will review and respond.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to post comment. Please try again.");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleLikeComment = async (commentId: string) => {
+    if (likedCommentIds.has(commentId)) return;
+    setLikedCommentIds((prev) => new Set(prev).add(commentId));
+    setComments((prev) =>
+      prev.map((c) => (c.id === commentId ? { ...c, likesCount: (c.likesCount || 0) + 1 } : c))
+    );
+    try {
+      await likeArticleComment({ data: { commentId } });
+    } catch {}
+  };
+
   const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${post.title} — ${canonicalUrl}`)}`;
 
   return (
     <AppLayout>
+      {/* Top Sticky Reading Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-200/50">
+        <div 
+          className="h-full bg-gradient-to-r from-[#0F766E] to-[#85CC14] transition-all duration-150"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       <div className="bg-[#FAFBF9] min-h-screen text-[#1A261C] py-8 selection:bg-[#85CC14] selection:text-white relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
@@ -218,19 +314,19 @@ function BlogPostDetailRoute() {
 
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-slate-700 hover:text-[#1A5438] border border-slate-200 hover:border-emerald-200 text-xs font-bold shadow-2xs hover:shadow-xs transition-all duration-200 group"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-none bg-white hover:bg-slate-50 text-slate-800 hover:text-[#0B2117] border border-slate-300 text-xs font-black uppercase tracking-wider shadow-2xs hover:shadow-xs transition-all duration-200 group"
               aria-label="Exit article and return to all news"
               title="Exit article and return to news (Esc)"
             >
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform text-[#1A5438]" />
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform text-[#0F766E]" />
               <span>Exit Article</span>
-              <kbd className="hidden sm:inline-block text-[10px] bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-[#1A5438] px-1.5 py-0.5 rounded font-mono border border-slate-200">Esc</kbd>
+              <kbd className="hidden sm:inline-block text-[9px] bg-slate-100 group-hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-none font-mono border border-slate-300">Esc</kbd>
             </Link>
           </div>
 
           {/* Article Header */}
           <header className="mb-8">
-            <span className="inline-block bg-[#0F766E] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+            <span className="inline-block bg-[#0B2117] text-[#85CC14] border border-[#85CC14]/30 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-none mb-3">
               {post.category}
             </span>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold font-['Lora',serif] text-[#1A3A1A] leading-tight tracking-tight">
@@ -238,51 +334,57 @@ function BlogPostDetailRoute() {
             </h1>
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-semibold mt-4 pb-6 border-b border-slate-200">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-[#1A5438]" />
+              <span className="flex items-center gap-1.5 font-bold">
+                <Calendar className="h-4 w-4 text-[#0F766E]" />
                 {post.publishedAt}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-[#1A5438]" />
+              <span className="flex items-center gap-1.5 font-bold">
+                <Clock className="h-4 w-4 text-[#0F766E]" />
                 {post.readTime}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <Eye className="h-4 w-4 text-[#1A5438]" />
+              <span className="flex items-center gap-1.5 font-bold">
+                <Eye className="h-4 w-4 text-[#0F766E]" />
                 {post.viewCount} views
               </span>
             </div>
 
             {/* Author E-E-A-T Profile Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 mt-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-white border-2 border-slate-200 rounded-none p-5 sm:p-6 mt-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <OptimizedImage
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="h-12 w-12 rounded-full object-cover border-2 border-[#1A5438]/20 shadow-xs shrink-0"
-                  width={48}
-                  height={48}
-                />
+                {post.author.name === "Mqulima Desk" || post.author.avatar === "/icon-192.png" ? (
+                  <div className="h-12 w-12 shrink-0 flex items-center justify-center">
+                    <MqulimaLogo size={42} />
+                  </div>
+                ) : (
+                  <OptimizedImage
+                    src={post.author.avatar}
+                    alt={post.author.name}
+                    className="h-12 w-12 rounded-none object-cover border-2 border-[#0B2117] shadow-xs shrink-0"
+                    width={48}
+                    height={48}
+                  />
+                )}
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <strong className="text-sm font-bold text-[#1A3A1A]">{post.author.name}</strong>
-                    <span className="bg-emerald-100 text-[#1A5438] text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="bg-[#0B2117] text-[#85CC14] text-[9px] font-black px-2 py-0.5 rounded-none uppercase tracking-wider border border-[#85CC14]/30">
                       Verified Publisher
                     </span>
                   </div>
-                  <span className="text-xs text-slate-600 block">{post.author.role}</span>
+                  <span className="text-xs text-slate-600 block font-medium">{post.author.role}</span>
                   <p className="text-[11px] text-slate-500 italic mt-0.5 max-w-md hidden sm:block">{post.author.bio}</p>
                 </div>
               </div>
 
               {/* Verified Agronomist Review Badge */}
-              <div className="bg-[#FAF9F5] border border-[#D4DDD0] rounded-xl px-3.5 py-2 text-left shrink-0">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#1A5438] uppercase tracking-wider">
+              <div className="bg-[#FAF9F5] border border-slate-300 rounded-none px-3.5 py-2 text-left shrink-0">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-[#0B2117] uppercase tracking-wider">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Peer Reviewed</span>
                 </div>
-                <span className="text-[11px] font-semibold text-slate-700 block mt-0.5">
+                <span className="text-[11px] font-bold text-slate-700 block mt-0.5">
                   {post.reviewedBy}
                 </span>
               </div>
@@ -290,7 +392,7 @@ function BlogPostDetailRoute() {
           </header>
 
           {/* Featured Hero Media */}
-          <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-100 mb-8 border border-slate-200 shadow-sm">
+          <div className="relative aspect-[16/9] w-full rounded-none overflow-hidden bg-slate-900 mb-8 border-2 border-[#0B2117] shadow-md">
             {post.mediaType === "video" ? (
               <video
                 src={post.mediaUrl || post.coverImage}
@@ -310,15 +412,30 @@ function BlogPostDetailRoute() {
             )}
           </div>
 
-          {/* Social Share Bar */}
-          <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 mb-8">
-            <span className="text-xs font-bold text-slate-600">Share this intelligence:</span>
+          {/* Social Share & Reader Feedback Bar */}
+          <div className="flex items-center justify-between gap-3 bg-white border-2 border-slate-200 rounded-none px-4 py-3 mb-8 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700">Share this intelligence:</span>
+              <button
+                onClick={handleVoteHelpful}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-black uppercase tracking-wider transition cursor-pointer border ${
+                  hasVotedHelpful
+                    ? "bg-[#0B2117] text-[#85CC14] border-[#0B2117] shadow-xs"
+                    : "bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100"
+                }`}
+                title="Mark this report as helpful"
+              >
+                <ThumbsUp className={`h-3.5 w-3.5 ${hasVotedHelpful ? "text-[#85CC14] fill-current" : "text-slate-500"}`} />
+                <span>Helpful ({helpfulCount})</span>
+              </button>
+            </div>
+
             <div className="flex items-center gap-2">
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white rounded-lg text-xs font-bold hover:brightness-105 transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#25D366] text-white rounded-none text-xs font-black uppercase tracking-wider hover:brightness-105 transition shadow-2xs"
               >
                 <WhatsAppIcon className="h-4 w-4 fill-white" />
                 <span>WhatsApp</span>
@@ -326,7 +443,7 @@ function BlogPostDetailRoute() {
 
               <button
                 onClick={handleWebShare}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1A5438] text-white rounded-lg text-xs font-bold hover:bg-[#113B26] transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0B2117] text-white rounded-none text-xs font-black uppercase tracking-wider hover:bg-[#0F766E] transition cursor-pointer shadow-2xs"
               >
                 <Share2 className="h-3.5 w-3.5" />
                 <span>Share</span>
@@ -334,7 +451,7 @@ function BlogPostDetailRoute() {
 
               <button
                 onClick={handleCopyLink}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-none text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition border border-slate-200 cursor-pointer"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <BookOpen className="h-3.5 w-3.5" />}
                 <span>{copied ? "Copied" : "Copy Link"}</span>
@@ -344,36 +461,36 @@ function BlogPostDetailRoute() {
 
           {/* Article HTML Body */}
           <div 
-            className="prose prose-slate max-w-none text-[#263225] leading-relaxed text-sm sm:text-base space-y-5 font-['Open_Sans',sans-serif] [&_h2]:text-xl sm:[&_h2]:text-2xl [&_h2]:font-bold [&_h2]:font-['Lora'] [&_h2]:text-[#1A3A1A] [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3 [&_li]:mb-1.5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/40 [&_blockquote]:py-3 [&_blockquote]:rounded-r-lg [&_a]:text-[#0F766E] [&_a]:underline font-medium"
+            className="prose prose-slate max-w-none text-[#263225] leading-relaxed text-sm sm:text-base space-y-5 font-['Open_Sans',sans-serif] [&_h2]:text-xl sm:[&_h2]:text-2xl [&_h2]:font-bold [&_h2]:font-['Lora',serif] [&_h2]:text-[#1A3A1A] [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3 [&_li]:mb-1.5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0F766E] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/40 [&_blockquote]:py-3 [&_a]:text-[#0F766E] [&_a]:underline font-medium"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body) }}
           />
 
           {/* ══════════════════════════════════════════
               CONTENT-TO-COMMERCE LOOP EMBEDS
               ══════════════════════════════════════════ */}
-          <section className="mt-12 pt-8 border-t-2 border-[#1A5438]/20 space-y-6">
-            <h2 className="text-xl font-bold font-['Lora',serif] text-[#1A3A1A]">
+          <section className="mt-12 pt-8 border-t-2 border-[#0B2117]/20 space-y-6">
+            <h2 className="text-xl font-black font-['Lora',serif] text-[#1A3A1A]">
               Recommended Next Actions for Your Farm
             </h2>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {/* Embed 1: Related Product */}
               {post.relatedProduct && (
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-[#1A5438] transition">
+                <div className="bg-white border-2 border-slate-200 rounded-none p-5 flex flex-col justify-between shadow-xs hover:border-[#0B2117] transition">
                   <div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#1A5438] mb-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-[#0F766E] mb-2">
                       <ShoppingBag className="h-3 w-3" />
                       AgroShop Input
                     </span>
                     <h3 className="text-xs font-bold text-[#1A3A1A] line-clamp-2">{post.relatedProduct.name}</h3>
-                    <div className="text-xs font-black text-[#1A5438] mt-2">
+                    <div className="text-xs font-black text-[#0B2117] mt-2">
                       KSh {post.relatedProduct.price.toLocaleString()}
                     </div>
                   </div>
                   <Link
                     to="/shop/product/$slug"
                     params={{ slug: post.relatedProduct.slug }}
-                    className="mt-4 w-full py-2 bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-bold text-xs rounded-xl text-center transition"
+                    className="mt-4 w-full py-2.5 bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-black uppercase text-xs tracking-wider rounded-none text-center transition shadow-xs"
                   >
                     View in AgroShop →
                   </Link>
@@ -382,9 +499,9 @@ function BlogPostDetailRoute() {
 
               {/* Embed 2: Related Service */}
               {post.relatedService && (
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-[#1A5438] transition">
+                <div className="bg-white border-2 border-slate-200 rounded-none p-5 flex flex-col justify-between shadow-xs hover:border-[#0B2117] transition">
                   <div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#0F766E] mb-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-[#0F766E] mb-2">
                       <Briefcase className="h-3 w-3" />
                       Book Expert
                     </span>
@@ -393,7 +510,7 @@ function BlogPostDetailRoute() {
                   </div>
                   <Link
                     to="/services"
-                    className="mt-4 w-full py-2 bg-[#1A5438] hover:bg-[#113B26] text-white font-bold text-xs rounded-xl text-center transition"
+                    className="mt-4 w-full py-2.5 bg-[#0B2117] hover:bg-[#0F766E] text-white font-black uppercase text-xs tracking-wider rounded-none text-center transition shadow-xs"
                   >
                     Book Consultation →
                   </Link>
@@ -401,9 +518,9 @@ function BlogPostDetailRoute() {
               )}
 
               {/* Embed 3: Tool Calculator */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-[#1A5438] transition">
+              <div className="bg-white border-2 border-slate-200 rounded-none p-5 flex flex-col justify-between shadow-xs hover:border-[#0B2117] transition">
                 <div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#85CC14] mb-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-[#0B2117] mb-2">
                     <Calculator className="h-3 w-3" />
                     Precision Tool
                   </span>
@@ -412,7 +529,7 @@ function BlogPostDetailRoute() {
                 </div>
                 <Link
                   to="/tools"
-                  className="mt-4 w-full py-2 bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs rounded-xl text-center transition"
+                  className="mt-4 w-full py-2.5 bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-black uppercase text-xs tracking-wider rounded-none text-center transition shadow-xs"
                 >
                   Launch Tool →
                 </Link>
@@ -420,22 +537,215 @@ function BlogPostDetailRoute() {
             </div>
           </section>
 
+          {/* ══════════════════════════════════════════
+              AGRONOMY DISCUSSION & READER QUESTIONS
+              ══════════════════════════════════════════ */}
+          <section id="discussion" className="mt-12 pt-8 border-t-2 border-[#0B2117]/20 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-slate-200 pb-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-black font-['Lora',serif] text-[#1A3A1A] flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-[#0F766E]" />
+                    <span>Agronomy Discussion & Farmer Q&A</span>
+                  </h2>
+                  <span className="bg-[#0B2117] text-[#85CC14] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-none border border-[#85CC14]/30 shadow-2xs">
+                    {comments.length} {comments.length === 1 ? "Contribution" : "Contributions"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-semibold mt-1">
+                  Ask our agronomist desk about soil protocols, dosages, or market opportunities referenced in this report.
+                </p>
+              </div>
+
+              <a
+                href="#post-question"
+                className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0F766E] hover:text-[#0B2117] shrink-0"
+              >
+                <span>Ask Question ↓</span>
+              </a>
+            </div>
+
+            {/* Comments List */}
+            <div className="space-y-4">
+              {comments.length === 0 ? (
+                <div className="border border-dashed border-slate-300 rounded-none p-8 text-center bg-white">
+                  <MessageSquare className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                  <h3 className="text-sm font-bold text-[#1A3A1A]">No questions posted yet for this article</h3>
+                  <p className="text-xs text-slate-500 mt-1">Be the first producer to consult our agronomists on this topic below.</p>
+                </div>
+              ) : (
+                comments.map((c) => (
+                  <article
+                    key={c.id}
+                    className={`rounded-none transition-all ${
+                      c.isAgronomistReply
+                        ? "bg-emerald-50/70 border-2 border-[#0F766E] border-l-[6px] border-l-[#0F766E] p-5 shadow-xs"
+                        : "bg-white border-2 border-slate-200 p-5 shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`w-8 h-8 rounded-none text-xs font-black flex items-center justify-center shrink-0 border ${
+                            c.isAgronomistReply
+                              ? "bg-[#0B2117] text-[#85CC14] border-[#85CC14]/30"
+                              : "bg-[#0F766E]/10 text-[#0F766E] border-[#0F766E]/20"
+                          }`}
+                        >
+                          {c.isAgronomistReply
+                            ? "MD"
+                            : c.authorName
+                                .split(" ")
+                                .map((n: string) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase() || "FR"}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <strong className="text-xs sm:text-sm font-bold text-[#1A3A1A]">
+                              {c.authorName}
+                            </strong>
+                            {c.isAgronomistReply && (
+                              <span className="inline-flex items-center gap-1 bg-[#0B2117] text-[#85CC14] text-[9px] font-black uppercase px-2 py-0.5 rounded-none border border-[#85CC14]/30">
+                                <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                                Verified Agronomist Desk
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                            {c.agronomistTitle
+                              ? `${c.agronomistTitle} • ${c.authorLocation || "Kenya"}`
+                              : `Producer • ${c.authorLocation || "Kenya"}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        {c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Recent"}
+                      </span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium mt-3 whitespace-pre-line">
+                      {c.content}
+                    </p>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
+                      <button
+                        onClick={() => handleLikeComment(c.id)}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold transition cursor-pointer ${
+                          likedCommentIds.has(c.id) ? "text-[#0F766E] font-black" : "text-slate-500 hover:text-[#0B2117]"
+                        }`}
+                        title="Upvote this insight"
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${likedCommentIds.has(c.id) ? "fill-current text-rose-600" : ""}`} />
+                        <span>Helpful ({c.likesCount || 0})</span>
+                      </button>
+
+                      {c.isAgronomistReply && (
+                        <span className="text-[10px] text-[#0F766E] font-black uppercase tracking-wider flex items-center gap-1">
+                          <Sparkles className="h-3 w-3" />
+                          Official Recommendation
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+
+            {/* Post Question / Comment Form */}
+            <div id="post-question" className="bg-white border-2 border-slate-200 rounded-none p-6 sm:p-8 shadow-sm">
+              <div className="mb-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#0F766E] block mb-1">
+                  COMMUNITY CONSULTATION
+                </span>
+                <h3 className="text-lg font-bold font-['Lora',serif] text-[#1A3A1A]">
+                  Ask the Mqulima Agronomy Desk or Share Field Advice
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-1">
+                  Have specific questions on this article's crop management, soil health, or market guidelines? Post below.
+                </p>
+              </div>
+
+              <form onSubmit={handleCommentSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                      Your Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Kosgei Kiprono"
+                      value={authorName}
+                      onChange={(e) => setAuthorName(e.target.value)}
+                      className="w-full bg-[#FAFBF9] border border-slate-300 rounded-none px-4 py-2.5 text-xs text-[#1A3A1A] placeholder-slate-400 outline-none focus:border-[#0F766E] font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                      Farm Location / County *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Uasin Gishu, Nakuru, Bungoma"
+                      value={authorLocation}
+                      onChange={(e) => setAuthorLocation(e.target.value)}
+                      className="w-full bg-[#FAFBF9] border border-slate-300 rounded-none px-4 py-2.5 text-xs text-[#1A3A1A] placeholder-slate-400 outline-none focus:border-[#0F766E] font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                    Your Question or Field Observation *
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Describe your inquiry, dosage question, crop symptom, or market feedback..."
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    className="w-full bg-[#FAFBF9] border border-slate-300 rounded-none p-4 text-xs text-[#1A3A1A] placeholder-slate-400 outline-none focus:border-[#0F766E] font-medium leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                  <span className="text-[10px] text-slate-400 font-semibold italic">
+                    *Questions are peer-reviewed by our certified agronomists and veterinary specialists.
+                  </span>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingComment}
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#0B2117] hover:bg-[#0F766E] disabled:opacity-60 text-white rounded-none text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer shrink-0"
+                  >
+                    <Send className="h-3.5 w-3.5 text-[#85CC14]" />
+                    <span>{isSubmittingComment ? "Posting Question..." : "Submit Question / Comment"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
           {/* Related Articles */}
           {post.relatedPosts && post.relatedPosts.length > 0 && (
             <section className="mt-12 pt-8 border-t border-slate-200">
-              <h2 className="text-xl font-bold font-['Lora',serif] text-[#1A3A1A] mb-6">
+              <h2 className="text-xl font-black font-['Lora',serif] text-[#1A3A1A] mb-6">
                 Related Agricultural Intelligence
               </h2>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-3">
                 {post.relatedPosts.map((r: any) => (
                   <Link
                     key={r.id}
                     to="/blog/$slug"
                     params={{ slug: r.slug }}
                     preload="intent"
-                    className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#1A5438] hover:shadow-md transition flex flex-col content-auto-card"
+                    className="group bg-white border-2 border-slate-200 rounded-none overflow-hidden hover:border-[#0B2117] hover:shadow-lg transition flex flex-col content-auto-card"
                   >
-                    <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                    <div className="aspect-[16/10] w-full overflow-hidden bg-slate-900">
                       <OptimizedImage
                         src={r.coverImage}
                         alt={r.title}
@@ -447,12 +757,12 @@ function BlogPostDetailRoute() {
                     </div>
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <div>
-                        <span className="text-[9px] font-bold text-[#0F766E] uppercase block mb-1">{r.category}</span>
-                        <h3 className="text-xs font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#1A5438] transition line-clamp-2 leading-snug">
+                        <span className="text-[9px] font-black text-[#0F766E] uppercase tracking-wider block mb-1">{r.category}</span>
+                        <h3 className="text-xs font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
                           {r.title}
                         </h3>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-semibold mt-3 block">{r.publishedAt}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-3 block">{r.publishedAt}</span>
                     </div>
                   </Link>
                 ))}
@@ -463,15 +773,15 @@ function BlogPostDetailRoute() {
           {/* Exit Article & Back to News Footer CTA */}
           <div className="mt-12 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-              <span className="text-xs font-semibold text-slate-500 block">Done reading this article?</span>
-              <p className="text-sm font-bold text-[#1A3A1A]">Return to agricultural intelligence, guides & market news</p>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Done reading this article?</span>
+              <p className="text-sm font-black font-['Lora',serif] text-[#1A3A1A]">Return to agricultural intelligence, guides & market news</p>
             </div>
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#1A5438] hover:bg-[#113B26] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all duration-200 group"
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-none bg-[#0B2117] hover:bg-[#0F766E] text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200 group"
               aria-label="Exit article and return to all news"
             >
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform text-[#85CC14]" />
               <span>Exit Article & Back to News</span>
             </Link>
           </div>
@@ -483,13 +793,13 @@ function BlogPostDetailRoute() {
           <div className="fixed bottom-6 left-4 sm:left-6 z-40 animate-in fade-in slide-in-from-bottom-3 duration-200">
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1A3A1A]/95 hover:bg-[#1A5438] text-white shadow-xl hover:shadow-2xl text-xs font-bold backdrop-blur-md border border-white/20 transition-all duration-200 group hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-none bg-[#0B2117]/95 hover:bg-[#0F766E] text-white shadow-xl hover:shadow-2xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-[#85CC14]/30 transition-all duration-200 group hover:scale-[1.02] active:scale-95"
               aria-label="Exit article and return to all news"
               title="Exit article and return to news (Esc)"
             >
               <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform text-[#85CC14]" />
               <span>Exit Article</span>
-              <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full font-medium text-white/90">News</span>
+              <span className="text-[10px] bg-[#85CC14] text-[#0B2117] px-2 py-0.5 rounded-none font-black tracking-wider">News</span>
             </Link>
           </div>
         )}

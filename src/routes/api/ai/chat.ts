@@ -207,18 +207,12 @@ export const Route = createFileRoute("/api/ai/chat")({
           const { getClientIp, checkApiRateLimit } = await import("@/lib/rate-limit.server");
           const { getDb } = await import("@/lib/db.server");
 
-          let user = await getAuthUserFromRequest(request);
+          const user = await getAuthUserFromRequest(request);
           if (!user) {
-            user = {
-              id: "guest-farmer",
-              name: "Farmer",
-              email: "farmer@mqulima.com",
-              county: "Kenya",
-              farmSize: "Smallholder",
-              crops: "Maize, Beans, Vegetables",
-              livestock: "Dairy, Poultry",
-              role: "farmer",
-            };
+            return jsonResponse(
+              { error: "Authentication required. Please sign in or create an account to use Mqulima AI." },
+              401
+            );
           }
 
           try {
@@ -228,13 +222,15 @@ export const Route = createFileRoute("/api/ai/chat")({
           }
 
           const parsedInput = ChatRequestSchema.parse(await request.json());
-          if (parsedInput.conversationId && user.id !== "guest-farmer") {
+          if (parsedInput.conversationId) {
             try {
               await assertConversationOwner(parsedInput.conversationId, user.id);
-            } catch (e) {}
+            } catch (e) {
+              return jsonResponse({ error: "Unauthorized access to this conversation." }, 403);
+            }
           }
 
-          if (parsedInput.conversationId && user.id !== "guest-farmer") {
+          if (parsedInput.conversationId) {
             const userMsgAttachments = (parsedInput.attachments || []).map(({ name, mimeType, size }) => ({
               name,
               mimeType,

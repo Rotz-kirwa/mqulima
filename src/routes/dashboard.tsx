@@ -32,6 +32,11 @@ import {
   AlertCircle,
   Eye,
   ArrowRight,
+  Sparkles,
+  ShoppingCart,
+  ShieldCheck,
+  LayoutDashboard,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -39,6 +44,7 @@ import { usePWA } from "@/hooks/usePWA";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/lib/cart-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserOrders, getUserServiceBookings, getUserNotifications, markNotificationRead } from "@/lib/api/dashboard.server";
 import { getProducts } from "@/lib/api/products.server";
@@ -46,13 +52,13 @@ import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCat
 import { adminGetServiceRequests, adminAssignServiceExpert, adminUpdateServiceStatus } from "@/lib/api/admin-services.server";
 
 type DashboardSearch = {
-  tab?: "orders" | "services" | "profile";
+  tab?: "overview" | "orders" | "services" | "profile" | "admin";
 };
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => {
     return {
-      tab: (search.tab as any) || "orders",
+      tab: (search.tab as any) || "overview",
     };
   },
   component: Dashboard,
@@ -60,9 +66,10 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   const { user, logout, isLoading } = useAuth();
+  const { cartItems } = useCart();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const activeTab = search.tab || "orders";
+  const activeTab = search.tab || "overview";
 
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null);
   const [selectedBookingDetails, setSelectedBookingDetails] = useState<any | null>(null);
@@ -94,6 +101,8 @@ function Dashboard() {
   })();
 
   const activeUser = user || cachedUser;
+  const isAdmin = activeUser?.role === "admin" || activeUser?.role === "super_admin";
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["userOrders", activeUser?.id],
@@ -180,9 +189,13 @@ function Dashboard() {
         <div className="container-px mx-auto max-w-7xl relative z-10">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="text-left space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14]">
                   CUSTOMER PORTAL & DASHBOARD
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-extrabold text-[#85CC14]">
+                  <CheckCircle className="h-3.5 w-3.5 text-[#85CC14]" />
+                  <span>Verified {activeUser.role === "admin" ? "Administrator" : "Farmer Account"}</span>
                 </span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
@@ -190,19 +203,32 @@ function Dashboard() {
               </h1>
               <p className="flex items-center gap-2 text-xs sm:text-sm text-white/80 font-normal">
                 <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" /> 
-                <span>{activeUser.county || "Uasin Gishu"} · {activeUser.farmSize || "Farmer"} · {activeUser.crops || "AgroShop Customer"}</span>
+                <span>{activeUser.county || "Kenya"} · {activeUser.farmSize || "Farmer"} · {activeUser.crops || "AgroShop Customer"}</span>
               </p>
             </div>
 
             {/* Quick Stats Pill Ribbon */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 w-full sm:w-auto">
               <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} color="lime" />
               <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} color="yellow" />
+              <Stat label="Active Cart Items" value={String(cartCount)} icon={ShoppingCart} color="lime" />
             </div>
           </div>
 
           {/* MAIN DASHBOARD TOP NAVIGATION TABS */}
           <div className="mt-8 flex items-center gap-2 border-b border-white/15 pb-0.5 overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => navigate({ search: { tab: "overview" } as any })}
+              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "overview"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <LayoutDashboard className={`h-4 w-4 ${activeTab === "overview" ? "text-[#16A34A]" : "text-white/60"}`} />
+              <span>Overview & Shortcuts</span>
+            </button>
+
             <button
               onClick={() => navigate({ search: { tab: "orders" } as any })}
               className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
@@ -248,12 +274,202 @@ function Dashboard() {
               <Settings className={`h-4 w-4 ${activeTab === "profile" ? "text-[#16A34A]" : "text-white/60"}`} />
               <span>Account & App Settings</span>
             </button>
+
+            {isAdmin && (
+              <button
+                onClick={() => navigate({ search: { tab: "admin" } as any })}
+                className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                  activeTab === "admin"
+                    ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                    : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+                }`}
+              >
+                <ShieldCheck className={`h-4 w-4 ${activeTab === "admin" ? "text-[#85CC14]" : "text-white/60"}`} />
+                <span>Admin Operations</span>
+              </button>
+            )}
           </div>
         </div>
       </section>
 
       {/* TAB CONTENT VIEWS */}
       <section className="container-px mx-auto max-w-7xl py-6">
+        {activeTab === "overview" && (
+          <div className="space-y-8">
+            {/* 1. Quick Agricultural Shortcuts */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#0F291E]">Quick Agricultural Shortcuts</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Direct access to your farming tools, AI assistance, and marketplace</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
+                <Link
+                  to="/ai"
+                  className="p-4 rounded-2xl bg-gradient-to-br from-[#0B2117] to-[#16382B] text-white hover:shadow-lg transition-all group border border-[#85CC14]/30 flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#85CC14]/20 text-[#85CC14] flex items-center justify-center font-bold">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-[#85CC14] tracking-wider">AI Powered</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-white group-hover:text-[#85CC14] transition-colors">Mqulima AI</h3>
+                    <p className="text-[11px] text-white/70 mt-1 line-clamp-2">Ask crop pathology, spray windows & localized diagnostics</p>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/shop"
+                  className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 hover:shadow-md transition-all border border-slate-200 flex flex-col justify-between group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center font-bold">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Shop</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-[#0F291E] group-hover:text-[#16A34A] transition-colors">AgroShop</h3>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">Order certified fertilizers, seeds & farm machinery</p>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/tools"
+                  className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 hover:shadow-md transition-all border border-slate-200 flex flex-col justify-between group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                      <Wrench className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Diagnostics</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-[#0F291E] group-hover:text-amber-600 transition-colors">Crop Doctor</h3>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">Neural plant disease identification & IPM recommendations</p>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/community"
+                  className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 hover:shadow-md transition-all border border-slate-200 flex flex-col justify-between group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-lime-50 text-lime-700 flex items-center justify-center font-bold">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Forum</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-[#0F291E] group-hover:text-lime-700 transition-colors">Farmers Network</h3>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">Connect and trade with verified growers across 47 counties</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* 2. Overview Summary Cards Grid */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Recent Orders Overview */}
+              <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-[#0F291E]">Recent Shop Purchases</h3>
+                  </div>
+                  <button
+                    onClick={() => navigate({ search: { tab: "orders" } as any })}
+                    className="text-xs font-bold text-[#16A34A] hover:underline cursor-pointer"
+                  >
+                    View All Orders →
+                  </button>
+                </div>
+
+                {ordersLoading ? (
+                  <div className="py-8 text-center text-xs font-bold text-slate-400 animate-pulse">Loading orders...</div>
+                ) : !orders || orders.length === 0 ? (
+                  <div className="py-8 text-center space-y-3">
+                    <p className="text-xs text-slate-500 font-medium">No product purchases made yet.</p>
+                    <Link
+                      to="/shop"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold shadow-xs hover:bg-[#74B510] transition"
+                    >
+                      <span>Explore AgroShop Products</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {orders.slice(0, 3).map((o: any) => (
+                      <div key={o.id} className="py-3 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-extrabold text-[#0F291E] line-clamp-1">{o.item}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">{o.id} · {o.createdAt}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-black text-[#16A34A] block">KES {o.total.toLocaleString()}</span>
+                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {o.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Verified Profile Card */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-[#0F291E]">Account Profile</h3>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#85CC14]/20 text-[#2D6A4F] border border-[#85CC14]/30">
+                      Verified
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-slate-600">
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400 font-medium">Full Name</span>
+                      <span className="font-bold text-[#0F291E]">{activeUser.name}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400 font-medium">Email</span>
+                      <span className="font-bold text-[#0F291E] truncate max-w-[150px]">{activeUser.email}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400 font-medium">County</span>
+                      <span className="font-bold text-[#0F291E]">{activeUser.county || "Kenya"}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-400 font-medium">Account Role</span>
+                      <span className="font-bold text-[#16A34A] uppercase">{activeUser.role || "Farmer"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate({ search: { tab: "profile" } as any })}
+                  className="w-full py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Manage Account Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === "orders" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -528,14 +744,22 @@ function Dashboard() {
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">County</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.county || "Uasin Gishu"}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.county || "Kenya"}</span>
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Farm size</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.farmSize || "4 acres"}</span>
+                  <span className="font-bold text-[#0F291E]">{activeUser.farmSize || "Standard"}</span>
                 </li>
               </ul>
             </Card>
+          </div>
+        )}
+
+        {/* ADMIN MANAGEMENT TAB (RESTRICTED ONLY TO ADMINS) */}
+        {isAdmin && activeTab === "admin" && (
+          <div className="space-y-8">
+            <AdminFeaturedProductsPanel />
+            <AdminServiceRequestsPanel />
           </div>
         )}
       </section>

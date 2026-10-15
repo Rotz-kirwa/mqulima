@@ -37,6 +37,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthPromptModal } from "@/components/mqulima/AuthPromptModal";
 import { type ShopProduct, mapToNewTaxonomy, cleanDescriptionText } from "@/lib/shop-data";
 import { useCart } from "@/lib/cart-context";
 import { useQuery } from "@tanstack/react-query";
@@ -135,6 +137,16 @@ function ProductDetailPage() {
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const { addToCart, buyNow } = useCart();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleBuyNow = (targetProduct: any, qty: number, size?: string) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    buyNow(targetProduct, qty, size);
+  };
   
   // Fetch details from backend API
   const { data, isLoading, error } = useQuery({
@@ -436,7 +448,7 @@ function ProductDetailPage() {
   const handleBuyBundle = () => {
     if (!product || !bundleItem) return;
     addToCart(bundleItem, 1);
-    buyNow(product, 1, selectedSize || undefined);
+    handleBuyNow(product, 1, selectedSize || undefined);
   };
 
   // Review breakdown math
@@ -773,7 +785,7 @@ function ProductDetailPage() {
 
                         <button
                           onClick={() => {
-                            buyNow(product, quantity, selectedSize || undefined);
+                            handleBuyNow(product, quantity, selectedSize || undefined);
                           }}
                           className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 rounded-xl bg-[#2D6A4F] h-12 text-xs font-extrabold text-white hover:bg-[#1A5438] transition uppercase tracking-wider shadow-sm cursor-pointer"
                         >
@@ -1010,7 +1022,7 @@ function ProductDetailPage() {
                   </button>
                   <button
                     onClick={() => {
-                      buyNow(product, quantity, selectedSize || undefined);
+                      handleBuyNow(product, quantity, selectedSize || undefined);
                     }}
                     className="flex-1 sm:flex-initial bg-[#2D6A4F] hover:bg-[#1A5438] text-white text-[10px] font-black uppercase px-5 h-9 rounded-lg transition cursor-pointer shadow-sm"
                   >
@@ -1065,6 +1077,14 @@ function ProductDetailPage() {
         </AnimatePresence>
 
       </div>
+
+      {/* Guest Auth Required Modal */}
+      <AuthPromptModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        featureName="purchase products and complete checkout"
+        redirectPath={typeof window !== "undefined" ? window.location.pathname : `/shop/product/${slug}`}
+      />
     </AppLayout>
   );
 }

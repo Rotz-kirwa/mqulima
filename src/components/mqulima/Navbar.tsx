@@ -564,8 +564,26 @@ export function Navbar() {
                       <>
                         <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 mb-1.5">
                           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                          <div className="text-xs font-extrabold text-[#0B2117] dark:text-white truncate mt-0.5">{user.email}</div>
+                          <div className="text-xs font-extrabold text-[#0B2117] dark:text-white truncate mt-0.5">{user.name || user.email}</div>
+                          <div className="text-[10px] text-gray-400 truncate">{user.email}</div>
                         </div>
+                        <Link
+                          to="/dashboard"
+                          search={{ tab: "overview" }}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-[#16A34A] dark:text-[#85CC14]" />
+                          <span>My Dashboard</span>
+                        </Link>
+                        <Link
+                          to="/ai"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                        >
+                          <Sparkles className="h-4 w-4 text-emerald-500" />
+                          <span>Mqulima AI</span>
+                        </Link>
                         <Link
                           to="/dashboard"
                           search={{ tab: "orders" }}
@@ -584,6 +602,27 @@ export function Navbar() {
                           <Briefcase className="h-4 w-4 text-[#16A34A] dark:text-[#85CC14]" />
                           <span>Booked Services</span>
                         </Link>
+                        <Link
+                          to="/dashboard"
+                          search={{ tab: "profile" }}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                        >
+                          <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                          <span>Account Settings</span>
+                        </Link>
+                        {(user.role === "admin" || user.role === "super_admin") && (
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "admin" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors my-1"
+                          >
+                            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                            <span>Admin Operations</span>
+                          </Link>
+                        )}
+                        <div className="my-1 border-t border-gray-100 dark:border-white/10" />
                         <button
                           onClick={async () => {
                             setUserDropdownOpen(false);
@@ -611,7 +650,7 @@ export function Navbar() {
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-black bg-[#85CC14] text-[#0B2117] hover:bg-[#74B510] transition-colors mt-1"
                         >
-                          <span>Create Account</span>
+                          <span>Create Free Account</span>
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </>
@@ -972,8 +1011,28 @@ export function Navbar() {
               <div className="border-t border-white/10 pt-4 space-y-3">
                 {user ? (
                   <>
-                    <div className="text-xs text-white/60">Logged in as <strong className="text-white font-extrabold">{user.name}</strong></div>
+                    <div className="px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Signed in as</div>
+                      <div className="text-xs font-extrabold text-white truncate">{user.name || user.email}</div>
+                    </div>
                     <div className="flex flex-col gap-2 mt-2">
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "overview" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-[#85CC14]" />
+                        <span>My Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/ai"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <Sparkles className="h-4 w-4 text-emerald-400" />
+                        <span>Mqulima AI</span>
+                      </Link>
                       <Link
                         to="/dashboard"
                         search={{ tab: "orders" }}
@@ -992,6 +1051,17 @@ export function Navbar() {
                         <Briefcase className="h-4 w-4 text-[#85CC14]" />
                         <span>Booked Services</span>
                       </Link>
+                      {(user.role === "admin" || user.role === "super_admin") && (
+                        <Link
+                          to="/dashboard"
+                          search={{ tab: "admin" }}
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-2xl bg-amber-500/20 px-4 py-3 text-xs font-bold text-amber-300 shadow-md hover:bg-amber-500/30 transition-colors border border-amber-500/30"
+                        >
+                          <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                          <span>Admin Operations</span>
+                        </Link>
+                      )}
                       <button
                         onClick={async () => {
                           setOpen(false);
@@ -999,7 +1069,7 @@ export function Navbar() {
                           toast.success("Successfully logged out");
                           navigate({ to: "/" });
                         }}
-                        className="flex items-center justify-center gap-2 rounded-2xl bg-red-600/80 hover:bg-red-600 py-3 text-xs font-bold text-white shadow-md transition-colors cursor-pointer"
+                        className="flex items-center justify-center gap-2 rounded-2xl bg-red-600/80 hover:bg-red-600 py-3 text-xs font-bold text-white shadow-md transition-colors cursor-pointer mt-1"
                       >
                         <LogOut className="h-4 w-4" />
                         <span>Sign Out</span>
@@ -1011,30 +1081,17 @@ export function Navbar() {
                     <Link
                       to="/auth/sign-in"
                       onClick={() => setOpen(false)}
+                      className="block text-center rounded-2xl bg-white/10 hover:bg-white/15 py-3 text-xs font-bold text-white border border-white/15 transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/auth/sign-up"
+                      onClick={() => setOpen(false)}
                       className="block text-center rounded-2xl bg-[#85CC14] py-3.5 text-xs font-black text-[#0B2117] shadow-lg hover:bg-[#74B510] transition-colors uppercase tracking-wider"
                     >
-                      Sign In to Account
+                      Create Free Account
                     </Link>
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <Link
-                        to="/dashboard"
-                        search={{ tab: "orders" }}
-                        onClick={() => setOpen(false)}
-                        className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 py-2.5 px-2 text-[11px] font-bold text-white/90 border border-white/10 transition-colors"
-                      >
-                        <ShoppingBag className="h-3.5 w-3.5 text-[#85CC14]" />
-                        <span>Shop Orders</span>
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        search={{ tab: "services" }}
-                        onClick={() => setOpen(false)}
-                        className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 py-2.5 px-2 text-[11px] font-bold text-white/90 border border-white/10 transition-colors"
-                      >
-                        <Briefcase className="h-3.5 w-3.5 text-[#85CC14]" />
-                        <span>Booked Services</span>
-                      </Link>
-                    </div>
                   </div>
                 )}
                 {isInstallable && (

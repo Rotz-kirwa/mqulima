@@ -10,7 +10,7 @@ import React from "react";
 export function SproutLogo({ className = "w-20 h-20" }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="10 2.5 105 105"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}

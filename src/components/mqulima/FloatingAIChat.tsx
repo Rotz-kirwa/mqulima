@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { X, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthPromptModal } from "./AuthPromptModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { AIIcon } from "./AIIcon";
 import { trackEvent } from "@/lib/events";
@@ -13,6 +14,7 @@ type Message = {
 
 export function FloatingAIChat() {
   const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const location = useLocation();
   const isShop = location.pathname.startsWith("/shop");
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/dashboard");
@@ -53,6 +55,11 @@ export function FloatingAIChat() {
 
   const handleSend = async (messageText: string) => {
     if (!messageText.trim() || isGenerating) return;
+
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
 
     const userMsg: Message = { role: "user", content: messageText };
     setMessages((prev) => [...prev, userMsg]);
@@ -274,6 +281,13 @@ export function FloatingAIChat() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AuthPromptModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        featureName="ask Mqulima AI farming questions"
+        redirectPath={typeof window !== "undefined" ? window.location.pathname : "/ai"}
+      />
     </>
   );
 }

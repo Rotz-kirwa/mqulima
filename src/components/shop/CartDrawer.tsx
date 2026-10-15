@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthPromptModal } from "@/components/mqulima/AuthPromptModal";
 import { trackEvent } from "@/lib/events";
 import {
   ALL_KENYA_COUNTIES,
@@ -126,6 +127,7 @@ export function CartDrawer() {
   } = useCart();
 
   const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Navigation steps:
   // 0: Cart items view
@@ -248,6 +250,13 @@ export function CartDrawer() {
   }, [user]);
 
   // Reset steps when drawer opens/closes
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setStep(1);
+  };
   useEffect(() => {
     if (!cartOpen) {
       // If order was finished, reset to step 0 on close
@@ -744,7 +753,7 @@ export function CartDrawer() {
                     <button
                       type="button"
                       disabled={step === 5 || cartItems.length === 0}
-                      onClick={() => cartItems.length > 0 && setStep(1)}
+                      onClick={() => cartItems.length > 0 && handleProceedToCheckout()}
                       className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition text-center ${
                         step === 1
                           ? "bg-[#2EB85C] text-white shadow-xs cursor-default"
@@ -1746,7 +1755,7 @@ export function CartDrawer() {
 
                     <button
                       id="proceed-to-checkout-btn"
-                      onClick={() => setStep(1)}
+                      onClick={handleProceedToCheckout}
                       className="w-full bg-[#2EB85C] hover:bg-[#279B42] text-white py-3.5 text-sm font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(46,184,92,0.3)] cursor-pointer active:scale-[0.99]"
                     >
                       <span>Proceed to Checkout</span>
@@ -2123,6 +2132,14 @@ export function CartDrawer() {
           </div>
         </div>
       )}
+
+      {/* Guest Auth Required Modal */}
+      <AuthPromptModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        featureName="proceed to checkout and purchase products"
+        redirectPath="/shop"
+      />
     </>
   );
 }

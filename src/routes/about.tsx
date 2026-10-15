@@ -45,6 +45,17 @@ const ABOUT_HERO_STATS = [
   { icon: TrendingUp, value: "$5M+", label: "Trade Facilitated" },
 ];
 
+const MARQUEE_ABOUT_STATS = [
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+  ...ABOUT_HERO_STATS,
+];
+
 function AboutPage() {
   const [activeTimeline, setActiveTimeline] = useState(0);
 
@@ -263,12 +274,15 @@ function AboutPage() {
             </div>
           </div>
 
-          {/* Stats Bar Ribbon at Bottom of Hero (Marquee Style) */}
-          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
-            <div className="marquee-wrapper flex w-max items-center animate-marquee">
+          {/* Stats Bar Ribbon at Bottom of Hero (Marquee Style - Truly Continuous) */}
+          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden select-none">
+            <div
+              className="marquee-wrapper flex w-max items-center animate-marquee will-change-transform"
+              style={{ animationDuration: "75s" }}
+            >
               {/* Track 1 */}
               <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16">
-                {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
+                {MARQUEE_ABOUT_STATS.map((stat, idx) => (
                   <div key={`t1-${idx}`} className="flex items-center gap-3 shrink-0">
                     <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
                       <stat.icon className="h-5 w-5 stroke-[2]" />
@@ -285,7 +299,7 @@ function AboutPage() {
 
               {/* Track 2 (Identical Clone for 100% Seamless Infinite Continuous Loop) */}
               <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16" aria-hidden="true">
-                {[...ABOUT_HERO_STATS, ...ABOUT_HERO_STATS].map((stat, idx) => (
+                {MARQUEE_ABOUT_STATS.map((stat, idx) => (
                   <div key={`t2-${idx}`} className="flex items-center gap-3 shrink-0">
                     <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
                       <stat.icon className="h-5 w-5 stroke-[2]" />

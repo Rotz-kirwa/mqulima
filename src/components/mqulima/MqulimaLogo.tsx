@@ -3,7 +3,7 @@ export function MqulimaLogo({ size = 36, className = "" }: { size?: number; clas
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="10 2.5 105 105"
       fill="none"
       className={className}
       aria-hidden="true"

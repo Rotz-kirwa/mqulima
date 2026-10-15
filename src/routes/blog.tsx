@@ -24,19 +24,16 @@ import {
   Sparkles,
   Share2,
   Bookmark,
-  Instagram,
-  Twitter,
-  Linkedin,
-  Youtube,
-  Quote,
-  Flame,
-  UserCheck
+  Quote
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { MqulimaLogo } from "@/components/mqulima/MqulimaLogo";
 import { toast } from "sonner";
 import { getPublishedBlogPosts, incrementBlogViewCount } from "@/lib/api/blog.server";
 import { sanitizeHtml } from "@/lib/sanitization";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { getMarketPrices, type CommodityPriceEntry } from "@/lib/api/markets.server";
+import { CommodityIndexWidget } from "@/components/mqulima/CommodityIndexWidget";
 
 export const Route = createFileRoute("/blog")({
   loader: async () => {
@@ -49,15 +46,18 @@ export const Route = createFileRoute("/blog")({
     };
 
     try {
-      const posts = await withSafeTimeout(
-        getPublishedBlogPosts().catch(() => []),
+      const [posts, marketPrices] = await withSafeTimeout(
+        Promise.all([
+          getPublishedBlogPosts().catch(() => []),
+          getMarketPrices().catch(() => []),
+        ]),
         4500,
-        []
+        [[], []]
       );
-      return { posts: posts || [] };
+      return { posts: posts || [], marketPrices: (marketPrices || []) as CommodityPriceEntry[] };
     } catch (e) {
       console.error("Failed to load blog posts in loader:", e);
-      return { posts: [] };
+      return { posts: [], marketPrices: [] };
     }
   },
   head: () => ({
@@ -109,6 +109,10 @@ function BlogPage() {
     () => (loaderData?.posts && loaderData.posts.length > 0 ? (loaderData.posts as BlogPost[]) : []),
     [loaderData?.posts]
   );
+  const initialMarketPrices = useMemo(
+    () => (loaderData?.marketPrices && loaderData.marketPrices.length > 0 ? (loaderData.marketPrices as CommodityPriceEntry[]) : []),
+    [loaderData?.marketPrices]
+  );
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -116,6 +120,12 @@ function BlogPage() {
   const [userName, setUserName] = useState("");
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [visiblePostCount, setVisiblePostCount] = useState(6);
+
+  // Reset pagination when category or search changes
+  useEffect(() => {
+    setVisiblePostCount(6);
+  }, [selectedCategory, searchQuery]);
 
   // Newsletter Modal State
   const [newsletterModalOpen, setNewsletterModalOpen] = useState(false);
@@ -184,14 +194,34 @@ function BlogPage() {
     }
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsletterEmail.trim()) {
+    const email = newsletterEmail.trim();
+    if (!email || !email.includes("@")) {
       toast.error("Please enter a valid email address.");
       return;
     }
-    toast.success(`Subscribed successfully! Weekly digest will be delivered to ${newsletterEmail}`);
-    setNewsletterEmail("");
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        toast.success(data.message || `Subscribed successfully! Weekly digest will be delivered to ${email}`);
+        setNewsletterEmail("");
+      } else {
+        toast.error(data.error || "Subscription failed. Please try again.");
+      }
+    } catch {
+      toast.error("Unable to subscribe right now. Please check your connection.");
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   const handleToggleReminder = async () => {
@@ -310,14 +340,21 @@ function BlogPage() {
     setFeaturedIndex((prev) => (prev + 1) % featuredPostsList.length);
   };
 
-  // Latest 4 posts (or filtered results)
+  // Latest posts (or filtered results) with dynamic visible count
   const latestPostsList = useMemo(() => {
     if (searchQuery.trim() || selectedCategory !== "All") {
-      return filteredPosts.slice(0, 8);
+      return filteredPosts.slice(0, visiblePostCount);
     }
-    // Return latest 4 posts (excluding current featured post if possible)
+    // Return latest posts (excluding current featured post if possible)
     const list = posts.filter((p) => p.id !== currentFeaturedPost?.id);
-    return list.slice(0, 4);
+    return list.slice(0, visiblePostCount);
+  }, [posts, filteredPosts, searchQuery, selectedCategory, currentFeaturedPost, visiblePostCount]);
+
+  const totalAvailableCount = useMemo(() => {
+    if (searchQuery.trim() || selectedCategory !== "All") {
+      return filteredPosts.length;
+    }
+    return posts.filter((p) => p.id !== currentFeaturedPost?.id).length;
   }, [posts, filteredPosts, searchQuery, selectedCategory, currentFeaturedPost]);
 
   // Popular posts sorted by view count
@@ -327,49 +364,6 @@ function BlogPage() {
       .slice(0, 4);
   }, [posts]);
 
-  // Trending articles (top 5 ranked)
-  const trendingPostsList = useMemo(() => {
-    return [...posts]
-      .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
-      .slice(0, 5);
-  }, [posts]);
-
-  // 4 Featured categories with real post counts
-  const categoryTiles = useMemo(() => {
-    const countFor = (name: string) => 
-      posts.filter(p => isCategoryMatch(p.category, name)).length;
-
-    return [
-      {
-        name: "Agronomy",
-        fullName: "Agronomy & Farm Tips",
-        count: countFor("Agronomy & Farm Tips"),
-        icon: "🌱",
-        accent: "text-emerald-700 bg-emerald-50 border-emerald-100",
-      },
-      {
-        name: "Market Intel",
-        fullName: "Policy & Market",
-        count: countFor("Policy & Market"),
-        icon: "📈",
-        accent: "text-teal-700 bg-teal-50 border-teal-100",
-      },
-      {
-        name: "Agri-Tech",
-        fullName: "Agri-Tech & Tools",
-        count: countFor("Agri-Tech & Tools"),
-        icon: "🚜",
-        accent: "text-amber-700 bg-amber-50 border-amber-100",
-      },
-      {
-        name: "Climate & Rain",
-        fullName: "Weather Advisory",
-        count: countFor("Weather Advisory"),
-        icon: "🌦️",
-        accent: "text-sky-700 bg-sky-50 border-sky-100",
-      },
-    ];
-  }, [posts]);
 
   // Authentic farmer & agronomist testimonials from verified registered members
   const testimonials = [
@@ -393,12 +387,6 @@ function BlogPage() {
     }
   ];
 
-  const fieldGallery = [
-    { src: "/images/services_crop_production.webp", alt: "Horticulture Greenhouse", tag: "Crops" },
-    { src: "/images/services_soil_analysis.webp", alt: "Soil Testing Field Lab", tag: "Soil" },
-    { src: "/images/mkulima_hero_farm.webp", alt: "Harvesting at Sunset", tag: "Harvest" },
-    { src: "/images/services_veterinary_care.webp", alt: "Livestock Management", tag: "Dairy" },
-  ];
 
   return (
     <AppLayout>
@@ -425,10 +413,10 @@ function BlogPage() {
               {currentFeaturedPost && !searchQuery && selectedCategory === "All" && (
                 <section 
                   aria-label="Featured Story"
-                  className="bg-white rounded-[28px] sm:rounded-[36px] border border-slate-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-10 lg:p-12 relative overflow-hidden transition-all duration-300 mb-10 group"
+                  className="bg-white rounded-none border border-slate-200/90 shadow-md p-6 sm:p-10 lg:p-12 relative overflow-hidden transition-all duration-300 mb-10 group"
                 >
                   {/* Soft ambient gradient overlay */}
-                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-emerald-50/70 via-teal-50/30 to-transparent rounded-full pointer-events-none -mr-20 -mt-20 blur-2xl" />
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-emerald-50/70 via-teal-50/30 to-transparent pointer-events-none -mr-20 -mt-20 blur-2xl" />
 
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
                     
@@ -437,11 +425,11 @@ function BlogPage() {
                       
                       {/* Top Pill Row */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-[#0F766E] border border-emerald-200/70 text-[10px] font-black uppercase tracking-widest">
-                          <Sparkles className="h-3 w-3 text-[#0F766E]" />
-                          FEATURED POST
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-none bg-[#0B2117] text-[#85CC14] border border-[#85CC14]/30 text-[10px] font-black uppercase tracking-widest shadow-xs">
+                          <Sparkles className="h-3 w-3 text-[#85CC14]" />
+                          FEATURED STORY
                         </span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
                           • {currentFeaturedPost.category}
                         </span>
                       </div>
@@ -470,10 +458,10 @@ function BlogPage() {
                               setActiveReadingPost(currentFeaturedPost);
                               incrementBlogViewCount({ data: { postId: currentFeaturedPost.id } }).catch(() => {});
                             }}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0F766E] hover:bg-[#113B26] text-white text-xs font-bold transition shadow-sm hover:shadow group/btn cursor-pointer"
+                            className="inline-flex items-center gap-2.5 px-7 py-3 rounded-none bg-[#0B2117] hover:bg-[#0F766E] text-white text-xs font-black uppercase tracking-wider transition shadow-sm hover:shadow group/btn cursor-pointer"
                           >
-                            <span>Read More</span>
-                            <ArrowRight className="h-3.5 w-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                            <span>Read Full Story</span>
+                            <ArrowRight className="h-3.5 w-3.5 text-[#85CC14] group-hover/btn:translate-x-1 transition-transform" />
                           </button>
 
                           <div className="flex items-center gap-3 text-xs text-slate-400 font-semibold">
@@ -489,19 +477,19 @@ function BlogPage() {
                           </div>
                         </div>
 
-                        {/* Carousel Navigation Arrows & Dots */}
+                        {/* Carousel Navigation Arrows & Indicators */}
                         <div className="flex items-center gap-3">
-                          {/* Dot indicators */}
+                          {/* Indicators */}
                           <div className="flex items-center gap-1.5">
                             {featuredPostsList.map((_, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => setFeaturedIndex(idx)}
                                 aria-label={`Go to slide ${idx + 1}`}
-                                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                                className={`h-1.5 rounded-none transition-all duration-300 cursor-pointer ${
                                   idx === Math.abs(featuredIndex) % featuredPostsList.length 
-                                    ? "w-6 bg-[#0F766E]" 
-                                    : "w-2 bg-slate-200 hover:bg-slate-300"
+                                    ? "w-8 bg-[#0F766E]" 
+                                    : "w-2.5 bg-slate-200 hover:bg-slate-300"
                                 }`}
                               />
                             ))}
@@ -512,14 +500,14 @@ function BlogPage() {
                             <button
                               onClick={handlePrevFeatured}
                               aria-label="Previous featured article"
-                              className="h-8 w-8 rounded-full border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition cursor-pointer active:scale-95"
+                              className="h-8 w-8 rounded-none border border-slate-300 hover:border-slate-500 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition cursor-pointer active:scale-95"
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </button>
                             <button
                               onClick={handleNextFeatured}
                               aria-label="Next featured article"
-                              className="h-8 w-8 rounded-full border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition cursor-pointer active:scale-95"
+                              className="h-8 w-8 rounded-none border border-slate-300 hover:border-slate-500 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition cursor-pointer active:scale-95"
                             >
                               <ChevronRight className="h-4 w-4" />
                             </button>
@@ -536,7 +524,7 @@ function BlogPage() {
                         setActiveReadingPost(currentFeaturedPost);
                         incrementBlogViewCount({ data: { postId: currentFeaturedPost.id } }).catch(() => {});
                       }}
-                      className="lg:col-span-5 aspect-[16/11] sm:aspect-[4/3] rounded-2xl lg:rounded-3xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm relative group/img cursor-pointer"
+                      className="lg:col-span-5 aspect-[16/11] sm:aspect-[4/3] rounded-none overflow-hidden bg-slate-900 border border-slate-200 shadow-sm relative group/img cursor-pointer"
                     >
                       {currentFeaturedPost.mediaType === "video" ? (
                         <video
@@ -548,16 +536,17 @@ function BlogPage() {
                         <img
                           src={currentFeaturedPost.coverImage}
                           alt={currentFeaturedPost.title}
-                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700"
+                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700 brightness-[0.98] group-hover:brightness-100"
                           onError={(e) => {
                             e.currentTarget.src = "/mqulima_news_banner.png";
                           }}
                         />
                       )}
                       
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
-                        <span className="text-white text-xs font-bold drop-shadow-sm flex items-center gap-1.5">
-                          Click to Read Story →
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-5">
+                        <span className="text-white text-xs font-black uppercase tracking-wider drop-shadow-sm flex items-center gap-2">
+                          <span>Read Full Story</span>
+                          <ArrowRight className="h-3.5 w-3.5 text-[#85CC14]" />
                         </span>
                       </div>
                     </div>
@@ -569,18 +558,18 @@ function BlogPage() {
               {/* ═════════════════════════════════════════════════════════════
                   CATEGORY FILTER & QUICK UTILITY ACTIONS
               ═════════════════════════════════════════════════════════════ */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-200/80">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-3 border-b-2 border-slate-200">
                 
-                {/* Category Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+                {/* Category Tabs with Sharp Edges */}
+                <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
                   {categories.map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-4 py-2 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                      className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-none transition whitespace-nowrap cursor-pointer border-b-2 ${
                         selectedCategory === cat 
-                          ? "bg-[#0F766E] text-white shadow-xs" 
-                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          ? "border-[#0F766E] text-[#0F766E] bg-emerald-50/70" 
+                          : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
                       }`}
                     >
                       {cat}
@@ -588,26 +577,26 @@ function BlogPage() {
                   ))}
                 </div>
 
-                {/* Right Utility Buttons */}
+                {/* Right Utility Buttons with Sharp Edges */}
                 <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
                   <button
                     onClick={handleToggleReminder}
-                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition border cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-none text-xs font-bold transition border cursor-pointer ${
                       remindToggled 
-                        ? "bg-[#0F766E] text-white border-[#0F766E]" 
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                        ? "bg-[#0B2117] text-[#85CC14] border-[#0B2117]" 
+                        : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                     }`}
                     title="Toggle browser notification alerts"
                   >
-                    <Bell className={`h-3.5 w-3.5 ${remindToggled ? "animate-swing" : ""}`} />
+                    <Bell className={`h-3.5 w-3.5 ${remindToggled ? "animate-swing text-[#85CC14]" : ""}`} />
                     <span>{remindToggled ? "Alerts Active" : "Remind Me"}</span>
                   </button>
 
                   <button
                     onClick={() => setNewsletterModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[#1A3A1A] hover:bg-[#113B26] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-none bg-[#0B2117] hover:bg-[#0F766E] text-white text-xs font-black uppercase tracking-wider transition shadow-xs cursor-pointer"
                   >
-                    <BookOpen className="h-3.5 w-3.5" />
+                    <BookOpen className="h-3.5 w-3.5 text-[#85CC14]" />
                     <span>Weekly Digest PDF</span>
                   </button>
                 </div>
@@ -624,18 +613,23 @@ function BlogPage() {
                 ─────────────────────────────────────────────────────────── */}
                 <div className="lg:col-span-8 space-y-12">
                   
-                  {/* SECTION 1: LATEST BLOG POSTS */}
+                  {/* SECTION 1: LATEST BLOG POSTS - LARGE SHARP CARDS */}
                   <section aria-labelledby="latest-posts-heading">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 id="latest-posts-heading" className="text-xl sm:text-2xl font-bold font-['Lora',serif] text-[#1A3A1A]">
-                        Latest Agricultural Posts
-                      </h2>
+                    <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
+                      <div>
+                        <h2 id="latest-posts-heading" className="text-xl sm:text-2xl font-bold font-['Lora',serif] text-[#1A3A1A] tracking-tight">
+                          Latest Agricultural Posts
+                        </h2>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                          In-depth crop management guides, soil science, and live Kenyan commodity intelligence.
+                        </p>
+                      </div>
                       <button 
                         onClick={() => {
                           setSelectedCategory("All");
                           setSearchQuery("");
                         }}
-                        className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-black uppercase tracking-wider text-[#0F766E] hover:text-[#0B2117] flex items-center gap-1 cursor-pointer"
                       >
                         <span>View All</span>
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -643,145 +637,144 @@ function BlogPage() {
                     </div>
 
                     {latestPostsList.length === 0 ? (
-                      <div className="border border-dashed border-slate-300 rounded-2xl p-12 text-center bg-white">
+                      <div className="border border-dashed border-slate-300 rounded-none p-12 text-center bg-white">
                         <span className="text-3xl">🌾</span>
                         <h3 className="text-sm font-bold text-[#1A3A1A] mt-2">No agricultural posts found</h3>
                         <p className="text-xs text-slate-500 mt-1">Try another keyword or category filter.</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                        {latestPostsList.map((post) => (
-                          <article
-                            key={post.id}
-                            onClick={() => {
-                              setActiveReadingPost(post);
-                              incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
-                            }}
-                            className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:border-[#0F766E] hover:shadow-md transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-2xs"
-                          >
-                            <div>
-                              {/* Cover Image Container */}
-                              <div className="aspect-[16/11] w-full relative overflow-hidden bg-slate-100">
-                                <img
-                                  src={post.coverImage}
-                                  alt={post.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  onError={(e) => {
-                                    e.currentTarget.src = "/mqulima_news_banner.png";
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                          {latestPostsList.map((post) => (
+                            <article
+                              key={post.id}
+                              onClick={() => {
+                                setActiveReadingPost(post);
+                                incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
+                              }}
+                              className="bg-white rounded-none border border-slate-200/90 hover:border-[#0F766E] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer relative"
+                            >
+                              <div>
+                                {/* Large Cover Image Container with Sharp Edges */}
+                                <div className="aspect-[16/10] w-full relative overflow-hidden bg-slate-900 rounded-none">
+                                  <img
+                                    src={post.coverImage}
+                                    alt={post.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-[0.98] group-hover:brightness-100"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/mqulima_news_banner.png";
+                                    }}
+                                  />
+
+                                  {/* Bottom gradient overlay for text readability */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                                  {/* Category Badge - Sharp Edges */}
+                                  <div className="absolute top-3 left-3 z-10">
+                                    <span className="inline-block bg-[#0B2117] text-[#85CC14] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-none border border-[#85CC14]/30 shadow-md">
+                                      {post.category}
+                                    </span>
+                                  </div>
+
+                                  {/* Reading Time Pill - Sharp Edges */}
+                                  <div className="absolute top-3 right-3 z-10">
+                                    <span className="inline-flex items-center gap-1 bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-none border border-white/15">
+                                      <Clock className="h-3 w-3 text-[#85CC14]" />
+                                      <span>{post.readTime || "4 min read"}</span>
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Text Body */}
+                                <div className="p-5 sm:p-6 text-left">
+                                  {/* Date & Views Meta Row */}
+                                  <div className="flex items-center gap-3 text-[11px] text-slate-500 font-semibold mb-2.5">
+                                    <span className="flex items-center gap-1.5">
+                                      <Calendar className="h-3.5 w-3.5 text-[#0F766E]" />
+                                      {post.publishedAt}
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1.5 text-slate-500">
+                                      <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                      {post.viewCount || 12} reads
+                                    </span>
+                                  </div>
+
+                                  {/* Editorial Title */}
+                                  <h3 className="text-lg sm:text-xl font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition leading-snug line-clamp-2">
+                                    {post.title}
+                                  </h3>
+
+                                  {/* Excerpt */}
+                                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-2 mt-2.5 font-normal">
+                                    {post.excerpt}
+                                  </p>
+
+                                  {/* Author Attribution */}
+                                  {post.author && (
+                                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2.5">
+                                      <div className="w-6 h-6 rounded-none bg-[#0F766E]/10 text-[#0F766E] font-black text-[10px] flex items-center justify-center border border-[#0F766E]/20">
+                                        {post.author.avatarInitials || "MQ"}
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-700 truncate">{post.author.name}</span>
+                                      <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">• {post.author.role}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Card Bottom: Prominent "Read Now" Sharp Button + Full Page Link */}
+                              <div className="px-5 pb-5 sm:px-6 sm:pb-6 pt-1 flex items-center justify-between gap-3 border-t border-slate-100">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveReadingPost(post);
+                                    incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
                                   }}
-                                />
-                                {/* Category Badge */}
-                                <span className="absolute bottom-2.5 left-2.5 bg-white/95 backdrop-blur-xs text-[#0F766E] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-2xs border border-slate-100">
-                                  {post.category}
-                                </span>
+                                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0B2117] hover:bg-[#0F766E] text-white text-xs font-black uppercase tracking-wider rounded-none transition-all duration-200 group/btn shadow-xs active:scale-[0.98] cursor-pointer"
+                                >
+                                  <span>Read Now</span>
+                                  <ArrowRight className="h-3.5 w-3.5 text-[#85CC14] group-hover/btn:translate-x-1 transition-transform" />
+                                </button>
+
+                                <Link
+                                  to="/blog/$slug"
+                                  params={{ slug: post.slug }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs font-bold text-slate-500 hover:text-[#0F766E] flex items-center gap-1 transition"
+                                  title="Open full page"
+                                >
+                                  <span>Full Article</span>
+                                  <ArrowRight className="h-3 w-3" />
+                                </Link>
                               </div>
+                            </article>
+                          ))}
+                        </div>
 
-                              {/* Text Body */}
-                              <div className="p-3.5 text-left">
-                                <h3 className="text-xs sm:text-[13px] font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
-                                  {post.title}
-                                </h3>
-                              </div>
-                            </div>
-
-                            {/* Card Footer: Date & Comment/View */}
-                            <div className="px-3.5 pb-3.5 pt-1 flex items-center justify-between text-[10px] text-slate-400 font-semibold border-t border-slate-50">
-                              <span>{post.publishedAt}</span>
-                              <span className="flex items-center gap-1 text-slate-500">
-                                <Eye className="h-3 w-3 text-slate-400" />
-                                {post.viewCount || 12}
-                              </span>
-                            </div>
-
-                          </article>
-                        ))}
-                      </div>
+                        {/* Load More Pagination */}
+                        {totalAvailableCount > latestPostsList.length && (
+                          <div className="mt-8 text-center">
+                            <button
+                              onClick={() => setVisiblePostCount(prev => prev + 6)}
+                              className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-slate-50 text-[#0B2117] border border-slate-300 hover:border-[#0F766E] rounded-none text-xs font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer"
+                            >
+                              <span>Load More Articles</span>
+                              <ChevronDown className="h-4 w-4 text-[#0F766E]" />
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </section>
-
-                  {/* SECTION 2: SUB-ROW (FEATURED CATEGORIES + TRENDING ARTICLES) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                    
-                    {/* Box A: Featured Categories */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                        <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A]">
-                          Featured Categories
-                        </h3>
-                        <button 
-                          onClick={() => setSelectedCategory("All")}
-                          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          View All →
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {categoryTiles.map((tile) => (
-                          <div
-                            key={tile.name}
-                            onClick={() => setSelectedCategory(tile.fullName)}
-                            className="bg-[#FAFBF9] border border-slate-200/70 hover:border-[#0F766E] rounded-xl p-3 text-center transition-all cursor-pointer group hover:bg-white hover:shadow-2xs"
-                          >
-                            <div className="w-10 h-10 mx-auto rounded-full bg-white border border-slate-100 shadow-2xs flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                              <span>{tile.icon}</span>
-                            </div>
-                            <strong className="text-xs font-bold text-[#1A3A1A] block mt-2 truncate">
-                              {tile.name}
-                            </strong>
-                            <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                              {tile.count} Posts
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Box B: Trending Articles */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                        <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A] flex items-center gap-1.5">
-                          <Flame className="h-4 w-4 text-amber-500" />
-                          Trending Articles
-                        </h3>
-                        <button 
-                          onClick={() => setSelectedCategory("All")}
-                          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          View All →
-                        </button>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {trendingPostsList.map((post, idx) => (
-                          <div
-                            key={post.id}
-                            onClick={() => {
-                              setActiveReadingPost(post);
-                              incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
-                            }}
-                            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-[#FAFBF9] transition cursor-pointer group"
-                          >
-                            <span className="w-5 h-5 rounded-full bg-[#0F766E] text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-2xs">
-                              {idx + 1}
-                            </span>
-                            <span className="text-xs font-bold text-slate-700 group-hover:text-[#0F766E] transition line-clamp-1">
-                              {post.title}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
 
                   {/* SECTION 3: SUB-ROW (NEWSLETTER + WHAT OUR READERS SAY) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                     
                     {/* Box A: Newsletter */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between text-left">
+                    <div className="bg-white border border-slate-200/90 rounded-none p-6 shadow-sm flex flex-col justify-between text-left">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[#0F766E] block mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#0F766E] block mb-1">
                           NEWSLETTER
                         </span>
                         <h3 className="text-lg font-bold font-['Lora',serif] text-[#1A3A1A] leading-snug">
@@ -799,19 +792,20 @@ function BlogPage() {
                           placeholder="Enter your email"
                           value={newsletterEmail}
                           onChange={(e) => setNewsletterEmail(e.target.value)}
-                          className="flex-1 bg-[#FAFBF9] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#0F766E] font-semibold"
+                          className="flex-1 bg-[#FAFBF9] border border-slate-300 rounded-none px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#0F766E] font-semibold"
                         />
                         <button
                           type="submit"
-                          className="px-5 py-2.5 bg-[#0F766E] hover:bg-[#113B26] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                          disabled={subscribing}
+                          className="px-6 py-2.5 bg-[#0B2117] hover:bg-[#0F766E] disabled:opacity-60 text-white rounded-none text-xs font-black uppercase tracking-wider transition shadow-xs cursor-pointer shrink-0"
                         >
-                          Subscribe
+                          {subscribing ? "Subscribing..." : "Subscribe"}
                         </button>
                       </form>
                     </div>
 
                     {/* Box B: What Our Readers Say (Testimonials) */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between text-left relative">
+                    <div className="bg-white border border-slate-200/90 border-l-4 border-l-[#0F766E] rounded-none p-6 shadow-sm flex flex-col justify-between text-left relative">
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="text-sm font-bold font-['Lora',serif] text-[#1A3A1A]">
@@ -830,7 +824,7 @@ function BlogPage() {
                           <img
                             src={testimonials[activeTestimonial].avatar}
                             alt={testimonials[activeTestimonial].author}
-                            className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                            className="w-9 h-9 rounded-none object-cover border border-slate-200"
                             onError={(e) => {
                               e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(testimonials[activeTestimonial].author)}&backgroundColor=1a5438&textColor=ffffff`;
                             }}
@@ -851,8 +845,8 @@ function BlogPage() {
                             <button
                               key={i}
                               onClick={() => setActiveTestimonial(i)}
-                              className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                i === activeTestimonial ? "w-4 bg-[#0F766E]" : "w-1.5 bg-slate-200 hover:bg-slate-300"
+                              className={`h-1.5 rounded-none transition-all cursor-pointer ${
+                                i === activeTestimonial ? "w-5 bg-[#0F766E]" : "w-1.5 bg-slate-200 hover:bg-slate-300"
                               }`}
                               aria-label={`Testimonial ${i + 1}`}
                             />
@@ -872,7 +866,7 @@ function BlogPage() {
                 <div className="lg:col-span-4 space-y-6">
                   
                   {/* WIDGET 1: SEARCH BAR */}
-                  <div className="bg-white border border-slate-200/90 rounded-2xl p-2.5 pl-4 shadow-2xs flex items-center justify-between focus-within:border-[#0F766E] transition">
+                  <div className="bg-white border border-slate-300 rounded-none p-2.5 pl-4 shadow-sm flex items-center justify-between focus-within:border-[#0F766E] transition">
                     <input
                       type="text"
                       placeholder="Search articles..."
@@ -889,14 +883,14 @@ function BlogPage() {
                   </div>
 
                   {/* WIDGET 2: POPULAR POSTS */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                  <div className="bg-white border border-slate-200/90 rounded-none p-6 shadow-sm text-left">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
                       <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A]">
                         Popular Posts
                       </h3>
                       <button 
                         onClick={() => setSelectedCategory("All")}
-                        className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-black uppercase tracking-wider text-[#0F766E] hover:text-[#0B2117] flex items-center gap-1 cursor-pointer"
                       >
                         View All →
                       </button>
@@ -910,26 +904,29 @@ function BlogPage() {
                             setActiveReadingPost(post);
                             incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
                           }}
-                          className="flex items-center gap-3 group cursor-pointer"
+                          className="flex items-center gap-3.5 group cursor-pointer"
                         >
                           <img
                             src={post.coverImage}
                             alt={post.title}
-                            className="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-100 shrink-0 group-hover:scale-105 transition-transform"
+                            className="w-20 h-20 rounded-none object-cover bg-slate-900 border border-slate-200 shrink-0 group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               e.currentTarget.src = "/mqulima_news_banner.png";
                             }}
                           />
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#0F766E] block mb-0.5">
+                              {post.category}
+                            </span>
+                            <h4 className="text-xs sm:text-[13px] font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
                               {post.title}
                             </h4>
-                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-semibold mt-1">
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-semibold mt-1.5">
                               <span>{post.publishedAt}</span>
                               <span>•</span>
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1 text-slate-500">
                                 <Eye className="h-2.5 w-2.5" />
-                                {post.viewCount || 14}
+                                {post.viewCount || 14} reads
                               </span>
                             </div>
                           </div>
@@ -938,17 +935,10 @@ function BlogPage() {
                     </div>
                   </div>
 
-                  {/* WIDGET 3: EDITORIAL TEAM CARD ("Hi, I'm Alex" -> "Hi, We're Mqulima Team") */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-center flex flex-col items-center">
-                    <div className="relative mb-3">
-                      <img
-                        src="/icon-192.png"
-                        alt="Mqulima Editorial Desk"
-                        className="w-20 h-20 rounded-full object-contain p-2 bg-emerald-50 border-2 border-emerald-500/20 shadow-xs"
-                      />
-                      <span className="absolute bottom-0 right-0 p-1 bg-[#0F766E] text-white rounded-full shadow-2xs">
-                        <UserCheck className="h-3 w-3" />
-                      </span>
+                  {/* WIDGET 3: EDITORIAL TEAM CARD */}
+                  <div className="bg-white border border-slate-200/90 rounded-none p-6 shadow-sm text-center flex flex-col items-center">
+                    <div className="mb-3 flex items-center justify-center">
+                      <MqulimaLogo size={68} className="hover:scale-105 transition-transform duration-300" />
                     </div>
 
                     <h4 className="text-lg font-bold font-['Lora',serif] italic text-[#0F766E]">
@@ -959,124 +949,50 @@ function BlogPage() {
                       Certified Kenyan agronomists and market researchers delivering actionable farm intelligence, soil health data, and policy updates.
                     </p>
 
-                    {/* Social Media Row */}
-                    <div className="flex items-center justify-center gap-3 mt-4 text-slate-400">
+                    {/* Official Mqulima Social Channels (Matching Footer) */}
+                    <div className="flex items-center justify-center gap-3 mt-4">
                       <a 
-                        href="https://twitter.com" 
+                        href="https://x.com/_mqulima" 
                         target="_blank" 
-                        rel="noreferrer"
-                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-sky-500 transition"
-                        aria-label="Twitter"
+                        rel="noopener noreferrer"
+                        className="grid h-9 w-9 place-items-center rounded-full bg-[#000000] text-white hover:bg-neutral-800 shadow-md transition-all duration-300 transform hover:scale-110"
+                        aria-label="X"
+                        title="Follow Mqulima on X"
                       >
-                        <Twitter className="h-4 w-4" />
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
                       </a>
                       <a 
-                        href="https://instagram.com" 
+                        href="https://tiktok.com/@_mqulima" 
                         target="_blank" 
-                        rel="noreferrer"
-                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-pink-600 transition"
-                        aria-label="Instagram"
+                        rel="noopener noreferrer"
+                        className="grid h-9 w-9 place-items-center rounded-full bg-[#010101] text-white hover:bg-neutral-900 shadow-md transition-all duration-300 transform hover:scale-110"
+                        aria-label="TikTok"
+                        title="Follow Mqulima on TikTok"
                       >
-                        <Instagram className="h-4 w-4" />
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.94 1.17 2.27 1.99 3.73 2.3v3.91c-1.39-.01-2.76-.41-3.95-1.15-.71-.44-1.34-.99-1.84-1.65v7.2c-.07 1.83-.69 3.63-1.83 5.05-1.5 1.88-3.83 2.97-6.23 2.97-1.81.01-3.59-.57-5.06-1.65C1.19 19.98.24 18.06.05 16.03c-.26-2.82.97-5.63 3.19-7.35 1.62-1.25 3.66-1.89 5.71-1.78v4c-.75-.08-1.5.07-2.18.42-1.07.56-1.79 1.66-1.89 2.87-.14 1.55.76 3.05 2.19 3.63.81.33 1.7.35 2.52.05 1.09-.4 1.84-1.44 1.94-2.6.01-.22.01-6.73.01-15.26z"/>
+                        </svg>
                       </a>
                       <a 
-                        href="https://linkedin.com" 
+                        href="https://linkedin.com/company/mqulima-hub" 
                         target="_blank" 
-                        rel="noreferrer"
-                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-blue-700 transition"
+                        rel="noopener noreferrer"
+                        className="grid h-9 w-9 place-items-center rounded-full bg-[#0077b5] text-white hover:bg-[#005e8e] shadow-md transition-all duration-300 transform hover:scale-110"
                         aria-label="LinkedIn"
+                        title="Follow Mqulima on LinkedIn"
                       >
-                        <Linkedin className="h-4 w-4" />
-                      </a>
-                      <a 
-                        href="https://youtube.com" 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-red-600 transition"
-                        aria-label="YouTube"
-                      >
-                        <Youtube className="h-4 w-4" />
-                      </a>
-                      <a 
-                        href="https://api.whatsapp.com/send?phone=254700000000" 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-emerald-600 transition"
-                        aria-label="WhatsApp Hotline"
-                      >
-                        <WhatsAppIcon className="h-4 w-4" />
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/>
+                        </svg>
                       </a>
                     </div>
                   </div>
 
-                  {/* WIDGET 4: INSTAGRAM / FIELD INTEL GALLERY */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                      <div>
-                        <h3 className="text-sm font-bold font-['Lora',serif] text-[#1A3A1A]">
-                          Field Intel
-                        </h3>
-                        <span className="text-[10px] text-slate-400 font-semibold block">@mqulima</span>
-                      </div>
-                      <a 
-                        href="https://instagram.com" 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="text-xs font-bold text-[#0F766E] hover:underline"
-                      >
-                        Follow Us
-                      </a>
-                    </div>
 
-                    <div className="grid grid-cols-4 gap-2">
-                      {fieldGallery.map((img, i) => (
-                        <div 
-                          key={i} 
-                          className="aspect-square rounded-xl overflow-hidden bg-slate-100 relative group cursor-pointer"
-                        >
-                          <img
-                            src={img.src}
-                            alt={img.alt}
-                            className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Instagram className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* WIDGET 5: LIVE AGRICULTURAL COMMODITY INDEX */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
-                    <h3 className="text-xs font-black text-[#1A3A1A] uppercase tracking-wider border-b border-slate-100 pb-3 mb-3 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <TrendingUp className="h-4 w-4 text-[#0F766E]" />
-                        Commodity Index
-                      </span>
-                      <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
-                        Live Market
-                      </span>
-                    </h3>
-                    <div className="space-y-2.5 text-xs text-[#1A3A1A] font-semibold">
-                      <div className="flex justify-between border-b border-slate-50 pb-2">
-                        <span>🌽 Dry Maize (90kg bag)</span>
-                        <strong className="text-[#0F766E]">KSh 3,200</strong>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-50 pb-2">
-                        <span>🥛 Fresh Milk (1L)</span>
-                        <strong className="text-[#0F766E]">KSh 55</strong>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-50 pb-2">
-                        <span>🫘 Rosecoco Beans (90kg)</span>
-                        <strong className="text-[#0F766E]">KSh 8,500</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>🥑 Fuerte Avocados (kg)</span>
-                        <strong className="text-[#0F766E]">KSh 65</strong>
-                      </div>
-                    </div>
-                  </div>
+                  {/* WIDGET 5: LIVE AGRICULTURAL COMMODITY INDEX (KAMIS) */}
+                  <CommodityIndexWidget initialData={initialMarketPrices} />
 
                 </div>
 
@@ -1098,34 +1014,34 @@ function BlogPage() {
           }}
           className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-[#FAF9F5] rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative border border-[#D4DDD0] flex flex-col text-left max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#FAF9F5] rounded-none max-w-3xl w-full p-6 shadow-2xl relative border-2 border-[#0B2117] flex flex-col text-left max-h-[90vh] overflow-y-auto">
             
             {/* Header */}
             <div className="flex justify-between items-center border-b border-[#D4DDD0] pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">📰</span>
-                <h3 className="text-sm font-extrabold text-[#1A3A1A] uppercase tracking-wider">
+                <h3 className="text-sm font-extrabold text-[#1A3A1A] uppercase tracking-wider font-['Lora',serif]">
                   Weekly Combined Newsletter
                 </h3>
               </div>
               <button 
                 onClick={() => setNewsletterModalOpen(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-lg text-xs font-bold transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-none text-xs font-black uppercase tracking-wider transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
                 aria-label="Exit newsletter"
               >
                 <X className="h-4 w-4 group-hover:scale-110 transition-transform text-slate-500 group-hover:text-rose-600" />
                 <span>Exit</span>
-                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1 py-0.2 rounded font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
+                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1 py-0.2 rounded-none font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
               </button>
             </div>
 
             {/* Newsletter compilation block */}
-            <div id="printable-newsletter" className="bg-white border border-[#D4DDD0] rounded-xl p-6 sm:p-8 space-y-6 mt-4 text-[#1A3A1A]">
+            <div id="printable-newsletter" className="bg-white border-2 border-slate-200 rounded-none p-6 sm:p-8 space-y-6 mt-4 text-[#1A3A1A]">
               
               {/* Newsletter brand banner */}
               <div className="text-center border-b-[3px] border-[#0F766E] pb-4">
                 <h4 className="text-xs font-black tracking-widest text-[#0F766E] uppercase">WEEKLY DIGEST</h4>
-                <h2 className="text-2xl font-black font-['Lora'] text-[#1A3A1A] mt-1">MQULIMA NEWSLETTER</h2>
+                <h2 className="text-2xl font-black font-['Lora',serif] text-[#1A3A1A] mt-1">MQULIMA NEWSLETTER</h2>
                 <div className="flex justify-center gap-4 text-[10px] text-[#5D6B5C] font-semibold mt-2.5">
                   <span>Issue #26-06</span>
                   <span>•</span>
@@ -1146,7 +1062,7 @@ function BlogPage() {
                     <span className="text-[9px] font-black text-[#0F766E] uppercase tracking-wider block">
                       ARTICLE {index + 1} — {p.category}
                     </span>
-                    <h3 className="text-base font-bold font-['Lora'] text-[#1A3A1A] mt-1">
+                    <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A] mt-1">
                       {p.title}
                     </h3>
                     <div className="text-[9px] text-[#5D6B5C] font-semibold mt-1">
@@ -1176,7 +1092,7 @@ function BlogPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewsletterModalOpen(false)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#D4DDD0] hover:border-slate-400 rounded-lg text-xs font-bold text-[#5D6B5C] hover:text-[#1A3A1A] hover:bg-gray-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#D4DDD0] hover:border-slate-400 rounded-none text-xs font-black uppercase tracking-wider text-[#5D6B5C] hover:text-[#1A3A1A] hover:bg-gray-50 transition cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                   <span>Exit Newsletter</span>
@@ -1186,7 +1102,7 @@ function BlogPage() {
                     toast.success("Preparing PDF print format...");
                     setTimeout(() => window.print(), 300);
                   }}
-                  className="px-4 py-2 bg-[#0F766E] hover:bg-[#113B26] rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-4 py-2 bg-[#0B2117] hover:bg-[#0F766E] rounded-none text-xs font-black uppercase tracking-wider text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Printer className="h-4 w-4" />
                   Print / Save PDF
@@ -1208,32 +1124,32 @@ function BlogPage() {
           }}
           className="fixed inset-0 z-50 overflow-y-auto font-sans flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative border border-gray-100 flex flex-col text-left max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-none max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative border-2 border-[#0B2117] flex flex-col text-left max-h-[90vh] overflow-y-auto">
             
             {/* Top Modal Exit Bar */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#E8F4F1] text-[#0F766E]">
+                <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-none bg-[#0B2117] text-[#85CC14] border border-[#85CC14]/30">
                   {activeReadingPost.category}
                 </span>
-                <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider hidden sm:inline">
                   • Reading Mode
                 </span>
               </div>
               <button 
                 onClick={() => setActiveReadingPost(null)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-none text-xs font-black uppercase tracking-wider transition border border-transparent hover:border-rose-200 shadow-2xs group cursor-pointer"
                 aria-label="Exit article reader"
               >
                 <X className="h-4 w-4 group-hover:scale-110 transition-transform text-slate-500 group-hover:text-rose-600" />
                 <span>Exit Article</span>
-                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1.5 py-0.5 rounded font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
+                <kbd className="hidden sm:inline-block text-[9px] bg-white group-hover:bg-rose-100 px-1.5 py-0.5 rounded-none font-mono text-slate-400 group-hover:text-rose-600 border border-slate-200">Esc</kbd>
               </button>
             </div>
 
             {/* Article Detail */}
             <div className="space-y-4">
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 relative">
+              <div className="aspect-video w-full rounded-none overflow-hidden bg-slate-100 border-2 border-slate-200 relative">
                 {activeReadingPost.mediaType === "video" ? (
                   <video
                     src={activeReadingPost.mediaUrl || activeReadingPost.coverImage}
@@ -1253,7 +1169,7 @@ function BlogPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-3 text-[10px] text-[#5D6B5C] font-bold uppercase tracking-wider">
+              <div className="flex items-center gap-3 text-[10px] text-[#5D6B5C] font-black uppercase tracking-wider">
                 <span>{activeReadingPost.category}</span>
                 <span>•</span>
                 <span>{activeReadingPost.publishedAt}</span>
@@ -1261,17 +1177,17 @@ function BlogPage() {
                 <span>{activeReadingPost.readTime}</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-bold font-['Lora'] text-[#1A3A1A] leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black font-['Lora',serif] text-[#1A3A1A] leading-snug">
                 {activeReadingPost.title}
               </h2>
 
               {/* Author row */}
               <div className="flex items-center gap-3 border-y border-[#E8ECE7] py-3">
-                <div className="h-8 w-8 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-bold text-xs flex items-center justify-center">
+                <div className="h-9 w-9 rounded-none bg-[#0B2117] text-[#85CC14] font-black text-xs flex items-center justify-center shrink-0 border border-[#85CC14]/30">
                   {activeReadingPost.author.avatarInitials}
                 </div>
                 <div>
-                  <strong className="text-xs text-[#1A3A1A] block">{activeReadingPost.author.name}</strong>
+                  <strong className="text-xs text-[#1A3A1A] block font-bold">{activeReadingPost.author.name}</strong>
                   <span className="text-[10px] text-[#5D6B5C] block font-semibold">{activeReadingPost.author.role}</span>
                 </div>
               </div>
@@ -1289,13 +1205,13 @@ function BlogPage() {
               <Link
                 to="/blog/$slug"
                 params={{ slug: activeReadingPost.slug }}
-                className="text-xs font-bold text-[#0F766E] hover:text-[#113B26] hover:underline flex items-center gap-1"
+                className="text-xs font-black uppercase tracking-wider text-[#0F766E] hover:text-[#0B2117] hover:underline flex items-center gap-1.5"
               >
                 Read on Dedicated Page & Comments →
               </Link>
               <button
                 onClick={() => setActiveReadingPost(null)}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#0F766E] hover:bg-[#113B26] rounded-xl text-xs font-bold text-white transition shadow-sm hover:shadow group cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#0B2117] hover:bg-[#0F766E] rounded-none text-xs font-black uppercase tracking-wider text-white transition shadow-sm hover:shadow group cursor-pointer"
                 aria-label="Exit article reader"
               >
                 <X className="h-4 w-4 group-hover:scale-110 transition-transform" />

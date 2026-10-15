@@ -34,6 +34,16 @@ export function getRawSql() {
   return globalThis.__mq_raw_sql__;
 }
 
+export function resetRawSql() {
+  if (globalThis.__mq_raw_sql__) {
+    try {
+      globalThis.__mq_raw_sql__.end({ timeout: 1 }).catch(() => {});
+    } catch {}
+    globalThis.__mq_raw_sql__ = undefined;
+    globalThis.__mq_drizzle_db__ = undefined;
+  }
+}
+
 export function getDb() {
   if (!globalThis.__mq_drizzle_db__) {
     const sql = getRawSql();

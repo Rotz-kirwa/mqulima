@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { trackEvent } from "@/lib/events";
@@ -14,7 +14,8 @@ import {
   Activity,
   ArrowRight,
   ShieldCheck,
-  Check
+  Check,
+  ShoppingBag
 } from "lucide-react";
 import "@/styles/mqulima-tools.css";
 
@@ -40,21 +41,49 @@ export const Route = createFileRoute("/tools")({
 
 type Tab = "weather" | "markets" | "doctor";
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+type TabConfig = {
+  id: Tab;
+  label: string;
+  icon: React.ElementType;
+  activeClass: string;
+  inactiveClass: string;
+  iconActive: string;
+  iconInactive: string;
+};
+
+const TABS: TabConfig[] = [
   {
     id: "weather",
     label: "Weather Radar",
     icon: CloudSun,
+    activeClass:
+      "bg-gradient-to-r from-[#0284C7] via-[#0EA5E9] to-[#38BDF8] text-white font-black shadow-lg shadow-sky-500/35 border-2 border-sky-200 ring-2 ring-sky-400/30 scale-[1.02]",
+    inactiveClass:
+      "bg-[#082F49]/80 text-sky-200 font-bold border-2 border-sky-500/40 hover:bg-[#0C4A6E] hover:border-sky-300 hover:text-white shadow-md shadow-sky-950/40",
+    iconActive: "text-white stroke-[2.5]",
+    iconInactive: "text-[#38BDF8] stroke-[2]",
   },
   {
     id: "markets",
     label: "Live Markets",
     icon: TrendingUp,
+    activeClass:
+      "bg-gradient-to-r from-[#F59E0B] via-[#EA580C] to-[#D97706] text-white font-black shadow-lg shadow-amber-500/35 border-2 border-amber-200 ring-2 ring-amber-400/30 scale-[1.02]",
+    inactiveClass:
+      "bg-[#451A03]/80 text-amber-200 font-bold border-2 border-amber-500/40 hover:bg-[#78350F] hover:border-amber-300 hover:text-white shadow-md shadow-amber-950/40",
+    iconActive: "text-white stroke-[2.5]",
+    iconInactive: "text-[#FBBF24] stroke-[2]",
   },
   {
     id: "doctor",
     label: "AI Crop Doctor",
     icon: Wrench,
+    activeClass:
+      "bg-gradient-to-r from-[#85CC14] via-[#65A30D] to-[#16A34A] text-[#081C13] font-black shadow-lg shadow-lime-500/35 border-2 border-[#BEF264] ring-2 ring-lime-400/30 scale-[1.02]",
+    inactiveClass:
+      "bg-[#143E23]/80 text-emerald-200 font-bold border-2 border-emerald-500/40 hover:bg-[#166534] hover:border-emerald-300 hover:text-white shadow-md shadow-emerald-950/40",
+    iconActive: "text-[#081C13] stroke-[2.5]",
+    iconInactive: "text-[#A3E635] stroke-[2]",
   },
 ];
 const HERO_STATS = [
@@ -64,12 +93,29 @@ const HERO_STATS = [
   { icon: Sparkles, value: "< 5 sec", label: "AI Diagnostics" },
 ];
 
+// Replicated 8 times = 32 items per track (>6,000px wide).
+// Guarantees Track 1 and Track 2 are far wider than any monitor (including 4K/ultrawide displays),
+// ensuring the marquee loop is 100% gapless, seamless, and never seen restarting or ending.
+const MARQUEE_STATS = [
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+  ...HERO_STATS,
+];
+
 function ToolsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("weather");
   const weatherState = useWeather("Nairobi");
   const { location, selectCounty } = weatherState;
 
-  const countyList = Object.keys(KENYA_COUNTIES) as CountyName[];
+  const countyList = useMemo(
+    () => (Object.keys(KENYA_COUNTIES) as CountyName[]).sort((a, b) => a.localeCompare(b)),
+    []
+  );
   const currentCounty = location.type === "county" ? location.county : "Nairobi";
 
   const lastTrackedTabRef = useRef<string | null>(null);
@@ -107,65 +153,64 @@ function ToolsPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#0B2117] via-transparent to-transparent" />
           </div>
 
-          <div className="relative z-10 container-px mx-auto max-w-7xl pt-8 pb-10 md:pt-10 md:pb-12 text-left">
-            <div className="max-w-3xl">
+          <div className="relative z-10 container-px mx-auto max-w-7xl pt-4 pb-4 md:pt-5 md:pb-5 text-left">
+            <div className="max-w-4xl">
               
               {/* Top Pill Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white/90 border border-white/15 mb-3">
-                <Cpu className="h-3.5 w-3.5 text-[#85CC14]" />
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/90 border border-white/15 mb-1.5">
+                <Cpu className="h-3 w-3 text-[#85CC14]" />
                 <span>MQULIMA AGRI-INTELLIGENCE CORE</span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight font-['Outfit',sans-serif]">
+              {/* Main Headline — Compact & Impactful */}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight tracking-tight font-['Outfit',sans-serif]">
                 Precision Farm{" "}
-                <span className="text-[#D4E157] underline decoration-[#D4E157]/30 underline-offset-6">
+                <span className="text-[#D4E157] underline decoration-[#D4E157]/30 underline-offset-4">
                   Intelligence
                 </span>{" "}
                 & Tools
               </h1>
 
-              {/* Subheading */}
-              <p className="mt-3 text-sm sm:text-base text-white/85 leading-relaxed font-normal max-w-2xl">
-                Empowering Kenyan farmers with real-time Open-Meteo weather analytics, live KAMIS wholesale commodity prices, spray suitability radar, and instant AI plant disease diagnosis.
+              {/* Compact Subheading */}
+              <p className="mt-1.5 text-xs sm:text-sm text-white/80 leading-relaxed font-normal max-w-2xl">
+                Real-time Open-Meteo telemetry, live KAMIS commodity market feeds, spray suitability radar, and instant AI plant disease diagnosis.
               </p>
 
-              {/* Action Buttons Row (Locked 1 Horizontal Row on Mobile) */}
-              <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* 2 Primary Buttons locked in 1 Horizontal Line */}
-                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  <button
-                    onClick={() => {
-                      const el = document.getElementById("interactive-console");
-                      el?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className="flex-1 sm:flex-initial px-3 sm:px-6 py-2.5 rounded-full bg-gradient-to-r from-[#85CC14] to-[#6FA810] text-[#0B2117] font-extrabold text-[11px] xs:text-xs sm:text-sm hover:brightness-110 shadow-md shadow-[#85CC14]/20 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer active:scale-98 whitespace-nowrap shrink-0"
-                  >
-                    <span>Open Control Console</span>
-                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.5] shrink-0" />
-                  </button>
+              {/* Action Buttons & County Selector Row */}
+              <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-2.5">
+                {/* 1. Open Control Console - Vibrant Lime Green */}
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("interactive-console");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#85CC14] to-[#65A30D] text-[#081C13] font-black text-xs hover:brightness-110 shadow-md shadow-[#85CC14]/30 border border-[#A3E635]/60 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 whitespace-nowrap shrink-0"
+                >
+                  <span>Open Control Console</span>
+                  <ArrowRight className="h-3.5 w-3.5 stroke-[2.5] shrink-0" />
+                </button>
 
-                  <Link
-                    to="/shop"
-                    className="flex-1 sm:flex-initial px-3 sm:px-6 py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white font-bold text-[11px] xs:text-xs sm:text-sm hover:bg-white/25 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer active:scale-98 whitespace-nowrap shrink-0"
-                  >
-                    <span>Browse Farm Supplies</span>
-                  </Link>
-                </div>
+                {/* 2. Browse Farm Supplies - Warm Amber / Harvest Gold */}
+                <Link
+                  to="/shop"
+                  className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#F59E0B] via-[#EA580C] to-[#D97706] text-white font-extrabold text-xs hover:brightness-110 shadow-md shadow-amber-500/30 border border-amber-300/40 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 whitespace-nowrap shrink-0"
+                >
+                  <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-amber-100" />
+                  <span>Browse Farm Supplies</span>
+                </Link>
 
-                {/* County Pill Selector */}
-                <div className="flex items-center justify-between sm:justify-start gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow-sm shrink-0 w-fit">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white/90 shrink-0">County:</span>
-                  </div>
+                {/* 3. County Pill Selector - Vibrant Cyan / Deep Sapphire Teal Glass */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#0369A1]/60 to-[#0F766E]/70 backdrop-blur-md border border-[#38BDF8]/60 text-white shadow-md shadow-sky-950/40 hover:border-[#38BDF8] transition-all duration-200 shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-[#38BDF8] shrink-0 animate-pulse" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-200/90 shrink-0">County:</span>
                   <select
                     value={currentCounty}
                     onChange={(e) => selectCounty(e.target.value as CountyName)}
-                    className="bg-transparent text-xs font-bold text-[#D4E157] outline-none cursor-pointer border-none max-w-[130px] truncate"
+                    className="bg-transparent text-xs font-black text-white drop-shadow-xs outline-none cursor-pointer border-none max-w-[150px] truncate"
+                    aria-label="Select Kenyan County (All 47 Counties)"
                   >
                     {countyList.map((c) => (
-                      <option key={c} value={c} className="bg-[#0F291E] text-white">
+                      <option key={c} value={c} className="bg-[#0B2117] text-white py-1">
                         {c} County
                       </option>
                     ))}
@@ -173,29 +218,25 @@ function ToolsPage() {
                 </div>
               </div>
 
-              {/* Trust Badges Checkmark Row (2 on top, 1 below on mobile; 3 in 1 line on desktop) */}
-              <div className="mt-5 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-2.5 sm:gap-6 text-xs font-semibold text-white/90">
-                {/* Top 2 Items on Mobile */}
-                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-6">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14] shrink-0">
-                      <Check className="h-3 w-3 stroke-[3]" />
-                    </div>
-                    <span>Real-time Open-Meteo V3</span>
+              {/* Inline Trust Badges Row */}
+              <div className="mt-2.5 pt-2 border-t border-white/10 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] font-medium text-white/80">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14] shrink-0">
+                    <Check className="h-2.5 w-2.5 stroke-[3]" />
                   </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14] shrink-0">
-                      <Check className="h-3 w-3 stroke-[3]" />
-                    </div>
-                    <span>KAMIS Commodity Prices</span>
-                  </div>
+                  <span>Real-time Open-Meteo V3</span>
                 </div>
 
-                {/* 3rd Item centered below on mobile, inline on desktop */}
-                <div className="flex items-center justify-center sm:justify-start gap-1.5 shrink-0 pt-0.5 sm:pt-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14] shrink-0">
-                    <Check className="h-3 w-3 stroke-[3]" />
+                    <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  </div>
+                  <span>KAMIS Commodity Prices</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="p-0.5 rounded-full bg-[#85CC14]/20 text-[#85CC14] shrink-0">
+                    <Check className="h-2.5 w-2.5 stroke-[3]" />
                   </div>
                   <span>Instant AI Disease Doctor</span>
                 </div>
@@ -204,38 +245,41 @@ function ToolsPage() {
             </div>
           </div>
 
-          {/* Stats Bar Ribbon at Bottom of Hero (Infinite Smooth Right-to-Left Marquee Carousel) */}
-          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-3.5 overflow-hidden">
-            <div className="marquee-wrapper flex w-max items-center animate-marquee">
+          {/* Stats Bar Ribbon at Bottom of Hero (Slimmer Marquee Strip - Truly Continuous) */}
+          <div className="relative z-10 bg-[#EDF7E2] border-t border-b border-[#D8EBC4] py-2 overflow-hidden select-none">
+            <div
+              className="marquee-wrapper flex w-max items-center animate-marquee will-change-transform"
+              style={{ animationDuration: "75s" }}
+            >
               {/* Track 1 */}
-              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16">
-                {[...HERO_STATS, ...HERO_STATS].map((stat, idx) => (
-                  <div key={`t1-${idx}`} className="flex items-center gap-3 shrink-0">
-                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
-                      <stat.icon className="h-5 w-5 stroke-[2]" />
+              <div className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12">
+                {MARQUEE_STATS.map((stat, idx) => (
+                  <div key={`t1-${idx}`} className="flex items-center gap-2.5 shrink-0">
+                    <div className="p-1.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-4 w-4 stroke-[2]" />
                     </div>
                     <div className="text-left">
-                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                      <span className="text-base sm:text-lg font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-none">
                         {stat.value}
                       </span>
-                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                      <span className="text-[10px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Track 2 (Identical Clone for 100% Seamless Infinite Continuous Loop) */}
-              <div className="flex shrink-0 items-center gap-10 sm:gap-16 pr-10 sm:pr-16" aria-hidden="true">
-                {[...HERO_STATS, ...HERO_STATS].map((stat, idx) => (
-                  <div key={`t2-${idx}`} className="flex items-center gap-3 shrink-0">
-                    <div className="p-2.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
-                      <stat.icon className="h-5 w-5 stroke-[2]" />
+              <div className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12" aria-hidden="true">
+                {MARQUEE_STATS.map((stat, idx) => (
+                  <div key={`t2-${idx}`} className="flex items-center gap-2.5 shrink-0">
+                    <div className="p-1.5 rounded-full bg-[#85CC14]/25 text-[#2A520B] shrink-0">
+                      <stat.icon className="h-4 w-4 stroke-[2]" />
                     </div>
                     <div className="text-left">
-                      <span className="text-xl sm:text-2xl font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-tight">
+                      <span className="text-base sm:text-lg font-black text-[#1A380A] tracking-tight font-['Outfit',sans-serif] block leading-none">
                         {stat.value}
                       </span>
-                      <span className="text-[11px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
+                      <span className="text-[10px] font-semibold text-[#3D661B] whitespace-nowrap">{stat.label}</span>
                     </div>
                   </div>
                 ))}
@@ -246,24 +290,22 @@ function ToolsPage() {
 
 
         {/* =========================================================================
-            SECTION 2: FLOATING TAB SWITCHER CONSOLE (Deep Forest Green Theme)
+            SECTION 2: FLOATING TAB SWITCHER CONSOLE (Multi-Color Tactile Buttons)
            ========================================================================= */}
-        <section id="interactive-console" className="sticky top-14 sm:top-16 z-40 py-3.5 px-2 sm:px-4 sm:container-px mx-auto max-w-7xl bg-[#FAFBF9]/90 backdrop-blur-md border-b border-slate-200/80">
-          <div className="flex justify-center w-full max-w-2xl mx-auto">
-            <div className="grid grid-cols-3 w-full sm:w-auto p-1.5 rounded-2xl sm:rounded-full bg-[#0B2117] border-2 border-[#85CC14]/40 shadow-lg shadow-[#0F291E]/20">
-              {TABS.map(({ id, label, icon: Icon }) => {
+        <section id="interactive-console" className="sticky top-14 sm:top-16 z-40 py-2.5 sm:py-3 px-2 sm:px-4 sm:container-px mx-auto max-w-7xl bg-[#FAFBF9]/95 backdrop-blur-md border-b border-slate-200/80">
+          <div className="flex justify-center w-full max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto p-1.5 sm:p-2 rounded-2xl sm:rounded-full bg-[#071B12]/95 backdrop-blur-xl border border-white/15 shadow-xl shadow-slate-900/15">
+              {TABS.map(({ id, label, icon: Icon, activeClass, inactiveClass, iconActive, iconInactive }) => {
                 const isActive = activeTab === id;
                 return (
                   <button
                     key={id}
                     onClick={() => setActiveTab(id)}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-xl sm:rounded-full text-[11px] xs:text-xs sm:text-sm font-bold transition-all duration-200 ease-out whitespace-nowrap cursor-pointer active:scale-98 ${
-                      isActive
-                        ? "bg-[#85CC14] text-[#0B2117] font-black shadow-md shadow-[#85CC14]/25"
-                        : "bg-transparent text-white/80 hover:text-white font-bold"
+                    className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-full text-[11px] xs:text-xs sm:text-sm font-black transition-all duration-200 ease-out whitespace-nowrap cursor-pointer active:scale-95 ${
+                      isActive ? activeClass : inactiveClass
                     }`}
                   >
-                    <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 ${isActive ? "text-[#0B2117] stroke-[2.5]" : "text-[#85CC14] stroke-[2]"}`} />
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? iconActive : iconInactive}`} />
                     <span>{label}</span>
                   </button>
                 );

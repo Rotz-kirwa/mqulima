@@ -419,24 +419,19 @@ export const createShopOrder = createServerFn({ method: "POST" })
       const { validateCsrfToken } = await import("../csrf-verify.server");
       validateCsrfToken(csrfToken);
 
-      // 2. Check authentication (allow logged-in user or guest checkout)
+      // 2. Strict Authentication Requirement (No unauthenticated purchases or account spoofing)
       const { getCurrentUser } = await import("../auth-server");
       const user = await getCurrentUser();
-      let userId = user ? user.id : null;
+      if (!user || !user.id) {
+        return {
+          success: false,
+          error: "Authentication required to place an order. Please sign in or create a free Mqulima account to complete your purchase."
+        };
+      }
+      const userId = user.id;
 
       const { getDb } = await import("../db.server");
       const sql = getDb();
-
-      if (!userId && data.email && data.email.includes("@")) {
-        const [matchedProfile] = await sql`
-          SELECT id FROM profiles
-          WHERE LOWER(email) = ${data.email.trim().toLowerCase()} AND deleted_at IS NULL
-          LIMIT 1
-        `;
-        if (matchedProfile) {
-          userId = matchedProfile.id;
-        }
-      }
 
       // 3. Format delivery address
       const deliveryAddress = `Name: ${fullName}\nPhone: ${phone}\nID: ${nationalId}\nCounty: ${county}\nTown: ${town}${village ? `\nVillage: ${village}` : ""}`;

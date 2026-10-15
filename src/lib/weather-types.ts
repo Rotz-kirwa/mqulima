@@ -32,12 +32,15 @@ export interface OpenMeteoCurrentWeather {
   cloud_cover: number;
   surface_pressure: number;
   weather_code: WeatherCode;
+  is_day?: number;
 }
 
 export interface OpenMeteoHourly {
   time: string[];
   temperature_2m: number[];
   precipitation_probability: number[];
+  weather_code?: WeatherCode[];
+  is_day?: number[];
   soil_temperature_0cm: number[];
   soil_moisture_0_to_1cm: number[];
   shortwave_radiation: number[];

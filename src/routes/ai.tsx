@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
+import { AuthPromptModal } from "@/components/mqulima/AuthPromptModal";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWeather } from "@/lib/api/weather";
 import {
@@ -128,21 +129,155 @@ function MqulimaAIWorkspace() {
       .catch(e => console.warn("Failed to load county weather", e));
   }, [user?.county]);
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalReason, setModalReason] = useState("use Mqulima AI");
+
   if (!user) {
+    const samplePrompts = [
+      {
+        tag: "Plant Health",
+        query: "How do I diagnose Fall Armyworm on 4-week maize leaves?",
+        hint: "Optical pathology & local IPM treatments"
+      },
+      {
+        tag: "Weather Advisories",
+        query: "Is it safe to spray fungicide in Nakuru this afternoon?",
+        hint: "Precipitation wash-off & wind velocity check"
+      },
+      {
+        tag: "Agronomy Sowing",
+        query: "What is the recommended seed rate for DK 777 maize per acre?",
+        hint: "Soil nutrient requirements & plant population"
+      },
+      {
+        tag: "Market Arbitrage",
+        query: "What are the latest wholesale prices for dry maize in Eldoret?",
+        hint: "KAMIS verified commodity price lookup"
+      }
+    ];
+
+    const handlePromptClick = (queryText: string) => {
+      setModalReason(`ask Mqulima AI: "${queryText}"`);
+      setShowAuthModal(true);
+    };
+
     return (
       <AppLayout>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center bg-background px-4 text-center">
-          <Sparkles className="h-12 w-12 text-[#2D6A4F] animate-pulse mb-4" />
-          <h2 className="text-2xl font-bold text-foreground">Welcome to Mqulima AI</h2>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Sign in to access your intelligent farming assistant, county diagnostics, and market records.
-          </p>
-          <Link
-            to="/auth/sign-in"
-            className="mt-6 rounded-full bg-[#2D6A4F] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#224f3b] shadow-md"
-          >
-            Sign In to Start
-          </Link>
+        <div className="min-h-[85vh] bg-[#0A110D] text-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+          {/* Background glowing orbs */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#85CC14]/10 rounded-full blur-[140px] pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-72 h-72 bg-[#1B4332]/25 rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="max-w-4xl mx-auto w-full text-center relative z-10 space-y-8">
+            {/* Engine Tag */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16382B] border border-[#85CC14]/40 text-[#85CC14] text-xs font-black uppercase tracking-wider shadow-lg">
+              <Sparkles className="h-4 w-4 text-[#85CC14] animate-pulse" />
+              <span>Next-Gen Gemini Agricultural Intelligence</span>
+            </div>
+
+            {/* Headline */}
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif] leading-tight">
+                Your 24/7 Intelligent Agronomist & Farm Advisor
+              </h1>
+              <p className="text-sm sm:text-base text-stone-300 max-w-2xl mx-auto leading-relaxed">
+                Localized for Kenya's 47 counties. Diagnoses crop diseases, provides spray windows, recommends certified agrochemicals, and tracks KAMIS market prices.
+              </p>
+            </div>
+
+            {/* Feature Capability Highlights */}
+            <div className="grid sm:grid-cols-3 gap-4 text-left">
+              <div className="p-5 rounded-2xl bg-[#121E16] border border-white/10 hover:border-[#85CC14]/40 transition space-y-2 shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-[#85CC14]/15 text-[#85CC14] flex items-center justify-center font-bold text-base">
+                  🔬
+                </div>
+                <h3 className="text-sm font-black text-white">Visual Crop Pathology</h3>
+                <p className="text-xs text-stone-400 leading-normal">
+                  Upload leaf, stem, or fruit photos for instant pathology identification and organic/synthetic IPM advice.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#121E16] border border-white/10 hover:border-[#85CC14]/40 transition space-y-2 shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-[#85CC14]/15 text-[#85CC14] flex items-center justify-center font-bold text-base">
+                  🌦️
+                </div>
+                <h3 className="text-sm font-black text-white">County Weather Windows</h3>
+                <p className="text-xs text-stone-400 leading-normal">
+                  Precipitation probabilities and wind analysis to ensure chemical sprays do not wash off or drift.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#121E16] border border-white/10 hover:border-[#85CC14]/40 transition space-y-2 shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-[#85CC14]/15 text-[#85CC14] flex items-center justify-center font-bold text-base">
+                  📈
+                </div>
+                <h3 className="text-sm font-black text-white">Real-Time Soko Prices</h3>
+                <p className="text-xs text-stone-400 leading-normal">
+                  Authoritative commodity rates from wholesale markets in Nairobi, Eldoret, Nakuru, and Mombasa.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Preview Simulator / Sample Questions */}
+            <div className="p-6 rounded-3xl bg-[#0F291E]/90 border border-[#85CC14]/30 text-left space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#85CC14]">
+                  <span>💬 Sample Agronomic Prompts</span>
+                </div>
+                <span className="text-[11px] text-stone-400 font-medium">Click any question to preview</span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                {samplePrompts.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handlePromptClick(s.query)}
+                    className="p-3.5 rounded-xl bg-[#0B2117] hover:bg-[#16382B] border border-white/10 hover:border-[#85CC14]/50 text-left transition-all group cursor-pointer shadow-xs"
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[#85CC14] mb-1">
+                      <span>{s.tag}</span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">Launch →</span>
+                    </div>
+                    <div className="text-xs font-bold text-white group-hover:text-[#85CC14] transition-colors line-clamp-1">
+                      "{s.query}"
+                    </div>
+                    <div className="text-[11px] text-stone-400 mt-1">{s.hint}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Call to Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                to="/auth/sign-in"
+                search={{ redirect: "/ai" } as any}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-black text-xs uppercase tracking-wider transition shadow-lg shadow-[#85CC14]/20 cursor-pointer"
+              >
+                Sign In to Start Asking
+              </Link>
+              <Link
+                to="/auth/sign-up"
+                search={{ redirect: "/ai" } as any}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-black text-xs uppercase tracking-wider transition cursor-pointer"
+              >
+                Create Free Account
+              </Link>
+            </div>
+            
+            <p className="text-[11px] text-stone-400">
+              Free access for all registered Kenyan smallholders & commercial growers.
+            </p>
+          </div>
+
+          {/* Auth Prompt Modal */}
+          <AuthPromptModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            featureName={modalReason}
+            redirectPath="/ai"
+          />
         </div>
       </AppLayout>
     );

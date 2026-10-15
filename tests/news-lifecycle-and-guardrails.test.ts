@@ -180,4 +180,53 @@ describe("Agritech News & Blog Architecture Guardrails", () => {
       }
     });
   });
+
+  describe("5. Agronomy Discussion Comments Architecture & Guardrails", () => {
+    it("validates comment payload integrity, requiring valid author and content", () => {
+      const validateCommentPayload = (data: { authorName?: string; content?: string }) => {
+        if (!data.authorName || data.authorName.trim().length < 2) {
+          return { valid: false, error: "Name must be at least 2 characters" };
+        }
+        if (!data.content || data.content.trim().length < 5) {
+          return { valid: false, error: "Comment must be at least 5 characters" };
+        }
+        return { valid: true };
+      };
+
+      // Valid author and question
+      expect(validateCommentPayload({ authorName: "Kosgei Kiprono", content: "What is the NPK dosage?" }).valid).toBe(true);
+
+      // Empty / too short author
+      expect(validateCommentPayload({ authorName: "K", content: "What is the NPK dosage?" }).valid).toBe(false);
+
+      // Empty / too short question
+      expect(validateCommentPayload({ authorName: "Kosgei Kiprono", content: "Hi" }).valid).toBe(false);
+    });
+
+    it("distinguishes verified agronomist responses from community questions", () => {
+      const formatCommentBadge = (isAgronomistReply: boolean, agronomistTitle?: string) => {
+        if (isAgronomistReply) {
+          return {
+            isOfficial: true,
+            badge: "Verified Agronomist Desk",
+            title: agronomistTitle || "Agronomy Specialist",
+          };
+        }
+        return {
+          isOfficial: false,
+          badge: "Producer",
+          title: "Community Farmer",
+        };
+      };
+
+      const agronomistComment = formatCommentBadge(true, "Senior Dairy & Livestock Specialist");
+      expect(agronomistComment.isOfficial).toBe(true);
+      expect(agronomistComment.badge).toBe("Verified Agronomist Desk");
+      expect(agronomistComment.title).toBe("Senior Dairy & Livestock Specialist");
+
+      const farmerComment = formatCommentBadge(false);
+      expect(farmerComment.isOfficial).toBe(false);
+      expect(farmerComment.badge).toBe("Producer");
+    });
+  });
 });

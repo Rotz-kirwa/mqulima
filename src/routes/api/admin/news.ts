@@ -247,11 +247,18 @@ export const Route = createFileRoute("/api/admin/news")({
             WHERE id = ${articleId}
           `;
 
-          // Also delete from legacy blog_posts if present
+          // Also delete from legacy blog_posts and comments if present
           try {
             await sql`
               DELETE FROM blog_posts
               WHERE id = ${articleId}
+            `;
+          } catch (_) {}
+
+          try {
+            await sql`
+              DELETE FROM agritech_news_comments
+              WHERE article_id = ${articleId}
             `;
           } catch (_) {}
 

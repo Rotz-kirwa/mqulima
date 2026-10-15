@@ -19,33 +19,46 @@ export const Route = createFileRoute("/api/news")({
           const limit = isNaN(limitParam) ? 50 : Math.min(Math.max(1, limitParam), 100);
           const offset = isNaN(offsetParam) ? 0 : Math.max(0, offsetParam);
 
-          const sql = getDb();
+          let sql = getDb();
 
           let whereClause = sql`WHERE LOWER(status) = 'published'`;
           if (categoryParam && categoryParam !== "All" && categoryParam.trim()) {
             whereClause = sql`${whereClause} AND (category ILIKE ${categoryParam.trim()})`;
           }
 
-          const articles = await sql`
-            SELECT 
-              id,
-              title,
-              slug,
-              summary,
-              content,
-              media_type AS "mediaType",
-              media_url AS "mediaUrl",
-              category,
-              source_attribution AS "sourceAttribution",
-              view_count AS "viewCount",
-              published_at AS "publishedAt",
-              created_at AS "createdAt"
-            FROM agritech_news
-            ${whereClause}
-            ORDER BY published_at DESC NULLS LAST, created_at DESC
-            LIMIT ${limit}
-            OFFSET ${offset}
-          `;
+          const runQuery = async (client: typeof sql) => {
+            return client`
+              SELECT 
+                id,
+                title,
+                slug,
+                summary,
+                content,
+                media_type AS "mediaType",
+                media_url AS "mediaUrl",
+                category,
+                source_attribution AS "sourceAttribution",
+                view_count AS "viewCount",
+                published_at AS "publishedAt",
+                created_at AS "createdAt"
+              FROM agritech_news
+              ${whereClause}
+              ORDER BY published_at DESC NULLS LAST, created_at DESC
+              LIMIT ${limit}
+              OFFSET ${offset}
+            `;
+          };
+
+          let articles;
+          try {
+            articles = await runQuery(sql);
+          } catch (err: any) {
+            console.warn("[API/NEWS] Retrying after DB connection drop:", err?.message);
+            const { resetDbPool } = await import("@/lib/db.server");
+            resetDbPool();
+            sql = getDb();
+            articles = await runQuery(sql);
+          }
 
           return new Response(JSON.stringify({ success: true, articles }), {
             status: 200,
