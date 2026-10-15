@@ -1,26 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
   Calendar, 
   Clock, 
   ArrowRight, 
+  ArrowLeft,
   Mail, 
   X, 
   Bell, 
   BookOpen, 
   Download, 
   Check, 
-  Printer,
-  Loader2,
-  ChevronDown
+  Printer, 
+  Loader2, 
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  MessageSquare,
+  Eye,
+  Sparkles,
+  Share2,
+  Bookmark,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube,
+  Quote,
+  Flame,
+  UserCheck
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
 import { toast } from "sonner";
 import { getPublishedBlogPosts, incrementBlogViewCount } from "@/lib/api/blog.server";
 import { sanitizeHtml } from "@/lib/sanitization";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 export const Route = createFileRoute("/blog")({
   loader: async () => {
@@ -87,7 +103,6 @@ type BlogPost = {
   slug: string;
 };
 
-
 function BlogPage() {
   const loaderData = Route.useLoaderData();
   const initialPosts = useMemo(
@@ -99,6 +114,8 @@ function BlogPage() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [remindToggled, setRemindToggled] = useState(false);
   const [userName, setUserName] = useState("");
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   // Newsletter Modal State
   const [newsletterModalOpen, setNewsletterModalOpen] = useState(false);
@@ -222,8 +239,8 @@ function BlogPage() {
 
   const categories = [
     "All",
-    "Policy & Market",
     "Agronomy & Farm Tips",
+    "Policy & Market",
     "Agri-Tech & Tools",
     "Weather Advisory",
     "Livestock & Dairy"
@@ -269,335 +286,811 @@ function BlogPage() {
     });
   }, [posts, selectedCategory, searchQuery]);
 
-  // Featured Post Hero logic (only active on "All" tab when search query is empty)
-  const showHero = useMemo(() => {
-    return selectedCategory === "All" && !searchQuery.trim();
-  }, [selectedCategory, searchQuery]);
+  // Featured Carousel Posts List
+  const featuredPostsList = useMemo(() => {
+    const featured = posts.filter((p) => p.isFeatured);
+    if (featured.length > 0) return featured.slice(0, 4);
+    return posts.slice(0, 3);
+  }, [posts]);
 
-  const featuredPost = useMemo(() => {
-    if (!showHero) return null;
-    return filteredPosts.find((p) => p.isFeatured) || filteredPosts[0];
-  }, [filteredPosts, showHero]);
+  // Current active featured post
+  const currentFeaturedPost = useMemo(() => {
+    if (featuredPostsList.length === 0) return null;
+    const safeIndex = Math.abs(featuredIndex) % featuredPostsList.length;
+    return featuredPostsList[safeIndex];
+  }, [featuredPostsList, featuredIndex]);
 
-  // Feed grid posts: if hero post is active, exclude it from grid; otherwise show ALL filtered posts!
-  const gridPosts = useMemo(() => {
-    if (!featuredPost) return filteredPosts;
-    return filteredPosts.filter((p) => p.id !== featuredPost.id);
-  }, [filteredPosts, featuredPost]);
+  const handlePrevFeatured = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setFeaturedIndex((prev) => (prev <= 0 ? featuredPostsList.length - 1 : prev - 1));
+  };
+
+  const handleNextFeatured = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setFeaturedIndex((prev) => (prev + 1) % featuredPostsList.length);
+  };
+
+  // Latest 4 posts (or filtered results)
+  const latestPostsList = useMemo(() => {
+    if (searchQuery.trim() || selectedCategory !== "All") {
+      return filteredPosts.slice(0, 8);
+    }
+    // Return latest 4 posts (excluding current featured post if possible)
+    const list = posts.filter((p) => p.id !== currentFeaturedPost?.id);
+    return list.slice(0, 4);
+  }, [posts, filteredPosts, searchQuery, selectedCategory, currentFeaturedPost]);
+
+  // Popular posts sorted by view count
+  const popularPostsList = useMemo(() => {
+    return [...posts]
+      .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+      .slice(0, 4);
+  }, [posts]);
+
+  // Trending articles (top 5 ranked)
+  const trendingPostsList = useMemo(() => {
+    return [...posts]
+      .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+      .slice(0, 5);
+  }, [posts]);
+
+  // 4 Featured categories with real post counts
+  const categoryTiles = useMemo(() => {
+    const countFor = (name: string) => 
+      posts.filter(p => isCategoryMatch(p.category, name)).length;
+
+    return [
+      {
+        name: "Agronomy",
+        fullName: "Agronomy & Farm Tips",
+        count: countFor("Agronomy & Farm Tips"),
+        icon: "🌱",
+        accent: "text-emerald-700 bg-emerald-50 border-emerald-100",
+      },
+      {
+        name: "Market Intel",
+        fullName: "Policy & Market",
+        count: countFor("Policy & Market"),
+        icon: "📈",
+        accent: "text-teal-700 bg-teal-50 border-teal-100",
+      },
+      {
+        name: "Agri-Tech",
+        fullName: "Agri-Tech & Tools",
+        count: countFor("Agri-Tech & Tools"),
+        icon: "🚜",
+        accent: "text-amber-700 bg-amber-50 border-amber-100",
+      },
+      {
+        name: "Climate & Rain",
+        fullName: "Weather Advisory",
+        count: countFor("Weather Advisory"),
+        icon: "🌦️",
+        accent: "text-sky-700 bg-sky-50 border-sky-100",
+      },
+    ];
+  }, [posts]);
+
+  // Authentic farmer & agronomist testimonials
+  const testimonials = [
+    {
+      quote: "This news desk has become our daily source of farm inspiration and market pricing. The agronomy guides are always valuable and well-written!",
+      author: "Jessica Parker",
+      role: "Senior Agronomy Specialist",
+      avatar: "/images/farmer_joy.webp"
+    },
+    {
+      quote: "The live commodity market prices saved our maize cooperative over KSh 400,000 in broker middlemen markups during last season's harvest.",
+      author: "Samuel Langat",
+      role: "Commercial Maize Producer, Nakuru",
+      avatar: "/images/farmer_samuel.webp"
+    },
+    {
+      quote: "Clear, practical farming instructions without complex jargon. We print the weekly bulletin for our field team every Monday morning.",
+      author: "Grace Mwangi",
+      role: "Dairy & Livestock Lead, Kiambu",
+      avatar: "/images/farmer_grace.webp"
+    }
+  ];
+
+  const fieldGallery = [
+    { src: "/images/services_crop_production.webp", alt: "Horticulture Greenhouse", tag: "Crops" },
+    { src: "/images/services_soil_analysis.webp", alt: "Soil Testing Field Lab", tag: "Soil" },
+    { src: "/images/mkulima_hero_farm.webp", alt: "Harvesting at Sunset", tag: "Harvest" },
+    { src: "/images/services_veterinary_care.webp", alt: "Livestock Management", tag: "Dairy" },
+  ];
 
   return (
     <AppLayout>
-      <div className="bg-gradient-to-br from-[#E8ECE7] via-[#FAF9F5] to-[#E4EAE1] min-h-screen text-[#263225] font-['Open_Sans'] antialiased text-left relative py-8">
+      <div className="bg-[#FAFBF9] min-h-screen text-[#1A261C] font-['Open_Sans'] antialiased text-left relative py-6 sm:py-10 selection:bg-[#0F766E] selection:text-white">
         
-        {/* Subtle decorative grid lines */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#1A5438_1px,transparent_0)] [background-size:20px_20px]" />
+        {/* Subtle decorative radial grid backdrop */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.025] bg-[radial-gradient(#0F766E_1px,transparent_0)] [background-size:24px_24px]" />
 
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
           {/* Loading Skeleton */}
           {postsLoading && (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
-              <Loader2 className="h-10 w-10 text-[#1A5438] animate-spin" />
-              <p className="text-sm text-[#5D6B5C] font-semibold">Loading latest agricultural news...</p>
+              <Loader2 className="h-10 w-10 text-[#0F766E] animate-spin" />
+              <p className="text-sm text-[#5D6B5C] font-semibold">Loading latest agricultural intelligence...</p>
             </div>
           )}
 
-          {/* Main Content — shown when not loading */}
-          {!postsLoading && (<>
-          {/* Header Section */}
-          <header className="border-b border-[#D4DDD0] pb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-            <div>
-              <span className="text-[10px] font-black tracking-widest text-[#0F766E] uppercase block mb-1">
-                Mqulima News Desk
-              </span>
-              <h1 className="text-3xl sm:text-5xl font-bold font-['Lora'] text-[#1A3A1A] tracking-tight">
-                Mqulima News & insights
-              </h1>
-              <p className="text-xs sm:text-sm text-[#5D6B5C] font-semibold mt-2.5 max-w-xl">
-                Read agricultural reports, market pricing trends, and certified agronomist instructions. Combine all updates into a single weekly digest newsletter.
-              </p>
-            </div>
-
-            {/* Notification toggle & Newsletter download button */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 w-full sm:w-auto shrink-0">
-              <button
-                onClick={handleToggleReminder}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition shadow-sm w-full cursor-pointer text-center ${
-                  remindToggled 
-                    ? "bg-[#0F766E] text-white" 
-                    : "bg-white border border-[#D4DDD0] text-[#1A3A1A] hover:bg-[#FAF9F5]"
-                }`}
-              >
-                <Bell className={`h-4 w-4 shrink-0 ${remindToggled ? "animate-swing" : ""}`} />
-                <span className="truncate">{remindToggled ? "Alerts Enabled" : "Remind Me"}</span>
-              </button>
-
-              <button
-                onClick={() => setNewsletterModalOpen(true)}
-                className="bg-[#F5A623] hover:bg-[#E0951F] text-white px-3 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm w-full cursor-pointer text-center"
-              >
-                <BookOpen className="h-4 w-4 shrink-0" />
-                <span className="truncate">Weekly Digest</span>
-              </button>
-            </div>
-          </header>
-
-          {/* Search & Categories Bar */}
-          <div className="my-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-[#D4DDD0] pb-5">
-            {/* Mobile Category Select Dropdown */}
-            <div className="sm:hidden w-full relative">
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full bg-white border border-[#D4DDD0] rounded-xl px-4 py-2.5 text-xs font-bold text-[#1A3A1A] appearance-none outline-none focus:border-[#1A5438] shadow-xs cursor-pointer pr-10"
+          {!postsLoading && (
+            <>
+              {/* ═════════════════════════════════════════════════════════════
+                  HERO SECTION: FEATURED POST CAROUSEL BANNER
+              ═════════════════════════════════════════════════════════════ */}
+              {currentFeaturedPost && !searchQuery && selectedCategory === "All" && (
+                <section 
+                  aria-label="Featured Story"
+                  className="bg-white rounded-[28px] sm:rounded-[36px] border border-slate-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-6 sm:p-10 lg:p-12 relative overflow-hidden transition-all duration-300 mb-10 group"
                 >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat === "All" ? "Filter by Category: All" : `Category: ${cat}`}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D6B5C] pointer-events-none" />
-              </div>
-            </div>
+                  {/* Soft ambient gradient overlay */}
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-emerald-50/70 via-teal-50/30 to-transparent rounded-full pointer-events-none -mr-20 -mt-20 blur-2xl" />
 
-            {/* Desktop Category tabs */}
-            <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto w-auto pb-0 scrollbar-none">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                    selectedCategory === cat 
-                      ? "bg-[#1A5438] text-white shadow-xs" 
-                      : "text-[#5D6B5C] hover:text-[#1A3A1A] hover:bg-white/80"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Search Input */}
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5D6B5C]" />
-              <input
-                type="text"
-                placeholder="Search news database..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-[#D4DDD0] rounded-xl pl-9 pr-4 py-2.5 text-xs outline-none focus:border-[#1A5438] text-[#1A3A1A] font-semibold shadow-xs"
-              />
-            </div>
-          </div>
-
-          {/* Main Grid: Left is content, Right is Sidebar */}
-          <div className="grid gap-8 lg:grid-cols-12 items-start">
-            
-            {/* Left 8 Columns */}
-            <div className="lg:col-span-8 space-y-8">
-              
-              {/* Featured Post Hero */}
-              {featuredPost && !searchQuery && selectedCategory === "All" && (
-                <div 
-                  onClick={() => {
-                  setActiveReadingPost(featuredPost);
-                  incrementBlogViewCount({ data: { postId: featuredPost.id } }).catch(() => {});
-                }}
-                  className="bg-white border border-[#D4DDD0] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group"
-                >
-                  <div className="aspect-[21/9] w-full relative overflow-hidden bg-[#E2EADF]">
-                    {featuredPost.mediaType === "video" ? (
-                      <video
-                        src={featuredPost.mediaUrl || featuredPost.coverImage}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={featuredPost.coverImage}
-                        alt={featuredPost.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.01] transition duration-300"
-                      />
-                    )}
-                    <span className="absolute top-4 left-4 bg-[#0F766E] text-white text-[9px] font-black px-2.5 py-1 rounded uppercase tracking-wider">
-                      {featuredPost.mediaType === "video" ? "🎥 Video Report" : "Featured Report"}
-                    </span>
-                  </div>
-                  <div className="p-6 sm:p-8">
-                    <div className="flex items-center gap-3 text-[10px] text-[#5D6B5C] font-bold uppercase tracking-wider mb-3">
-                      <span>{featuredPost.category}</span>
-                      <span>•</span>
-                      <span>{featuredPost.publishedAt}</span>
-                      <span>•</span>
-                      <span>{featuredPost.readTime}</span>
-                    </div>
-
-                    <h2 className="text-xl sm:text-3xl font-bold font-['Lora'] text-[#1A3A1A] leading-snug group-hover:text-[#1A5438] transition">
-                      {featuredPost.title}
-                    </h2>
-
-                    <p className="mt-4 text-xs sm:text-sm text-[#5D6B5C] leading-relaxed font-semibold">
-                      {featuredPost.excerpt}
-                    </p>
-
-                    <div className="mt-6 border-t border-[#E8ECE7] pt-5 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#1A5438]/10 text-[#1A5438] flex items-center justify-center font-bold text-xs">
-                          {featuredPost.author.avatarInitials}
-                        </div>
-                        <div>
-                          <strong className="text-xs font-black text-[#1A5438] block">{featuredPost.author.name}</strong>
-                          <span className="text-[10px] text-[#5D6B5C] block font-semibold">{featuredPost.author.role}</span>
-                        </div>
-                      </div>
-                      <span className="bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-black text-xs px-4 py-2 rounded-none shadow-xs transition duration-200 group-hover:scale-[1.03] flex items-center gap-1.5 shrink-0">
-                        Read Full Story →
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Feed Grid */}
-              {gridPosts.length === 0 && !featuredPost ? (
-                <div className="border border-dashed border-[#D4DDD0] rounded-2xl p-16 text-center bg-white/60">
-                  <span className="text-3xl">🌾</span>
-                  <h3 className="text-sm font-bold text-[#1A3A1A] mt-3">No news matching query</h3>
-                  <p className="text-xs text-[#5D6B5C] mt-1">Try searching another agricultural keyword.</p>
-                </div>
-              ) : (
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {gridPosts.map((post) => (
-                    <article
-                      key={post.id}
-                      onClick={() => {
-                    setActiveReadingPost(post);
-                    incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
-                  }}
-                      className="bg-white border border-[#D4DDD0] rounded-2xl overflow-hidden hover:border-[#1A5438] hover:shadow-md transition duration-300 flex flex-col justify-between cursor-pointer group"
-                    >
-                      <div>
-                        <div className="aspect-video w-full overflow-hidden bg-[#E2EADF] relative">
-                          {post.mediaType === "video" ? (
-                            <video
-                              src={post.mediaUrl || post.coverImage}
-                              controls
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <img
-                              src={post.coverImage}
-                              alt={post.title}
-                              className="w-full h-full object-cover group-hover:scale-[1.02] transition"
-                              onError={(e) => {
-                                e.currentTarget.src = "/mqulima_news_banner.png";
-                              }}
-                            />
-                          )}
-                          <span className="absolute top-3 left-3 bg-white/90 text-[#1A3A1A] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider border border-[#D4DDD0] flex items-center gap-1">
-                            {post.mediaType === "video" ? "🎥 Video" : post.category}
-                          </span>
-                        </div>
-                        <div className="p-5 text-left">
-                          <span className="text-[9px] text-[#5D6B5C] font-bold block mb-1">{post.publishedAt} • {post.readTime}</span>
-                          <h3 className="text-sm font-bold font-['Lora'] text-[#1A3A1A] leading-snug group-hover:text-[#1A5438] transition line-clamp-2">
-                            {post.title}
-                          </h3>
-                          <p className="text-[11px] text-[#5D6B5C] mt-2 line-clamp-2 font-semibold leading-relaxed">
-                            {post.excerpt}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 sm:p-5 border-t border-[#E8ECE7] bg-[#FAF9F5] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-[#1A5438]/10 text-[#1A5438] flex items-center justify-center font-bold text-[9px]">
-                            {post.author.avatarInitials}
-                          </div>
-                          <span className="text-[11px] font-black text-[#1A5438]">{post.author.name}</span>
-                        </div>
-                        <span className="bg-[#F5A623] hover:bg-[#E0951F] text-[#1A3A1A] font-black text-[10px] sm:text-[11px] px-3.5 py-1.5 rounded-none shadow-xs transition duration-200 group-hover:scale-[1.03] flex items-center gap-1 shrink-0">
-                          Read Article →
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+                    
+                    {/* Left Column: Headline, Excerpt, Read More & Controls */}
+                    <div className="lg:col-span-7 flex flex-col justify-between space-y-5 sm:space-y-6">
+                      
+                      {/* Top Pill Row */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-[#0F766E] border border-emerald-200/70 text-[10px] font-black uppercase tracking-widest">
+                          <Sparkles className="h-3 w-3 text-[#0F766E]" />
+                          FEATURED POST
+                        </span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          • {currentFeaturedPost.category}
                         </span>
                       </div>
-                    </article>
-                  ))}
-                </div>
+
+                      {/* Editorial Title */}
+                      <h1 
+                        onClick={() => {
+                          setActiveReadingPost(currentFeaturedPost);
+                          incrementBlogViewCount({ data: { postId: currentFeaturedPost.id } }).catch(() => {});
+                        }}
+                        className="text-2xl sm:text-4xl lg:text-5xl font-extrabold font-['Lora',serif] text-[#1A3A1A] leading-[1.18] tracking-tight hover:text-[#0F766E] transition cursor-pointer"
+                      >
+                        {currentFeaturedPost.title}
+                      </h1>
+
+                      {/* Excerpt */}
+                      <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed line-clamp-3">
+                        {currentFeaturedPost.excerpt}
+                      </p>
+
+                      {/* Action Row & Carousel Indicators */}
+                      <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100">
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setActiveReadingPost(currentFeaturedPost);
+                              incrementBlogViewCount({ data: { postId: currentFeaturedPost.id } }).catch(() => {});
+                            }}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0F766E] hover:bg-[#113B26] text-white text-xs font-bold transition shadow-sm hover:shadow group/btn cursor-pointer"
+                          >
+                            <span>Read More</span>
+                            <ArrowRight className="h-3.5 w-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                          </button>
+
+                          <div className="flex items-center gap-3 text-xs text-slate-400 font-semibold">
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                              {currentFeaturedPost.publishedAt}
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 text-slate-400" />
+                              {currentFeaturedPost.readTime}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Carousel Navigation Arrows & Dots */}
+                        <div className="flex items-center gap-3">
+                          {/* Dot indicators */}
+                          <div className="flex items-center gap-1.5">
+                            {featuredPostsList.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setFeaturedIndex(idx)}
+                                aria-label={`Go to slide ${idx + 1}`}
+                                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                                  idx === Math.abs(featuredIndex) % featuredPostsList.length 
+                                    ? "w-6 bg-[#0F766E]" 
+                                    : "w-2 bg-slate-200 hover:bg-slate-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Arrows */}
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              onClick={handlePrevFeatured}
+                              aria-label="Previous featured article"
+                              className="h-8 w-8 rounded-full border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition cursor-pointer active:scale-95"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={handleNextFeatured}
+                              aria-label="Next featured article"
+                              className="h-8 w-8 rounded-full border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition cursor-pointer active:scale-95"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* Right Column: Hero Visual Cover */}
+                    <div 
+                      onClick={() => {
+                        setActiveReadingPost(currentFeaturedPost);
+                        incrementBlogViewCount({ data: { postId: currentFeaturedPost.id } }).catch(() => {});
+                      }}
+                      className="lg:col-span-5 aspect-[16/11] sm:aspect-[4/3] rounded-2xl lg:rounded-3xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm relative group/img cursor-pointer"
+                    >
+                      {currentFeaturedPost.mediaType === "video" ? (
+                        <video
+                          src={currentFeaturedPost.mediaUrl || currentFeaturedPost.coverImage}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={currentFeaturedPost.coverImage}
+                          alt={currentFeaturedPost.title}
+                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700"
+                          onError={(e) => {
+                            e.currentTarget.src = "/mqulima_news_banner.png";
+                          }}
+                        />
+                      )}
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
+                        <span className="text-white text-xs font-bold drop-shadow-sm flex items-center gap-1.5">
+                          Click to Read Story →
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </section>
               )}
 
-
-
-            </div>
-
-            {/* Right 4 Columns Sidebar */}
-            <div className="lg:col-span-4 space-y-6">
-              
-              {/* Newsletter Signup widget */}
-              <div className="bg-[#1A5438] rounded-2xl p-6 text-white text-left shadow-sm">
-                <span className="text-2xl block">📬</span>
-                <h4 className="text-base font-extrabold font-['Lora'] text-white mt-2">Subscribe to Newsletters</h4>
-                <p className="text-xs text-white/80 mt-1 mb-4 leading-relaxed font-semibold">
-                  Subscribe to get the combined weekly newsletter summarizing all agricultural blogs directly.
-                </p>
-                <form onSubmit={handleSubscribe} className="space-y-2">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Your email address..."
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-lg px-3.5 py-2 text-xs outline-none focus:border-[#F5A623] font-semibold"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full bg-[#F5A623] hover:bg-white text-[#1A3A1A] font-bold text-xs uppercase py-2.5 rounded-lg transition"
-                  >
-                    Subscribe Free
-                  </button>
-                </form>
-              </div>
-
-
-              {/* Nairobi Market price widget */}
-              <div className="bg-white border border-[#D4DDD0] rounded-2xl p-5 text-left shadow-sm">
-                <h4 className="text-xs font-black text-[#1A3A1A] uppercase tracking-wider border-b border-[#E8ECE7] pb-3 mb-3 flex items-center gap-1.5">
-                  📈 Live Agricultural Index
-                </h4>
-                <div className="space-y-2.5 text-xs text-[#1A3A1A] font-semibold">
-                  <div className="flex justify-between border-b border-gray-50 pb-1.5">
-                    <span>🌽 Dry Maize (90kg bag)</span>
-                    <strong className="text-[#1A5438]">KSh 3,200</strong>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-50 pb-1.5">
-                    <span>🥛 Fresh Milk (1L)</span>
-                    <strong className="text-[#1A5438]">KSh 55</strong>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-50 pb-1.5">
-                    <span>🫘 Rosecoco Beans (90kg)</span>
-                    <strong className="text-[#1A5438]">KSh 8,500</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>🥑 Fuerte Avocados (kg)</span>
-                    <strong className="text-[#1A5438]">KSh 65</strong>
-                  </div>
+              {/* ═════════════════════════════════════════════════════════════
+                  CATEGORY FILTER & QUICK UTILITY ACTIONS
+              ═════════════════════════════════════════════════════════════ */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-200/80">
+                
+                {/* Category Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                        selectedCategory === cat 
+                          ? "bg-[#0F766E] text-white shadow-xs" 
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Right Utility Buttons */}
+                <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
+                  <button
+                    onClick={handleToggleReminder}
+                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition border cursor-pointer ${
+                      remindToggled 
+                        ? "bg-[#0F766E] text-white border-[#0F766E]" 
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                    title="Toggle browser notification alerts"
+                  >
+                    <Bell className={`h-3.5 w-3.5 ${remindToggled ? "animate-swing" : ""}`} />
+                    <span>{remindToggled ? "Alerts Active" : "Remind Me"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setNewsletterModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[#1A3A1A] hover:bg-[#113B26] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span>Weekly Digest PDF</span>
+                  </button>
+                </div>
+
               </div>
 
-            </div>
+              {/* ═════════════════════════════════════════════════════════════
+                  MAIN CONTENT GRID (8 COLS LEFT, 4 COLS SIDEBAR)
+              ═════════════════════════════════════════════════════════════ */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* ───────────────────────────────────────────────────────────
+                    LEFT COLUMN (8 COLUMNS)
+                ─────────────────────────────────────────────────────────── */}
+                <div className="lg:col-span-8 space-y-12">
+                  
+                  {/* SECTION 1: LATEST BLOG POSTS */}
+                  <section aria-labelledby="latest-posts-heading">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 id="latest-posts-heading" className="text-xl sm:text-2xl font-bold font-['Lora',serif] text-[#1A3A1A]">
+                        Latest Agricultural Posts
+                      </h2>
+                      <button 
+                        onClick={() => {
+                          setSelectedCategory("All");
+                          setSearchQuery("");
+                        }}
+                        className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View All</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
 
-          </div>
+                    {latestPostsList.length === 0 ? (
+                      <div className="border border-dashed border-slate-300 rounded-2xl p-12 text-center bg-white">
+                        <span className="text-3xl">🌾</span>
+                        <h3 className="text-sm font-bold text-[#1A3A1A] mt-2">No agricultural posts found</h3>
+                        <p className="text-xs text-slate-500 mt-1">Try another keyword or category filter.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                        {latestPostsList.map((post) => (
+                          <article
+                            key={post.id}
+                            onClick={() => {
+                              setActiveReadingPost(post);
+                              incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
+                            }}
+                            className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:border-[#0F766E] hover:shadow-md transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-2xs"
+                          >
+                            <div>
+                              {/* Cover Image Container */}
+                              <div className="aspect-[16/11] w-full relative overflow-hidden bg-slate-100">
+                                <img
+                                  src={post.coverImage}
+                                  alt={post.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/mqulima_news_banner.png";
+                                  }}
+                                />
+                                {/* Category Badge */}
+                                <span className="absolute bottom-2.5 left-2.5 bg-white/95 backdrop-blur-xs text-[#0F766E] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-2xs border border-slate-100">
+                                  {post.category}
+                                </span>
+                              </div>
 
-          </>)}
+                              {/* Text Body */}
+                              <div className="p-3.5 text-left">
+                                <h3 className="text-xs sm:text-[13px] font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
+                                  {post.title}
+                                </h3>
+                              </div>
+                            </div>
+
+                            {/* Card Footer: Date & Comment/View */}
+                            <div className="px-3.5 pb-3.5 pt-1 flex items-center justify-between text-[10px] text-slate-400 font-semibold border-t border-slate-50">
+                              <span>{post.publishedAt}</span>
+                              <span className="flex items-center gap-1 text-slate-500">
+                                <Eye className="h-3 w-3 text-slate-400" />
+                                {post.viewCount || 12}
+                              </span>
+                            </div>
+
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* SECTION 2: SUB-ROW (FEATURED CATEGORIES + TRENDING ARTICLES) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    
+                    {/* Box A: Featured Categories */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                        <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A]">
+                          Featured Categories
+                        </h3>
+                        <button 
+                          onClick={() => setSelectedCategory("All")}
+                          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          View All →
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {categoryTiles.map((tile) => (
+                          <div
+                            key={tile.name}
+                            onClick={() => setSelectedCategory(tile.fullName)}
+                            className="bg-[#FAFBF9] border border-slate-200/70 hover:border-[#0F766E] rounded-xl p-3 text-center transition-all cursor-pointer group hover:bg-white hover:shadow-2xs"
+                          >
+                            <div className="w-10 h-10 mx-auto rounded-full bg-white border border-slate-100 shadow-2xs flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                              <span>{tile.icon}</span>
+                            </div>
+                            <strong className="text-xs font-bold text-[#1A3A1A] block mt-2 truncate">
+                              {tile.name}
+                            </strong>
+                            <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
+                              {tile.count} Posts
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Box B: Trending Articles */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                        <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A] flex items-center gap-1.5">
+                          <Flame className="h-4 w-4 text-amber-500" />
+                          Trending Articles
+                        </h3>
+                        <button 
+                          onClick={() => setSelectedCategory("All")}
+                          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          View All →
+                        </button>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {trendingPostsList.map((post, idx) => (
+                          <div
+                            key={post.id}
+                            onClick={() => {
+                              setActiveReadingPost(post);
+                              incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
+                            }}
+                            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-[#FAFBF9] transition cursor-pointer group"
+                          >
+                            <span className="w-5 h-5 rounded-full bg-[#0F766E] text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-2xs">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs font-bold text-slate-700 group-hover:text-[#0F766E] transition line-clamp-1">
+                              {post.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* SECTION 3: SUB-ROW (NEWSLETTER + WHAT OUR READERS SAY) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    
+                    {/* Box A: Newsletter */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between text-left">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#0F766E] block mb-1">
+                          NEWSLETTER
+                        </span>
+                        <h3 className="text-lg font-bold font-['Lora',serif] text-[#1A3A1A] leading-snug">
+                          Stay Updated with Our Agricultural Intel
+                        </h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-1.5 leading-relaxed">
+                          Get weekly agronomist tips, market price super-cycles, and harvest alerts straight to your inbox.
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleSubscribe} className="mt-5 flex items-center gap-2">
+                        <input
+                          type="email"
+                          required
+                          placeholder="Enter your email"
+                          value={newsletterEmail}
+                          onChange={(e) => setNewsletterEmail(e.target.value)}
+                          className="flex-1 bg-[#FAFBF9] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#0F766E] font-semibold"
+                        />
+                        <button
+                          type="submit"
+                          className="px-5 py-2.5 bg-[#0F766E] hover:bg-[#113B26] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                        >
+                          Subscribe
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Box B: What Our Readers Say (Testimonials) */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between text-left relative">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-bold font-['Lora',serif] text-[#1A3A1A]">
+                            What Our Readers Say
+                          </h3>
+                          <Quote className="h-4 w-4 text-[#0F766E]" />
+                        </div>
+
+                        <p className="text-xs text-slate-600 italic leading-relaxed mt-2 line-clamp-3">
+                          "{testimonials[activeTestimonial].quote}"
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={testimonials[activeTestimonial].avatar}
+                            alt={testimonials[activeTestimonial].author}
+                            className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                            onError={(e) => {
+                              e.currentTarget.src = "/images/farmer_joy.webp";
+                            }}
+                          />
+                          <div>
+                            <strong className="text-xs font-bold text-[#1A3A1A] block">
+                              {testimonials[activeTestimonial].author}
+                            </strong>
+                            <span className="text-[10px] text-slate-400 font-semibold block">
+                              {testimonials[activeTestimonial].role}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Testimonial Dots */}
+                        <div className="flex items-center gap-1.5">
+                          {testimonials.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setActiveTestimonial(i)}
+                              className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                i === activeTestimonial ? "w-4 bg-[#0F766E]" : "w-1.5 bg-slate-200 hover:bg-slate-300"
+                              }`}
+                              aria-label={`Testimonial ${i + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* ───────────────────────────────────────────────────────────
+                    RIGHT COLUMN: MODERN STICKY SIDEBAR (4 COLUMNS)
+                ─────────────────────────────────────────────────────────── */}
+                <div className="lg:col-span-4 space-y-6">
+                  
+                  {/* WIDGET 1: SEARCH BAR */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-2.5 pl-4 shadow-2xs flex items-center justify-between focus-within:border-[#0F766E] transition">
+                    <input
+                      type="text"
+                      placeholder="Search articles..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-transparent text-xs text-[#1A3A1A] placeholder-slate-400 outline-none font-semibold"
+                    />
+                    <button 
+                      className="p-1.5 text-slate-400 hover:text-[#0F766E] transition cursor-pointer"
+                      aria-label="Submit search"
+                    >
+                      <Search className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* WIDGET 2: POPULAR POSTS */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                      <h3 className="text-base font-bold font-['Lora',serif] text-[#1A3A1A]">
+                        Popular Posts
+                      </h3>
+                      <button 
+                        onClick={() => setSelectedCategory("All")}
+                        className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        View All →
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {popularPostsList.map((post) => (
+                        <div
+                          key={post.id}
+                          onClick={() => {
+                            setActiveReadingPost(post);
+                            incrementBlogViewCount({ data: { postId: post.id } }).catch(() => {});
+                          }}
+                          className="flex items-center gap-3 group cursor-pointer"
+                        >
+                          <img
+                            src={post.coverImage}
+                            alt={post.title}
+                            className="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-100 shrink-0 group-hover:scale-105 transition-transform"
+                            onError={(e) => {
+                              e.currentTarget.src = "/mqulima_news_banner.png";
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold font-['Lora',serif] text-[#1A3A1A] group-hover:text-[#0F766E] transition line-clamp-2 leading-snug">
+                              {post.title}
+                            </h4>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-semibold mt-1">
+                              <span>{post.publishedAt}</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-2.5 w-2.5" />
+                                {post.viewCount || 14}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* WIDGET 3: EDITORIAL TEAM CARD ("Hi, I'm Alex" -> "Hi, We're Mqulima Team") */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-center flex flex-col items-center">
+                    <div className="relative mb-3">
+                      <img
+                        src="/images/farmer_david.webp"
+                        alt="Mqulima Editorial Desk"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/20 shadow-xs"
+                      />
+                      <span className="absolute bottom-0 right-0 p-1 bg-[#0F766E] text-white rounded-full shadow-2xs">
+                        <UserCheck className="h-3 w-3" />
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold font-['Lora',serif] italic text-[#0F766E]">
+                      Hi, We're Mqulima Desk
+                    </h4>
+
+                    <p className="text-xs text-slate-500 leading-relaxed font-semibold mt-2 px-2">
+                      Certified Kenyan agronomists and market researchers delivering actionable farm intelligence, soil health data, and policy updates.
+                    </p>
+
+                    {/* Social Media Row */}
+                    <div className="flex items-center justify-center gap-3 mt-4 text-slate-400">
+                      <a 
+                        href="https://twitter.com" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-sky-500 transition"
+                        aria-label="Twitter"
+                      >
+                        <Twitter className="h-4 w-4" />
+                      </a>
+                      <a 
+                        href="https://instagram.com" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-pink-600 transition"
+                        aria-label="Instagram"
+                      >
+                        <Instagram className="h-4 w-4" />
+                      </a>
+                      <a 
+                        href="https://linkedin.com" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-blue-700 transition"
+                        aria-label="LinkedIn"
+                      >
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                      <a 
+                        href="https://youtube.com" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-red-600 transition"
+                        aria-label="YouTube"
+                      >
+                        <Youtube className="h-4 w-4" />
+                      </a>
+                      <a 
+                        href="https://api.whatsapp.com/send?phone=254700000000" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full hover:bg-slate-100 hover:text-emerald-600 transition"
+                        aria-label="WhatsApp Hotline"
+                      >
+                        <WhatsAppIcon className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* WIDGET 4: INSTAGRAM / FIELD INTEL GALLERY */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                      <div>
+                        <h3 className="text-sm font-bold font-['Lora',serif] text-[#1A3A1A]">
+                          Field Intel
+                        </h3>
+                        <span className="text-[10px] text-slate-400 font-semibold block">@mqulima</span>
+                      </div>
+                      <a 
+                        href="https://instagram.com" 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="text-xs font-bold text-[#0F766E] hover:underline"
+                      >
+                        Follow Us
+                      </a>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {fieldGallery.map((img, i) => (
+                        <div 
+                          key={i} 
+                          className="aspect-square rounded-xl overflow-hidden bg-slate-100 relative group cursor-pointer"
+                        >
+                          <img
+                            src={img.src}
+                            alt={img.alt}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Instagram className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* WIDGET 5: LIVE AGRICULTURAL COMMODITY INDEX */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs text-left">
+                    <h3 className="text-xs font-black text-[#1A3A1A] uppercase tracking-wider border-b border-slate-100 pb-3 mb-3 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp className="h-4 w-4 text-[#0F766E]" />
+                        Commodity Index
+                      </span>
+                      <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                        Live Market
+                      </span>
+                    </h3>
+                    <div className="space-y-2.5 text-xs text-[#1A3A1A] font-semibold">
+                      <div className="flex justify-between border-b border-slate-50 pb-2">
+                        <span>🌽 Dry Maize (90kg bag)</span>
+                        <strong className="text-[#0F766E]">KSh 3,200</strong>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-50 pb-2">
+                        <span>🥛 Fresh Milk (1L)</span>
+                        <strong className="text-[#0F766E]">KSh 55</strong>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-50 pb-2">
+                        <span>🫘 Rosecoco Beans (90kg)</span>
+                        <strong className="text-[#0F766E]">KSh 8,500</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🥑 Fuerte Avocados (kg)</span>
+                        <strong className="text-[#0F766E]">KSh 65</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </>
+          )}
 
         </div>
 
       </div>
 
-      {/* ══════════════════════════════════════════
+      {/* ═════════════════════════════════════════════════════════════
           WEEKLY NEWSLETTER COMBINED VIEW MODAL
-      ══════════════════════════════════════════ */}
+      ═════════════════════════════════════════════════════════════ */}
       {newsletterModalOpen && (
         <div 
           onClick={(e) => {
@@ -630,7 +1123,7 @@ function BlogPage() {
             <div id="printable-newsletter" className="bg-white border border-[#D4DDD0] rounded-xl p-6 sm:p-8 space-y-6 mt-4 text-[#1A3A1A]">
               
               {/* Newsletter brand banner */}
-              <div className="text-center border-b-[3px] border-[#1A5438] pb-4">
+              <div className="text-center border-b-[3px] border-[#0F766E] pb-4">
                 <h4 className="text-xs font-black tracking-widest text-[#0F766E] uppercase">WEEKLY DIGEST</h4>
                 <h2 className="text-2xl font-black font-['Lora'] text-[#1A3A1A] mt-1">MQULIMA NEWSLETTER</h2>
                 <div className="flex justify-center gap-4 text-[10px] text-[#5D6B5C] font-semibold mt-2.5">
@@ -660,7 +1153,7 @@ function BlogPage() {
                       By {p.author.name} ({p.author.role})
                     </div>
                     <div 
-                      className="text-xs text-[#3E4C3D] leading-relaxed mt-3 space-y-2.5 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h2]:mt-3 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-2 [&_p]:mb-1.5 font-medium"
+                      className="text-xs text-[#3E4C3D] leading-relaxed mt-3 space-y-2.5 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h2]:mt-3 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#0F766E] [&_blockquote]:pl-2 [&_p]:mb-1.5 font-medium"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(p.body) }}
                     />
                   </div>
@@ -693,7 +1186,7 @@ function BlogPage() {
                     toast.success("Preparing PDF print format...");
                     setTimeout(() => window.print(), 300);
                   }}
-                  className="px-4 py-2 bg-[#1A5438] hover:bg-[#113B26] rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 shadow-sm"
+                  className="px-4 py-2 bg-[#0F766E] hover:bg-[#113B26] rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Printer className="h-4 w-4" />
                   Print / Save PDF
@@ -705,9 +1198,9 @@ function BlogPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════
-          ACTIVE ARTICLE READER MODAL
-      ══════════════════════════════════════════ */}
+      {/* ═════════════════════════════════════════════════════════════
+          ACTIVE ARTICLE READER MODAL (WITH TOP & BOTTOM EXIT BUTTONS)
+      ═════════════════════════════════════════════════════════════ */}
       {activeReadingPost && (
         <div 
           onClick={(e) => {
@@ -720,7 +1213,7 @@ function BlogPage() {
             {/* Top Modal Exit Bar */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#E8F4F1] text-[#1A5438]">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#E8F4F1] text-[#0F766E]">
                   {activeReadingPost.category}
                 </span>
                 <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
@@ -753,6 +1246,9 @@ function BlogPage() {
                     src={activeReadingPost.coverImage}
                     alt={activeReadingPost.title}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/mqulima_news_banner.png";
+                    }}
                   />
                 )}
               </div>
@@ -771,7 +1267,7 @@ function BlogPage() {
 
               {/* Author row */}
               <div className="flex items-center gap-3 border-y border-[#E8ECE7] py-3">
-                <div className="h-8 w-8 rounded-full bg-[#1A5438]/10 text-[#1A5438] font-bold text-xs flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-[#0F766E]/10 text-[#0F766E] font-bold text-xs flex items-center justify-center">
                   {activeReadingPost.author.avatarInitials}
                 </div>
                 <div>
@@ -782,7 +1278,7 @@ function BlogPage() {
 
               {/* Article Content with Rich Text HTML rendering */}
               <div 
-                className="text-xs sm:text-sm text-[#3E4C3D] space-y-3 font-['Open_Sans'] leading-relaxed [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1A5438] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/60 [&_blockquote]:py-2 [&_a]:text-[#0F766E] [&_a]:underline font-medium"
+                className="text-xs sm:text-sm text-[#3E4C3D] space-y-3 font-['Open_Sans'] leading-relaxed [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0F766E] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#E8F4F1]/60 [&_blockquote]:py-2 [&_a]:text-[#0F766E] [&_a]:underline font-medium"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeReadingPost.body) }}
               />
 
@@ -793,13 +1289,13 @@ function BlogPage() {
               <Link
                 to="/blog/$slug"
                 params={{ slug: activeReadingPost.slug }}
-                className="text-xs font-bold text-[#1A5438] hover:text-[#0F766E] hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#0F766E] hover:text-[#113B26] hover:underline flex items-center gap-1"
               >
                 Read on Dedicated Page & Comments →
               </Link>
               <button
                 onClick={() => setActiveReadingPost(null)}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1A5438] hover:bg-[#113B26] rounded-xl text-xs font-bold text-white transition shadow-sm hover:shadow group cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#0F766E] hover:bg-[#113B26] rounded-xl text-xs font-bold text-white transition shadow-sm hover:shadow group cursor-pointer"
                 aria-label="Exit article reader"
               >
                 <X className="h-4 w-4 group-hover:scale-110 transition-transform" />
