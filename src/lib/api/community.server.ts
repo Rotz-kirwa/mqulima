@@ -1113,10 +1113,37 @@ export const sendDirectMessage = createServerFn({ method: "POST" })
 
     const cleanUsername = data.recipientUsername.replace(/^@/, "").trim().toLowerCase();
 
-    const [recipient] = await sql`
-      SELECT id, username, full_name FROM profiles
-      WHERE LOWER(username) = ${cleanUsername} AND deleted_at IS NULL
+    let [recipient] = await sql`
+      SELECT id, username, full_name, email FROM profiles
+      WHERE (
+        LOWER(REPLACE(username, '@', '')) = ${cleanUsername}
+        OR LOWER(email) = ${cleanUsername}
+        OR id::text = ${cleanUsername}
+      )
+      AND deleted_at IS NULL
+      LIMIT 1
     `;
+
+    if (!recipient) {
+      const [u] = await sql`
+        SELECT id, email, first_name, last_name FROM users
+        WHERE (
+          LOWER(email) = ${cleanUsername}
+          OR id::text = ${cleanUsername}
+        )
+        LIMIT 1
+      `;
+      if (u) {
+        const generatedUsername = `mqulima_${(u.first_name || 'farmer').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        const [createdProfile] = await sql`
+          INSERT INTO profiles (id, username, full_name, email)
+          VALUES (${u.id}, ${generatedUsername}, ${u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.email}, ${u.email})
+          ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email
+          RETURNING id, username, full_name, email
+        `;
+        recipient = createdProfile;
+      }
+    }
 
     if (!recipient) {
       throw new Error(`User @${cleanUsername} was not found.`);
@@ -1132,6 +1159,14 @@ export const sendDirectMessage = createServerFn({ method: "POST" })
       RETURNING id, sender_id, recipient_id, body, image_url, is_read, created_at
     `;
 
+    const [senderProfile] = await sql`
+      SELECT username, full_name FROM profiles WHERE id = ${currentUser.id}
+    `;
+    const senderDisplayHandle = senderProfile?.username
+      ? (senderProfile.username.startsWith("@") ? senderProfile.username : `@${senderProfile.username}`)
+      : `@${(currentUser.name || currentUser.email || "farmer").toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+    const senderDisplayName = senderProfile?.full_name || currentUser.name || "Farmer";
+
     await sql`
       INSERT INTO notifications (user_id, type, payload)
       VALUES (
@@ -1139,25 +1174,18 @@ export const sendDirectMessage = createServerFn({ method: "POST" })
         'message',
         ${JSON.stringify({
           title: "New Message",
-          sub: `💬 Direct message from ${currentUser.name || currentUser.email}: "${data.body.trim().slice(0, 45)}"`,
-          senderUsername: currentUser.email,
-          actorName: currentUser.name || currentUser.email
+          sub: `💬 Direct message from ${senderDisplayName}: "${data.body.trim().slice(0, 45)}"`,
+          senderUsername: senderDisplayHandle,
+          actorName: senderDisplayName
         })}::jsonb
       )
     `;
-
-    const [senderProfile] = await sql`
-      SELECT username FROM profiles WHERE id = ${currentUser.id}
-    `;
-    const senderUsername = senderProfile?.username
-      ? (senderProfile.username.startsWith("@") ? senderProfile.username : `@${senderProfile.username}`)
-      : currentUser.email || "@mqulima_farmer";
 
     return {
       success: true,
       message: {
         id: msg.id,
-        sender: senderUsername,
+        sender: senderDisplayHandle,
         text: msg.body,
         image: msg.image_url,
         timestamp: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -1179,11 +1207,20 @@ export const getDirectMessages = createServerFn({ method: "GET" })
     const sql = getDb();
 
     let messages: any[] = [];
+    let otherUser: any = null;
     if (data.otherUsername) {
       const cleanUsername = data.otherUsername.replace(/^@/, "").trim().toLowerCase();
-      const [otherUser] = await sql`
-        SELECT id FROM profiles WHERE LOWER(username) = ${cleanUsername} AND deleted_at IS NULL
+      const [foundUser] = await sql`
+        SELECT id, username, full_name FROM profiles
+        WHERE (
+          LOWER(REPLACE(username, '@', '')) = ${cleanUsername}
+          OR LOWER(email) = ${cleanUsername}
+          OR id::text = ${cleanUsername}
+        )
+        AND deleted_at IS NULL
+        LIMIT 1
       `;
+      otherUser = foundUser;
 
       if (otherUser) {
         const rawMsgs = await sql`
@@ -1197,7 +1234,7 @@ export const getDirectMessages = createServerFn({ method: "GET" })
             m.created_at,
             sp.username AS sender_username
           FROM direct_messages m
-          JOIN profiles sp ON sp.id = m.sender_id
+          LEFT JOIN profiles sp ON sp.id = m.sender_id
           WHERE (m.sender_id = ${currentUser.id} AND m.recipient_id = ${otherUser.id})
              OR (m.sender_id = ${otherUser.id} AND m.recipient_id = ${currentUser.id})
           ORDER BY m.created_at ASC
@@ -1286,6 +1323,50 @@ export const getDirectMessages = createServerFn({ method: "GET" })
       }
     }));
 
+    // If a specific conversation partner was requested and exists, ensure they are present in conversations list
+    if (otherUser && data.otherUsername) {
+      const cleanOther = data.otherUsername.replace(/^@/, "").toLowerCase();
+      const alreadyInList = conversations.some((c: any) => 
+        c.farmer.username.toLowerCase().replace(/^@/, "") === cleanOther ||
+        c.id === `dm_${otherUser.id}`
+      );
+      if (!alreadyInList) {
+        const [op] = await sql`
+          SELECT id, username, full_name, county_region, avatar_url, reputation_score, years_farming, crops, livestock, bio
+          FROM profiles WHERE id = ${otherUser.id}
+        `;
+        if (op) {
+          conversations.unshift({
+            id: `dm_${op.id}`,
+            name: op.full_name || op.username || "Farmer Partner",
+            isGroup: false,
+            unreadCount: 0,
+            lastMessage: messages.length > 0 ? messages[messages.length - 1].text : "",
+            lastMessageTime: messages.length > 0 ? messages[messages.length - 1].timestamp : "",
+            farmer: {
+              username: op.username?.startsWith("@") ? op.username : `@${op.username || "farmer"}`,
+              name: op.full_name || "Mqulima Farmer",
+              country: "Kenya",
+              county: op.county_region || "Kenya",
+              interests: [],
+              crops: op.crops || [],
+              livestock: op.livestock || [],
+              yearsFarming: op.years_farming || 0,
+              certifications: [],
+              reputationScore: op.reputation_score || 0,
+              followersCount: 0,
+              followers: [],
+              avatarUrl: op.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(op.full_name || "Farmer")}&backgroundColor=1a5438&textColor=ffffff`,
+              coverImage: "",
+              bio: op.bio || "",
+              website: "",
+              joinedDate: "2024"
+            }
+          });
+        }
+      }
+    }
+
     return {
       conversations,
       messages
@@ -1343,7 +1424,8 @@ export const getCommunityNotifications = createServerFn({ method: "GET" })
         time: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         read: false,
         linkType: "chat",
-        senderUsername: msg.username
+        senderUsername: msg.username?.startsWith("@") ? msg.username : `@${msg.username || "farmer"}`,
+        actorName: senderName
       });
     }
 
@@ -1358,7 +1440,8 @@ export const getCommunityNotifications = createServerFn({ method: "GET" })
         read: !!n.read_at,
         linkType: n.type === 'like' || n.type === 'comment' ? 'post' : (n.type === 'message' ? 'chat' : 'general'),
         postId: payload.postId,
-        senderUsername: payload.senderUsername
+        senderUsername: payload.senderUsername,
+        actorName: payload.actorName
       });
     }
 

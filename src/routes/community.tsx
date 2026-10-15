@@ -264,6 +264,8 @@ type ChatSession = {
   farmer?: FarmerProfile;
   log: ChatMessage[];
   unreadCount?: number;
+  lastMessage?: string;
+  lastMessageTime?: string;
 };
 
 // Seed Databases
@@ -844,6 +846,16 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   const [chatInput, setChatInput] = useState("");
   const [chats, setChats] = useState<ChatSession[]>([]);
 
+  const chatsRef = useRef(chats);
+  chatsRef.current = chats;
+
+  const totalUnreadMessages = useMemo(() => {
+    return chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  }, [chats]);
+
+  const prevUnreadMapRef = useRef<Record<string, number>>({});
+  const isFirstSyncRef = useRef(true);
+
   // Offline / Network Simulator States
   const [isOnline, setIsOnline] = useState(true);
   const [offlineQueue, setOfflineQueue] = useState<{ chatId: string; text: string; timestamp: string }[]>([]);
@@ -1030,18 +1042,17 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
     };
   }, [authUser]);
 
-  // Poll & sync direct messages from PostgreSQL database
+  // Poll & sync direct messages and notifications from PostgreSQL database
   useEffect(() => {
     if (!currentUser) return;
-    const activeChat = chats.find(c => c.id === activeChatId);
-    const recipientUsername = activeChat?.farmer?.username;
 
+    let syncCycles = 0;
     const syncMessages = async () => {
-      // Pause polling if document is hidden or if not in messaging context
-      if (typeof document !== "undefined" && document.hidden) return;
-      if (subpage !== "konnekt" && !activeChatId) return;
-
       try {
+        const currentChats = chatsRef.current;
+        const activeChat = currentChats.find(c => c.id === activeChatId);
+        const recipientUsername = activeChat?.farmer?.username;
+
         const res = await getDirectMessages({
           data: {
             otherUsername: recipientUsername || undefined
@@ -1049,15 +1060,46 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         });
 
         if (res.conversations && res.conversations.length > 0) {
+          // Detect new incoming messages to notify the logged-in user in real time
+          for (const dbConv of res.conversations) {
+            const partnerKey = (dbConv.farmer?.username || "").toLowerCase().replace(/^@/, "");
+            const prevUnread = prevUnreadMapRef.current[partnerKey] ?? 0;
+            const currentUnread = dbConv.unreadCount || 0;
+
+            if (!isFirstSyncRef.current && currentUnread > prevUnread && currentUnread > 0) {
+              const senderName = dbConv.name || dbConv.farmer?.name || "A farmer";
+              const snippet = dbConv.lastMessage ? `"${dbConv.lastMessage.slice(0, 45)}"` : "Sent you a message";
+              toast.info(`💬 ${senderName}: ${snippet}`, {
+                duration: 6000,
+                action: {
+                  label: "Open Chat",
+                  onClick: () => handleStartChat(dbConv.farmer)
+                }
+              });
+
+              // Refresh notifications immediately
+              getCommunityNotifications().then(data => {
+                if (Array.isArray(data)) setNotifications(data);
+              }).catch(() => {});
+            }
+
+            prevUnreadMapRef.current[partnerKey] = currentUnread;
+          }
+          isFirstSyncRef.current = false;
+
           setChats(prev => {
             const merged = [...prev];
             for (const dbConv of res.conversations) {
-              const existingIdx = merged.findIndex(c => c.farmer?.username === dbConv.farmer.username);
+              const existingIdx = merged.findIndex(c => isUsernameMatch(c.farmer?.username, dbConv.farmer.username) || c.id === dbConv.id);
               if (existingIdx >= 0) {
                 merged[existingIdx] = {
                   ...merged[existingIdx],
+                  id: dbConv.id,
+                  name: dbConv.name,
                   farmer: dbConv.farmer,
-                  unreadCount: dbConv.unreadCount
+                  unreadCount: dbConv.unreadCount,
+                  lastMessage: dbConv.lastMessage || merged[existingIdx].lastMessage,
+                  lastMessageTime: dbConv.lastMessageTime || merged[existingIdx].lastMessageTime
                 };
               } else {
                 merged.push({
@@ -1066,6 +1108,8 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                   isGroup: false,
                   farmer: dbConv.farmer,
                   unreadCount: dbConv.unreadCount,
+                  lastMessage: dbConv.lastMessage,
+                  lastMessageTime: dbConv.lastMessageTime,
                   log: []
                 });
               }
@@ -1076,14 +1120,25 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
 
         if (res.messages && res.messages.length > 0 && activeChatId) {
           setChats(prev => prev.map(c => {
-            if (c.id === activeChatId) {
+            if (c.id === activeChatId || isUsernameMatch(c.farmer?.username, recipientUsername)) {
               return {
                 ...c,
-                log: res.messages
+                log: res.messages,
+                unreadCount: 0,
+                lastMessage: res.messages[res.messages.length - 1]?.text || c.lastMessage,
+                lastMessageTime: res.messages[res.messages.length - 1]?.timestamp || c.lastMessageTime
               };
             }
             return c;
           }));
+        }
+
+        // Periodically refresh notifications (every ~4 cycles)
+        syncCycles++;
+        if (syncCycles % 4 === 0) {
+          getCommunityNotifications().then(data => {
+            if (Array.isArray(data)) setNotifications(data);
+          }).catch(() => {});
         }
       } catch (err) {
         // Silent catch for background polling
@@ -1091,9 +1146,20 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
     };
 
     syncMessages();
-    const interval = setInterval(syncMessages, subpage === "konnekt" ? 3000 : 10000);
+    const pollInterval = subpage === "konnekt" ? 3000 : 4000;
+    const interval = setInterval(syncMessages, pollInterval);
     return () => clearInterval(interval);
   }, [currentUser, activeChatId, subpage]);
+
+  // Periodic forum feed refresh for new posts & comments across all active users
+  useEffect(() => {
+    const forumInterval = setInterval(() => {
+      if (typeof document !== "undefined" && !document.hidden && subpage === "posts") {
+        reloadForum();
+      }
+    }, 25000);
+    return () => clearInterval(forumInterval);
+  }, [subpage]);
 
 
   // Offline message queue synchronization
@@ -1204,9 +1270,28 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
     if (notif.linkType === "chat" || notif.type === "message") {
       setSubpage("konnekt");
       if (notif.senderUsername) {
-        const partner = farmers.find(f => f.username.toLowerCase() === notif.senderUsername.toLowerCase());
+        const partner = farmers.find(f => isUsernameMatch(f.username, notif.senderUsername)) ||
+                        chats.find(c => isUsernameMatch(c.farmer?.username, notif.senderUsername))?.farmer;
         if (partner) {
           handleStartChat(partner);
+        } else {
+          const clean = notif.senderUsername.replace(/^@/, "");
+          handleStartChat({
+            username: `@${clean}`,
+            name: notif.actorName || clean,
+            country: "Kenya",
+            county: "Kenya",
+            interests: ["Agriculture"],
+            crops: [],
+            livestock: [],
+            yearsFarming: 1,
+            certifications: [],
+            reputationScore: 100,
+            followersCount: 0,
+            followers: [],
+            avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(notif.actorName || clean)}&backgroundColor=1a5438&textColor=ffffff`,
+            bio: "Active community member on Mqulima."
+          });
         }
       }
     } else if (notif.linkType === "post" || notif.postId) {
@@ -1763,7 +1848,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
     if (!requireAuth("send messages")) return;
     if (!chatInput.trim() && !chatImageAttachment) return;
 
-    const senderHandle = currentUser ? currentUser.username : "@mqulima_guest";
+    const senderHandle = currentUser ? (currentUser.username.startsWith("@") ? currentUser.username : `@${currentUser.username}`) : "@mqulima_guest";
     const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     if (!isOnline) {
@@ -1774,41 +1859,65 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       return;
     }
 
+    const currentChats = chatsRef.current;
+    const targetChat = currentChats.find(c => c.id === activeChatId) || (activeChatId ? { farmer: partner } : null);
+    const recipientUsername = targetChat?.farmer?.username;
+
+    if (!recipientUsername) {
+      toast.error("Please select a recipient before sending your message.");
+      return;
+    }
+
+    const tempMsgId = `temp_${Date.now()}`;
+    const textToSend = chatInput.trim();
+    const imageToSend = chatImageAttachment || undefined;
+
     const newMsg: ChatMessage = {
-      id: String(Date.now()),
+      id: tempMsgId,
       sender: senderHandle,
-      text: chatInput.trim(),
+      text: textToSend,
       timestamp: timeStr,
       read: false,
-      image: chatImageAttachment || undefined
+      image: imageToSend
     };
 
     setChats(prev => prev.map(c => {
-      if (c.id === activeChatId) {
+      if (c.id === activeChatId || isUsernameMatch(c.farmer?.username, recipientUsername)) {
         return {
           ...c,
-          log: [...c.log, newMsg]
+          log: [...c.log, newMsg],
+          lastMessage: textToSend || "📷 Image",
+          lastMessageTime: timeStr
         };
       }
       return c;
     }));
 
-    const activeChat = chats.find(c => c.id === activeChatId);
-    const recipientUsername = activeChat?.farmer?.username;
-
-    if (recipientUsername) {
-      const csrfToken = getCsrfTokenFromCookie();
-      sendDirectMessage({
-        data: {
-          recipientUsername,
-          body: chatInput.trim(),
-          imageUrl: chatImageAttachment || undefined,
-          csrfToken
-        }
-      }).catch(err => {
-        toast.error("Failed to sync message to server: " + (err.message || "Unknown error"));
-      });
-    }
+    const csrfToken = getCsrfTokenFromCookie();
+    sendDirectMessage({
+      data: {
+        recipientUsername,
+        body: textToSend,
+        imageUrl: imageToSend,
+        csrfToken
+      }
+    }).then(res => {
+      if (res?.message?.id) {
+        setChats(prev => prev.map(c => {
+          if (c.id === activeChatId || isUsernameMatch(c.farmer?.username, recipientUsername)) {
+            return {
+              ...c,
+              log: c.log.map(m => m.id === tempMsgId ? { ...m, id: res.message.id } : m),
+              lastMessage: res.message.text,
+              lastMessageTime: res.message.timestamp
+            };
+          }
+          return c;
+        }));
+      }
+    }).catch(err => {
+      toast.error("Failed to sync message to server: " + (err.message || "Unknown error"));
+    });
 
     setChatInput("");
     setChatImageAttachment(null);
@@ -1816,29 +1925,55 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
 
   const handleStartChat = (farmer: FarmerProfile) => {
     if (!requireAuth(`chat with ${farmer.name}`)) return;
-    if (farmer.username === currentUser?.username) {
+    if (isUsernameMatch(farmer.username, currentUser?.username)) {
       toast.info("You cannot start a direct chat with yourself.");
       return;
     }
-    const existing = chats.find(c => !c.isGroup && c.farmer?.username === farmer.username);
+    const cleanUsername = (farmer.username || "").replace(/^@/, "").toLowerCase();
+    const existing = chats.find(c => !c.isGroup && isUsernameMatch(c.farmer?.username, farmer.username));
+    const targetChatId = existing ? existing.id : ((farmer as any).id ? `dm_${(farmer as any).id}` : `dm_${cleanUsername}`);
+
     if (existing) {
       setActiveChatId(existing.id);
     } else {
-      const newChatId = `dm_${Date.now()}`;
       const newChat: ChatSession = {
-        id: newChatId,
+        id: targetChatId,
         name: farmer.name,
         isGroup: false,
         farmer,
         log: []
       };
-      setChats(prev => [...prev, newChat]);
-      setActiveChatId(newChatId);
+      setChats(prev => [newChat, ...prev]);
+      setActiveChatId(targetChatId);
     }
     setMobileChatView("chat");
     setSubpage("konnekt");
     setSelectedProfileUsername(null);
     toast.success(`Opened 1-on-1 chat with ${farmer.name}`);
+
+    // Immediately fetch conversation messages for this partner
+    if (farmer.username) {
+      getDirectMessages({
+        data: {
+          otherUsername: farmer.username
+        }
+      }).then(res => {
+        if (res.messages && res.messages.length > 0) {
+          setChats(prev => prev.map(c => {
+            if (c.id === targetChatId || isUsernameMatch(c.farmer?.username, farmer.username)) {
+              return {
+                ...c,
+                log: res.messages,
+                unreadCount: 0,
+                lastMessage: res.messages[res.messages.length - 1]?.text || c.lastMessage,
+                lastMessageTime: res.messages[res.messages.length - 1]?.timestamp || c.lastMessageTime
+              };
+            }
+            return c;
+          }));
+        }
+      }).catch(() => {});
+    }
   };
 
   // Add Comment Handler
@@ -1853,9 +1988,9 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
     const avatarUrl = currentUser ? currentUser.avatarUrl : defaultGuestFarmer.avatarUrl;
 
     const tempCommentId = `temp_comm_${Date.now()}`;
-    const newCommentItem = {
+    const newCommentItem: any = {
       id: tempCommentId,
-      parentId: parentId || null,
+      parentId: parentId || undefined,
       userId: currentUser ? currentUser.username || "guest" : "guest",
       authorName,
       authorUsername,
@@ -1863,7 +1998,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       text: textToSubmit,
       time: "Just now",
       createdAt: new Date().toISOString(),
-      ...({ _isOptimistic: true } as any)
+      _isOptimistic: true
     };
 
     // Optimistically append comment to UI post state immediately
@@ -1897,7 +2032,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
             if (p.id === postId) {
               return {
                 ...p,
-                comments: p.comments.map(c => c.id === tempCommentId ? { ...c, id: res.commentId, _isOptimistic: false } : c)
+                comments: p.comments.map(c => c.id === tempCommentId ? { ...c, id: String(res.commentId), _isOptimistic: false } : c)
               };
             }
             return p;
@@ -1987,7 +2122,8 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   }, [sokoListings, sokoSearch, sokoTypeFilter, sokoCountyFilter, sokoMaxPrice]);
 
   const activeChat = useMemo(() => {
-    return chats.find(c => c.id === activeChatId) || chats[0];
+    if (!activeChatId) return null;
+    return chats.find(c => c.id === activeChatId || isUsernameMatch(c.farmer?.username, activeChatId.replace(/^dm_/, ''))) || null;
   }, [chats, activeChatId]);
 
   const partner = activeChat?.farmer;  return (
@@ -2104,7 +2240,11 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                 aria-label="Open messages"
               >
                 <MessageSquare className="h-5 w-5 text-blue-600 fill-blue-600" />
-                <span className="absolute top-1 right-1 bg-blue-600 text-white text-[8px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">1</span>
+                {totalUnreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[9px] font-bold h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white animate-pulse shadow-xs font-mono">
+                    {totalUnreadMessages > 99 ? "99+" : totalUnreadMessages}
+                  </span>
+                )}
               </button>
 
               {/* Notifications panel toggle */}
@@ -2448,9 +2588,9 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                   >
                     <IconComponent className={`h-[18px] w-[18px] shrink-0 ${isActive ? item.activeIconClass : item.inactiveIconClass}`} />
                     {!isSidebarCollapsed && <span className="text-left flex-1 text-xs font-medium">{item.label}</span>}
-                    {item.id === "konnekt" && offlineQueue.length > 0 && (
-                      <span className={`bg-blue-600 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-white ${isSidebarCollapsed ? "absolute -top-1 -right-1" : "ml-auto"}`}>
-                        {offlineQueue.length}
+                    {item.id === "konnekt" && (totalUnreadMessages > 0 || offlineQueue.length > 0) && (
+                      <span className={`bg-blue-600 text-white text-[9px] font-bold h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center border border-white font-mono shadow-xs ${isSidebarCollapsed ? "absolute -top-1 -right-1" : "ml-auto"}`}>
+                        {totalUnreadMessages + offlineQueue.length}
                       </span>
                     )}
                   </button>
@@ -3419,25 +3559,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
 
                             <button 
                               onClick={() => {
-                                const sessionIdx = chats.findIndex(c => c.farmer?.username === listing.author.username);
-                                if (sessionIdx !== -1) {
-                                  setActiveChatId(chats[sessionIdx].id);
-                                } else {
-                                  const newId = `chat_${Date.now()}`;
-                                  const newSession: ChatSession = {
-                                    id: newId,
-                                    name: `${listing.author.name} (DM)`,
-                                    isGroup: false,
-                                    farmer: listing.author,
-                                    log: [
-                                      { id: "s_init", sender: listing.author.username, text: `Hello! I noticed you are viewing my trade listing for ${listing.commodity}. Let me know if you would like to arrange purchase.`, timestamp: "Just now", read: true }
-                                    ]
-                                  };
-                                  setChats(prev => [newSession, ...prev]);
-                                  setActiveChatId(newId);
-                                }
-                                setSubpage("konnekt");
-                                toast.success(`Chat session established with ${listing.author.name}`);
+                                handleStartChat(listing.author);
                               }}
                               className="bg-emerald-50 hover:bg-emerald-100 text-[#1A5438] px-3.5 py-1.5 rounded-lg border border-[#1A5438]/20 font-bold uppercase text-[10px]"
                             >
@@ -4072,6 +4194,19 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                                 onClick={() => {
                                   setActiveChatId(sess.id);
                                   setMobileChatView("chat");
+                                  if (sess.farmer?.username) {
+                                    getDirectMessages({
+                                      data: { otherUsername: sess.farmer.username }
+                                    }).then(res => {
+                                      if (res.messages && res.messages.length > 0) {
+                                        setChats(prev => prev.map(c => 
+                                          c.id === sess.id || isUsernameMatch(c.farmer?.username, sess.farmer?.username)
+                                            ? { ...c, log: res.messages, unreadCount: 0 }
+                                            : c
+                                        ));
+                                      }
+                                    }).catch(() => {});
+                                  }
                                 }}
                                 className={`w-full flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all border text-left cursor-pointer ${
                                   isActive
@@ -4095,13 +4230,22 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                                     <strong className={`text-xs block truncate ${isActive ? "text-[#1B4332] font-black" : "text-stone-900 font-bold"}`}>
                                       {sess.name}
                                     </strong>
-                                    {lastMsg && (
-                                      <span className="text-[9px] text-stone-400 font-mono shrink-0 ml-1">{lastMsg.timestamp}</span>
+                                    {(lastMsg?.timestamp || sess.lastMessageTime) && (
+                                      <span className="text-[9px] text-stone-400 font-mono shrink-0 ml-1">
+                                        {lastMsg?.timestamp || sess.lastMessageTime}
+                                      </span>
                                     )}
                                   </div>
-                                  <span className={`text-[10px] sm:text-[11px] block truncate mt-0.5 ${isActive ? "text-emerald-950 font-medium" : "text-stone-500"}`}>
-                                    {lastMsg ? (lastMsg.image ? "📷 Sent an image" : lastMsg.text) : (sess.farmer?.county ? `📍 ${sess.farmer.county}` : "Connected Farmer")}
-                                  </span>
+                                  <div className="flex items-center justify-between gap-1 mt-0.5">
+                                    <span className={`text-[10px] sm:text-[11px] block truncate ${isActive ? "text-emerald-950 font-medium" : "text-stone-500"}`}>
+                                      {lastMsg ? (lastMsg.image ? "📷 Sent an image" : lastMsg.text) : (sess.lastMessage || (sess.farmer?.county ? `📍 ${sess.farmer.county}` : "Connected Farmer"))}
+                                    </span>
+                                    {Boolean(sess.unreadCount && sess.unreadCount > 0) && (
+                                      <span className="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[16px] text-center font-mono shrink-0 shadow-xs animate-pulse">
+                                        {sess.unreadCount}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </button>
                             );
@@ -4232,7 +4376,12 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                           </div>
 
                           {(activeChat?.log || []).map((msg, i) => {
-                            const isMe = msg.sender === (currentUser ? currentUser.username : "@mqulima_guest");
+                            const isMe = Boolean(
+                              currentUser && (
+                                isUsernameMatch(msg.sender, currentUser.username) ||
+                                (currentUser.email && msg.sender.toLowerCase() === currentUser.email.toLowerCase())
+                              )
+                            );
                             const reaction = messageReactions[msg.id];
                             return (
                               <div key={msg.id || i} className={`flex gap-2 items-end ${isMe ? "justify-end" : "justify-start"} group`}>
@@ -6193,10 +6342,15 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                 setSelectedProfileUsername(null);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={isActive ? 'active' : ''}
+              className={`relative ${isActive ? 'active' : ''}`}
             >
               <IconComp className={`h-5 w-5 ${item.iconClass}`} />
               <span>{item.label}</span>
+              {item.id === "konnekt" && totalUnreadMessages > 0 && (
+                <span className="absolute top-1 right-1/4 bg-blue-600 text-white text-[8px] font-bold h-3.5 min-w-[14px] px-0.5 rounded-full flex items-center justify-center border border-white font-mono animate-pulse">
+                  {totalUnreadMessages > 99 ? "99+" : totalUnreadMessages}
+                </span>
+              )}
             </button>
           );
         })}
