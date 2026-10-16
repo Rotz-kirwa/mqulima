@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, defer, Await } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, defer, Await } from "@tanstack/react-router";
 import React, { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { 
   MessageSquare, 
@@ -109,8 +109,10 @@ import {
 import "@/styles/community-forum.css";
 
 export const Route = createFileRoute("/community")({
+  staleTime: 60_000,
+  gcTime: 10 * 60_000,
   pendingComponent: CommunitySkeleton,
-  pendingMs: 250,
+  pendingMs: 800,
   loader: async () => {
     try {
       // Direct server await: SWR cached in memory (1.8ms), so HTML arrives with REAL posts!
@@ -372,6 +374,7 @@ function isPostByFarmer(post: CommunityPost, farmer?: FarmerProfile | null): boo
 
 function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
   const navigate = useNavigate();
+  const router = useRouter();
   const { user: authUser } = useAuth();
   const [subpage, setSubpageState] = useState<"posts" | "soko" | "consult" | "konnekt" | "saved" | "profile" | "network">("posts");
 
@@ -525,11 +528,49 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       /Mary Wanjiku|Grace Mutiso|Samuel Kirwa|Catherine Nduku|David Kiprono/i.test(f?.name || "");
 
     if (initialSnapshot?.showPosts?.length) {
+      const incomingPosts = mapSnapshotToPosts(initialSnapshot.showPosts);
+      setPosts((prev) => {
+        const incomingIds = new Set(incomingPosts.map((p) => p.id));
+        // Preserve recent optimistic posts that are not yet in the incoming snapshot
+        const pendingPosts = prev.filter(
+          (p) => !incomingIds.has(p.id) && (p.createdAt === "Just now" || (p as any)._isOptimistic)
+        );
+
+        // For posts present in incoming, preserve any optimistic comments that aren't yet in snapshot
+        const mergedIncoming = incomingPosts.map((incPost) => {
+          const prevPost = prev.find((p) => p.id === incPost.id);
+          if (!prevPost) return incPost;
+          const incCommentIds = new Set(incPost.comments.map((c) => c.id));
+          const pendingComments = prevPost.comments.filter((c) => !incCommentIds.has(c.id));
+          if (pendingComments.length > 0) {
+            return {
+              ...incPost,
+              comments: [...incPost.comments, ...pendingComments],
+            };
+          }
+          return incPost;
+        });
+
+        return [...pendingPosts, ...mergedIncoming];
+      });
+
+      if (initialSnapshot.sokoListings?.length) {
+        setSokoListings(mapSnapshotToSoko(initialSnapshot.sokoListings));
+      }
+      if (initialSnapshot.pulsePosts?.length) {
+        setPulsePosts(initialSnapshot.pulsePosts as PulsePost[]);
+      }
+      const sanitizedSuggested = (initialSnapshot.suggestedFarmers || []).filter((f: any) => !isMock(f));
+      if (sanitizedSuggested.length > 0) {
+        setFarmers(sanitizedSuggested as FarmerProfile[]);
+      }
+      setCommunityDataSource("database");
+
       // Save fresh server snapshot to localStorage v5
       try {
         const sanitizedSnapshot = {
           ...initialSnapshot,
-          suggestedFarmers: (initialSnapshot.suggestedFarmers || []).filter((f: any) => !isMock(f))
+          suggestedFarmers: sanitizedSuggested
         };
         localStorage.setItem("mqulima_community_cached_snapshot_v5", JSON.stringify(sanitizedSnapshot));
       } catch {}
@@ -919,6 +960,10 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         setCommunityDataSource("database");
         try {
           localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(snapshot));
+          localStorage.setItem("mqulima_community_cached_snapshot_v5", JSON.stringify(snapshot));
+        } catch {}
+        try {
+          router.invalidate();
         } catch {}
         return snapshot;
       })
@@ -1577,6 +1622,9 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
           localStorage.removeItem("mqulima_post_draft");
         }
         reloadForum({ bypassCache: true });
+        try {
+          router.invalidate();
+        } catch {}
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to share post. Are you logged in?");
@@ -1621,7 +1669,10 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         setSokoDesc("");
         setSokoImgText("");
         setSokoPhone("");
-        reloadForum();
+        reloadForum({ bypassCache: true });
+        try {
+          router.invalidate();
+        } catch {}
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to publish listing. Are you logged in?");
@@ -2039,6 +2090,9 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
           }));
         }
         reloadForum({ bypassCache: true });
+        try {
+          router.invalidate();
+        } catch {}
       }
     } catch (err: any) {
       // Revert optimistic comment on failure

@@ -349,6 +349,7 @@ export function CommodityPriceCard({ commodity }: CommodityPriceCardProps) {
 
         <Link
           to="/community"
+          preload="intent"
           className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg ${theme.btnClass} font-bold text-xs shadow-xs hover:shadow-md transition-all active:scale-95`}
         >
           <span>Find Buyers</span>

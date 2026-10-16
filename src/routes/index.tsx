@@ -604,6 +604,7 @@ function Index() {
               <div className="pt-6">
                 <Link
                   to="/community"
+                  preload="intent"
                   className="w-fit sm:w-full py-2 px-4 sm:py-2.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] font-bold text-xs transition duration-200 inline-flex sm:flex items-center justify-between gap-2 shadow-sm"
                 >
                   <span>Connect</span>

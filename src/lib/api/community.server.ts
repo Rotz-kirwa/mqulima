@@ -21,8 +21,8 @@ function normalizeTags(tags: unknown): string[] {
 
 // PERF: forum snapshot cache (public data only; per-user likes/bookmarks are always live).
 // Every forum write must invalidate via withForumInvalidation(). See PERFORMANCE.md.
-const FORUM_FRESH_MS = 5_000;
-const FORUM_STALE_MS = 15_000;
+const FORUM_FRESH_MS = 60_000;
+const FORUM_STALE_MS = 15 * 60_000;
 let forumGen = 0;
 let forumCache: { data: any; freshUntil: number; staleUntil: number } | null = null;
 let forumInflight: { gen: number; promise: Promise<any> } | null = null;
@@ -30,6 +30,7 @@ let forumInflight: { gen: number; promise: Promise<any> } | null = null;
 export function invalidateForumSnapshotCache() {
   forumGen++;
   forumCache = null;
+  forumInflight = null;
 }
 
 async function withForumInvalidation<T>(fn: () => Promise<T>): Promise<T> {
@@ -109,43 +110,69 @@ async function loadPublicForumSnapshot() {
     const { getDb } = await import("../db.server");
     const sql = getDb();
 
-    const postsQ = sql`
+    // PERF: Combined single CTE query for posts + comments in 1 network round-trip.
+    // sp.deleted_at IS NULL hits partial index idx_show_posts_feed.
+    const postsAndCommentsQ = sql`
+      WITH top_posts AS (
+        SELECT
+          sp.id,
+          sp.type,
+          sp.title,
+          sp.caption,
+          sp.media_urls,
+          sp.like_count,
+          sp.relate_count,
+          sp.comment_count,
+          sp.tags,
+          sp.created_at,
+          COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
+          COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
+          COALESCE(p.country, 'Kenya') AS country,
+          COALESCE(p.county_region, u.county, 'Kenya') AS county_region,
+          p.farming_interests,
+          p.crops,
+          p.livestock,
+          p.years_farming,
+          p.certifications,
+          p.reputation_score,
+          p.followers_count,
+          p.avatar_url,
+          p.bio,
+          p.website,
+          p.phone,
+          COALESCE(p.email, u.email) AS email,
+          p.farming_activities,
+          p.farming_photos,
+          p.created_at AS profile_created_at
+        FROM show_posts sp
+        LEFT JOIN profiles p ON p.id = sp.user_id
+        LEFT JOIN users u ON u.id = sp.user_id
+        WHERE sp.deleted_at IS NULL AND (sp.status IS NULL OR sp.status IN ('published', 'active'))
+        ORDER BY sp.created_at DESC
+        LIMIT 50
+      ),
+      post_comments AS (
+        SELECT
+          sc.id,
+          sc.post_id,
+          sc.parent_id,
+          sc.body,
+          sc.created_at,
+          sc.user_id,
+          COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
+          COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
+          p.avatar_url
+        FROM show_comments sc
+        LEFT JOIN profiles p ON p.id = sc.user_id
+        LEFT JOIN users u ON u.id = sc.user_id
+        WHERE (sc.status IS NULL OR sc.status IN ('published', 'active'))
+          AND sc.post_id IN (SELECT id FROM top_posts)
+        ORDER BY sc.created_at ASC
+        LIMIT 250
+      )
       SELECT
-        sp.id,
-        sp.type,
-        sp.title,
-        sp.caption,
-        sp.media_urls,
-        sp.like_count,
-        sp.relate_count,
-        sp.comment_count,
-        sp.tags,
-        sp.created_at,
-        COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
-        COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
-        COALESCE(p.country, 'Kenya') AS country,
-        COALESCE(p.county_region, u.county, 'Kenya') AS county_region,
-        p.farming_interests,
-        p.crops,
-        p.livestock,
-        p.years_farming,
-        p.certifications,
-        p.reputation_score,
-        p.followers_count,
-        p.avatar_url,
-        p.bio,
-        p.website,
-        p.phone,
-        COALESCE(p.email, u.email) AS email,
-        p.farming_activities,
-        p.farming_photos,
-        p.created_at AS profile_created_at
-      FROM show_posts sp
-      LEFT JOIN profiles p ON p.id = sp.user_id
-      LEFT JOIN users u ON u.id = sp.user_id
-      WHERE (sp.status IS NULL OR sp.status IN ('published', 'active'))
-      ORDER BY sp.created_at DESC
-      LIMIT 50
+        (SELECT COALESCE(json_agg(tp.*), '[]'::json) FROM top_posts tp) AS posts,
+        (SELECT COALESCE(json_agg(pc.*), '[]'::json) FROM post_comments pc) AS comments;
     `;
 
     const listingsQ = sql`
@@ -227,29 +254,16 @@ async function loadPublicForumSnapshot() {
       LIMIT 100
     `;
 
-    // PERF: independent queries run in parallel (previously sequential).
-    const [posts, listings, pulse, suggestedProfiles] = await Promise.all([postsQ, listingsQ, pulseQ, suggestedQ]);
+    // PERF: All forum collections run in parallel in a single round-trip batch.
+    const [postsAndComments, listings, pulse, suggestedProfiles] = await Promise.all([
+      postsAndCommentsQ,
+      listingsQ,
+      pulseQ,
+      suggestedQ
+    ]);
 
-    const comments = posts.length > 0
-      ? await sql`
-          SELECT
-            sc.id,
-            sc.post_id,
-            sc.parent_id,
-            sc.body,
-            sc.created_at,
-            sc.user_id,
-            COALESCE(p.username, CONCAT('@mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
-            COALESCE(p.full_name, CONCAT(u.first_name, ' ', u.last_name), u.email, 'Mqulima Farmer') AS full_name,
-            p.avatar_url
-          FROM show_comments sc
-          LEFT JOIN profiles p ON p.id = sc.user_id
-          LEFT JOIN users u ON u.id = sc.user_id
-          WHERE (sc.status IS NULL OR sc.status IN ('published', 'active')) AND sc.post_id IN ${sql(posts.map((post: any) => post.id))}
-          ORDER BY sc.created_at ASC
-          LIMIT 250
-        `.catch(() => [])
-      : [];
+    const posts = postsAndComments[0]?.posts || [];
+    const comments = postsAndComments[0]?.comments || [];
 
     const commentsByPost = new Map<string, any[]>();
     for (const comment of comments as any[]) {

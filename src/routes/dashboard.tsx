@@ -382,6 +382,7 @@ function Dashboard() {
 
                 <Link
                   to="/community"
+                  preload="intent"
                   className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 hover:shadow-md transition-all border border-slate-200 flex flex-col justify-between group"
                 >
                   <div className="flex items-center justify-between mb-3">

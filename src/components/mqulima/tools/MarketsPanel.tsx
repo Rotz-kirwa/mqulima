@@ -462,6 +462,7 @@ export function MarketsPanel() {
                     <td className="p-3.5 sm:p-4 text-right">
                       <Link
                         to="/community"
+                        preload="intent"
                         className={`inline-flex items-center gap-1 px-4 py-2 rounded-full ${theme.btnClass} font-black text-[11px] uppercase shadow-xs transition-all active:scale-95`}
                       >
                         Find Buyers

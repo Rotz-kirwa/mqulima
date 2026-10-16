@@ -185,6 +185,7 @@ function FooterCol({ title, links }: { title: string; links: { to: string; label
           <li key={`${l.label}-${index}`}>
             <Link
               to={l.to as any}
+              preload="intent"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
