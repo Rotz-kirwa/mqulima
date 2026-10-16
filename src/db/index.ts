@@ -11,10 +11,14 @@ declare global {
 export function getRawSql() {
   if (!globalThis.__mq_raw_sql__) {
     const config = getServerConfig();
-    const connectionString = config.DATABASE_URL;
+    let connectionString = config.DATABASE_URL;
 
     if (!connectionString) {
       throw new Error("[FATAL] Unable to initialize PostgreSQL connection: DATABASE_URL is unconfigured.");
+    }
+
+    if (connectionString.includes("Mq@Hub#Dev2026!")) {
+      connectionString = connectionString.replace("Mq@Hub#Dev2026!", "Mq%40Hub%23Dev2026%21");
     }
 
     const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1") || connectionString.includes("::1");

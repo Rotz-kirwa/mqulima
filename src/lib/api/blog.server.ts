@@ -136,14 +136,26 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       `;
     };
 
-    let agritechArticles;
+    let agritechArticles: any[] = [];
     try {
       agritechArticles = await fetchArticles(sql);
     } catch (err: any) {
       console.warn("[BLOG] Retrying getPublishedBlogPosts after connection issue:", err?.message);
-      resetDbPool();
-      sql = getDb();
-      agritechArticles = await fetchArticles(sql);
+      try {
+        resetDbPool();
+        sql = getDb();
+        agritechArticles = await fetchArticles(sql);
+      } catch (retryErr: any) {
+        console.error("[BLOG] Error querying articles in getPublishedBlogPosts:", retryErr?.message);
+        if (cached?.data) {
+          return cached.data;
+        }
+        return [];
+      }
+    }
+
+    if (!agritechArticles || !Array.isArray(agritechArticles)) {
+      return cached?.data || [];
     }
 
     const result = agritechArticles.map((row) => {
@@ -153,12 +165,31 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
       const body = (row.body as string) || excerpt;
       const author = resolveAuthor(row.authorName as string, row.id as string);
 
-      const pubDate = row.publishedAt ? new Date(row.publishedAt as string) : new Date(row.createdAt as string);
+      let pubDate = new Date();
+      try {
+        if (row.publishedAt) {
+          pubDate = new Date(row.publishedAt as string);
+        } else if (row.createdAt) {
+          pubDate = new Date(row.createdAt as string);
+        }
+        if (isNaN(pubDate.getTime())) {
+          pubDate = new Date();
+        }
+      } catch {
+        pubDate = new Date();
+      }
+
+      let publishedIso = new Date().toISOString();
+      try {
+        publishedIso = pubDate.toISOString();
+      } catch {
+        publishedIso = new Date().toISOString();
+      }
 
       return {
-        id: row.id as string,
-        title: row.title as string,
-        slug: row.slug as string,
+        id: (row.id as string) || `news-${Math.random()}`,
+        title: (row.title as string) || "Agricultural Update",
+        slug: (row.slug as string) || "",
         coverImage: media || "/placeholder-product.png",
         mediaType: (isVideo ? "video" : "image") as "image" | "video",
         mediaUrl: isVideo ? media : "",
@@ -170,10 +201,10 @@ export const getPublishedBlogPosts = createServerFn({ method: "GET" })
           month: "long",
           day: "numeric",
         }),
-        publishedIso: pubDate.toISOString(),
+        publishedIso,
         viewCount: typeof row.viewCount === "number" ? row.viewCount : 0,
         readTime: `${Math.max(2, Math.ceil(excerpt.split(/\s+/).length / 25))} min read`,
-        author,
+        author: author || MQULIMA_DESK_AUTHOR,
         reviewedBy: "Mqulima Agronomy & Intelligence Desk",
       };
     });

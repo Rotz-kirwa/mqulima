@@ -51,7 +51,7 @@ export const Route = createFileRoute("/blog")({
           getPublishedBlogPosts().catch(() => []),
           getMarketPrices().catch(() => []),
         ]),
-        4500,
+        3500,
         [[], []]
       );
       return { posts: posts || [], marketPrices: (marketPrices || []) as CommodityPriceEntry[] };
@@ -59,6 +59,37 @@ export const Route = createFileRoute("/blog")({
       console.error("Failed to load blog posts in loader:", e);
       return { posts: [], marketPrices: [] };
     }
+  },
+  errorComponent: ({ error, reset }: { error: any; reset: () => void }) => {
+    return (
+      <AppLayout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 text-center">
+          <div className="w-16 h-16 bg-emerald-50 text-[#0F766E] rounded-none border border-emerald-200 flex items-center justify-center mb-4">
+            <span className="text-2xl">🌾</span>
+          </div>
+          <h1 className="text-2xl font-bold font-['Lora',serif] text-[#1A3A1A] mb-2">
+            Unable to load agricultural updates
+          </h1>
+          <p className="text-sm text-slate-500 max-w-md mb-6 font-semibold">
+            We encountered a temporary delay loading the latest farm news. You can try again or head back to home.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => reset()}
+              className="px-6 py-2.5 bg-[#0B2117] hover:bg-[#0F766E] text-white text-xs font-black uppercase tracking-wider transition cursor-pointer"
+            >
+              Try Again
+            </button>
+            <Link
+              to="/"
+              className="px-6 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </AppLayout>
+    );
   },
   head: () => ({
     meta: [
@@ -815,26 +846,27 @@ function BlogPage() {
                         </div>
 
                         <p className="text-xs text-slate-600 italic leading-relaxed mt-2 line-clamp-3">
-                          "{testimonials[activeTestimonial].quote}"
+                          "{(testimonials[activeTestimonial] || testimonials[0]).quote}"
                         </p>
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <img
-                            src={testimonials[activeTestimonial].avatar}
-                            alt={testimonials[activeTestimonial].author}
+                            src={(testimonials[activeTestimonial] || testimonials[0]).avatar}
+                            alt={(testimonials[activeTestimonial] || testimonials[0]).author}
                             className="w-9 h-9 rounded-none object-cover border border-slate-200"
                             onError={(e) => {
-                              e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(testimonials[activeTestimonial].author)}&backgroundColor=1a5438&textColor=ffffff`;
+                              const authorName = (testimonials[activeTestimonial] || testimonials[0]).author;
+                              e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authorName)}&backgroundColor=1a5438&textColor=ffffff`;
                             }}
                           />
                           <div>
                             <strong className="text-xs font-bold text-[#1A3A1A] block">
-                              {testimonials[activeTestimonial].author}
+                              {(testimonials[activeTestimonial] || testimonials[0]).author}
                             </strong>
                             <span className="text-[10px] text-slate-400 font-semibold block">
-                              {testimonials[activeTestimonial].role}
+                              {(testimonials[activeTestimonial] || testimonials[0]).role}
                             </span>
                           </div>
                         </div>
@@ -1066,7 +1098,7 @@ function BlogPage() {
                       {p.title}
                     </h3>
                     <div className="text-[9px] text-[#5D6B5C] font-semibold mt-1">
-                      By {p.author.name} ({p.author.role})
+                      By {p.author?.name || "Mqulima Desk"} ({p.author?.role || "Editorial Desk"})
                     </div>
                     <div 
                       className="text-xs text-[#3E4C3D] leading-relaxed mt-3 space-y-2.5 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-[#1A3A1A] [&_h2]:mt-3 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[#1A3A1A] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-[#0F766E] [&_blockquote]:pl-2 [&_p]:mb-1.5 font-medium"
@@ -1184,11 +1216,11 @@ function BlogPage() {
               {/* Author row */}
               <div className="flex items-center gap-3 border-y border-[#E8ECE7] py-3">
                 <div className="h-9 w-9 rounded-none bg-[#0B2117] text-[#85CC14] font-black text-xs flex items-center justify-center shrink-0 border border-[#85CC14]/30">
-                  {activeReadingPost.author.avatarInitials}
+                  {activeReadingPost.author?.avatarInitials || "MD"}
                 </div>
                 <div>
-                  <strong className="text-xs text-[#1A3A1A] block font-bold">{activeReadingPost.author.name}</strong>
-                  <span className="text-[10px] text-[#5D6B5C] block font-semibold">{activeReadingPost.author.role}</span>
+                  <strong className="text-xs text-[#1A3A1A] block font-bold">{activeReadingPost.author?.name || "Mqulima Desk"}</strong>
+                  <span className="text-[10px] text-[#5D6B5C] block font-semibold">{activeReadingPost.author?.role || "Editorial Desk"}</span>
                 </div>
               </div>
 

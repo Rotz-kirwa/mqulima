@@ -195,7 +195,7 @@ interface CommodityIndexWidgetProps {
 
 export function CommodityIndexWidget({ initialData = [] }: CommodityIndexWidgetProps) {
   const [data, setData] = useState<CommodityPriceEntry[]>(() => {
-    return initialData && initialData.length > 0 ? initialData : FALLBACK_VARIETIES;
+    return Array.isArray(initialData) && initialData.length > 0 ? initialData : FALLBACK_VARIETIES;
   });
 
   const [activeCategory, setActiveCategory] = useState<string>("All");
@@ -206,10 +206,10 @@ export function CommodityIndexWidget({ initialData = [] }: CommodityIndexWidgetP
 
   // Fetch prices if initialData was empty
   useEffect(() => {
-    if (!initialData || initialData.length === 0) {
+    if (!Array.isArray(initialData) || initialData.length === 0) {
       getMarketPrices()
         .then((res) => {
-          if (res && res.length > 0) {
+          if (Array.isArray(res) && res.length > 0) {
             setData(res);
           }
         })
@@ -220,16 +220,19 @@ export function CommodityIndexWidget({ initialData = [] }: CommodityIndexWidgetP
   // Categories list
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    data.forEach((item) => {
-      if (item.category) cats.add(item.category);
-    });
+    if (Array.isArray(data)) {
+      data.forEach((item) => {
+        if (item?.category) cats.add(item.category);
+      });
+    }
     return ["All", ...Array.from(cats)];
   }, [data]);
 
   // Filtered list based on active category
   const filteredList = useMemo(() => {
+    if (!Array.isArray(data)) return FALLBACK_VARIETIES;
     if (activeCategory === "All") return data;
-    return data.filter((item) => item.category === activeCategory);
+    return data.filter((item) => item?.category === activeCategory);
   }, [data, activeCategory]);
 
   const totalPages = Math.ceil(filteredList.length / pageSize) || 1;
