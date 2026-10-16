@@ -110,13 +110,37 @@ export default {
     const requestStart = performance.now();
     const url = new URL(request.url);
     if (url.pathname === "/favicon.ico") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Content-Type": "image/x-icon",
-          "Cache-Control": "public, max-age=86400",
-        },
-      });
+      try {
+        const { readFileSync } = await import("fs");
+        const { resolve } = await import("path");
+        const ico = readFileSync(resolve(process.cwd(), "public/favicon.ico"));
+        return new Response(ico, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/x-icon",
+            "Cache-Control": "public, max-age=604800, immutable",
+          },
+        });
+      } catch {
+        return new Response(null, { status: 404 });
+      }
+    }
+
+    if (url.pathname === "/apple-touch-icon.png" || url.pathname === "/apple-touch-icon-precomposed.png") {
+      try {
+        const { readFileSync } = await import("fs");
+        const { resolve } = await import("path");
+        const icon = readFileSync(resolve(process.cwd(), "public/apple-touch-icon.png"));
+        return new Response(icon, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=604800, immutable",
+          },
+        });
+      } catch {
+        return new Response(null, { status: 404 });
+      }
     }
 
     // Intercept WordPress / PHP probe scans early to prevent expensive SSR 500 mutation errors

@@ -88,15 +88,18 @@ export const Route = createFileRoute("/")({
         content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
       },
       { property: "og:url", content: "https://mqulima.com/" },
-      { property: "og:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
+      { property: "og:image", content: "https://mqulima.com/mqulima-logo.png" },
+      { property: "og:image:width", content: "512" },
+      { property: "og:image:height", content: "512" },
+      { property: "og:image:alt", content: "Official Mqulima Brand Logo" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Home — Agriculture for the Future | Mqulima" },
       {
         name: "twitter:description",
         content: "Empowering Kenyan farmers with verified agronomy knowledge, authentic seeds and fertilizers, precision weather tools, and vetted agricultural specialists.",
       },
-      { name: "twitter:image", content: "https://mqulima.com/images/mkulima_hero_farm.webp" },
+      { name: "twitter:image", content: "https://mqulima.com/mqulima-logo.png" },
     ],
     links: [
       { rel: "canonical", href: "https://mqulima.com/" },
@@ -119,7 +122,15 @@ export const Route = createFileRoute("/")({
               "@id": "https://mqulima.com/#organization",
               "name": "Mqulima",
               "url": "https://mqulima.com",
-              "logo": "https://mqulima.com/icon-192.png",
+              "logo": {
+                "@type": "ImageObject",
+                "@id": "https://mqulima.com/#logo",
+                "url": "https://mqulima.com/mqulima-logo.png",
+                "caption": "Mqulima Official Logo",
+                "width": 512,
+                "height": 512
+              },
+              "image": "https://mqulima.com/mqulima-logo.png",
               "description": "Africa's 360° agricultural ecosystem connecting farmers to agrodealers, veterinary doctors, and certified market intelligence.",
               "address": {
                 "@type": "PostalAddress",
