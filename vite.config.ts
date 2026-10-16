@@ -21,18 +21,6 @@ export default defineConfig({
               if (id.includes("lucide-react")) {
                 return "lucide-icons";
               }
-              if (id.includes("canvg") || id.includes("stackblur-canvas") || id.includes("rgbcolor")) {
-                return "canvg";
-              }
-              if (id.includes("jspdf") || id.includes("fflate")) {
-                return "jspdf";
-              }
-              if (id.includes("html2canvas")) {
-                return "html2canvas";
-              }
-              if (id.includes("pako")) {
-                return "pako";
-              }
             }
           },
         },

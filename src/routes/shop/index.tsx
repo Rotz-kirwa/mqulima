@@ -48,6 +48,8 @@ type ShopSearch = {
 };
 
 export const Route = createFileRoute("/shop/")({
+  staleTime: 60_000,
+  gcTime: 10 * 60_000,
   pendingComponent: ShopSkeleton,
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
     const pageNum = Number(search.page);
@@ -225,9 +227,9 @@ function ShopPage() {
   const initialData = Route.useLoaderData();
   const { data: allProductsData, isLoading: isProductsLoading } = useQuery({
     queryKey: ["shopProducts"],
-    staleTime: 30 * 1000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       return getShopProducts({

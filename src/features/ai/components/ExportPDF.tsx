@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Download, FileText, Share2, Check } from "lucide-react";
-import { jsPDF } from "jspdf";
 import { toast } from "sonner";
 import { Message, Conversation } from "../types/ai.types";
 
@@ -59,9 +58,10 @@ export const ExportPDF: React.FC<Props> = ({
     setIsOpen(false);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (messages.length === 0) return;
     try {
+      const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(18);

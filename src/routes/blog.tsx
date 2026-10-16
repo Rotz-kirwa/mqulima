@@ -36,6 +36,8 @@ import { getMarketPrices, type CommodityPriceEntry } from "@/lib/api/markets.ser
 import { CommodityIndexWidget } from "@/components/mqulima/CommodityIndexWidget";
 
 export const Route = createFileRoute("/blog")({
+  staleTime: 60_000,
+  gcTime: 10 * 60_000,
   loader: async () => {
     const withSafeTimeout = async <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
       let timer: any;

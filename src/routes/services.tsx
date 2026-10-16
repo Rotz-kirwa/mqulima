@@ -2,7 +2,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { createServiceBooking, getServiceCategoriesWithServices } from "@/lib/api/services.server";
+import { createServiceBooking, getServiceCategoriesWithServices, createWhatsAppServiceRequest } from "@/lib/api/services.server";
 import { getCsrfTokenFromCookie } from "@/lib/csrf-client";
 import { 
   Check, 
@@ -811,7 +811,6 @@ function ServicesPage() {
   // Handle WhatsApp quotation link helper with Database Persistence
   const openWhatsAppQuotation = async (serviceName: string, customDetails?: { name?: string; phone?: string; email?: string; county?: string; notes?: string }) => {
     try {
-      const { createWhatsAppServiceRequest } = await import("@/lib/api/services.server");
       
       const reqName = customDetails?.name || farmerName || user?.name || "Farmer";
       const reqPhone = customDetails?.phone || phone || (user as any)?.phone || "";

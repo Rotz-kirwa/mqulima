@@ -46,6 +46,8 @@ import heroCinematic640 from "@/assets/hero-cinematic-640w.webp";
 import { HomeSkeleton } from "@/components/mqulima/RouteSkeletons";
 
 export const Route = createFileRoute("/")({
+  staleTime: 60_000,
+  gcTime: 10 * 60_000,
   pendingComponent: HomeSkeleton,
   loader: async () => {
     const withSafeTimeout = async <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
