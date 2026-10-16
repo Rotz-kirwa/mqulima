@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["cpt1"],
   "buildCommand": "npm run build",
   "outputDirectory": ".vercel/output",
   "build": {

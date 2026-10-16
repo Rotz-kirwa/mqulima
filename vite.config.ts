@@ -46,6 +46,12 @@ export default defineConfig({
 
   nitro: {
     compressPublicAssets: { brotli: true, gzip: true },
+    vercel: {
+      regions: ["cpt1"],
+      functions: {
+        regions: ["cpt1"],
+      },
+    },
     routeRules: {
       "/images/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
       "/assets/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
