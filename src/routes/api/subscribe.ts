@@ -59,6 +59,27 @@ export const Route = createFileRoute("/api/subscribe")({
             }
           }
 
+          // Automatically record into centralized subscription system
+          try {
+            const { recordSubscription } = await import("@/lib/services/subscriptions.server");
+            await recordSubscription({
+              email: normalizedEmail,
+              category: "news",
+              serviceName: "Weekly Agritech Digest & Intelligence Bulletin",
+              planCode: "newsletter_free",
+              subscriptionType: "free",
+              status: "active",
+              billingCycle: "none",
+              priceKes: 0,
+              paymentStatus: "waived",
+              actorType: "user",
+              actorEmail: normalizedEmail,
+              notes: "Subscribed via public newsletter subscription form",
+            });
+          } catch (syncErr) {
+            console.error("[SUBSCRIBE] Failed to record in centralized subscriptions table:", syncErr);
+          }
+
           return new Response(
             JSON.stringify({
               success: true,

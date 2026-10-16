@@ -148,6 +148,21 @@ function Dashboard() {
         link.type = "image/jpeg";
       }
     }
+    if (activeUser?.email) {
+      fetch(`/api/user/subscriptions?email=${encodeURIComponent(activeUser.email)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.channels) {
+            setChannels((prev) => ({
+              ...prev,
+              sowing: data.channels.sowing ?? prev.sowing,
+              market: data.channels.market ?? prev.market,
+              weather: data.channels.weather ?? prev.weather,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
   }, [activeUser]);
 
   if (!mounted || (isLoading && !activeUser)) {
@@ -171,11 +186,22 @@ function Dashboard() {
       }
     }
     setChannels((prev) => ({ ...prev, [key]: value }));
-    if (value) {
-      toast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts enabled!`);
-    } else {
-      toast.info(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts disabled.`);
-    }
+    try {
+      await fetch("/api/user/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: key,
+          enabled: value,
+          email: activeUser?.email,
+        }),
+      });
+      if (value) {
+        toast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts enabled!`);
+      } else {
+        toast.info(`${key.charAt(0).toUpperCase() + key.slice(1)} alerts disabled.`);
+      }
+    } catch (_) {}
   };
 
   return (

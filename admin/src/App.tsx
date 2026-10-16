@@ -18,6 +18,7 @@ const AcademyExtensionModule = React.lazy(() => import("./components/modules/Aca
 const ServiceRequestsModule = React.lazy(() => import("./components/modules/ServiceRequestsModule").then(m => ({ default: m.ServiceRequestsModule })));
 const NewsCMSModule = React.lazy(() => import("./components/modules/NewsCMSModule").then(m => ({ default: m.NewsCMSModule })));
 const CommodityTrendsModule = React.lazy(() => import("./components/modules/CommodityTrendsModule").then(m => ({ default: m.CommodityTrendsModule })));
+const SubscriptionsModule = React.lazy(() => import("./components/modules/SubscriptionsModule").then(m => ({ default: m.SubscriptionsModule })));
 
 import { Toaster, toast } from "sonner";
 
@@ -86,6 +87,7 @@ const VALID_TABS: AdminTab[] = [
   "forum",
   "academy",
   "news",
+  "subscriptions",
 ];
 
 function parseTabFromUrl(): AdminTab {
@@ -270,6 +272,8 @@ export const App: React.FC = () => {
         return <NewsCMSModule />;
       case "commodity-trends":
         return <CommodityTrendsModule />;
+      case "subscriptions":
+        return <SubscriptionsModule onNavigateTab={setActiveTab} />;
       default:
         return <DashboardHomeModule onNavigateTab={setActiveTab} />;
     }

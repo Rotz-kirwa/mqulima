@@ -162,6 +162,32 @@ export const enrollInCourse = createServerFn({ method: "POST" })
         entityId: data.courseId,
         diff: { userId: user.id }
       });
+
+      // Automatically record in centralized subscription system
+      try {
+        const [course] = await sql`SELECT title, price FROM courses WHERE id = ${data.courseId}`;
+        const { recordSubscription } = await import("../services/subscriptions.server");
+        const coursePrice = Number(course?.price || 0);
+        await recordSubscription({
+          userId: user.id,
+          email: user.email,
+          fullName: (user as any).name || (user as any).fullName || user.email.split("@")[0],
+          category: "academy",
+          serviceName: course?.title || "Agritech Academy Course",
+          planCode: "course_enrollment",
+          subscriptionType: coursePrice > 0 ? "one_time" : "free",
+          status: "active",
+          billingCycle: "none",
+          priceKes: coursePrice,
+          paymentStatus: coursePrice > 0 ? "paid" : "waived",
+          metadata: { courseId: data.courseId },
+          actorType: "user",
+          actorEmail: user.email,
+          notes: `Enrolled in academy course: ${course?.title || data.courseId}`,
+        });
+      } catch (subErr) {
+        console.error("[ACADEMY] Failed to record subscription in centralized system:", subErr);
+      }
     }
 
     return { success: true };

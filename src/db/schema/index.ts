@@ -11,4 +11,4 @@ export * from "./services";
 export * from "./admin";
 export * from "./sms";
 export * from "./recovery";
-
+export * from "./subscriptions";
