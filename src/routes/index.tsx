@@ -43,6 +43,7 @@ import { getPublishedBlogPosts } from "@/lib/api/blog.server";
 import heroFarmerWoman from "@/assets/hero-farmer-woman.webp";
 import heroCinematic from "@/assets/hero-cinematic.webp";
 import heroCinematic640 from "@/assets/hero-cinematic-640w.webp";
+import heroCinematic320 from "@/assets/hero-cinematic-320w.webp";
 import { HomeSkeleton } from "@/components/mqulima/RouteSkeletons";
 
 export const Route = createFileRoute("/")({
@@ -107,6 +108,8 @@ export const Route = createFileRoute("/")({
         rel: "preload",
         as: "image",
         href: heroCinematic640,
+        imageSrcSet: `${heroCinematic320} 320w, ${heroCinematic640} 640w, ${heroCinematic} 1280w`,
+        imageSizes: "100vw",
         type: "image/webp",
         fetchPriority: "high" as const,
       },

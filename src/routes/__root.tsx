@@ -135,7 +135,7 @@ export const Route = createRootRouteWithContext<{
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){if(typeof window==='undefined')return;function isNoise(m){if(!m)return false;var s=String(m);return s.includes('unknown host')||s.includes('contentscript')||s.includes('Could not establish connection')||s.includes('Receiving end does not exist')||s.includes('AI chart')||s.includes('chat.js');}window.addEventListener('unhandledrejection',function(e){var r=(e&&e.reason&&(e.reason.message||e.reason))||'';if(isNoise(r)){e.preventDefault();if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();}},true);window.addEventListener('error',function(e){var m=(e&&(e.message||(e.error&&e.error.message)))||'';if(isNoise(m)){e.preventDefault();if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();}},true);try{var oe=console.error,ow=console.warn;console.error=function(){var a=Array.prototype.slice.call(arguments).join(' ');if(isNoise(a))return;oe.apply(console,arguments);};console.warn=function(){var a=Array.prototype.slice.call(arguments).join(' ');if(isNoise(a))return;ow.apply(console,arguments);};}catch(_){}})();`,

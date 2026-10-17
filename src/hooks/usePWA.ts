@@ -17,6 +17,8 @@ declare global {
   }
 }
 
+let hasRegisteredSW = false;
+
 export function usePWA() {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isInstallable, setIsInstallable] = useState<boolean>(false);
@@ -95,6 +97,8 @@ export function usePWA() {
   // Service worker registration
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    if (hasRegisteredSW) return;
+    hasRegisteredSW = true;
 
     const isDev =
       window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
