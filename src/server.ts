@@ -109,6 +109,23 @@ export default {
     const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
     const requestStart = performance.now();
     const url = new URL(request.url);
+
+    // Intercept mobile API v1 routes directly for instant execution without SSR overhead
+    if (url.pathname.startsWith("/api/v1/") || url.pathname === "/api/v1") {
+      const { handleApiV1Request } = await import("./lib/api-v1/router");
+      const res = await handleApiV1Request(request, url);
+      const origin = request.headers.get("origin") || "";
+      const headers = new Headers(res.headers);
+      headers.set("Access-Control-Allow-Origin", origin || "*");
+      headers.set("Access-Control-Allow-Credentials", "true");
+      headers.set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH");
+      headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Cache-Control, Accept, Range");
+      return new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+      });
+    }
     if (url.pathname === "/favicon.ico") {
       try {
         const { readFileSync } = await import("fs");

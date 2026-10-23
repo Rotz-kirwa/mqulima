@@ -407,3 +407,63 @@ export async function fetchOpenMeteoWeather(
 
   throw lastError ?? new Error("Open-Meteo fetch failed after retries");
 }
+
+export const KENYA_COUNTIES: Record<string, LocationCoords> = {
+  "Baringo":         { lat: 0.4833,  lon: 35.7333 },
+  "Bomet":           { lat: -0.7833, lon: 35.3500 },
+  "Bungoma":         { lat: 0.5635,  lon: 34.5606 },
+  "Busia":           { lat: 0.4608,  lon: 34.1115 },
+  "Elgeyo-Marakwet": { lat: 0.8000,  lon: 35.5000 },
+  "Embu":            { lat: -0.5311, lon: 37.4506 },
+  "Garissa":         { lat: -0.4532, lon: 39.6461 },
+  "Homa Bay":        { lat: -0.5298, lon: 34.4534 },
+  "Isiolo":          { lat: 0.3546,  lon: 37.5822 },
+  "Kajiado":         { lat: -1.8500, lon: 36.7833 },
+  "Kakamega":        { lat: 0.2827,  lon: 34.7519 },
+  "Kericho":         { lat: -0.3689, lon: 35.2863 },
+  "Kiambu":          { lat: -1.1736, lon: 36.8356 },
+  "Kilifi":          { lat: -3.6307, lon: 39.8499 },
+  "Kirinyaga":       { lat: -0.4980, lon: 37.3150 },
+  "Kisii":           { lat: -0.6817, lon: 34.7717 },
+  "Kisumu":          { lat: -0.1022, lon: 34.7617 },
+  "Kitui":           { lat: -1.3683, lon: 38.0106 },
+  "Kwale":           { lat: -4.1737, lon: 39.4521 },
+  "Laikipia":        { lat: 0.3667,  lon: 36.7833 },
+  "Lamu":            { lat: -2.2717, lon: 40.9020 },
+  "Machakos":        { lat: -1.5177, lon: 37.2634 },
+  "Makueni":         { lat: -1.8041, lon: 37.6203 },
+  "Mandera":         { lat: 3.9367,  lon: 41.8569 },
+  "Marsabit":        { lat: 2.3369,  lon: 37.9904 },
+  "Meru":            { lat: 0.0463,  lon: 37.6559 },
+  "Migori":          { lat: -1.0634, lon: 34.4731 },
+  "Mombasa":         { lat: -4.0547, lon: 39.6636 },
+  "Murang'a":        { lat: -0.7210, lon: 37.1500 },
+  "Nairobi":         { lat: -1.2921, lon: 36.8219 },
+  "Nakuru":          { lat: -0.3031, lon: 36.0800 },
+  "Nandi":           { lat: 0.1833,  lon: 35.1000 },
+  "Narok":           { lat: -1.0836, lon: 35.8712 },
+  "Nyamira":         { lat: -0.5633, lon: 34.9358 },
+  "Nyandarua":       { lat: -0.4285, lon: 36.3767 },
+  "Nyeri":           { lat: -0.4167, lon: 36.9500 },
+  "Samburu":         { lat: 1.2500,  lon: 36.8000 },
+  "Siaya":           { lat: -0.0607, lon: 34.2882 },
+  "Taita-Taveta":    { lat: -3.3161, lon: 38.4850 },
+  "Tana River":      { lat: -1.4827, lon: 40.0130 },
+  "Tharaka-Nithi":   { lat: -0.2996, lon: 37.8979 },
+  "Trans Nzoia":     { lat: 1.0181,  lon: 35.0022 },
+  "Turkana":         { lat: 3.1167,  lon: 35.6000 },
+  "Uasin Gishu":     { lat: 0.5143,  lon: 35.2698 },
+  "Vihiga":          { lat: 0.0833,  lon: 34.7167 },
+  "Wajir":           { lat: 1.7471,  lon: 40.0573 },
+  "West Pokot":      { lat: 1.5000,  lon: 35.1167 }
+};
+
+export async function fetchCountyWeather(county: string, signal?: AbortSignal): Promise<WeatherViewModel> {
+  const norm = (county || "").trim();
+  const matchedKey = Object.keys(KENYA_COUNTIES).find(
+    (k) => k.toLowerCase() === norm.toLowerCase() || norm.toLowerCase().includes(k.toLowerCase())
+  );
+  const coords = matchedKey ? KENYA_COUNTIES[matchedKey] : KENYA_COUNTIES["Uasin Gishu"];
+  return fetchOpenMeteoWeather(coords, signal);
+}
+
