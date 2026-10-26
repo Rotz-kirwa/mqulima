@@ -608,6 +608,12 @@ function AboutPage() {
                 >
                   Explore Services
                 </Link>
+                <Link 
+                  to="/business" 
+                  className="w-full sm:w-auto bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm uppercase tracking-wider py-4 px-8 rounded-full border border-emerald-500/30 transition duration-200 text-center cursor-pointer active:scale-98"
+                >
+                  Business Profile
+                </Link>
               </div>
             </div>
           </div>

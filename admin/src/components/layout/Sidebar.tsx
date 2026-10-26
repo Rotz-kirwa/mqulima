@@ -22,6 +22,7 @@ import {
   CloudSun,
   Store,
   HelpCircle,
+  Building2,
 } from "lucide-react";
 import { prefetchAdminData } from "../../lib/api";
 
@@ -39,7 +40,8 @@ export type AdminTab =
   | "inquiries"
   | "forum"
   | "academy"
-  | "news";
+  | "news"
+  | "business-profile";
 
 interface SidebarProps {
   activeTab: AdminTab;
@@ -93,6 +95,7 @@ const MODULE_LOADERS: Record<AdminTab, () => Promise<any>> = {
   forum: () => import("../modules/ForumModerationModule"),
   academy: () => import("../modules/AcademyExtensionModule"),
   news: () => import("../modules/NewsCMSModule"),
+  "business-profile": () => import("../modules/BusinessProfileModule").then(m => ({ default: m.BusinessProfileModule })),
 };
 
 const TAB_DATA_ENDPOINTS: Record<AdminTab, string[]> = {
@@ -110,6 +113,7 @@ const TAB_DATA_ENDPOINTS: Record<AdminTab, string[]> = {
   forum: ["/api/admin/forum-moderation"],
   academy: ["/api/admin/academy"],
   news: ["/api/admin/news"],
+  "business-profile": ["/api/admin/business-profile"],
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole }) => {
@@ -181,6 +185,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userR
           label: "Visitor Analytics (GA4)",
           icon: BarChart3,
           badgeBg: "bg-[#278C7B]", // Solid Deep Teal
+        },
+        {
+          id: "business-profile",
+          label: "Business Profile",
+          icon: Building2,
+          badgeBg: "bg-[#245B35]", // Solid Forest Green
         },
       ],
     },

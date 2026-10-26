@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
+import { Route as BusinessRouteImport } from './routes/business'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiRouteImport } from './routes/ai'
@@ -40,6 +41,7 @@ import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
 import { Route as PaymentsPaystackCallbackRouteImport } from './routes/payments.paystack.callback'
+import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as ApiUserSubscriptionsRouteImport } from './routes/api/user/subscriptions'
 import { Route as ApiUploadPresignRouteImport } from './routes/api/upload/presign'
 import { Route as ApiShopPosSyncRouteImport } from './routes/api/shop/pos-sync'
@@ -63,6 +65,7 @@ import { Route as ApiAdminForumModerationRouteImport } from './routes/api/admin/
 import { Route as ApiAdminFeaturedRouteImport } from './routes/api/admin/featured'
 import { Route as ApiAdminCustomersRouteImport } from './routes/api/admin/customers'
 import { Route as ApiAdminCommodityTrendsRouteImport } from './routes/api/admin/commodity-trends'
+import { Route as ApiAdminBusinessProfileRouteImport } from './routes/api/admin/business-profile'
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAdminAiForecastsRouteImport } from './routes/api/admin/ai-forecasts'
 import { Route as ApiAdminAcademyRouteImport } from './routes/api/admin/academy'
@@ -112,6 +115,11 @@ const ContactRoute = ContactRouteImport.update({
 const CommunityRoute = CommunityRouteImport.update({
   id: '/community',
   path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessRoute = BusinessRouteImport.update({
+  id: '/business',
+  path: '/business',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -230,6 +238,11 @@ const PaymentsPaystackCallbackRoute =
     path: '/payments/paystack/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
+  id: '/api/v1/$',
+  path: '/api/v1/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserSubscriptionsRoute = ApiUserSubscriptionsRouteImport.update({
   id: '/api/user/subscriptions',
   path: '/api/user/subscriptions',
@@ -346,6 +359,11 @@ const ApiAdminCommodityTrendsRoute = ApiAdminCommodityTrendsRouteImport.update({
   path: '/api/admin/commodity-trends',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminBusinessProfileRoute = ApiAdminBusinessProfileRouteImport.update({
+  id: '/api/admin/business-profile',
+  path: '/api/admin/business-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminAnalyticsRoute = ApiAdminAnalyticsRouteImport.update({
   id: '/api/admin/analytics',
   path: '/api/admin/analytics',
@@ -408,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/business': typeof BusinessRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -434,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/academy': typeof ApiAdminAcademyRoute
   '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/business-profile': typeof ApiAdminBusinessProfileRoute
   '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/featured': typeof ApiAdminFeaturedRoute
@@ -457,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
   '/api/user/subscriptions': typeof ApiUserSubscriptionsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
@@ -474,6 +495,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/business': typeof BusinessRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -500,6 +522,7 @@ export interface FileRoutesByTo {
   '/api/admin/academy': typeof ApiAdminAcademyRoute
   '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/business-profile': typeof ApiAdminBusinessProfileRoute
   '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/featured': typeof ApiAdminFeaturedRoute
@@ -523,6 +546,7 @@ export interface FileRoutesByTo {
   '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
   '/api/user/subscriptions': typeof ApiUserSubscriptionsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
@@ -541,6 +565,7 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/business': typeof BusinessRoute
   '/community': typeof CommunityRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -567,6 +592,7 @@ export interface FileRoutesById {
   '/api/admin/academy': typeof ApiAdminAcademyRoute
   '/api/admin/ai-forecasts': typeof ApiAdminAiForecastsRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/business-profile': typeof ApiAdminBusinessProfileRoute
   '/api/admin/commodity-trends': typeof ApiAdminCommodityTrendsRoute
   '/api/admin/customers': typeof ApiAdminCustomersRoute
   '/api/admin/featured': typeof ApiAdminFeaturedRoute
@@ -590,6 +616,7 @@ export interface FileRoutesById {
   '/api/shop/pos-sync': typeof ApiShopPosSyncRoute
   '/api/upload/presign': typeof ApiUploadPresignRoute
   '/api/user/subscriptions': typeof ApiUserSubscriptionsRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
   '/payments/paystack/callback': typeof PaymentsPaystackCallbackRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/api/admin/products/sync': typeof ApiAdminProductsSyncRoute
@@ -609,6 +636,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/auth'
     | '/blog'
+    | '/business'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -635,6 +663,7 @@ export interface FileRouteTypes {
     | '/api/admin/academy'
     | '/api/admin/ai-forecasts'
     | '/api/admin/analytics'
+    | '/api/admin/business-profile'
     | '/api/admin/commodity-trends'
     | '/api/admin/customers'
     | '/api/admin/featured'
@@ -658,6 +687,7 @@ export interface FileRouteTypes {
     | '/api/shop/pos-sync'
     | '/api/upload/presign'
     | '/api/user/subscriptions'
+    | '/api/v1/$'
     | '/payments/paystack/callback'
     | '/shop/product/$slug'
     | '/api/admin/products/sync'
@@ -675,6 +705,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/auth'
     | '/blog'
+    | '/business'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -701,6 +732,7 @@ export interface FileRouteTypes {
     | '/api/admin/academy'
     | '/api/admin/ai-forecasts'
     | '/api/admin/analytics'
+    | '/api/admin/business-profile'
     | '/api/admin/commodity-trends'
     | '/api/admin/customers'
     | '/api/admin/featured'
@@ -724,6 +756,7 @@ export interface FileRouteTypes {
     | '/api/shop/pos-sync'
     | '/api/upload/presign'
     | '/api/user/subscriptions'
+    | '/api/v1/$'
     | '/payments/paystack/callback'
     | '/shop/product/$slug'
     | '/api/admin/products/sync'
@@ -741,6 +774,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/auth'
     | '/blog'
+    | '/business'
     | '/community'
     | '/contact'
     | '/dashboard'
@@ -767,6 +801,7 @@ export interface FileRouteTypes {
     | '/api/admin/academy'
     | '/api/admin/ai-forecasts'
     | '/api/admin/analytics'
+    | '/api/admin/business-profile'
     | '/api/admin/commodity-trends'
     | '/api/admin/customers'
     | '/api/admin/featured'
@@ -790,6 +825,7 @@ export interface FileRouteTypes {
     | '/api/shop/pos-sync'
     | '/api/upload/presign'
     | '/api/user/subscriptions'
+    | '/api/v1/$'
     | '/payments/paystack/callback'
     | '/shop/product/$slug'
     | '/api/admin/products/sync'
@@ -808,6 +844,7 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  BusinessRoute: typeof BusinessRoute
   CommunityRoute: typeof CommunityRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -826,6 +863,7 @@ export interface RootRouteChildren {
   ApiAdminAcademyRoute: typeof ApiAdminAcademyRoute
   ApiAdminAiForecastsRoute: typeof ApiAdminAiForecastsRoute
   ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
+  ApiAdminBusinessProfileRoute: typeof ApiAdminBusinessProfileRoute
   ApiAdminCommodityTrendsRoute: typeof ApiAdminCommodityTrendsRoute
   ApiAdminCustomersRoute: typeof ApiAdminCustomersRoute
   ApiAdminFeaturedRoute: typeof ApiAdminFeaturedRoute
@@ -848,6 +886,7 @@ export interface RootRouteChildren {
   ApiShopPosSyncRoute: typeof ApiShopPosSyncRoute
   ApiUploadPresignRoute: typeof ApiUploadPresignRoute
   ApiUserSubscriptionsRoute: typeof ApiUserSubscriptionsRoute
+  ApiV1SplatRoute: typeof ApiV1SplatRoute
   PaymentsPaystackCallbackRoute: typeof PaymentsPaystackCallbackRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   ApiPaymentsNcbaCallbackRoute: typeof ApiPaymentsNcbaCallbackRoute
@@ -911,6 +950,13 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/community'
       preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/business': {
+      id: '/business'
+      path: '/business'
+      fullPath: '/business'
+      preLoaderRoute: typeof BusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -1074,6 +1120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentsPaystackCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/$': {
+      id: '/api/v1/$'
+      path: '/api/v1/$'
+      fullPath: '/api/v1/$'
+      preLoaderRoute: typeof ApiV1SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/user/subscriptions': {
       id: '/api/user/subscriptions'
       path: '/api/user/subscriptions'
@@ -1235,6 +1288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCommodityTrendsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/business-profile': {
+      id: '/api/admin/business-profile'
+      path: '/api/admin/business-profile'
+      fullPath: '/api/admin/business-profile'
+      preLoaderRoute: typeof ApiAdminBusinessProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/analytics': {
       id: '/api/admin/analytics'
       path: '/api/admin/analytics'
@@ -1387,6 +1447,7 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   AuthRoute: AuthRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  BusinessRoute: BusinessRoute,
   CommunityRoute: CommunityRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
@@ -1405,6 +1466,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAcademyRoute: ApiAdminAcademyRoute,
   ApiAdminAiForecastsRoute: ApiAdminAiForecastsRoute,
   ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
+  ApiAdminBusinessProfileRoute: ApiAdminBusinessProfileRoute,
   ApiAdminCommodityTrendsRoute: ApiAdminCommodityTrendsRoute,
   ApiAdminCustomersRoute: ApiAdminCustomersRoute,
   ApiAdminFeaturedRoute: ApiAdminFeaturedRoute,
@@ -1427,6 +1489,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiShopPosSyncRoute: ApiShopPosSyncRoute,
   ApiUploadPresignRoute: ApiUploadPresignRoute,
   ApiUserSubscriptionsRoute: ApiUserSubscriptionsRoute,
+  ApiV1SplatRoute: ApiV1SplatRoute,
   PaymentsPaystackCallbackRoute: PaymentsPaystackCallbackRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   ApiPaymentsNcbaCallbackRoute: ApiPaymentsNcbaCallbackRoute,

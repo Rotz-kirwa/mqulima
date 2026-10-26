@@ -92,6 +92,7 @@ export function Footer() {
             title="Company"
             links={[
               { to: "/about", label: "About Us" },
+              { to: "/business", label: "Business Profile" },
               { to: "/contact", label: "Contact Us" },
               { to: "/about", label: "Careers" },
               { to: "/about", label: "Insurance" },

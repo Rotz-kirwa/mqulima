@@ -19,6 +19,7 @@ const ServiceRequestsModule = React.lazy(() => import("./components/modules/Serv
 const NewsCMSModule = React.lazy(() => import("./components/modules/NewsCMSModule").then(m => ({ default: m.NewsCMSModule })));
 const CommodityTrendsModule = React.lazy(() => import("./components/modules/CommodityTrendsModule").then(m => ({ default: m.CommodityTrendsModule })));
 const SubscriptionsModule = React.lazy(() => import("./components/modules/SubscriptionsModule").then(m => ({ default: m.SubscriptionsModule })));
+const BusinessProfileModule = React.lazy(() => import("./components/modules/BusinessProfileModule").then(m => ({ default: m.BusinessProfileModule })));
 
 import { Toaster, toast } from "sonner";
 
@@ -88,6 +89,7 @@ const VALID_TABS: AdminTab[] = [
   "academy",
   "news",
   "subscriptions",
+  "business-profile",
 ];
 
 function parseTabFromUrl(): AdminTab {
@@ -274,6 +276,8 @@ export const App: React.FC = () => {
         return <CommodityTrendsModule />;
       case "subscriptions":
         return <SubscriptionsModule onNavigateTab={setActiveTab} />;
+      case "business-profile":
+        return <BusinessProfileModule userRole={adminSession.role} />;
       default:
         return <DashboardHomeModule onNavigateTab={setActiveTab} />;
     }
