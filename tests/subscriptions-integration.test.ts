@@ -28,14 +28,20 @@ import {
   getSubscriberProfile,
 } from "../src/lib/services/subscriptions.server";
 
-describe("Centralized Subscription Management System", () => {
+const hasDatabase = Boolean(process.env.DATABASE_URL);
+
+describe.skipIf(!hasDatabase)("Centralized Subscription Management System", () => {
   const testEmail = `test_integration_${Date.now()}@mqulima.com`;
   const sql = getDb();
   let createdSubId: string;
 
   afterAll(async () => {
-    // Clean up test data
-    await sql`DELETE FROM subscriptions WHERE email = ${testEmail}`;
+    if (hasDatabase) {
+      try {
+        const sql = getDb();
+        await sql`DELETE FROM subscriptions WHERE email = ${testEmail}`;
+      } catch {}
+    }
   });
 
   it("1. Automatically records an anonymous newsletter subscription under news category", async () => {
