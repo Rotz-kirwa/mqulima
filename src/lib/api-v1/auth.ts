@@ -24,7 +24,33 @@ const RegisterSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+export const CORS_HEADERS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Cache-Control, Accept, Range",
+  "Access-Control-Max-Age": "86400",
+};
+
+export function corsJsonResponse(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: CORS_HEADERS,
+  });
+}
+
+export function corsOptionsResponse() {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
 export async function handleAuthRegister(request: Request): Promise<Response> {
+  if (request.method.toUpperCase() === "OPTIONS") {
+    return corsOptionsResponse();
+  }
+
   try {
     const ip = getClientIp();
     await checkSignupRateLimit(ip).catch(() => {});
@@ -32,9 +58,9 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
     const body = await request.json().catch(() => ({}));
     const parseResult = RegisterSchema.safeParse(body);
     if (!parseResult.success) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Validation failed", details: parseResult.error.flatten().fieldErrors }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return corsJsonResponse(
+        { success: false, error: "Validation failed", details: parseResult.error.flatten().fieldErrors },
+        400
       );
     }
 
@@ -69,9 +95,9 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
     });
 
     if ("error" in res) {
-      return new Response(
-        JSON.stringify({ success: false, error: res.error, field: res.field }),
-        { status: 409, headers: { "Content-Type": "application/json" } }
+      return corsJsonResponse(
+        { success: false, error: res.error, field: res.field },
+        409
       );
     }
 
@@ -79,8 +105,8 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
     const token = await signUserToken(userId, email, "farmer");
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    return new Response(
-      JSON.stringify({
+    return corsJsonResponse(
+      {
         success: true,
         access_token: token,
         token,
@@ -92,19 +118,23 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
           county,
           role: "farmer",
         },
-      }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
+      },
+      201
     );
   } catch (err: any) {
     console.error("[API/V1/REGISTER ERROR]:", err);
-    return new Response(
-      JSON.stringify({ success: false, error: err?.message || "Registration failed. Please try again." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return corsJsonResponse(
+      { success: false, error: err?.message || "Registration failed. Please try again." },
+      500
     );
   }
 }
 
 export async function handleAuthLogin(request: Request): Promise<Response> {
+  if (request.method.toUpperCase() === "OPTIONS") {
+    return corsOptionsResponse();
+  }
+
   try {
     const ip = getClientIp();
     await checkLoginRateLimit(ip).catch(() => {});
@@ -112,9 +142,9 @@ export async function handleAuthLogin(request: Request): Promise<Response> {
     const body = await request.json().catch(() => ({}));
     const parseResult = LoginSchema.safeParse(body);
     if (!parseResult.success) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Validation failed", details: parseResult.error.flatten().fieldErrors }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return corsJsonResponse(
+        { success: false, error: "Validation failed", details: parseResult.error.flatten().fieldErrors },
+        400
       );
     }
 
@@ -173,17 +203,17 @@ export async function handleAuthLogin(request: Request): Promise<Response> {
     }
 
     if (!dbUser || !dbUser.password_hash) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid email/phone number or password." }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
+      return corsJsonResponse(
+        { success: false, error: "Invalid email/phone number or password." },
+        401
       );
     }
 
     const isMatch = await bcrypt.compare(password, dbUser.password_hash);
     if (!isMatch) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid email/phone number or password." }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
+      return corsJsonResponse(
+        { success: false, error: "Invalid email/phone number or password." },
+        401
       );
     }
 
@@ -192,8 +222,8 @@ export async function handleAuthLogin(request: Request): Promise<Response> {
 
     const token = await signUserToken(dbUser.id, dbUser.email, dbUser.role || "farmer");
 
-    return new Response(
-      JSON.stringify({
+    return corsJsonResponse(
+      {
         success: true,
         access_token: token,
         token,
@@ -205,29 +235,33 @@ export async function handleAuthLogin(request: Request): Promise<Response> {
           county: dbUser.county_region || "Kenya",
           role: dbUser.role || "farmer",
         },
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      },
+      200
     );
   } catch (err: any) {
     console.error("[API/V1/LOGIN ERROR]:", err);
-    return new Response(
-      JSON.stringify({ success: false, error: err?.message || "Login failed. Please try again." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return corsJsonResponse(
+      { success: false, error: err?.message || "Login failed. Please try again." },
+      500
     );
   }
 }
 
 export async function handleAuthMe(request: Request): Promise<Response> {
+  if (request.method.toUpperCase() === "OPTIONS") {
+    return corsOptionsResponse();
+  }
+
   const user = await authenticateRequest(request);
   if (!user) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Unauthorized. Please sign in to continue." }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
+    return corsJsonResponse(
+      { success: false, error: "Unauthorized. Please sign in to continue." },
+      401
     );
   }
 
-  return new Response(
-    JSON.stringify({
+  return corsJsonResponse(
+    {
       success: true,
       user,
       id: user.id,
@@ -236,17 +270,21 @@ export async function handleAuthMe(request: Request): Promise<Response> {
       phone: user.phone || "",
       county: user.county || "Kenya",
       role: user.role,
-    }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    },
+    200
   );
 }
 
 export async function handleUpdateProfile(request: Request): Promise<Response> {
+  if (request.method.toUpperCase() === "OPTIONS") {
+    return corsOptionsResponse();
+  }
+
   const user = await authenticateRequest(request);
   if (!user) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Unauthorized." }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
+    return corsJsonResponse(
+      { success: false, error: "Unauthorized." },
+      401
     );
   }
 
@@ -274,18 +312,18 @@ export async function handleUpdateProfile(request: Request): Promise<Response> {
       WHERE id = ${user.id}
     `;
 
-    return new Response(
-      JSON.stringify({
+    return corsJsonResponse(
+      {
         success: true,
         message: "Profile updated successfully.",
         user: { ...user, name: fullName, county, phone, avatarUrl },
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      },
+      200
     );
   } catch (err: any) {
-    return new Response(
-      JSON.stringify({ success: false, error: err?.message || "Failed to update profile." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return corsJsonResponse(
+      { success: false, error: err?.message || "Failed to update profile." },
+      500
     );
   }
 }
