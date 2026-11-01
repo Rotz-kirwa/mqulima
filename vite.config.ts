@@ -9,6 +9,15 @@ export default defineConfig({
       minify: "esbuild",
       cssMinify: true,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (
+            warning.code === "MODULE_LEVEL_DIRECTIVE" ||
+            warning.message?.includes('"use client"')
+          ) {
+            return;
+          }
+          warn(warning);
+        },
         output: {
           manualChunks(id: string) {
             if (id.includes("node_modules")) {
