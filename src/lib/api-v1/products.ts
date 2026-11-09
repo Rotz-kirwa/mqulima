@@ -162,7 +162,7 @@ export async function handleGetProduct(identifier: string): Promise<Response> {
       JSON.stringify({
         id: p.id,
         name: p.name,
-        price: Number(p.base_price) || 0,
+        price: Number(p.basePrice) || 0,
         stock: p.stockQty ?? 0,
         category: p.subcategory || p.shopType || "General",
         brand: p.brand || "Verified Input",

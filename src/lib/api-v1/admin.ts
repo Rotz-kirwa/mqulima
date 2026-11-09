@@ -666,7 +666,7 @@ export async function handleAdminSaveRecord(
       const { name, category, price, stock, description, featured, image, status, variants } = body;
       const slug = (name || "product").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const imageUrls = image ? [image] : [];
-      const metadata = variants ? { variants } : {};
+      const metadataJson = JSON.stringify(variants !== undefined ? { variants } : {});
 
       if (id === "new") {
         const [inserted] = await sql`
@@ -677,7 +677,7 @@ export async function handleAdminSaveRecord(
             ${name || "New Product"}, ${slug + "-" + Date.now().toString(36)},
             ${description || ""}, ${Number(price) || 0}, ${Number(stock) || 0},
             ${status || "draft"}, ${category || "General"}, ${imageUrls},
-            ${Boolean(featured)}, ${metadata}, NOW(), NOW()
+            ${Boolean(featured)}, ${metadataJson}::jsonb, NOW(), NOW()
           )
           RETURNING id
         `;
@@ -697,7 +697,7 @@ export async function handleAdminSaveRecord(
             subcategory = COALESCE(${category}, subcategory),
             image_urls = CASE WHEN ${image !== undefined} THEN ${imageUrls} ELSE image_urls END,
             is_featured = COALESCE(${featured}, is_featured),
-            metadata = COALESCE(${metadata}, metadata),
+            metadata = CASE WHEN ${variants !== undefined} THEN ${metadataJson}::jsonb ELSE metadata END,
             updated_at = NOW()
           WHERE id = ${id}
         `;

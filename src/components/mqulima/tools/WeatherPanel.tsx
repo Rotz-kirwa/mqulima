@@ -32,7 +32,7 @@ import {
   Clock
 } from "lucide-react";
 import { useWeather, KENYA_COUNTIES, resolveLabel, type CountyName, type UseWeatherState } from "@/hooks/useWeather";
-import type { DailyForecast, HourlySnapshot } from "@/lib/weather-types";
+import type { DailyForecast, HourlySnapshot, WeatherViewModel } from "@/lib/weather-types";
 
 // Direction lookup
 function getWindDirection(deg: number): string {
@@ -176,7 +176,7 @@ function getHourlyForecastCards(
     });
     const prefix = `${kenyaDateStr}T${kenyaHour.toString().padStart(2, "0")}`;
 
-    let startIndex = hourlyTimes.findIndex((t) => t.startsWith(prefix));
+    let startIndex = hourlyTimes.findIndex((t: string) => t.startsWith(prefix));
     if (startIndex === -1) {
       startIndex = Math.min(kenyaHour, hourlyTimes.length - 1);
     }

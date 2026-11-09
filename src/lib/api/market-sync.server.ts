@@ -573,7 +573,7 @@ export async function executeKamisSync() {
       const basePrice = benchmark
         ? benchmark.basePrice
         : liveMatch
-        ? Math.round(liveMatch.pricePerKg * (benchmark?.unitKgMultiplier || 1))
+        ? Math.round(liveMatch.pricePerKg)
         : 1400;
 
       const targetRegions = benchmark?.regions || [

@@ -211,6 +211,11 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
     }).catch((err) => console.error("[AUTH SIGNUP] Welcome SMS background dispatch error:", err));
   }
 
+  // Invalidate admin customers cache so new registration is immediately visible in admin
+  try {
+    import("../../routes/api/admin/customers").then((m) => m.invalidateCustomersServerCache?.()).catch(() => {});
+  } catch {}
+
   return { success: true, userId: userId! };
 }
 

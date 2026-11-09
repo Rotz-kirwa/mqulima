@@ -130,7 +130,10 @@ export type AdminPermission =
   | "content.delete"
   | "inquiries.read"
   | "inquiries.update"
-  | "analytics.read";
+  | "analytics.read"
+  | "subscriptions.read"
+  | "subscriptions.write"
+  | "subscriptions.export";
 
 export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
   super_admin: [
@@ -141,6 +144,7 @@ export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
     "content.read", "content.create", "content.update", "content.delete",
     "inquiries.read", "inquiries.update",
     "analytics.read",
+    "subscriptions.read", "subscriptions.write", "subscriptions.export",
   ],
   admin: [
     "customers.read", "customers.update", "customers.delete",
@@ -150,6 +154,7 @@ export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
     "content.read", "content.create", "content.update", "content.delete",
     "inquiries.read", "inquiries.update",
     "analytics.read",
+    "subscriptions.read", "subscriptions.write", "subscriptions.export",
   ],
   sales_agent: [
     "customers.read",

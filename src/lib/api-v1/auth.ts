@@ -74,7 +74,6 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
       deliveryLocation,
       farmingType,
       specifyFarmingType,
-      farmSizeAcres,
       password,
     } = parseResult.data;
 
@@ -89,9 +88,8 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
       deliveryLocation,
       farmingType,
       specifyFarmingType,
-      farmSizeAcres,
       password,
-      acceptTerms: true,
+      terms: true,
     });
 
     if ("error" in res) {

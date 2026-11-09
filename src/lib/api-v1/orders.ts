@@ -153,9 +153,15 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
     if (customerPhone) {
       sendOrderConfirmedSms({
         orderId,
-        orderTotal: finalTotal,
+        total: finalTotal,
+        items: savedItems.map((si) => ({
+          name: si.name,
+          quantity: si.qty,
+          price: si.price,
+          lineTotal: si.lineTotal,
+        })),
         customerName: name || user.name,
-        customerPhone,
+        phoneNumber: customerPhone,
       }).catch((e) => console.warn("[ORDER CONFIRMED SMS ERROR]:", e));
     }
 
