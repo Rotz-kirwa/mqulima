@@ -169,6 +169,7 @@ export async function handleForumFeed(request: Request, url: URL): Promise<Respo
         saved: savedPostIds.has(r.id),
         resolved: false,
         image: (Array.isArray(r.mediaUrls) && r.mediaUrls[0]) || null,
+        images: Array.isArray(r.mediaUrls) ? r.mediaUrls : [],
       };
     });
 
@@ -408,9 +409,15 @@ export async function handleCreatePost(request: Request): Promise<Response> {
 
   try {
     const body = await request.json();
-    const { title, text, tag = "Farm Progress", county, image } = body;
+    const { title, text, tag = "Farm Progress", county, image, images } = body;
 
-    if ((!text || text.trim().length < 5) && !image) {
+    const mediaUrls: string[] = Array.isArray(images) && images.length > 0
+      ? images.map((u: any) => String(u || "").trim()).filter(Boolean)
+      : image
+        ? [String(image).trim()]
+        : [];
+
+    if ((!text || text.trim().length < 5) && mediaUrls.length === 0) {
       return new Response(
         JSON.stringify({ success: false, error: "Post content must be at least 5 characters." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -418,7 +425,6 @@ export async function handleCreatePost(request: Request): Promise<Response> {
     }
 
     const sql = getDb();
-    const mediaUrls = image ? [image] : [];
     const tags = [tag, ...(county ? [`📍 ${county}`] : [])];
     const typeMap: Record<string, string> = {
       "Harvest Update": "harvest",
@@ -495,7 +501,8 @@ export async function handleCreatePost(request: Request): Promise<Response> {
       liked: false,
       saved: false,
       resolved: false,
-      image: image || null,
+      image: mediaUrls[0] || null,
+      images: mediaUrls,
       comments: [],
     };
 
@@ -614,6 +621,7 @@ export async function handleGetPost(postId: string, request: Request): Promise<R
         saved: isSaved,
         resolved: false,
         image: (Array.isArray(p.media_urls) && p.media_urls[0]) || null,
+        images: Array.isArray(p.media_urls) ? p.media_urls : [],
         comments: mappedComments,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }

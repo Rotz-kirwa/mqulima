@@ -1533,16 +1533,17 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       setIsPostComposerOpen(false);
       return;
     }
-    if (!createBody.trim()) {
-      toast.error("Please enter some text for your post.");
+    const typedImages = createImagesText.split(",").map(url => url.trim()).filter(Boolean);
+    const uploadedImages = postMediaFiles.filter(m => m.type === "image").map(m => m.url);
+    const imagesParsed = [...uploadedImages, ...typedImages];
+
+    if (!createBody.trim() && imagesParsed.length === 0) {
+      toast.error("Please enter text or attach a photo for your post.");
       return;
     }
 
     setIsSubmittingPost(true);
     const csrfToken = getCsrfTokenFromCookie();
-    const typedImages = createImagesText.split(",").map(url => url.trim()).filter(Boolean);
-    const uploadedImages = postMediaFiles.filter(m => m.type === "image").map(m => m.url);
-    const imagesParsed = [...uploadedImages, ...typedImages];
     const cropTags = [
       ...createCrops.split(",").map(c => c.trim()).filter(Boolean),
       ...createLivestock.split(",").map(l => l.trim()).filter(Boolean)
@@ -4811,10 +4812,10 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
                     {/* Direct Publish Post Button */}
                     <button
                       type="button"
-                      disabled={isSubmittingPost || !createBody.trim()}
+                      disabled={isSubmittingPost || (!createBody.trim() && postMediaFiles.length === 0)}
                       onClick={handleCreatePost}
                       className={`px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-150 flex items-center gap-2 cursor-pointer shadow-md ${
-                        createBody.trim() && !isSubmittingPost
+                        (createBody.trim() || postMediaFiles.length > 0) && !isSubmittingPost
                           ? "bg-[#85CC14] hover:bg-[#74B510] text-[#0B2117] hover:scale-105 active:scale-95"
                           : "bg-stone-200 text-stone-400 cursor-not-allowed"
                       }`}

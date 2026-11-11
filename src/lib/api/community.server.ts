@@ -656,14 +656,20 @@ async function autoModeratePostOrComment(
 }
 
 export const createCommunityPost = createServerFn({ method: "POST" })
-  .inputValidator(z.object({
-    title: z.string().min(1),
-    body: z.string().min(1),
-    category: z.string(),
-    images: z.array(z.string()),
-    tags: z.array(z.string()),
-    csrfToken: z.string(),
-  }))
+  .inputValidator(
+    z
+      .object({
+        title: z.string(),
+        body: z.string(),
+        category: z.string(),
+        images: z.array(z.string()),
+        tags: z.array(z.string()),
+        csrfToken: z.string(),
+      })
+      .refine((d) => d.body.trim().length > 0 || d.images.length > 0, {
+        message: "Please add post text or at least one image.",
+      })
+  )
   .handler(async ({ data }) => withForumInvalidation(async () => {
     const { validateCsrfToken } = await import("../csrf-verify.server");
     validateCsrfToken(data.csrfToken);
@@ -713,8 +719,10 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     };
     const type = categoryMap[data.category] || "update";
 
-    const textToCheck = `${data.title} ${data.body} ${data.tags.join(" ")}`;
-    const modResult = await autoModeratePostOrComment(sql, user.id, "post", textToCheck);
+    const textToCheck = `${data.title} ${data.body} ${data.tags.join(" ")}`.trim();
+    const modResult = data.body.trim()
+      ? await autoModeratePostOrComment(sql, user.id, "post", textToCheck)
+      : { status: "published", flaggedReason: null };
     const postStatus = modResult.status === "flagged" ? "flagged" : "published";
 
     const [post] = await sql`

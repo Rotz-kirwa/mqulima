@@ -19,7 +19,7 @@ import { handleListCourses, handleGetCourse, handleAcademyWaitlist } from "./aca
 import { handleListServices, handleServiceBooking } from "./services";
 import { handleWeather, handleMarketPrices } from "./tools";
 import { handleAiChat, handleCropDoctor } from "./ai";
-import { handleUploadPresign } from "./upload";
+import { handleUploadPresign, handleForumMediaUpload, handleGetForumMedia } from "./upload";
 import {
   handleAdminOverview,
   handleAdminResourceList,
@@ -103,6 +103,13 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
     }
 
     // 5. Community Forum
+    if ((path === "/api/v1/forum/upload" || path === "/api/v1/upload/media") && method === "POST") {
+      return await handleForumMediaUpload(request);
+    }
+    const forumMediaMatch = path.match(/^\/api\/v1\/forum\/media\/([^/]+)$/);
+    if (forumMediaMatch && method === "GET") {
+      return await handleGetForumMedia(decodeURIComponent(forumMediaMatch[1]));
+    }
     if ((path === "/api/v1/forum/feed" || path === "/api/v1/threads/feed" || path === "/api/v1/threads") && method === "GET") {
       return await handleForumFeed(request, url);
     }

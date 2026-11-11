@@ -346,9 +346,9 @@ export default function LazyPostComposerModal({
             <button
               type="button"
               onClick={handleCreatePost}
-              disabled={!createBody.trim() || isSubmittingPost}
+              disabled={(!createBody.trim() && postMediaFiles.length === 0) || isSubmittingPost}
               className={`px-6 py-2.5 rounded-full text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer ${
-                !createBody.trim() || isSubmittingPost
+                (!createBody.trim() && postMediaFiles.length === 0) || isSubmittingPost
                   ? "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
                   : "bg-[#1B4332] hover:bg-[#2D6A4F] text-white active:scale-95"
               }`}
