@@ -12,25 +12,7 @@ export const KonnektMessaging: React.FC<Props> = ({ currentUser }) => {
   const [activeSessionId, setActiveSessionId] = useState("s1");
   const [inputMessage, setInputMessage] = useState("");
 
-  const [sessions, setSessions] = useState<ChatSession[]>([
-    {
-      id: "s1",
-      name: "Eliud Rotich (Poultry Lead)",
-      isGroup: false,
-      log: [
-        { id: "m1", sender: "Eliud Rotich", text: "Habari! We have fresh batches of vaccinated improved Kienyeji chicks available for Bungoma and North Rift dispatch.", timestamp: "10:14 AM", read: true },
-        { id: "m2", sender: "Me", text: "Great! What is the brooding age and vaccination schedule?", timestamp: "10:18 AM", read: true }
-      ]
-    },
-    {
-      id: "s2",
-      name: "Elgeyo-Marakwet & Eldoret Agri Network",
-      isGroup: true,
-      log: [
-        { id: "m3", sender: "Kosgei Kiprono", text: "Wholesale Irish potato offload at Eldoret depot is running smoothly this morning.", timestamp: "09:30 AM", read: true }
-      ]
-    }
-  ]);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
 

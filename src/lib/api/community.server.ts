@@ -225,11 +225,12 @@ async function loadPublicForumSnapshot() {
 
     const suggestedQ = sql`
       SELECT
-        p.username,
-        p.full_name,
-        p.country,
-        p.county_region,
-        COALESCE(p.nature_of_agriculture, u.farming_type) AS nature_of_agriculture,
+        u.id,
+        COALESCE(p.username, CONCAT('mqulima_', LOWER(REGEXP_REPLACE(COALESCE(u.first_name, 'farmer'), '[^a-zA-Z0-9]', '', 'g')))) AS username,
+        COALESCE(NULLIF(TRIM(p.full_name), ''), TRIM(CONCAT(u.first_name, ' ', u.last_name)), u.email, 'Mqulima Farmer') AS full_name,
+        COALESCE(p.country, 'Kenya') AS country,
+        COALESCE(NULLIF(TRIM(p.county_region), ''), NULLIF(TRIM(u.county), ''), 'Kenya') AS county_region,
+        COALESCE(p.nature_of_agriculture, u.farming_type, 'General Agriculture') AS nature_of_agriculture,
         p.farming_interests,
         p.crops,
         p.livestock,
@@ -241,16 +242,17 @@ async function loadPublicForumSnapshot() {
         p.cover_image,
         p.bio,
         p.website,
-        p.phone,
-        p.email,
+        COALESCE(p.phone, u.phone_number) AS phone,
+        COALESCE(p.email, u.email) AS email,
         p.farming_activities,
         p.farming_photos,
-        p.created_at
-      FROM profiles p
-      LEFT JOIN users u ON u.id = p.id
-      WHERE (p.role IS NULL OR p.role NOT IN ('super_admin'))
+        COALESCE(p.created_at, u.created_at) AS created_at
+      FROM users u
+      LEFT JOIN profiles p ON p.id = u.id
+      WHERE (p.role IS NULL OR p.role NOT IN ('super_admin', 'admin'))
         AND (p.username IS NULL OR (p.username NOT LIKE '%admin%' AND p.username NOT LIKE '%agent%'))
-      ORDER BY p.created_at DESC, p.reputation_score DESC
+        AND p.deleted_at IS NULL
+      ORDER BY u.created_at ASC NULLS LAST
       LIMIT 100
     `;
 
@@ -320,10 +322,10 @@ async function loadPublicForumSnapshot() {
       learning: "Farming Tips"
     };
 
-    const mappedPosts = posts.length > 0 ? posts.map((post: any) => ({
+    const mappedPosts = posts.map((post: any) => ({
       id: post.id,
       author: toFarmer(post),
-      title: post.title || "Untitled discussion",
+      title: post.title || "",
       body: post.caption || "",
       type: post.type === "harvest" ? "gallery" : post.type === "story" ? "story" : "update",
       category: typeToCategoryMap[post.type] || "Farm Progress",
@@ -335,9 +337,9 @@ async function loadPublicForumSnapshot() {
       comments: commentsByPost.get(post.id) || [],
       tags: normalizeTags(post.tags),
       createdAt: post.created_at ? new Date(post.created_at).toISOString().split("T")[0] : "2024-01-01",
-    })) : DEFAULT_SHOWCASE_POSTS;
+    }));
 
-    const mappedListings = listings.length > 0 ? listings.map((listing: any) => ({
+    const mappedListings = listings.map((listing: any) => ({
       id: listing.id,
       author: toFarmer(listing),
       commodity: listing.commodity,
@@ -350,25 +352,23 @@ async function loadPublicForumSnapshot() {
       phone: listing.contact_phone || listing.farmer_phone || "",
       status: listing.status === "sold" ? "sold" : "available",
       createdAt: listing.created_at ? new Date(listing.created_at).toISOString().split("T")[0] : "2024-01-01",
-    })) : DEFAULT_SOKO_LISTINGS;
+    }));
 
-    const mappedPulse = pulse.length > 0 ? pulse.map((item: any) => ({
+    const mappedPulse = pulse.map((item: any) => ({
       id: item.id,
       title: item.title,
       content: item.body,
       category: item.category || "Agronomy Alert",
       source: item.source_url,
       date: item.published_at ? new Date(item.published_at).toISOString().split("T")[0] : "2024-01-01",
-    })) : DEFAULT_PULSE_POSTS;
+    }));
 
     const isMockUser = (r: any) =>
       /wanjiku|mutiso|samuel_kirwa|nduku|@mqulima_wanjiku|@mqulima_mutiso|@mqulima_samuel|@mqulima_nduku|@mqulima_kiprono$/i.test(r?.username || "") ||
       /Mary Wanjiku|Grace Mutiso|Samuel Kirwa|Catherine Nduku|David Kiprono/i.test(r?.full_name || r?.name || "");
 
     const filteredSuggested = (suggestedProfiles || []).filter((p: any) => !isMockUser(p));
-    const mappedSuggested = filteredSuggested.length > 0 
-      ? filteredSuggested.map(toFarmer) 
-      : DEFAULT_SUGGESTED_FARMERS;
+    const mappedSuggested = filteredSuggested.map(toFarmer);
 
     return {
       showPosts: mappedPosts,

@@ -319,8 +319,8 @@ function mapSnapshotToPosts(showPosts: any[]): CommunityPost[] {
     return {
       id: sp.id,
       author: authorRecord,
-      title: sp.title || "Farm update",
-      body: sp.body,
+      title: sp.title || "",
+      body: sp.body || "",
       category: (sp.category || "Farm Progress") as any,
       images: sp.images || [],
       likes: sp.likes || 0,
@@ -524,6 +524,8 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       localStorage.removeItem("mqulima_community_cached_snapshot_v2");
       localStorage.removeItem("mqulima_community_cached_snapshot_v3");
       localStorage.removeItem("mqulima_community_cached_snapshot_v4");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v5");
+      localStorage.removeItem("mqulima_community_cached_snapshot_v6");
     } catch {}
 
     const isMock = (f: any) =>
@@ -569,18 +571,18 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
       }
       setCommunityDataSource("database");
 
-      // Save fresh server snapshot to localStorage v5
+      // Save fresh server snapshot to localStorage v6
       try {
         const sanitizedSnapshot = {
           ...initialSnapshot,
           suggestedFarmers: sanitizedSuggested
         };
-        localStorage.setItem("mqulima_community_cached_snapshot_v5", JSON.stringify(sanitizedSnapshot));
+        localStorage.setItem("mqulima_community_cached_snapshot_v6", JSON.stringify(sanitizedSnapshot));
       } catch {}
     } else {
       // If server returned empty, safely restore from client cache after mount
       try {
-        const raw = localStorage.getItem("mqulima_community_cached_snapshot_v5");
+        const raw = localStorage.getItem("mqulima_community_cached_snapshot_v6");
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.showPosts) && parsed.showPosts.length > 0) {
@@ -962,8 +964,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
         }
         setCommunityDataSource("database");
         try {
-          localStorage.setItem("mqulima_community_cached_snapshot", JSON.stringify(snapshot));
-          localStorage.setItem("mqulima_community_cached_snapshot_v5", JSON.stringify(snapshot));
+          localStorage.setItem("mqulima_community_cached_snapshot_v6", JSON.stringify(snapshot));
         } catch {}
         try {
           router.invalidate();
@@ -5421,7 +5422,7 @@ function ForumSubdomainPage({ initialSnapshot }: { initialSnapshot?: any }) {
               </div>
               
               <div className="space-y-3">
-                {farmers.filter(f => f.username !== currentUser?.username).slice(0, 5).map((f) => (
+                {farmers.map((f) => (
                   <div key={f.username} className="flex gap-2.5 items-center justify-between group">
                     <button 
                       onClick={() => setSelectedProfileUsername(f.username)}

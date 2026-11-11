@@ -2,7 +2,18 @@ import { handleAuthRegister, handleAuthLogin, handleAuthMe, handleUpdateProfile 
 import { handleListProducts, handleFeaturedProducts, handleGetProduct, handleGetCategories, handleGetProductsByIds } from "./products";
 import { handleCreateOrder, handleGetMyOrders } from "./orders";
 import { handleMpesaStkPush, handlePaymentStatus, handlePaystackInitialize, handlePaystackVerify } from "./payments";
-import { handleForumFeed, handleCreatePost, handleGetPost, handleAddComment, handleToggleLike, handleBookmarkPost } from "./forum";
+import {
+  handleForumFeed,
+  handleCreatePost,
+  handleGetPost,
+  handleAddComment,
+  handleToggleLike,
+  handleBookmarkPost,
+  handleCreateSokoListing,
+  handleSubmitConsultation,
+  handleGetDirectMessages,
+  handleSendDirectMessage,
+} from "./forum";
 import { handleListNews, handleGetNewsArticle } from "./news";
 import { handleListCourses, handleGetCourse, handleAcademyWaitlist } from "./academy";
 import { handleListServices, handleServiceBooking } from "./services";
@@ -95,6 +106,18 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
     if ((path === "/api/v1/forum/feed" || path === "/api/v1/threads/feed" || path === "/api/v1/threads") && method === "GET") {
       return await handleForumFeed(request, url);
     }
+    if ((path === "/api/v1/forum/soko" || path === "/api/v1/soko") && method === "POST") {
+      return await handleCreateSokoListing(request);
+    }
+    if ((path === "/api/v1/forum/consult" || path === "/api/v1/consult") && method === "POST") {
+      return await handleSubmitConsultation(request);
+    }
+    if ((path === "/api/v1/forum/messages" || path === "/api/v1/messages") && method === "GET") {
+      return await handleGetDirectMessages(request, url);
+    }
+    if ((path === "/api/v1/forum/messages" || path === "/api/v1/messages") && method === "POST") {
+      return await handleSendDirectMessage(request);
+    }
     if ((path === "/api/v1/forum/posts" || path === "/api/v1/threads") && method === "POST") {
       return await handleCreatePost(request);
     }
@@ -107,8 +130,16 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
       return await handleToggleLike(decodeURIComponent(postLikeMatch[1]), request);
     }
     const postBookmarkMatch = path.match(/^\/api\/v1\/(?:forum\/posts|threads)\/([^/]+)\/bookmark$/);
-    if (postBookmarkMatch && method === "POST") {
+    if (postBookmarkMatch && (method === "POST" || method === "PUT")) {
       return await handleBookmarkPost(decodeURIComponent(postBookmarkMatch[1]), request);
+    }
+    const postResolvedMatch = path.match(/^\/api\/v1\/(?:forum\/posts|threads)\/([^/]+)\/resolved$/);
+    if (postResolvedMatch && (method === "POST" || method === "PUT")) {
+      const body = await request.json().catch(() => ({}));
+      return new Response(JSON.stringify({ resolved: Boolean(body.resolved) }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     const postDetailMatch = path.match(/^\/api\/v1\/(?:forum\/posts|threads)\/([^/]+)$/);
     if (postDetailMatch && method === "GET") {
