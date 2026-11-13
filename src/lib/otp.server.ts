@@ -22,7 +22,10 @@ export function generateSecureOtp(): string {
  * Plaintext OTP codes must NEVER be stored in the database.
  */
 export function hashOtp(otp: string, secret?: string): string {
-  const appSecret = secret || getServerConfig().JWT_SECRET || "mqulima-otp-default-secret";
+  const appSecret = (secret || getServerConfig().JWT_SECRET || process.env.JWT_SECRET || "").trim();
+  if (!appSecret) {
+    throw new Error("JWT_SECRET is not configured for OTP hashing");
+  }
   return crypto
     .createHmac("sha256", appSecret)
     .update(otp.trim())

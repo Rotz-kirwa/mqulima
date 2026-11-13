@@ -32,8 +32,7 @@ export class PaystackService {
 
     try {
       const config = getServerConfig();
-      const fallback = Buffer.from("c2tfbGl2ZV9mMGFhZTNhNjBlNzVjY2ExNDY2ZWI5ZTlmMmVjODIyNjA4NDAwYTdk", "base64").toString("utf-8");
-      const secretKey = config.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY || fallback;
+      const secretKey = (config.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY || "").trim();
 
       if (!secretKey) {
         console.error("[PAYSTACK WEBHOOK SECURITY FATAL] PAYSTACK_SECRET_KEY missing for webhook verification.");

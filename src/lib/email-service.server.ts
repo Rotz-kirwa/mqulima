@@ -62,25 +62,35 @@ export function resetMailTransporter(): void {
   globalThis.__mq_nodemailer_transporter_key__ = undefined;
 }
 
+function resolveSmtpCredentials() {
+  const config = getServerConfig() as any;
+  const host = (config.SMTP_HOST || process.env.SMTP_HOST || "").trim();
+  const port = Number(config.SMTP_PORT || process.env.SMTP_PORT) || 465;
+  const user = (config.SMTP_USER || process.env.SMTP_USER || "").trim();
+  const pass = (config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "").trim();
+  const secure = config.SMTP_SECURE ?? (port === 465);
+  const isMockMode = Boolean(config.SMTP_MOCK || config.NODE_ENV === "test");
+  const isConfigured = Boolean(host && user && pass);
+  return { config, host, port, user, pass, secure, isMockMode, isConfigured };
+}
+
 /**
- * Creates or reuses a singleton Nodemailer transporter configured for Hostinger SMTP.
+ * Creates or reuses a singleton Nodemailer transporter configured from environment SMTP credentials.
  */
 export function getMailTransporter(): Transporter | null {
-  const config = getServerConfig() as any;
-  const host = config.SMTP_HOST || process.env.SMTP_HOST || "smtp.hostinger.com";
-  const port = Number(config.SMTP_PORT || process.env.SMTP_PORT) || 465;
-  const user = config.SMTP_USER || process.env.SMTP_USER || "mqulima@mqulima.com";
-  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
-  const secure = config.SMTP_SECURE ?? (port === 465);
+  const { config, host, port, user, pass, secure, isMockMode, isConfigured } = resolveSmtpCredentials();
+
+  if (!isConfigured) {
+    if (!isMockMode) {
+      console.error("[EMAIL SERVICE] SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not configured.");
+    }
+    return null;
+  }
 
   const currentKey = `${host}:${port}:${user}:${pass ? "auth" : "no_auth"}`;
 
   if (globalThis.__mq_nodemailer_transporter__ && globalThis.__mq_nodemailer_transporter_key__ === currentKey) {
     return globalThis.__mq_nodemailer_transporter__;
-  }
-
-  if (!pass && !config.SMTP_MOCK && config.NODE_ENV !== "test") {
-    console.warn("[EMAIL SERVICE] SMTP_PASSWORD is not configured. Email dispatches will operate in simulated fallback mode.");
   }
 
   const transporter = nodemailer.createTransport({
@@ -266,14 +276,8 @@ export async function sendVerificationOtpEmail(
     return { success: false, error: "Invalid 6-digit OTP code supplied" };
   }
 
-  const config = getServerConfig();
-  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
-  const isMockMode =
-    config.SMTP_MOCK ||
-    config.NODE_ENV === "test" ||
-    !pass;
-
-  const senderAddress = `Mqulima <${config.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const { user, isMockMode, isConfigured } = resolveSmtpCredentials();
+  const senderAddress = `Mqulima <${user || "noreply@mqulima.com"}>`;
   const subject = "Verify your Mqulima account";
 
   if (isMockMode) {
@@ -285,6 +289,10 @@ export async function sendVerificationOtpEmail(
       mocked: true,
       messageId: `mock_email_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
     };
+  }
+
+  if (!isConfigured) {
+    return { success: false, error: "SMTP credentials are not configured in environment" };
   }
 
   try {
@@ -621,14 +629,8 @@ export async function sendServiceBookingConfirmationEmail(
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  const config = getServerConfig() as any;
-  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
-  const isMockMode =
-    config.SMTP_MOCK ||
-    config.NODE_ENV === "test" ||
-    !pass;
-
-  const senderAddress = `Mqulima Hub <${config.SMTP_USER || process.env.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const { user, isMockMode, isConfigured } = resolveSmtpCredentials();
+  const senderAddress = `Mqulima Hub <${user || "noreply@mqulima.com"}>`;
   const subject = `Service Booking Confirmed: ${subserviceName} [Ref: ${reference}]`;
 
   if (isMockMode) {
@@ -639,6 +641,10 @@ export async function sendServiceBookingConfirmationEmail(
       mocked: true,
       messageId: `mock_booking_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
     };
+  }
+
+  if (!isConfigured) {
+    return { success: false, error: "SMTP credentials are not configured in environment" };
   }
 
   try {
@@ -830,14 +836,8 @@ export async function sendPasswordRecoveryEmail(
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  const config = getServerConfig();
-  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
-  const isMockMode =
-    config.SMTP_MOCK ||
-    config.NODE_ENV === "test" ||
-    !pass;
-
-  const senderAddress = `Mqulima Security <${config.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const { user, isMockMode, isConfigured } = resolveSmtpCredentials();
+  const senderAddress = `Mqulima Security <${user || "noreply@mqulima.com"}>`;
   const subject = "Your Mqulima password recovery code and sign-in link";
 
   if (isMockMode) {
@@ -848,6 +848,10 @@ export async function sendPasswordRecoveryEmail(
       mocked: true,
       messageId: `mock_recovery_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
     };
+  }
+
+  if (!isConfigured) {
+    return { success: false, error: "SMTP credentials are not configured in environment" };
   }
 
   try {
@@ -899,11 +903,8 @@ export async function sendRecoverySecurityNoticeEmail(params: {
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  const config = getServerConfig();
-  const pass = config.SMTP_PASSWORD || process.env.SMTP_PASSWORD || "Mqulima@2026";
-  const isMockMode = config.SMTP_MOCK || config.NODE_ENV === "test" || !pass;
-
-  const senderAddress = `Mqulima Security <${config.SMTP_USER || "mqulima@mqulima.com"}>`;
+  const { user, isMockMode, isConfigured } = resolveSmtpCredentials();
+  const senderAddress = `Mqulima Security <${user || "noreply@mqulima.com"}>`;
   const subject = "Security Alert: Your Mqulima account was accessed via password recovery";
 
   const greeting = recipientName ? `Hello ${recipientName},` : "Hello,";
@@ -940,6 +941,10 @@ Mqulima Security Team`;
 
   if (isMockMode) {
     return { success: true, mocked: true, messageId: `mock_notice_${Date.now()}` };
+  }
+
+  if (!isConfigured) {
+    return { success: false, error: "SMTP credentials are not configured in environment" };
   }
 
   try {

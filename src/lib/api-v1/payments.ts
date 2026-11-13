@@ -82,8 +82,14 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       );
     }
 
-    const shortcode = (process.env.MPESA_SHORTCODE || "4183765").trim();
+    const shortcode = (process.env.MPESA_SHORTCODE || "").trim();
     const passkey = (process.env.MPESA_PASSKEY || "").trim();
+    if (!shortcode || !passkey) {
+      return new Response(
+        JSON.stringify({ success: false, error: "M-Pesa payment configuration is incomplete" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
     const amount = Math.max(1, Math.ceil(parseFloat(order.total)));
 
     const now = new Date();

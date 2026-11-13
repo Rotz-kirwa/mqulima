@@ -94,13 +94,19 @@ function isOriginAllowed(origin: string): boolean {
   if (!origin) return false;
   const normalized = origin.replace(/\/$/, "");
   if (ALLOWED_ORIGINS.includes(normalized)) return true;
-  // Allow any mqulimaadmin or mqulima domain (e.g. www.mqulimaadmin.org, admin.mqulima.com, etc.)
-  if (/^https?:\/\/([a-zA-Z0-9_-]+\.)*(mqulimaadmin\.org|mqulimaadmin\.[a-z]{2,}|mqulima\.com|mqulima\.co.ke|mqulima\.org)$/i.test(normalized)) return true;
-  // Allow any Render or Vercel preview/production deployment
-  if (/^https:\/\/[a-zA-Z0-9_-]+\.onrender\.com$/.test(normalized)) return true;
-  if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(normalized)) return true;
-  if (/^http:\/\/localhost(:[0-9]+)?$/.test(normalized)) return true;
-  if (/^http:\/\/127\.0\.0\.1(:[0-9]+)?$/.test(normalized)) return true;
+  // Allow Mqulima-owned first-party domains
+  if (/^https?:\/\/([a-zA-Z0-9_-]+\.)*(mqulimaadmin\.org|mqulima\.com|mqulima\.co\.ke|mqulima\.org)$/i.test(normalized)) return true;
+  if (process.env.VERCEL_ENV === "preview") {
+    const previewHosts = [process.env.VERCEL_URL || "", process.env.VERCEL_BRANCH_URL || ""]
+      .map((h) => h.trim())
+      .filter(Boolean)
+      .map((h) => (h.startsWith("http") ? h : `https://${h}`));
+    if (previewHosts.includes(normalized)) return true;
+  }
+  if (process.env.NODE_ENV !== "production") {
+    if (/^http:\/\/localhost(:[0-9]+)?$/.test(normalized)) return true;
+    if (/^http:\/\/127\.0\.0\.1(:[0-9]+)?$/.test(normalized)) return true;
+  }
   return false;
 }
 
@@ -110,21 +116,11 @@ export default {
     const requestStart = performance.now();
     const url = new URL(request.url);
 
-    // Intercept mobile API v1 routes directly for instant execution without SSR overhead
+    // Intercept mobile API v1 routes directly for instant execution without SSR overhead.
+    // Strict CORS headers are enforced exclusively by cors.ts inside handleApiV1Request.
     if (url.pathname.startsWith("/api/v1/") || url.pathname === "/api/v1") {
       const { handleApiV1Request } = await import("./lib/api-v1/router");
-      const res = await handleApiV1Request(request, url);
-      const origin = request.headers.get("origin") || "";
-      const headers = new Headers(res.headers);
-      headers.set("Access-Control-Allow-Origin", origin || "*");
-      headers.set("Access-Control-Allow-Credentials", "true");
-      headers.set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH");
-      headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Cache-Control, Accept, Range");
-      return new Response(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-      });
+      return handleApiV1Request(request, url);
     }
     if (url.pathname === "/favicon.ico") {
       try {

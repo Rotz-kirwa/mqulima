@@ -2,6 +2,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "https://www.mqulima.com",
   "https://mqulima.com",
   "https://admin.mqulima.com",
+  "https://www.mqulimaadmin.org",
+  "https://mqulimaadmin.org",
   "https://mqulima.onrender.com",
 ];
 

@@ -166,13 +166,18 @@ export async function sendSms(options: SendSmsOptions): Promise<SendSmsResult> {
     return sendAfricasTalkingSms(`+${normalizedPhone}`, message, triggerType);
   }
 
-  const apiKey = process.env.TEXTSMS_API_KEY || "82b5401f7d2d708f19d78f405cb4acab";
-  const partnerId = process.env.TEXTSMS_PARTNER_ID || "16948";
-  const senderId = process.env.TEXTSMS_SENDER_ID || "KIRGIT_AGRI";
+  const apiKey = (process.env.TEXTSMS_API_KEY || "").trim();
+  const partnerId = (process.env.TEXTSMS_PARTNER_ID || "").trim();
+  const senderId = (process.env.TEXTSMS_SENDER_ID || "").trim();
   const apiUrl = process.env.TEXTSMS_API_URL || "https://sms.textsms.co.ke/api/services/sendsms/";
 
-  if (!apiKey || apiKey === "your_textsms_api_key_here") {
-    const errorMsg = "TEXTSMS_API_KEY is not configured in environment";
+  if (
+    !apiKey ||
+    apiKey === "your_textsms_api_key_here" ||
+    !partnerId ||
+    !senderId
+  ) {
+    const errorMsg = "TEXTSMS_API_KEY, TEXTSMS_PARTNER_ID, and TEXTSMS_SENDER_ID must be configured in environment";
     console.error("[SMS SERVICE] Error:", errorMsg);
     const result = { success: false, error: errorMsg };
     await logSmsAttempt(normalizedPhone, message, triggerType, "failed", result);

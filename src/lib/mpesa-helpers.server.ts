@@ -315,9 +315,9 @@ export async function queryMpesaStkStatus(checkoutRequestId: string): Promise<{
   merchantRequestId?: string;
 } | null> {
   try {
-    const shortcode = (process.env.MPESA_SHORTCODE || "4183765").trim();
+    const shortcode = (process.env.MPESA_SHORTCODE || "").trim();
     const passkey = (process.env.MPESA_PASSKEY || "").trim();
-    if (!passkey || !checkoutRequestId) return null;
+    if (!shortcode || !passkey || !checkoutRequestId) return null;
 
     const now = new Date();
     const timestamp =

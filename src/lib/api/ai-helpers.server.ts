@@ -64,7 +64,8 @@ export async function getAuthUserFromRequest(request: Request) {
     const { jwtVerify } = await import("jose");
     const { getServerConfig } = await import("../config.server");
     const config = getServerConfig();
-    const secretKey = config.JWT_SECRET || process.env.JWT_SECRET || "mqulima_jwt_production_secret_key_2026_secure_auth_99";
+    const secretKey = (config.JWT_SECRET || process.env.JWT_SECRET || "").trim();
+    if (!secretKey) return null;
     const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jwtVerify(token, secret);
     const userId = (payload.sub || payload.id) as string;

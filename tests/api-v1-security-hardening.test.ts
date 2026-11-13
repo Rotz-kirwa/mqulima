@@ -418,7 +418,12 @@ vi.mock("../src/lib/audit.server", () => ({
   writeAuditLog: async () => {},
 }));
 
+vi.mock("../src/jobs/productSync.job", () => ({
+  initProductSyncJob: () => {},
+}));
+
 import { handleApiV1Request } from "../src/lib/api-v1/router";
+import server from "../src/server";
 import { signUserToken } from "../src/lib/api-v1/auth-helper";
 import { handleMpesaCallback, getMpesaWebhookSecret } from "../src/lib/mpesa-helpers.server";
 import { PaystackService } from "../src/lib/payments/providers/paystack/paystack.service";
@@ -574,6 +579,86 @@ describe("API v1 Production Security Hardening Regressions", () => {
         if (prevBranchUrl === undefined) delete process.env.VERCEL_BRANCH_URL;
         else process.env.VERCEL_BRANCH_URL = prevBranchUrl;
       }
+    });
+
+    it("enforces strict CORS through top-level server.fetch for allowed, unauthorized, and credentialed requests", async () => {
+      const meUrl = "https://www.mqulima.com/api/v1/auth/me";
+      const farmerToken = await signUserToken("11111111-1111-4111-8111-111111111111", "farmer@mqulima.com", "farmer");
+
+      for (const allowedOrigin of ["https://www.mqulima.com", "https://www.mqulimaadmin.org"]) {
+        const preflight = await server.fetch(
+          new Request(meUrl, {
+            method: "OPTIONS",
+            headers: { Origin: allowedOrigin },
+          }),
+          {},
+          {}
+        );
+        expect(preflight.status).toBe(204);
+        expect(preflight.headers.get("Access-Control-Allow-Origin")).toBe(allowedOrigin);
+        expect(preflight.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+
+        const credGet = await server.fetch(
+          new Request(meUrl, {
+            method: "GET",
+            headers: {
+              Origin: allowedOrigin,
+              Cookie: `mq_session=${farmerToken}`,
+            },
+          }),
+          {},
+          {}
+        );
+        expect(credGet.status).toBe(200);
+        expect(credGet.headers.get("Access-Control-Allow-Origin")).toBe(allowedOrigin);
+        expect(credGet.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+      }
+
+      for (const evilOrigin of [
+        "https://evil.example.com",
+        "https://mqulima-attacker.vercel.app",
+        "https://mqulima-clone.onrender.com",
+      ]) {
+        const blockedPreflight = await server.fetch(
+          new Request(meUrl, {
+            method: "OPTIONS",
+            headers: { Origin: evilOrigin },
+          }),
+          {},
+          {}
+        );
+        expect(blockedPreflight.status).toBe(403);
+        expect(blockedPreflight.headers.get("Access-Control-Allow-Origin")).toBeNull();
+        expect(blockedPreflight.headers.get("Access-Control-Allow-Credentials")).toBeNull();
+
+        const blockedCredGet = await server.fetch(
+          new Request(meUrl, {
+            method: "GET",
+            headers: {
+              Origin: evilOrigin,
+              Cookie: `mq_session=${farmerToken}`,
+            },
+          }),
+          {},
+          {}
+        );
+        expect(blockedCredGet.status).toBe(200);
+        expect(blockedCredGet.headers.get("Access-Control-Allow-Origin")).toBeNull();
+        expect(blockedCredGet.headers.get("Access-Control-Allow-Credentials")).toBeNull();
+      }
+
+      // Native mobile client request without Origin header must never receive wildcard or credentials headers
+      const nativeGet = await server.fetch(
+        new Request(meUrl, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${farmerToken}` },
+        }),
+        {},
+        {}
+      );
+      expect(nativeGet.status).toBe(200);
+      expect(nativeGet.headers.get("Access-Control-Allow-Origin")).toBeNull();
+      expect(nativeGet.headers.get("Access-Control-Allow-Credentials")).toBeNull();
     });
   });
 
