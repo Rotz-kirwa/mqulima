@@ -16,6 +16,8 @@ export interface BuildOrderSmsParams {
   customerName?: string | null;
   paymentRef?: string | null;
   channel?: "website" | "whatsapp";
+  paymentMethod?: string;
+  isPaid?: boolean;
 }
 
 export interface SendOrderConfirmedSmsParams extends BuildOrderSmsParams {
@@ -50,6 +52,10 @@ export function buildOrderSmsMessage(params: BuildOrderSmsParams): string {
     return `${greeting}your Mqulima WhatsApp order #${shortOrderId} has been received! Items: ${itemsSummary}. Total: ${totalStr}. Our team will contact you shortly to coordinate delivery. - Mqulima`;
   }
 
+  if (params.paymentMethod === "manual" || params.isPaid === false) {
+    return `${greeting}your Mqulima order #${shortOrderId} has been received (Pay on Delivery)! Items: ${itemsSummary}. Amount due on delivery: ${totalStr}. - Mqulima`;
+  }
+
   const refSnippet = params.paymentRef ? ` (Ref: ${params.paymentRef})` : "";
   return `${greeting}payment confirmed for Mqulima order #${shortOrderId}! Items: ${itemsSummary}. Total Paid: ${totalStr}${refSnippet}. We are preparing your shipment! - Mqulima`;
 }
@@ -65,7 +71,10 @@ export async function sendOrderConfirmedSms(params: SendOrderConfirmedSmsParams)
     }
 
     const message = buildOrderSmsMessage(params);
-    const triggerType = params.channel === "whatsapp" ? "order_confirmation" : "payment_confirmed";
+    const triggerType =
+      params.channel === "whatsapp" || params.paymentMethod === "manual" || params.isPaid === false
+        ? "order_confirmation"
+        : "payment_confirmed";
 
     await sendSms({
       phoneNumber: params.phoneNumber,

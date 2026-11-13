@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/admin/inquiries")({
 
           // 3. Fetch Service Requests
           const services = await sql`
-            SELECT id, reference, contact_name, contact_phone, subservice_name, location, status, notes, created_at
+            SELECT id, reference, contact_name, contact_phone, contact_email, subservice_name, location, status, notes, created_at
             FROM service_requests
             ORDER BY created_at DESC
           `;
@@ -148,7 +148,7 @@ export const Route = createFileRoute("/api/admin/inquiries")({
               sourceTable: "service_requests",
               ticketNo: s.reference || `SERV-300${idx + 1}`,
               customerName: s.contact_name || "Farmer Client",
-              customerEmail: "farmer@mkulima.co.ke",
+              customerEmail: s.contact_email || "farmer@mkulima.co.ke",
               customerPhone: s.contact_phone || "+254 723 346 134",
               title: `${s.subservice_name || "Agronomy Service"} Advisory`,
               category: "Service Request",

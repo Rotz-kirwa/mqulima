@@ -78,12 +78,13 @@ export async function handleAuthRegister(request: Request): Promise<Response> {
     } = parseResult.data;
 
     // Use dual-table insertion logic with welcome SMS dispatch
+    const cleanNationalId = nationalId?.trim();
     const res = await performSignUp({
       firstName,
       lastName,
       email,
       phoneNumber,
-      nationalId: nationalId || "N/A",
+      nationalId: cleanNationalId && cleanNationalId.toUpperCase() !== "N/A" ? cleanNationalId : undefined,
       county,
       deliveryLocation,
       farmingType,

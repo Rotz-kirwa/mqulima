@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getCurrentUser } from "../auth-server";
 import { RBACService, SecurityUserContext, UserRole } from "../rbac.server";
-import { getDb } from "../db.server";
+import { getDb, withDbRetry } from "../db.server";
 import { logAdminAction } from "../audit.server";
 
 const AssignActionSchema = z.object({
@@ -49,15 +49,14 @@ export const adminGetServiceRequests = createServerFn({ method: "GET" })
   .handler(async () => {
     await assertAdminAccess("services:read");
 
-    const sql = getDb();
-
-    const list = await sql`
+    const list = await withDbRetry(async (sql) => sql`
       SELECT 
         sr.id,
         sr.reference,
         sr.status,
         sr.contact_name,
         sr.contact_phone,
+        sr.contact_email,
         sr.location,
         sr.subservice_name,
         sr.farm_scale,
@@ -78,15 +77,15 @@ export const adminGetServiceRequests = createServerFn({ method: "GET" })
       LEFT JOIN profiles e ON sr.assigned_expert_id = e.id
       ORDER BY sr.created_at DESC
       LIMIT 100
-    `;
+    `);
 
-    return list.map((s: any) => ({
+    return (list as any[]).map((s: any) => ({
       id: s.id,
       referenceCode: s.reference || `SRV-${String(s.id).slice(0, 6).toUpperCase()}`,
       serviceType: s.subservice_name || s.service_category_name || "Agronomy Service",
       fullName: s.contact_name || s.user_full_name || "Guest Farmer",
       phone: s.contact_phone || s.user_phone || "N/A",
-      email: s.user_email || "N/A",
+      email: s.contact_email || s.user_email || "N/A",
       county: s.location || "Kenya",
       farmScale: s.farm_scale || "Standard",
       assignedTechnician: s.expert_name || (s.assigned_expert_id ? "Assigned Expert" : null),

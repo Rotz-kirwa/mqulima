@@ -107,7 +107,7 @@ export const Route = createFileRoute("/api/admin/services")({
                 serviceType: s.subserviceName || "Agronomy Advisory",
                 fullName: s.contactName || userFullName || "Guest Farmer",
                 phone: s.contactPhone || userPhone || "N/A",
-                email: userEmail || "Guest / Direct Order",
+                email: s.contactEmail || userEmail || "Guest / Direct Order",
                 county: s.location || userCounty || "Kenya",
                 farmScale: s.farmScale || "Standard Scale",
                 scheduledDate: s.scheduledDate,

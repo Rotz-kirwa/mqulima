@@ -112,7 +112,7 @@ export function useWeather(defaultCounty: CountyName = "Nairobi"): UseWeatherSta
   // AbortController ref — cancelled on each new location change
   const abortRef = useRef<AbortController | null>(null);
 
-  const doFetch = useCallback(async (loc: WeatherLocation) => {
+  const doFetch = useCallback(async (loc: WeatherLocation, forceRefresh = false) => {
     // Cancel any in-flight request
     abortRef.current?.abort();
     const ctrl = new AbortController();
@@ -124,7 +124,7 @@ export function useWeather(defaultCounty: CountyName = "Nairobi"): UseWeatherSta
     const coords = resolveCoords(loc);
 
     try {
-      const vm = await fetchWeather({ data: coords });
+      const vm = await fetchWeather({ data: { ...coords, forceRefresh } });
       if (ctrl.signal.aborted) return; // location changed mid-flight
       setData(vm);
       setLastFetchedAt(vm.fetchedAt);
@@ -177,7 +177,7 @@ export function useWeather(defaultCounty: CountyName = "Nairobi"): UseWeatherSta
   }, []);
 
   const refresh = useCallback(() => {
-    doFetch(location);
+    doFetch(location, true);
   }, [location, doFetch]);
 
   return {

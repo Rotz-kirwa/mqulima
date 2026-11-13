@@ -116,7 +116,13 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           ${authoritativeSubtotal},
           ${authoritativeTotal},
           'pending',
-          ${paymentMethod === "card" || paymentMethod === "paystack" ? "paystack" : "mpesa"},
+          ${
+            paymentMethod === "manual"
+              ? "mpesa"
+              : paymentMethod === "airtel" || paymentMethod === "airtel_money"
+              ? "airtel_money"
+              : "paystack"
+          },
           'pending',
           ${deliveryAddress},
           'website',
@@ -133,24 +139,25 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           INSERT INTO order_items (
             order_id,
             product_id,
+            product_name,
             quantity,
-            unit_price,
-            total_price
+            unit_price
           )
           VALUES (
             ${orderId},
             ${item.productId},
+            ${item.name},
             ${item.qty},
-            ${item.price},
-            ${item.lineTotal}
+            ${item.price}
           )
         `;
       }
     });
 
-    // Fire confirmation SMS via TextSMS Kenya in background
+    // Only dispatch order-received SMS upfront for Pay on Delivery (manual).
+    // M-Pesa and Paystack confirmation SMS MUST ONLY fire after verified payment callback/webhook.
     const customerPhone = phone || user.phone;
-    if (customerPhone) {
+    if (customerPhone && paymentMethod === "manual") {
       sendOrderConfirmedSms({
         orderId,
         total: finalTotal,
@@ -162,7 +169,9 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
         })),
         customerName: name || user.name,
         phoneNumber: customerPhone,
-      }).catch((e) => console.warn("[ORDER CONFIRMED SMS ERROR]:", e));
+        paymentMethod: "manual",
+        isPaid: false,
+      }).catch((e) => console.warn("[ORDER RECEIVED SMS ERROR]:", e));
     }
 
     return new Response(
@@ -174,7 +183,7 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           subtotal: finalSubtotal,
           delivery: finalSubtotal >= 5000 ? 0 : 300,
           total: finalTotal,
-          status: "Processing",
+          status: paymentMethod === "manual" ? "Processing" : "Pending Payment",
           paymentStatus: "Pending",
           paymentMethod,
           items: savedItems,
@@ -193,6 +202,17 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
       { status: 409, headers: { "Content-Type": "application/json" } }
     );
   }
+}
+
+function parseOrderAddress(deliveryAddress?: string | null): { county: string; location: string } {
+  const raw = String(deliveryAddress || "");
+  const countyMatch = raw.match(/^County:\s*(.+)$/im);
+  const subcountyMatch = raw.match(/^Sub-County\/Town:\s*(.+)$/im);
+  const locationMatch = raw.match(/^Location:\s*(.+)$/im);
+  return {
+    county: countyMatch?.[1]?.trim() || "Kenya",
+    location: locationMatch?.[1]?.trim() || subcountyMatch?.[1]?.trim() || (raw ? "Delivery" : "Service Booking"),
+  };
 }
 
 export async function handleGetMyOrders(request: Request): Promise<Response> {
@@ -218,19 +238,32 @@ export async function handleGetMyOrders(request: Request): Promise<Response> {
       LIMIT 100
     `;
 
-    const orders = rows.map((r: any) => ({
-      id: r.id,
-      date: r.created_at,
-      subtotal: Number(r.subtotal) || 0,
-      delivery: Math.max(0, (Number(r.total) || 0) - (Number(r.subtotal) || 0)),
-      total: Number(r.total) || 0,
-      status: r.status,
-      paymentStatus: r.payment_status,
-      paymentMethod: r.payment_method,
-      items: typeof r.items === "string" ? JSON.parse(r.items) : (r.items || []),
-      deliveryAddress: r.delivery_address,
-      receiptNumber: r.mpesaReceipt || null,
-    }));
+    const orders = rows.map((r: any) => {
+      const rawItems = typeof r.items === "string" ? JSON.parse(r.items) : (r.items || []);
+      const normalizedItems = (Array.isArray(rawItems) ? rawItems : []).map((it: any, idx: number) => ({
+        ...it,
+        key: it.key || `${it.productId || it.id || "item"}::${it.variant || ""}::${idx}`,
+        productId: it.productId || it.id || "",
+        qty: Number(it.qty ?? it.quantity ?? 1) || 1,
+        price: Number(it.price ?? 0) || 0,
+      }));
+      const addr = parseOrderAddress(r.delivery_address);
+      return {
+        id: r.id,
+        date: r.created_at,
+        subtotal: Number(r.subtotal) || 0,
+        delivery: Math.max(0, (Number(r.total) || 0) - (Number(r.subtotal) || 0)),
+        total: Number(r.total) || 0,
+        status: r.status,
+        paymentStatus: r.payment_status,
+        paymentMethod: r.payment_method,
+        county: addr.county,
+        location: addr.location,
+        items: normalizedItems,
+        deliveryAddress: r.delivery_address,
+        receiptNumber: r.mpesaReceipt || null,
+      };
+    });
 
     return new Response(JSON.stringify(orders), {
       status: 200,

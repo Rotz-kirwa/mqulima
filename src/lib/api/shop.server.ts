@@ -84,7 +84,7 @@ export function resolveFastProductImage(p: any): string {
 
   const firstImg = images[0] || "";
 
-  // PRIORITY 1: Valid POS-uploaded image
+  // PRIORITY 1: Valid POS-uploaded or curated local product image
   const isPosUpload =
     firstImg &&
     typeof firstImg === "string" &&
@@ -93,7 +93,13 @@ export function resolveFastProductImage(p: any): string {
     !firstImg.includes("dummy") &&
     !firstImg.includes("unsplash") &&
     !firstImg.includes("pexels") &&
-    (firstImg.startsWith("https://") || firstImg.startsWith("http://") || firstImg.startsWith("/uploads/"));
+    !firstImg.includes("myagrovet.co.ke") &&
+    !firstImg.includes("pomais.com") &&
+    (firstImg.startsWith("https://") ||
+      firstImg.startsWith("http://") ||
+      firstImg.startsWith("/uploads/") ||
+      firstImg.startsWith("/images/products/") ||
+      firstImg.startsWith("/images/featured/"));
 
   if (isPosUpload) {
     return firstImg;
@@ -103,19 +109,67 @@ export function resolveFastProductImage(p: any): string {
 
   // PRIORITY 2: Exact trade-name verified photos (specific brand-to-image mapping)
   if (nameLower.includes("duduthrin")) {
-    return "/images/services/crop_production.webp";
+    return "/images/products/duduthrin.webp";
   }
   if (nameLower.includes("lambda")) {
     return "/images/products/lambda-cyhalothrin.webp";
+  }
+  if (nameLower.includes("belt 480") || nameLower.includes("belt expert")) {
+    return "/images/products/belt_480sc.webp";
+  }
+  if (nameLower.includes("chicken feed") || nameLower.includes("layer chicken") || nameLower.includes("layers mash")) {
+    return "/images/products/chicken_feed.webp";
+  }
+  if (nameLower.includes("dairy mash")) {
+    return "/images/products/dairy_mash.webp";
+  }
+  if (nameLower.includes("dairy meal")) {
+    return "/images/products/high_yield_dairy_meal.webp";
+  }
+  if (nameLower.includes("motorized") && nameLower.includes("knapsack")) {
+    return "/images/products/motorized_knapsack.webp";
+  }
+  if (nameLower.includes("knapsack") && !nameLower.includes("hand")) {
+    return "/images/products/knapsack_sprayer_20l.webp";
+  }
+  if (nameLower.includes("17:17:17") || nameLower.includes("17-17-17")) {
+    return "/images/products/yara_npk_17_17_17.webp";
+  }
+  if (nameLower.includes("20:20:20") || nameLower.includes("20-20-20")) {
+    return "/images/products/npk_20_20_20.webp";
+  }
+  if (nameLower.includes("seaweed")) {
+    return "/images/products/seaweed_growth_booster.webp";
+  }
+  if (nameLower.includes("feeder") && nameLower.includes("drinker")) {
+    return "/images/products/poultry_feeder_drinker.webp";
+  }
+  if (nameLower.includes("feeding trough") || nameLower.includes("poultry trough")) {
+    return "/images/products/poultry_feeding_trough.webp";
+  }
+  if (nameLower.includes("h614d")) {
+    return "/images/products/kenya_seed_h614d_maize.webp";
+  }
+  if (nameLower.includes("rosecoco")) {
+    return "/images/products/easeed_rosecoco_beans.webp";
+  }
+  if (nameLower.includes("duma 43")) {
+    return "/images/products/seed_co_sc_duma_43.webp";
+  }
+  if (nameLower.includes("red coach")) {
+    return "/images/products/greenlife_red_coach_f1_onion.webp";
+  }
+  if (nameLower.includes("baraka") && nameLower.includes("fertilizer")) {
+    return "/images/products/baraka_fertilizer_50kg.webp";
+  }
+  if (nameLower.includes("maclik") || nameLower.includes("macclick")) {
+    return "/images/products/maclik_super.webp";
   }
   if (nameLower.includes("pembe")) {
     return "/images/products/actellic-gold-dust.webp";
   }
   if (nameLower.includes("unga feed") || nameLower.includes("unga layer") || nameLower.includes("unga chick")) {
     return "/images/products/roundup-turbo.webp";
-  }
-  if (nameLower.includes("knapsack") && !nameLower.includes("hand")) {
-    return "/images/services/machinery_rental.webp";
   }
 
   // PRIORITY 3: Category-specific Mqulima internal placeholder

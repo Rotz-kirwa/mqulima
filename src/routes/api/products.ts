@@ -118,6 +118,7 @@ export const Route = createFileRoute("/api/products")({
           const andConditions = [
             sql`${products.deletedAt} IS NULL`,
             eq(products.status, "active"),
+            sql`${products.externalProductId} IS NOT NULL`,
           ];
 
           if (category && category !== "All") {

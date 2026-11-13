@@ -164,7 +164,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
             result_description = 'Payment confirmed via M-Pesa Daraja',
             completed_at = NOW(),
             updated_at = NOW(),
-            raw_payload = ${tx.json(payload)}
+            raw_payload = ${JSON.stringify(payload)}::jsonb
         WHERE id = ${currentPayment.id}
       `;
 
@@ -210,7 +210,12 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
       // Payment failed or cancelled by user
       await tx`
         UPDATE payments
-        SET status = 'failed', raw_payload = ${tx.json(payload)}
+        SET status = 'failed',
+            result_code = ${ResultCode !== undefined && ResultCode !== null ? String(ResultCode) : null},
+            result_description = ${ResultDesc || "Payment cancelled or failed"},
+            failure_reason = ${ResultDesc || "Payment cancelled or failed"},
+            updated_at = NOW(),
+            raw_payload = ${JSON.stringify(payload)}::jsonb
         WHERE id = ${currentPayment.id}
       `;
 
@@ -289,5 +294,72 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
       console.warn(`[M-PESA] Payment failed for checkout ID: ${CheckoutRequestID}. Code: ${ResultCode}, Desc: ${ResultDesc}`);
     }
   });
+}
+
+/**
+ * Queries Safaricom Daraja STK Push status directly when a callback is delayed or missed.
+ * Returns null if Daraja indicates the transaction is still in progress or unavailable.
+ */
+export async function queryMpesaStkStatus(checkoutRequestId: string): Promise<{
+  terminal: boolean;
+  resultCode: string;
+  resultDesc: string;
+  merchantRequestId?: string;
+} | null> {
+  try {
+    const shortcode = (process.env.MPESA_SHORTCODE || "4183765").trim();
+    const passkey = (process.env.MPESA_PASSKEY || "").trim();
+    if (!passkey || !checkoutRequestId) return null;
+
+    const now = new Date();
+    const timestamp =
+      now.getFullYear().toString() +
+      String(now.getMonth() + 1).padStart(2, "0") +
+      String(now.getDate()).padStart(2, "0") +
+      String(now.getHours()).padStart(2, "0") +
+      String(now.getMinutes()).padStart(2, "0") +
+      String(now.getSeconds()).padStart(2, "0");
+
+    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
+    const token = await getMpesaToken();
+    const isProduction = process.env.MPESA_ENVIRONMENT !== "sandbox";
+    const queryUrl = isProduction
+      ? "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+      : "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query";
+
+    const res = await fetch(queryUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        BusinessShortCode: shortcode,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: checkoutRequestId,
+      }),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!data) return null;
+
+    // 500.001.1001 = "The transaction is being processed" (still awaiting PIN / prompt)
+    if (data.errorCode === "500.001.1001" || data.ResultCode === undefined || data.ResultCode === null) {
+      return null;
+    }
+
+    const resultCode = String(data.ResultCode);
+    const resultDesc = String(data.ResultDesc || data.ResponseDescription || "");
+    return {
+      terminal: true,
+      resultCode,
+      resultDesc,
+      merchantRequestId: data.MerchantRequestID,
+    };
+  } catch (err: any) {
+    console.warn("[M-PESA STK QUERY WARNING]:", err?.message || err);
+    return null;
+  }
 }
 

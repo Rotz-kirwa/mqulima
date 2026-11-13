@@ -276,8 +276,9 @@ export async function handleAdminResourceList(
       const [rows, count] = await Promise.all([
         sql`
           SELECT 
-            sr.id, sr.user_id, sr.status, sr.location, sr.notes,
-            sr.scheduled_date, sr.contact_name, sr.contact_phone, sr.created_at,
+            sr.id, sr.reference, sr.user_id, sr.status, sr.location, sr.notes,
+            sr.scheduled_date, sr.contact_name, sr.contact_phone, sr.contact_email,
+            sr.subservice_name, sr.farm_scale, sr.channel, sr.created_at,
             s.name AS service_name
           FROM service_requests sr
           LEFT JOIN services s ON s.id = sr.service_id
@@ -292,10 +293,14 @@ export async function handleAdminResourceList(
         JSON.stringify({
           items: rows.map((r: any) => ({
             id: r.id,
+            reference: r.reference || "",
             name: r.contact_name || "Farmer",
             phone: r.contact_phone || "",
-            service: r.service_name || "Agricultural Service",
+            email: r.contact_email || "",
+            service: r.subservice_name || r.service_name || "Agricultural Service",
             location: r.location || "Kenya",
+            farmScale: r.farm_scale || "Custom",
+            channel: r.channel || "website",
             status: r.status,
             date: r.scheduled_date || r.created_at,
             notes: r.notes || "",

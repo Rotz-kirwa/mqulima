@@ -25,9 +25,11 @@ export function getRawSql() {
     const requiresSsl = !isLocal || connectionString.includes("sslmode=require");
     const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
     globalThis.__mq_raw_sql__ = postgres(connectionString, {
-      max: isServerless ? 2 : 5,
-      idle_timeout: 10,
-      connect_timeout: isServerless ? 4 : 8,
+      max: isServerless ? 2 : 10,
+      idle_timeout: 30,
+      max_lifetime: 60 * 30,
+      connect_timeout: isServerless ? 8 : 20,
+      keep_alive: 30,
       connection: {
         statement_timeout: isServerless ? 10000 : 30000,
       },

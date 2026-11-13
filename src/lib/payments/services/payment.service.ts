@@ -380,7 +380,16 @@ export class PaymentService {
       LIMIT 1
     `;
 
-    if (existingPending && existingPending.raw_payload?.authorization_url) {
+    const normalizedChannels =
+      Array.isArray(params.channels) && params.channels.length > 0 ? params.channels : null;
+    const normalizedCallbackUrl = callbackUrl || null;
+
+    if (
+      existingPending &&
+      existingPending.raw_payload?.authorization_url &&
+      JSON.stringify(existingPending.raw_payload?.channels || null) === JSON.stringify(normalizedChannels) &&
+      (existingPending.raw_payload?.callback_url || null) === normalizedCallbackUrl
+    ) {
       console.log(`[PAYSTACK SERVICE] Reusing active pending payment ${existingPending.id} for order ${orderId}`);
       return {
         success: true,
@@ -434,7 +443,7 @@ export class PaymentService {
         'KES',
         ${serverAmount},
         'pending',
-        ${JSON.stringify({ authorization_url: initRes.authorizationUrl, access_code: initRes.accessCode, initRes: initRes.rawResponse })}::jsonb
+        ${JSON.stringify({ authorization_url: initRes.authorizationUrl, access_code: initRes.accessCode, channels: normalizedChannels, callback_url: normalizedCallbackUrl, initRes: initRes.rawResponse })}::jsonb
       )
       RETURNING id
     `;

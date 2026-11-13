@@ -37,6 +37,7 @@ export const serviceRequests = pgTable("service_requests", {
   reference: text("reference"),
   contactName: text("contact_name"),
   contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
   subserviceName: text("subservice_name"),
   farmScale: text("farm_scale"),
   channel: text("channel").default("website"),

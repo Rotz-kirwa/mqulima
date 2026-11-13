@@ -9,6 +9,7 @@
 
 import type {
   OpenMeteoResponse,
+  OpenMeteoCurrentWeather,
   WeatherViewModel,
   DailyForecast,
   HourlySnapshot,
@@ -18,10 +19,17 @@ import type {
 } from "@/lib/weather-types";
 
 const OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast";
+const OPENWEATHER_CURRENT_BASE = "https://api.openweathermap.org/data/2.5/weather";
+const KENYA_METAR_URL =
+  "https://aviationweather.gov/api/data/metar?ids=HKNW,HKJK,HKMO,HKKI,HKEL,HKML,HKWJ,HKGA,HKLU&format=json";
 const TIMEZONE = "Africa/Nairobi";
+const EAT_OFFSET_MS = 3 * 60 * 60 * 1000;
 const FORECAST_DAYS = 7;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 800;
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes (matches Open-Meteo 15m current cadence)
+const MAX_METAR_DISTANCE_KM = 45;
+const MAX_METAR_AGE_MS = 90 * 60 * 1000;
 
 // ------------------------------------------------------------------
 // WMO Weather Code → Human-readable label
@@ -131,8 +139,12 @@ function buildAgriAdvisory(
   let bullets: AgriAdvisory["bullets"] = [];
 
   if (precipProb > 60 || windSpeed > 20 || precipSum > 2) {
+    const reasons: string[] = [];
+    if (precipProb > 60) reasons.push(`rain risk ${precipProb}%`);
+    if (windSpeed > 20) reasons.push(`wind drift ${windSpeed.toFixed(0)} km/h`);
+    if (precipSum > 2) reasons.push(`daily rain ${precipSum.toFixed(1)} mm`);
     sprayWindow = "CLOSED";
-    sprayWindowText = `High precipitation risk (${precipProb}%) or wind drift (${windSpeed.toFixed(0)} km/h). Suspend all agrochemical applications to prevent wash-off, drift, and water-table contamination.`;
+    sprayWindowText = `Wash-off or drift risk (${reasons.join(", ")}). Suspend all agrochemical applications to prevent wash-off, drift, and water-table contamination.`;
     bullets = [
       { text: "Foliar spray: DO NOT apply", color: "red" },
       { text: "Fungicide: suspend until dry", color: "red" },
@@ -177,32 +189,319 @@ function buildAgriAdvisory(
   return { sprayWindow, sprayWindowText, bullets, alerts, gdd, recommendations };
 }
 
-// ------------------------------------------------------------------
-// Find the hourly index that best matches the current local hour
-// ------------------------------------------------------------------
-function getCurrentHourIndex(hourlyTimes: string[]): number {
-  const nowStr = new Date().toISOString().substring(0, 13); // "2026-07-02T15"
-  const idx = hourlyTimes.findIndex((t) => t.startsWith(nowStr));
-  return idx >= 0 ? idx : 0;
+type GroundObservation = {
+  temperature_2m: number;
+  relative_humidity_2m?: number;
+  apparent_temperature?: number;
+  wind_speed_10m?: number;
+  wind_direction_10m?: number;
+  cloud_cover?: number;
+  precipitation?: number;
+  rain?: number;
+  weather_code?: WeatherCode;
+  sourceLabel: string;
+  observationStation: string;
+  observedAt: string;
+};
+
+type MetarReport = {
+  icaoId?: string;
+  name?: string;
+  lat?: number;
+  lon?: number;
+  obsTime?: number;
+  reportTime?: string;
+  temp?: number | null;
+  dewp?: number | null;
+  wdir?: number | string | null;
+  wspd?: number | null;
+  wxString?: string | null;
+  cover?: string | null;
+};
+
+function getNairobiNowIso(offsetMs = EAT_OFFSET_MS, dateMs = Date.now()): string {
+  return new Date(dateMs + offsetMs).toISOString();
+}
+
+function formatNairobiClock(ms: number): string {
+  return `${getNairobiNowIso(EAT_OFFSET_MS, ms).substring(11, 16)} EAT`;
 }
 
 // ------------------------------------------------------------------
-// Build full WeatherViewModel from raw Open-Meteo response
+// Find the hourly index matching current local time in Africa/Nairobi
+// (hourly.time from Open-Meteo is in Africa/Nairobi, NOT UTC)
 // ------------------------------------------------------------------
-export function buildViewModel(raw: OpenMeteoResponse): WeatherViewModel {
+function getCurrentHourIndex(hourlyTimes: string[], utcOffsetSeconds = 10800): number {
+  const localIso = getNairobiNowIso(utcOffsetSeconds * 1000);
+  const targetPrefix = localIso.substring(0, 13); // "YYYY-MM-DDTHH"
+  const idx = hourlyTimes.findIndex((t) => t.startsWith(targetPrefix));
+  if (idx >= 0) return idx;
+  const hourFallback = parseInt(localIso.substring(11, 13), 10);
+  return Math.min(Math.max(0, hourFallback), Math.max(0, hourlyTimes.length - 1));
+}
+
+function getBlendedSoilMoisture(
+  hourly: OpenMeteoResponse["hourly"],
+  hIdx: number
+): { value: number; depthLabel: string } {
+  const sm0_1 = hourly.soil_moisture_0_to_1cm?.[hIdx];
+  const sm1_3 = hourly.soil_moisture_1_to_3cm?.[hIdx];
+  const sm3_9 = hourly.soil_moisture_3_to_9cm?.[hIdx];
+  if (typeof sm0_1 === "number" && typeof sm1_3 === "number" && typeof sm3_9 === "number") {
+    return {
+      value: (sm0_1 * 1 + sm1_3 * 2 + sm3_9 * 6) / 9,
+      depthLabel: "Root Zone (0-9cm)",
+    };
+  }
+  return {
+    value: typeof sm0_1 === "number" ? sm0_1 : 0,
+    depthLabel: "Surface (0-1cm)",
+  };
+}
+
+// ------------------------------------------------------------------
+// Ground-station observation helpers (OpenWeatherMap + Kenya METARs)
+// ------------------------------------------------------------------
+function withTimeoutSignal(ms: number, parent?: AbortSignal): { signal: AbortSignal; cleanup: () => void } {
+  const ctrl = new AbortController();
+  const onParentAbort = () => ctrl.abort();
+  if (parent) {
+    if (parent.aborted) ctrl.abort();
+    else parent.addEventListener("abort", onParentAbort, { once: true });
+  }
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return {
+    signal: ctrl.signal,
+    cleanup: () => {
+      clearTimeout(timer);
+      if (parent) parent.removeEventListener("abort", onParentAbort);
+    },
+  };
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function computeRhFromDewpoint(tempC: number, dewpC: number): number {
+  const es = Math.exp((17.625 * tempC) / (243.04 + tempC));
+  const e = Math.exp((17.625 * dewpC) / (243.04 + dewpC));
+  return Math.min(100, Math.max(1, Math.round((e / es) * 100)));
+}
+
+function mapOpenWeatherIdToWmo(id?: number): WeatherCode | undefined {
+  if (typeof id !== "number") return undefined;
+  if (id >= 200 && id < 300) return id === 202 || id === 212 || id === 221 || id === 232 ? 96 : 95;
+  if (id >= 300 && id < 400) return id === 302 || id === 312 || id === 314 ? 55 : id === 301 || id === 311 ? 53 : 51;
+  if (id === 500 || id === 511) return 61;
+  if (id === 501) return 63;
+  if (id >= 502 && id <= 504) return 65;
+  if (id === 520) return 80;
+  if (id === 521) return 81;
+  if (id >= 522 && id < 600) return 82;
+  if (id >= 600 && id < 700) return id === 602 ? 75 : id === 601 ? 73 : 71;
+  if (id >= 700 && id < 800) return 45;
+  if (id === 800) return 0;
+  if (id === 801) return 1;
+  if (id === 802) return 2;
+  if (id === 803 || id === 804) return 3;
+  return undefined;
+}
+
+function mapMetarToWmo(wxString?: string | null, cover?: string | null): { code?: WeatherCode; raining: boolean } {
+  const wx = (wxString || "").toUpperCase();
+  if (wx.includes("TS")) return { code: wx.includes("GR") ? 96 : 95, raining: true };
+  if (wx.includes("SHRA")) return { code: wx.includes("+") ? 82 : wx.includes("-") ? 80 : 81, raining: true };
+  if (wx.includes("DZ")) return { code: wx.includes("+") ? 55 : wx.includes("-") ? 51 : 53, raining: true };
+  if (wx.includes("RA")) return { code: wx.includes("+") ? 65 : wx.includes("-") ? 61 : 63, raining: true };
+  if (wx.includes("FG") || wx.includes("BR") || wx.includes("HZ")) return { code: 45, raining: false };
+  const cov = (cover || "").toUpperCase();
+  if (cov === "CLR" || cov === "SKC" || cov === "CAVOK") return { code: 0, raining: false };
+  if (cov === "FEW") return { code: 1, raining: false };
+  if (cov === "SCT") return { code: 2, raining: false };
+  if (cov === "BKN" || cov === "OVC") return { code: 3, raining: false };
+  return { code: undefined, raining: false };
+}
+
+function mapMetarCloudCover(cover?: string | null): number | undefined {
+  const cov = (cover || "").toUpperCase();
+  if (cov === "CLR" || cov === "SKC" || cov === "CAVOK") return 5;
+  if (cov === "FEW") return 20;
+  if (cov === "SCT") return 45;
+  if (cov === "BKN") return 75;
+  if (cov === "OVC") return 95;
+  return undefined;
+}
+
+let _metarBatchCache: { reports: MetarReport[]; expiresAt: number } | null = null;
+let _metarInFlight: Promise<MetarReport[]> | null = null;
+
+async function fetchOpenWeatherCurrent(
+  lat: number,
+  lon: number,
+  apiKey: string,
+  parentSignal?: AbortSignal
+): Promise<GroundObservation | null> {
+  const { signal, cleanup } = withTimeoutSignal(4500, parentSignal);
+  try {
+    const url = new URL(OPENWEATHER_CURRENT_BASE);
+    url.searchParams.set("lat", lat.toString());
+    url.searchParams.set("lon", lon.toString());
+    url.searchParams.set("units", "metric");
+    url.searchParams.set("appid", apiKey);
+    const res = await fetch(url.toString(), { signal });
+    if (!res.ok) return null;
+    const owm: any = await res.json();
+    if (typeof owm?.main?.temp !== "number") return null;
+
+    const rain1h = typeof owm?.rain?.["1h"] === "number" ? owm.rain["1h"] : undefined;
+    const obsMs = typeof owm?.dt === "number" ? owm.dt * 1000 : Date.now();
+    return {
+      temperature_2m: Number(owm.main.temp.toFixed(1)),
+      relative_humidity_2m: typeof owm.main.humidity === "number" ? Math.round(owm.main.humidity) : undefined,
+      apparent_temperature: typeof owm.main.feels_like === "number" ? Number(owm.main.feels_like.toFixed(1)) : undefined,
+      wind_speed_10m: typeof owm?.wind?.speed === "number" ? Number((owm.wind.speed * 3.6).toFixed(1)) : undefined,
+      wind_direction_10m: typeof owm?.wind?.deg === "number" ? Math.round(owm.wind.deg) : undefined,
+      cloud_cover: typeof owm?.clouds?.all === "number" ? Math.round(owm.clouds.all) : undefined,
+      precipitation: rain1h,
+      rain: rain1h,
+      weather_code: mapOpenWeatherIdToWmo(owm?.weather?.[0]?.id),
+      sourceLabel: "OpenWeatherMap + Open-Meteo",
+      observationStation: owm.name ? `${owm.name} (OpenWeatherMap)` : "OpenWeatherMap",
+      observedAt: formatNairobiClock(obsMs),
+    };
+  } catch {
+    return null;
+  } finally {
+    cleanup();
+  }
+}
+
+async function fetchKenyaMetarBatch(parentSignal?: AbortSignal, forceRefresh = false): Promise<MetarReport[]> {
+  if (!forceRefresh && _metarBatchCache && Date.now() < _metarBatchCache.expiresAt) {
+    return _metarBatchCache.reports;
+  }
+  if (_metarInFlight) return _metarInFlight;
+
+  const { signal, cleanup } = withTimeoutSignal(5000, parentSignal);
+  _metarInFlight = (async () => {
+    try {
+      const res = await fetch(KENYA_METAR_URL, { signal });
+      if (!res.ok) return _metarBatchCache?.reports ?? [];
+      const data = await res.json();
+      if (!Array.isArray(data)) return _metarBatchCache?.reports ?? [];
+      _metarBatchCache = { reports: data as MetarReport[], expiresAt: Date.now() + CACHE_TTL_MS };
+      return data as MetarReport[];
+    } catch {
+      return _metarBatchCache?.reports ?? [];
+    } finally {
+      cleanup();
+      _metarInFlight = null;
+    }
+  })();
+
+  return _metarInFlight;
+}
+
+async function fetchNearestKenyaMetar(
+  lat: number,
+  lon: number,
+  parentSignal?: AbortSignal,
+  forceRefresh = false
+): Promise<GroundObservation | null> {
+  const reports = await fetchKenyaMetarBatch(parentSignal, forceRefresh);
+  const now = Date.now();
+  let best: { report: MetarReport; dist: number; obsMs: number } | null = null;
+
+  for (const r of reports) {
+    if (typeof r.lat !== "number" || typeof r.lon !== "number" || typeof r.temp !== "number") continue;
+    const obsMs = typeof r.obsTime === "number" ? r.obsTime * 1000 : Date.parse(r.reportTime || "");
+    if (!Number.isFinite(obsMs) || now - obsMs > MAX_METAR_AGE_MS) continue;
+    const dist = haversineKm(lat, lon, r.lat, r.lon);
+    if (dist <= MAX_METAR_DISTANCE_KM && (!best || dist < best.dist)) {
+      best = { report: r, dist, obsMs };
+    }
+  }
+
+  if (!best) return null;
+  const { report, obsMs } = best;
+  const { code, raining } = mapMetarToWmo(report.wxString, report.cover);
+  const rh = typeof report.dewp === "number" ? computeRhFromDewpoint(report.temp!, report.dewp) : undefined;
+  const windKmh = typeof report.wspd === "number" ? Number((report.wspd * 1.852).toFixed(1)) : undefined;
+
+  return {
+    temperature_2m: Number(report.temp!.toFixed(1)),
+    relative_humidity_2m: rh,
+    wind_speed_10m: windKmh,
+    wind_direction_10m: typeof report.wdir === "number" ? Math.round(report.wdir) : undefined,
+    cloud_cover: mapMetarCloudCover(report.cover),
+    precipitation: raining ? undefined : 0,
+    rain: raining ? undefined : 0,
+    weather_code: code,
+    sourceLabel: `${report.icaoId} Airport + Open-Meteo`,
+    observationStation: report.name ? `${report.name} (${report.icaoId})` : `${report.icaoId} Airport`,
+    observedAt: formatNairobiClock(obsMs),
+  };
+}
+
+async function fetchGroundObservation(
+  lat: number,
+  lon: number,
+  parentSignal?: AbortSignal,
+  forceRefresh = false
+): Promise<GroundObservation | null> {
+  const owmKey = (typeof process !== "undefined" ? process.env?.OPENWEATHER_API_KEY : undefined)?.trim();
+  if (owmKey) {
+    const owmObs = await fetchOpenWeatherCurrent(lat, lon, owmKey, parentSignal);
+    if (owmObs) return owmObs;
+  }
+  return fetchNearestKenyaMetar(lat, lon, parentSignal, forceRefresh);
+}
+
+// ------------------------------------------------------------------
+// Build full WeatherViewModel from Open-Meteo + live ground observation
+// ------------------------------------------------------------------
+export function buildViewModel(
+  raw: OpenMeteoResponse,
+  observation: GroundObservation | null = null,
+  fetchedAt = Date.now()
+): WeatherViewModel {
   const { current, daily, hourly } = raw;
 
-  // Find current-hour index in hourly arrays
-  const hIdx = getCurrentHourIndex(hourly.time);
+  // Find current-hour index in local Africa/Nairobi hourly arrays
+  const hIdx = getCurrentHourIndex(hourly.time, raw.utc_offset_seconds ?? 10800);
+  const soil = getBlendedSoilMoisture(hourly, hIdx);
 
-  // --- Hourly snapshot at current hour ---
+  // --- Hourly snapshot at current Kenya hour ---
   const hourlySnapshot: HourlySnapshot = {
     soilTemperature:   hourly.soil_temperature_0cm[hIdx] ?? 0,
-    soilMoisturePct:   soilMoistureToPercent(hourly.soil_moisture_0_to_1cm[hIdx] ?? 0),
+    soilMoisturePct:   soilMoistureToPercent(soil.value),
     shortwaveRadiation: hourly.shortwave_radiation[hIdx] ?? 0,
     et0Hourly:         hourly.et0_fao_evapotranspiration[hIdx] ?? 0,
     precipProbability: hourly.precipitation_probability[hIdx] ?? 0,
   };
+
+  // Overlay live station / OpenWeatherMap current conditions if available
+  const mergedCurrent: OpenMeteoCurrentWeather = observation
+    ? {
+        ...current,
+        temperature_2m: observation.temperature_2m,
+        relative_humidity_2m: observation.relative_humidity_2m ?? current.relative_humidity_2m,
+        apparent_temperature: observation.apparent_temperature ?? current.apparent_temperature,
+        wind_speed_10m: observation.wind_speed_10m ?? current.wind_speed_10m,
+        wind_direction_10m: observation.wind_direction_10m ?? current.wind_direction_10m,
+        cloud_cover: observation.cloud_cover ?? current.cloud_cover,
+        precipitation: observation.precipitation ?? current.precipitation,
+        rain: observation.rain ?? current.rain,
+        weather_code: observation.weather_code ?? current.weather_code,
+      }
+    : current;
 
   // --- GDD from today's forecast ---
   const todayMax = daily.temperature_2m_max[0] ?? 0;
@@ -232,34 +531,40 @@ export function buildViewModel(raw: OpenMeteoResponse): WeatherViewModel {
     };
   });
 
-  const isDay = current.is_day !== undefined
-    ? current.is_day === 1
+  const isDay = mergedCurrent.is_day !== undefined
+    ? mergedCurrent.is_day === 1
     : daily7[0]
     ? computeIsDay(daily7[0].sunrise, daily7[0].sunset)
     : true;
 
-  // --- Agricultural advisory from today's real data ---
+  // --- Agricultural advisory from synchronized live data ---
   const advisory = buildAgriAdvisory(
-    current.wind_speed_10m,
+    mergedCurrent.wind_speed_10m,
     hourlySnapshot.precipProbability,
     daily7[0]?.precipitationSum ?? 0,
-    current.relative_humidity_2m,
+    mergedCurrent.relative_humidity_2m,
     daily7[0]?.uvIndexMax ?? 0,
-    current.cloud_cover,
-    current.temperature_2m,
+    mergedCurrent.cloud_cover,
+    mergedCurrent.temperature_2m,
     gdd
   );
 
+  const openMeteoClock = current.time ? `${current.time.substring(11, 16)} EAT` : formatNairobiClock(fetchedAt);
+
   return {
     raw,
-    current,
-    conditionLabel: wmoCodeToLabel(current.weather_code),
+    current: mergedCurrent,
+    conditionLabel: wmoCodeToLabel(mergedCurrent.weather_code),
     isDay,
     gdd,
     daily: daily7,
     hourlySnapshot,
     advisory,
-    fetchedAt: Date.now(),
+    fetchedAt,
+    sourceLabel: observation?.sourceLabel ?? "Open-Meteo Live",
+    observationStation: observation?.observationStation ?? "Open-Meteo Grid",
+    observedAt: observation?.observedAt ?? openMeteoClock,
+    soilDepthLabel: soil.depthLabel,
   };
 }
 
@@ -296,6 +601,8 @@ function buildForecastUrl(lat: number, lon: number): string {
     "is_day",
     "soil_temperature_0cm",
     "soil_moisture_0_to_1cm",
+    "soil_moisture_1_to_3cm",
+    "soil_moisture_3_to_9cm",
     "shortwave_radiation",
     "et0_fao_evapotranspiration",
   ].join(","));
@@ -343,32 +650,37 @@ async function fetchWithRetry(
 }
 
 // ------------------------------------------------------------------
-// Server-side in-memory cache (1-hour TTL per coordinate)
-// Key is rounded to 2 decimal places (≈1.1 km precision) to allow
-// nearby locations to share cache entries.
+// Server-side in-memory cache (15-min TTL per coordinate; recomputes
+// Africa/Nairobi hour index dynamically on read so hourly values never lag)
 // ------------------------------------------------------------------
-type CacheEntry = { viewModel: WeatherViewModel; expiresAt: number };
+type CacheEntry = {
+  raw: OpenMeteoResponse;
+  observation: GroundObservation | null;
+  fetchedAt: number;
+  expiresAt: number;
+};
 const _cache: Map<string, CacheEntry> = new Map();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function cacheKey(lat: number, lon: number): string {
   return `${lat.toFixed(2)}_${lon.toFixed(2)}`;
 }
 
-function getCached(lat: number, lon: number): WeatherViewModel | null {
+function getCached(lat: number, lon: number): CacheEntry | null {
   const entry = _cache.get(cacheKey(lat, lon));
   if (!entry) return null;
   if (Date.now() > entry.expiresAt) {
     _cache.delete(cacheKey(lat, lon));
     return null;
   }
-  return entry.viewModel;
+  return entry;
 }
 
-function setCache(lat: number, lon: number, vm: WeatherViewModel): void {
+function setCache(lat: number, lon: number, raw: OpenMeteoResponse, observation: GroundObservation | null, fetchedAt: number): void {
   _cache.set(cacheKey(lat, lon), {
-    viewModel: vm,
-    expiresAt: Date.now() + CACHE_TTL_MS,
+    raw,
+    observation,
+    fetchedAt,
+    expiresAt: fetchedAt + CACHE_TTL_MS,
   });
 }
 
@@ -377,16 +689,20 @@ function setCache(lat: number, lon: number, vm: WeatherViewModel): void {
 // ------------------------------------------------------------------
 export async function fetchOpenMeteoWeather(
   coords: LocationCoords,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: { forceRefresh?: boolean }
 ): Promise<WeatherViewModel> {
   const { lat, lon } = coords;
 
-  // 1. Return from cache if fresh
-  const cached = getCached(lat, lon);
-  if (cached) return cached;
+  // 1. Return freshly indexed view from 15m cache unless forceRefresh requested
+  if (!options?.forceRefresh) {
+    const cached = getCached(lat, lon);
+    if (cached) return buildViewModel(cached.raw, cached.observation, cached.fetchedAt);
+  }
 
-  // 2. Build URL and fetch with retries
+  // 2. Fetch Open-Meteo forecast & live ground observation in parallel
   const url = buildForecastUrl(lat, lon);
+  const obsPromise = fetchGroundObservation(lat, lon, signal, Boolean(options?.forceRefresh));
 
   let lastError: Error | null = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -395,9 +711,10 @@ export async function fetchOpenMeteoWeather(
         await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
       }
       const raw = await fetchWithRetry(url, signal, attempt);
-      const viewModel = buildViewModel(raw);
-      setCache(lat, lon, viewModel);
-      return viewModel;
+      const observation = await obsPromise;
+      const now = Date.now();
+      setCache(lat, lon, raw, observation, now);
+      return buildViewModel(raw, observation, now);
     } catch (err: any) {
       if (err?.name === "AbortError") throw err; // do not retry on cancellation
       lastError = err;
@@ -458,12 +775,16 @@ export const KENYA_COUNTIES: Record<string, LocationCoords> = {
   "West Pokot":      { lat: 1.5000,  lon: 35.1167 }
 };
 
-export async function fetchCountyWeather(county: string, signal?: AbortSignal): Promise<WeatherViewModel> {
+export async function fetchCountyWeather(
+  county: string,
+  signal?: AbortSignal,
+  options?: { forceRefresh?: boolean }
+): Promise<WeatherViewModel> {
   const norm = (county || "").trim();
   const matchedKey = Object.keys(KENYA_COUNTIES).find(
     (k) => k.toLowerCase() === norm.toLowerCase() || norm.toLowerCase().includes(k.toLowerCase())
   );
   const coords = matchedKey ? KENYA_COUNTIES[matchedKey] : KENYA_COUNTIES["Uasin Gishu"];
-  return fetchOpenMeteoWeather(coords, signal);
+  return fetchOpenMeteoWeather(coords, signal, options);
 }
 

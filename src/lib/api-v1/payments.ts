@@ -1,7 +1,13 @@
 import { getDb } from "../db.server";
 import { authenticateRequest } from "./auth-helper";
-import { getMpesaToken } from "../mpesa-helpers.server";
+import {
+  getMpesaToken,
+  getMpesaWebhookSecret,
+  handleMpesaCallback,
+  queryMpesaStkStatus,
+} from "../mpesa-helpers.server";
 import { PaymentService } from "../payments/services/payment.service";
+import { verifyPaystackTransactionApi } from "../payments/providers/paystack/paystack.api";
 
 export async function handleMpesaStkPush(request: Request): Promise<Response> {
   const user = await authenticateRequest(request);
@@ -52,6 +58,17 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       );
     }
 
+    if (order.status === "cancelled" || order.payment_status === "failed") {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          orderCancelled: true,
+          error: "Previous payment attempt was cancelled. Please submit a new order to retry.",
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Standardize Kenyan phone: 2547XXXXXXXX or 2541XXXXXXXX
     let cleanPhone = phone.replace(/[^0-9]/g, "");
     if (cleanPhone.startsWith("0")) cleanPhone = "254" + cleanPhone.slice(1);
@@ -85,7 +102,11 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       ? "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
       : "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
 
-    const callbackUrl = process.env.MPESA_CALLBACK_URL || "https://mqulima.com/api/mpesa/callback";
+    const rawCallbackUrl = (process.env.MPESA_CALLBACK_URL || "https://mqulima.com/api/mpesa/callback").trim();
+    const webhookSecret = getMpesaWebhookSecret();
+    const callbackUrl = rawCallbackUrl.includes("token=")
+      ? rawCallbackUrl
+      : `${rawCallbackUrl}${rawCallbackUrl.includes("?") ? "&" : "?"}token=${encodeURIComponent(webhookSecret)}`;
 
     const stkPayload = {
       BusinessShortCode: shortcode,
@@ -119,6 +140,7 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
           order_id,
           provider,
           provider_ref,
+          merchant_reference,
           phone_number,
           amount,
           status,
@@ -128,6 +150,7 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
           ${orderId},
           'mpesa',
           ${data.CheckoutRequestID},
+          ${data.MerchantRequestID || null},
           ${cleanPhone},
           ${amount},
           'pending',
@@ -165,30 +188,111 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
 export async function handlePaymentStatus(orderId: string): Promise<Response> {
   try {
     const sql = getDb();
-    const [p] = await sql`
-      SELECT id, status, provider, provider_ref, receipt_number, amount, updated_at
+    let [p] = await sql`
+      SELECT id, status, provider, provider_ref, merchant_reference, receipt_number,
+             result_code, result_description, failure_reason, amount, created_at, updated_at
       FROM payments
       WHERE order_id = ${orderId}
       ORDER BY created_at DESC
       LIMIT 1
     `;
 
-    const [o] = await sql`
+    let [o] = await sql`
       SELECT status, payment_status
       FROM orders
       WHERE id = ${orderId}
       LIMIT 1
     `;
 
-    const isPaid = (p?.status === "paid") || (o?.payment_status === "paid");
+    // Actively reconcile pending M-Pesa STK transactions directly with Daraja STK Query
+    // so cancellations (1032) and completions are caught promptly even if callbacks are delayed.
+    if (
+      p?.status === "pending" &&
+      o?.payment_status !== "paid" &&
+      p?.provider === "mpesa" &&
+      typeof p?.provider_ref === "string" &&
+      p.provider_ref.startsWith("ws_CO_")
+    ) {
+      const ageMs = Date.now() - new Date(p.created_at).getTime();
+      if (ageMs >= 6000) {
+        const stkRes = await queryMpesaStkStatus(p.provider_ref);
+        if (stkRes?.terminal) {
+          const isSuccess = stkRes.resultCode === "0";
+          // Wait up to 12s on success so async callback with MpesaReceiptNumber runs first if reachable
+          if (!isSuccess || ageMs >= 12000) {
+            await handleMpesaCallback({
+              Body: {
+                stkCallback: {
+                  MerchantRequestID: p.merchant_reference || stkRes.merchantRequestId || "",
+                  CheckoutRequestID: p.provider_ref,
+                  ResultCode: Number(stkRes.resultCode),
+                  ResultDesc: stkRes.resultDesc,
+                },
+              },
+            }).catch((err) => console.warn("[M-PESA RECONCILE WARNING]:", err?.message || err));
+
+            [p] = await sql`
+              SELECT id, status, provider, provider_ref, merchant_reference, receipt_number,
+                     result_code, result_description, failure_reason, amount, created_at, updated_at
+              FROM payments
+              WHERE order_id = ${orderId}
+              ORDER BY created_at DESC
+              LIMIT 1
+            `;
+            [o] = await sql`
+              SELECT status, payment_status
+              FROM orders
+              WHERE id = ${orderId}
+              LIMIT 1
+            `;
+          }
+        }
+      }
+    } else if (
+      p?.status === "pending" &&
+      o?.payment_status !== "paid" &&
+      p?.provider === "paystack" &&
+      typeof p?.provider_ref === "string" &&
+      p.provider_ref.length > 0
+    ) {
+      const verifyRes = await verifyPaystackTransactionApi(p.provider_ref).catch(() => null);
+      if (verifyRes && (verifyRes.paid || verifyRes.status === "failed")) {
+        await PaymentService.verifyPaystackPayment(p.provider_ref).catch((err) =>
+          console.warn("[PAYSTACK RECONCILE WARNING]:", err?.message || err)
+        );
+        [p] = await sql`
+          SELECT id, status, provider, provider_ref, merchant_reference, receipt_number,
+                 result_code, result_description, failure_reason, amount, created_at, updated_at
+          FROM payments
+          WHERE order_id = ${orderId}
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+        [o] = await sql`
+          SELECT status, payment_status
+          FROM orders
+          WHERE id = ${orderId}
+          LIMIT 1
+        `;
+      }
+    }
+
+    const isPaid = p?.status === "paid" || p?.status === "partial_paid" || o?.payment_status === "paid";
+    const isFailed = !isPaid && (p?.status === "failed" || o?.payment_status === "failed" || o?.status === "cancelled");
+    const resCode = String(p?.result_code || "");
+    const message = p?.failure_reason || p?.result_description || null;
+    const isCancelled = isFailed && (resCode === "1032" || /cancel/i.test(String(message || "")));
 
     return new Response(
       JSON.stringify({
         orderId,
         paid: isPaid,
-        status: isPaid ? "Paid" : (p?.status || o?.payment_status || "Pending"),
+        failed: isFailed,
+        cancelled: isCancelled,
+        status: isPaid ? "Paid" : isFailed ? "Failed" : (p?.status || o?.payment_status || "Pending"),
         receiptNumber: p?.receipt_number || null,
         provider: p?.provider || "mpesa",
+        message,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -211,14 +315,28 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
 
   try {
     const body = await request.json();
-    const { orderId, email } = body;
+    const { orderId, email, channels, paymentMethod, callbackUrl } = body;
+
+    const resolvedChannels =
+      Array.isArray(channels) && channels.length > 0
+        ? channels
+        : paymentMethod === "mpesa" || paymentMethod === "airtel" || paymentMethod === "airtel_money"
+        ? ["mobile_money"]
+        : paymentMethod === "visa" || paymentMethod === "mastercard"
+        ? ["card"]
+        : undefined;
+
+    const isSafeCallback =
+      typeof callbackUrl === "string" &&
+      /^https?:\/\/(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|([a-z0-9-]+\.)*mqulima\.com)(\/|$)/i.test(callbackUrl.trim());
 
     const result = await PaymentService.initiatePaystackPayment({
       orderId,
       userId: user.id,
       email: email || user.email,
       isAdmin: false,
-      callbackUrl: "https://mqulima.com/payments/paystack/callback",
+      channels: resolvedChannels,
+      callbackUrl: isSafeCallback ? callbackUrl.trim() : "https://mqulima.com/payments/paystack/callback",
     });
 
     return new Response(JSON.stringify(result), {

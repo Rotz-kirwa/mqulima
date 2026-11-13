@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeKenyanPhone } from "../phone.server";
+import { withDbRetry } from "../db.server";
 
 export const CreateBookingSchema = z.object({
   service_type: z.string().min(1, "Service type is required"),
@@ -29,7 +30,26 @@ function generateReference(prefix = "MQ-SRV"): string {
   return `${prefix}-${ref}`;
 }
 
-export async function executeServiceBooking(data: CreateBookingInput) {
+function parseScheduledTimestamp(rawDate?: string | null): { timestampIso: string | null; noteSuffix: string } {
+  const val = (rawDate || "").trim();
+  if (!val) {
+    return { timestampIso: new Date().toISOString(), noteSuffix: "" };
+  }
+  // Only accept explicit YYYY-MM-DD or ISO date/datetime formats for PostgreSQL timestamptz
+  if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+    const parsed = new Date(val);
+    if (!Number.isNaN(parsed.getTime())) {
+      return { timestampIso: parsed.toISOString(), noteSuffix: "" };
+    }
+  }
+  // Natural language phrases (e.g. "Next Monday") are saved cleanly in notes instead of breaking timestamptz
+  return { timestampIso: null, noteSuffix: `Preferred Date: ${val}` };
+}
+
+export async function executeServiceBooking(
+  data: CreateBookingInput,
+  options?: { trustedApiGateway?: boolean }
+) {
   const {
     service_type,
     farmer_id,
@@ -47,8 +67,8 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     csrfToken,
   } = data;
 
-  // 1. Mandatory CSRF Token Validation for website requests
-  if (channel === "website") {
+  // 1. Mandatory CSRF Token Validation for direct web client requests
+  if (channel === "website" && !options?.trustedApiGateway) {
     if (!csrfToken) {
       throw new Error("CSRF token is required for service booking requests.");
     }
@@ -61,7 +81,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
   try {
     const { getCurrentUser } = await import("../auth-server");
     currentUser = await getCurrentUser();
-  } catch (e) {
+  } catch {
     // Safe fallback outside HTTP request context
   }
 
@@ -72,9 +92,9 @@ export async function executeServiceBooking(data: CreateBookingInput) {
   if (currentUser?.id) {
     effectiveUserId = currentUser.id;
   } else if (farmer_id) {
-    const { getDb } = await import("../db.server");
-    const sql = getDb();
-    const [userCheck] = await sql`SELECT id FROM profiles WHERE id = ${farmer_id} AND deleted_at IS NULL`;
+    const [userCheck] = await withDbRetry(
+      (sql) => sql`SELECT id FROM profiles WHERE id = ${farmer_id} AND deleted_at IS NULL`
+    );
     if (userCheck?.id) {
       effectiveUserId = userCheck.id;
     }
@@ -100,9 +120,6 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     throw new Error(`Phone validation failed: ${err.message || "Invalid Kenyan phone number"}`);
   }
 
-  const { getDb } = await import("../db.server");
-  const sql = getDb();
-
   // Resolve recipient contact email
   let finalContactEmail: string | null = null;
   if (contact_email && contact_email.includes("@")) {
@@ -111,7 +128,9 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     finalContactEmail = currentUser.email.trim().toLowerCase();
   } else if (effectiveUserId) {
     try {
-      const [userProfile] = await sql`SELECT email FROM profiles WHERE id = ${effectiveUserId} AND deleted_at IS NULL`;
+      const [userProfile] = await withDbRetry(
+        (sql) => sql`SELECT email FROM profiles WHERE id = ${effectiveUserId} AND deleted_at IS NULL`
+      );
       if (userProfile?.email && userProfile.email.includes("@")) {
         finalContactEmail = (userProfile.email as string).trim().toLowerCase();
       }
@@ -120,119 +139,140 @@ export async function executeServiceBooking(data: CreateBookingInput) {
     }
   }
 
-  // 4. Idempotency Check: Prevent duplicate bookings if submitted within 60 seconds
   const finalSubserviceName = subservice_name || service_type;
-  const [recentDuplicate] = await sql`
-    SELECT id, reference, user_id
-    FROM service_requests
-    WHERE contact_phone = ${normalizedPhone}
-      AND subservice_name = ${finalSubserviceName}
-      AND created_at > NOW() - INTERVAL '60 seconds'
-    LIMIT 1
-  `;
+  const { timestampIso: parsedScheduledIso, noteSuffix } = parseScheduledTimestamp(scheduled_date);
+  const finalNotes = [noteSuffix, notes?.trim() || ""].filter(Boolean).join(" | ") || null;
+  const reference = generateReference(channel === "whatsapp" ? "MQ-WA" : "MQ-SRV");
+  const finalFarmScale = farm_scale || (farm_size_acres ? `${farm_size_acres} Acres` : "Custom");
+  const finalAmount = amount !== undefined ? amount : 2500;
 
-  if (recentDuplicate) {
+  // 4. Transactional Idempotency + Database Execution with transient connection retry
+  const txResult = await withDbRetry(async (sql) => {
+    const [recentDuplicate] = await sql`
+      SELECT id, reference, user_id
+      FROM service_requests
+      WHERE contact_phone = ${normalizedPhone}
+        AND subservice_name = ${finalSubserviceName}
+        AND created_at > NOW() - INTERVAL '60 seconds'
+      LIMIT 1
+    `;
+
+    if (recentDuplicate) {
+      return {
+        duplicate: true,
+        reference: recentDuplicate.reference as string,
+        bookingId: recentDuplicate.id as string,
+        orderId: null as string | null,
+        serviceId: "",
+        serviceSlug: "",
+        serviceName: finalSubserviceName,
+      };
+    }
+
+    let serviceSlug = "soil-ph-npk-analysis";
+    const st = service_type.toLowerCase();
+    if (st.includes("soil")) {
+      serviceSlug = "soil-ph-npk-analysis";
+    } else if (st.includes("vet") || st.includes("vaccin") || st.includes("breed") || st.includes("animal")) {
+      serviceSlug = "emergency-vet-visit";
+    } else if (st.includes("silage") || st.includes("feed") || st.includes("shred")) {
+      serviceSlug = "silage-shredding";
+    }
+
+    const serviceRes = await sql`SELECT id, name FROM services WHERE slug = ${serviceSlug} LIMIT 1`;
+    let serviceId: string = (serviceRes[0]?.id || "") as string;
+    let serviceName: string = (serviceRes[0]?.name || "Agricultural Service") as string;
+
+    if (!serviceId) {
+      const [anyService] = await sql`SELECT id, name FROM services LIMIT 1`;
+      serviceId = (anyService?.id || "") as string;
+      serviceName = (anyService?.name || "Agricultural Service") as string;
+    }
+
+    let bookingId = "";
+    let orderId = "";
+
+    await sql.begin(async (tx) => {
+      const [insertRes] = await tx`
+        INSERT INTO service_requests (
+          user_id,
+          service_id,
+          status,
+          notes,
+          scheduled_date,
+          location,
+          reference,
+          contact_name,
+          contact_phone,
+          contact_email,
+          subservice_name,
+          farm_scale,
+          channel,
+          estimated_cost
+        ) VALUES (
+          ${effectiveUserId},
+          ${serviceId},
+          'requested',
+          ${finalNotes},
+          ${parsedScheduledIso},
+          ${location},
+          ${reference},
+          ${finalContactName},
+          ${normalizedPhone},
+          ${finalContactEmail},
+          ${finalSubserviceName},
+          ${finalFarmScale},
+          ${channel},
+          ${finalAmount}
+        )
+        RETURNING id
+      `;
+      bookingId = insertRes.id as string;
+
+      const orderItemsJson = JSON.stringify([
+        { id: serviceId, name: `${serviceName} (${finalSubserviceName})`, price: finalAmount, quantity: 1 },
+      ]);
+      const [orderRes] = await tx`
+        INSERT INTO orders (user_id, items, subtotal, total, status, payment_method, payment_status, notes, checkout_channel)
+        VALUES (
+          ${effectiveUserId},
+          ${orderItemsJson}::jsonb,
+          ${finalAmount},
+          ${finalAmount},
+          'pending',
+          'mpesa',
+          'pending',
+          ${`Service Booking Ref: ${reference}`},
+          ${channel}
+        )
+        RETURNING id
+      `;
+      orderId = orderRes.id as string;
+    });
+
+    return {
+      duplicate: false,
+      reference,
+      bookingId,
+      orderId,
+      serviceId,
+      serviceSlug,
+      serviceName,
+    };
+  });
+
+  if (txResult.duplicate) {
     return {
       success: true,
-      reference: recentDuplicate.reference as string,
-      bookingId: recentDuplicate.id as string,
+      reference: txResult.reference,
+      bookingId: txResult.bookingId,
       orderId: null,
       channel,
       duplicate: true,
     };
   }
 
-  // 5. Map service_type to service slug in database
-  let serviceSlug = "soil-ph-npk-analysis";
-  const st = service_type.toLowerCase();
-  if (st.includes("soil")) {
-    serviceSlug = "soil-ph-npk-analysis";
-  } else if (st.includes("vet") || st.includes("ai") || st.includes("vaccin") || st.includes("breed")) {
-    serviceSlug = "emergency-vet-visit";
-  } else if (st.includes("silage") || st.includes("feed") || st.includes("shred")) {
-    serviceSlug = "silage-shredding";
-  } else {
-    const match = await sql`SELECT slug FROM services WHERE slug LIKE ${"%" + service_type + "%"} LIMIT 1`;
-    if (match.length > 0) {
-      serviceSlug = match[0].slug;
-    }
-  }
-
-  const serviceRes = await sql`SELECT id, name FROM services WHERE slug = ${serviceSlug} LIMIT 1`;
-  let serviceId: string = serviceRes[0]?.id || "";
-  let serviceName: string = serviceRes[0]?.name || "Agricultural Service";
-
-  if (!serviceId) {
-    const [anyService] = await sql`SELECT id, name FROM services LIMIT 1`;
-    serviceId = (anyService?.id || "") as string;
-    serviceName = (anyService?.name || "Agricultural Service") as string;
-  }
-
-  const reference = generateReference(channel === "whatsapp" ? "MQ-WA" : "MQ-SRV");
-  const finalFarmScale = farm_scale || (farm_size_acres ? `${farm_size_acres} Acres` : "Custom");
-  const finalAmount = amount !== undefined ? amount : 2500;
-
-  // 6. Transactional Database Execution
-  let bookingId = "";
-  let orderId = "";
-
-  await sql.begin(async (tx) => {
-    // 6a. Insert service request (user_id is NULL for guest users)
-    const [insertRes] = await tx`
-      INSERT INTO service_requests (
-        user_id,
-        service_id,
-        status,
-        notes,
-        scheduled_date,
-        location,
-        reference,
-        contact_name,
-        contact_phone,
-        contact_email,
-        subservice_name,
-        farm_scale,
-        channel,
-        estimated_cost
-      ) VALUES (
-        ${effectiveUserId},
-        ${serviceId},
-        'requested',
-        ${notes || null},
-        ${scheduled_date},
-        ${location},
-        ${reference},
-        ${finalContactName},
-        ${normalizedPhone},
-        ${finalContactEmail},
-        ${finalSubserviceName},
-        ${finalFarmScale},
-        ${channel},
-        ${finalAmount}
-      )
-      RETURNING id
-    `;
-    bookingId = insertRes.id as string;
-
-    // 6b. Insert corresponding pending order ledger record
-    const orderItemsJson = JSON.stringify([{ id: serviceId, name: `${serviceName} (${finalSubserviceName})`, price: finalAmount, quantity: 1 }]);
-    const [orderRes] = await tx`
-      INSERT INTO orders (user_id, items, subtotal, total, status, payment_method, payment_status, notes, checkout_channel)
-      VALUES (
-        ${effectiveUserId},
-        ${orderItemsJson}::jsonb,
-        ${finalAmount},
-        ${finalAmount},
-        'pending',
-        'mpesa',
-        'pending',
-        ${`Service Booking Ref: ${reference}`},
-        ${channel}
-      )
-      RETURNING id
-    `;
-    orderId = orderRes.id as string;
-  });
+  const { bookingId, orderId, serviceId, serviceSlug, serviceName } = txResult;
 
   // 6c. Insert in-app notification ONLY if user is authenticated (never for guests or admins)
   if (effectiveUserId) {
@@ -241,7 +281,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
         tag: "Booking",
         tagClass: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
         title: `Service Booking Confirmed: ${finalSubserviceName} 🚜`,
-        desc: `Booking Ref: ${reference} (${finalSubserviceName}) scheduled for ${scheduled_date} at ${location} (${finalFarmScale}). Contact: ${normalizedPhone}. Estimated Cost: KES ${finalAmount.toLocaleString()}`,
+        desc: `Booking Ref: ${reference} (${finalSubserviceName}) scheduled for ${scheduled_date || "To be confirmed"} at ${location} (${finalFarmScale}). Contact: ${normalizedPhone}. Estimated Cost: KES ${finalAmount.toLocaleString()}`,
         details: {
           reference,
           bookingId,
@@ -255,7 +295,7 @@ export async function executeServiceBooking(data: CreateBookingInput) {
           contactPhone: normalizedPhone,
           contactEmail: finalContactEmail,
           farmScale: finalFarmScale,
-          notes,
+          notes: finalNotes,
           estimatedCost: finalAmount,
           channel,
           bookedAt: new Date().toISOString()
@@ -263,14 +303,14 @@ export async function executeServiceBooking(data: CreateBookingInput) {
         time: "Just now",
         link: "/services"
       };
-      await sql`
+      await withDbRetry((sql) => sql`
         INSERT INTO notifications (user_id, type, payload)
         VALUES (
           ${effectiveUserId},
           'service_request_submitted',
           ${JSON.stringify(notifPayload)}::jsonb
         )
-      `;
+      `);
     } catch (err) {
       console.warn("[SERVICES] Could not create notification record:", err);
     }

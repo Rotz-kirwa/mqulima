@@ -14,17 +14,22 @@ import type { WeatherViewModel } from "@/lib/weather-types";
 const CoordsSchema = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
+  forceRefresh: z.boolean().optional(),
 });
 
 /**
- * Server function — fetches live weather from Open-Meteo API.
- * Includes 1-hour server-side cache keyed by rounded coordinates.
+ * Server function — fetches live weather from Open-Meteo + live ground stations.
+ * Includes 15-minute server-side cache keyed by rounded coordinates.
  * Never returns mock data.
  */
 export const fetchWeather = createServerFn({ method: "POST" })
   .inputValidator((val: unknown) => CoordsSchema.parse(val))
   .handler(async ({ data }): Promise<WeatherViewModel> => {
-    return fetchOpenMeteoWeather({ lat: data.lat, lon: data.lon });
+    return fetchOpenMeteoWeather(
+      { lat: data.lat, lon: data.lon },
+      undefined,
+      { forceRefresh: data.forceRefresh }
+    );
   });
 
 // Re-export types for consumers

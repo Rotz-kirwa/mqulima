@@ -16,7 +16,7 @@ import {
 } from "./forum";
 import { handleListNews, handleGetNewsArticle } from "./news";
 import { handleListCourses, handleGetCourse, handleAcademyWaitlist } from "./academy";
-import { handleListServices, handleServiceBooking } from "./services";
+import { handleListServices, handleGetServiceCategory, handleServiceBooking } from "./services";
 import { handleWeather, handleMarketPrices } from "./tools";
 import { handleAiChat, handleCropDoctor } from "./ai";
 import { handleUploadPresign, handleForumMediaUpload, handleGetForumMedia } from "./upload";
@@ -176,7 +176,11 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
 
     // 8. Services
     if (path === "/api/v1/services/categories" && method === "GET") {
-      return await handleListServices();
+      return await handleListServices(request);
+    }
+    const serviceCatMatch = path.match(/^\/api\/v1\/services\/categories\/([^/]+)$/);
+    if (serviceCatMatch && method === "GET") {
+      return await handleGetServiceCategory(decodeURIComponent(serviceCatMatch[1]), request);
     }
     if ((path === "/api/v1/services/booking" || path === "/api/v1/service-requests") && method === "POST") {
       return await handleServiceBooking(request);
@@ -187,7 +191,7 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
       return await handleWeather(url);
     }
     if ((path === "/api/v1/tools/markets" || path === "/api/v1/markets") && method === "GET") {
-      return await handleMarketPrices();
+      return await handleMarketPrices(url);
     }
 
     // 10. AI (Chat & Crop Doctor)

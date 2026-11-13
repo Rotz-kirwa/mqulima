@@ -43,6 +43,8 @@ export interface OpenMeteoHourly {
   is_day?: number[];
   soil_temperature_0cm: number[];
   soil_moisture_0_to_1cm: number[];
+  soil_moisture_1_to_3cm?: number[];
+  soil_moisture_3_to_9cm?: number[];
   shortwave_radiation: number[];
   et0_fao_evapotranspiration: number[];
 }
@@ -121,6 +123,10 @@ export interface WeatherViewModel {
   hourlySnapshot: HourlySnapshot;
   advisory: AgriAdvisory;
   fetchedAt: number;           // timestamp
+  sourceLabel?: string;
+  observationStation?: string;
+  observedAt?: string;
+  soilDepthLabel?: string;
 }
 
 export type LocationCoords = {

@@ -29,7 +29,8 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
   // Clean values for insertion
   const cleanEmail = data.email.trim().toLowerCase();
   const cleanPhone = data.phoneNumber?.trim() ? data.phoneNumber.replace(/\s+/g, "") : null;
-  const cleanId = data.nationalId?.trim() ? data.nationalId.trim() : null;
+  const rawId = data.nationalId?.trim();
+  const cleanId = rawId && rawId.toUpperCase() !== "N/A" ? rawId : null;
 
   // 0. Auto-purge any stale soft-deleted or orphaned profile/user records matching email
   if (cleanPhone || cleanId) {

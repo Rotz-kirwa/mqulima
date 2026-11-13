@@ -1,16 +1,20 @@
 import { fetchCountyWeather } from "../weather-service";
-import { getMarketPrices, BENCHMARK_COMMODITIES } from "../api/markets.server";
+import { queryMarketPrices, BENCHMARK_COMMODITIES } from "../api/markets.server";
 
 export async function handleWeather(url: URL): Promise<Response> {
   try {
     const county = url.searchParams.get("county") || "Uasin Gishu";
-    const weather = await fetchCountyWeather(county);
+    const forceRefresh =
+      url.searchParams.get("refresh") === "1" ||
+      url.searchParams.get("refresh") === "true" ||
+      url.searchParams.get("force") === "1";
+    const weather = await fetchCountyWeather(county, undefined, { forceRefresh });
 
     return new Response(JSON.stringify(weather), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=600, s-maxage=1800",
+        "Cache-Control": forceRefresh ? "no-store" : "public, max-age=180, s-maxage=900",
       },
     });
   } catch (err: any) {
@@ -21,15 +25,19 @@ export async function handleWeather(url: URL): Promise<Response> {
   }
 }
 
-export async function handleMarketPrices(): Promise<Response> {
+export async function handleMarketPrices(url?: URL): Promise<Response> {
   try {
-    const prices = await getMarketPrices().catch(() => BENCHMARK_COMMODITIES);
+    const forceRefresh =
+      url?.searchParams.get("refresh") === "1" ||
+      url?.searchParams.get("refresh") === "true" ||
+      url?.searchParams.get("force") === "1";
+    const prices = await queryMarketPrices(forceRefresh).catch(() => BENCHMARK_COMMODITIES);
 
     return new Response(JSON.stringify(prices), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=900, s-maxage=3600",
+        "Cache-Control": forceRefresh ? "no-store" : "public, max-age=180, s-maxage=900",
       },
     });
   } catch (err: any) {
