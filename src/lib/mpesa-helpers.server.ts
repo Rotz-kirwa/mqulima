@@ -1,6 +1,14 @@
 import { sendSms } from "./sms-service.server";
 import { sendOrderPaymentConfirmedSmsById } from "./order-sms.server";
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
+
+function safeTokenMatch(provided: string | null, expected: string): boolean {
+  if (!provided || !expected) return false;
+  const a = Buffer.from(provided.trim(), "utf8");
+  const b = Buffer.from(expected.trim(), "utf8");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 // Cache token in memory
 let cachedToken: string | null = null;
@@ -83,7 +91,7 @@ export async function handleMpesaCallback(payload: any, request?: Request) {
       throw new Error("Unauthorized M-Pesa callback: security token missing");
     }
 
-    if (tokenQuery !== expectedSecret && tokenHeader !== expectedSecret) {
+    if (!safeTokenMatch(tokenQuery, expectedSecret) && !safeTokenMatch(tokenHeader, expectedSecret)) {
       console.error("[M-PESA] Webhook security token mismatch. Rejected unauthorized callback.");
       throw new Error("Unauthorized M-Pesa callback: security token validation failed");
     }

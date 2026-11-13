@@ -2,13 +2,26 @@ import { describe, it, expect, vi } from "vitest";
 import { handleAuthRegister, handleAuthLogin, handleAuthMe, corsOptionsResponse } from "../src/lib/api-v1/auth";
 
 describe("API v1 Auth REST Endpoints (Mobile App Integration)", () => {
-  it("should return correct CORS preflight headers on OPTIONS request", async () => {
-    const res = corsOptionsResponse();
+  it("should enforce explicit CORS preflight origins without wildcard", async () => {
+    const allowedReq = new Request("http://localhost:3000/api/v1/auth/me", {
+      method: "OPTIONS",
+      headers: { Origin: "https://www.mqulima.com" },
+    });
+    const res = corsOptionsResponse(allowedReq);
     expect(res.status).toBe(204);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://www.mqulima.com");
+    expect(res.headers.get("Vary")).toContain("Origin");
     expect(res.headers.get("Access-Control-Allow-Methods")).toContain("POST");
     expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
     expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
+
+    const blockedReq = new Request("http://localhost:3000/api/v1/auth/me", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example.com" },
+    });
+    const blockedRes = corsOptionsResponse(blockedReq);
+    expect(blockedRes.status).toBe(403);
+    expect(blockedRes.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("should reject registration requests with missing required fields", async () => {

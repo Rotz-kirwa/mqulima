@@ -1042,7 +1042,7 @@ export async function executeKamisSync() {
   const updatedCount = newBoardRows.length + updIds.length;
 
   try {
-    const { invalidateMarketPricesCache } = await import("./markets.server");
+    const { invalidateMarketPricesCache } = await import("./markets-ops.server");
     invalidateMarketPricesCache();
   } catch (e) {}
 

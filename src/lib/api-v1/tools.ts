@@ -1,5 +1,5 @@
 import { fetchCountyWeather } from "../weather-service";
-import { queryMarketPrices, BENCHMARK_COMMODITIES } from "../api/markets.server";
+import { queryMarketPrices, BENCHMARK_COMMODITIES } from "../api/markets-ops.server";
 
 export async function handleWeather(url: URL): Promise<Response> {
   try {

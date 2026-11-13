@@ -68,7 +68,6 @@ export const requestPasswordRecovery = createServerFn({ method: "POST" })
     const clientIp = getClientIp();
 
     // 1. Bot Protection Checks
-    // Honeypot trap: if filled by a bot, silently return generic response
     if (honeypot && honeypot.trim().length > 0) {
       console.warn(`[RECOVERY BOT TRAP] Bot detected via honeypot field from IP ${clientIp}`);
       return {
@@ -77,7 +76,6 @@ export const requestPasswordRecovery = createServerFn({ method: "POST" })
       };
     }
 
-    // Timestamp check: forms submitted faster than 500ms are automated scripts
     if (formStartTime && Date.now() - formStartTime < 500) {
       console.warn(`[RECOVERY BOT TRAP] Form submitted too quickly (${Date.now() - formStartTime}ms) from IP ${clientIp}`);
       return {
@@ -86,152 +84,12 @@ export const requestPasswordRecovery = createServerFn({ method: "POST" })
       };
     }
 
-    // 2. Upstash Redis Rate Limiting (10 req/hr per IP, 3 req/hr per account)
-    const rateCheck = await checkRecoveryRequestRateLimit(clientIp, identifier);
-    if (!rateCheck.success) {
-      throw new Error(rateCheck.error || "Rate limit exceeded. Please wait before trying again.");
-    }
-
-    const sql = getDb();
-    const cleanIdent = identifier.trim().toLowerCase();
-
-    // 3. Database lookup for eligible User Account
-    // Per policy: Strictly for main site users (farmers, buyers, retailers). Excludes admin/super_admin.
-    let dbUser: any = null;
-    const isEmail = cleanIdent.includes("@");
-
-    if (isEmail) {
-      [dbUser] = await sql`
-        SELECT id, email, phone, full_name, role, status
-        FROM profiles
-        WHERE LOWER(email) = ${cleanIdent}
-          AND deleted_at IS NULL
-          AND role NOT IN ('admin', 'super_admin')
-        LIMIT 1
-      `;
-    } else {
-      // Clean phone across Kenyan formats
-      const cleanPhone = cleanIdent.replace(/[^0-9+]/g, "");
-      const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
-
-      [dbUser] = await sql`
-        SELECT id, email, phone, full_name, role, status
-        FROM profiles
-        WHERE (
-          phone = ${cleanPhone}
-          OR phone = ${'+254' + basePhone}
-          OR phone = ${'254' + basePhone}
-          OR phone = ${'0' + basePhone}
-          OR phone = ${basePhone}
-        )
-          AND deleted_at IS NULL
-          AND role NOT IN ('admin', 'super_admin')
-        LIMIT 1
-      `;
-    }
-
-    // Anti-enumeration: if account not found or suspended, mimic processing time and return uniform response
-    if (!dbUser || dbUser.status === "suspended") {
-      // Small artificial jitter (80-160ms) to ensure timing attacks cannot differentiate account presence
-      await new Promise((res) => setTimeout(res, 80 + Math.floor(Math.random() * 80)));
-      await writeAuditLog({
-        action: "recovery.requested_unknown_account",
-        ipAddress: clientIp,
-        diff: { identifierType: isEmail ? "email" : "phone" },
-      });
-
-      return {
-        success: true,
-        message: "If this account exists, we've sent a code and link to your registered email and phone.",
-        maskedHint: maskIdentifier(identifier),
-      };
-    }
-
-    // 4. Generate Cryptographic Code (6-digit) and Link Token (32-bytes / 64-hex)
-    const rawCode = crypto.randomInt(100000, 1000000).toString();
-    const rawToken = crypto.randomBytes(32).toString("hex");
-
-    const codeHash = hashSecret(rawCode);
-    const tokenHash = hashSecret(rawToken);
-
-    // 5. Invalidate any existing unused recovery tokens for this user
-    await sql`
-      UPDATE recovery_tokens
-      SET used_at = NOW()
-      WHERE user_id = ${dbUser.id} AND used_at IS NULL
-    `;
-
-    // 6. Insert new recovery record (10-minute expiry)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    await sql`
-      INSERT INTO recovery_tokens (
-        user_id,
-        code_hash,
-        token_hash,
-        expires_at
-      ) VALUES (
-        ${dbUser.id},
-        ${codeHash},
-        ${tokenHash},
-        ${expiresAt}
-      )
-    `;
-
-    // 7. Dispatch to Both Channels in Parallel (Promise.allSettled)
-    const baseUrl = getAppBaseUrl();
-    const magicLinkUrl = `${baseUrl}/auth/magic-login?token=${encodeURIComponent(rawToken)}`;
-
-    const deliveryPromises: Promise<any>[] = [];
-
-    // Channel A: Registered Email
-    if (dbUser.email && dbUser.email.includes("@")) {
-      deliveryPromises.push(
-        sendPasswordRecoveryEmail({
-          toEmail: dbUser.email,
-          recipientName: dbUser.full_name,
-          otpCode: rawCode,
-          magicLinkUrl,
-          expiresInMinutes: 10,
-        })
-      );
-    }
-
-    // Channel B: Registered Phone (SMS)
-    // STRICT SECURITY: Only send SMS to the phone number the user ALREADY registered in the DB.
-    let e164Phone: string | null = null;
-    if (dbUser.phone) {
-      try {
-        e164Phone = formatKenyanPhoneE164(dbUser.phone);
-        deliveryPromises.push(sendRecoverySms(e164Phone, rawCode, magicLinkUrl));
-      } catch (err: any) {
-        console.error("[RECOVERY] Registered phone number could not be normalized to +254 format:", err?.message || err);
-      }
-    }
-
-    // Parallel dispatch with error containment
-    const dispatchResults = await Promise.allSettled(deliveryPromises);
-    const hasSuccessfulChannel = dispatchResults.some(
-      (r) => r.status === "fulfilled" && (r.value as any)?.success !== false
-    );
-
-    // 8. Audit Log the Dispatch Event (no plaintext secrets)
-    await writeAuditLog({
-      actorId: dbUser.id,
-      action: "recovery.dispatched",
-      ipAddress: clientIp,
-      entityType: "recovery_token",
-      diff: {
-        emailDispatched: !!dbUser.email,
-        smsDispatched: !!e164Phone,
-        hasSuccessfulChannel,
-      },
+    const { executePasswordRecoveryRequest } = await import("./auth-recovery-ops.server");
+    return executePasswordRecoveryRequest({
+      identifier,
+      clientIp,
+      appBaseUrl: getAppBaseUrl(),
     });
-
-    return {
-      success: true,
-      message: "If this account exists, we've sent a code and link to your registered email and phone.",
-      maskedHint: dbUser.email ? maskIdentifier(dbUser.email) : maskIdentifier(dbUser.phone || identifier),
-    };
   });
 
 /**

@@ -82,6 +82,7 @@ export const STATIC_PUBLIC_ROUTES: SitemapRoute[] = [
   { path: "/about", priority: "0.6", changefreq: "monthly" },
   { path: "/contact", priority: "0.6", changefreq: "monthly" },
   { path: "/terms", priority: "0.4", changefreq: "monthly" },
+  { path: "/privacy", priority: "0.4", changefreq: "monthly" },
 ];
 
 /**

@@ -332,14 +332,14 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       let [dbUser] = await sql`
         SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
         FROM profiles
-        WHERE id = ${userId} AND deleted_at IS NULL
+        WHERE id = ${userId} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
       `;
 
       if (!dbUser && tokenEmail) {
         [dbUser] = await sql`
           SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
           FROM profiles
-          WHERE LOWER(email) = ${tokenEmail} AND deleted_at IS NULL
+          WHERE LOWER(email) = ${tokenEmail} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
           LIMIT 1
         `;
       }
@@ -348,7 +348,9 @@ export const getCurrentUser = createServerFn({ method: "GET" })
         const [rawUser] = await sql`
           SELECT id, email, first_name, last_name, county
           FROM users
-          WHERE id = ${userId} OR (email IS NOT NULL AND LOWER(email) = ${tokenEmail})
+          WHERE (id = ${userId} OR (email IS NOT NULL AND LOWER(email) = ${tokenEmail}))
+            AND deleted_at IS NULL
+            AND COALESCE(status, 'active') <> 'deleted'
           LIMIT 1
         `;
         if (rawUser) {

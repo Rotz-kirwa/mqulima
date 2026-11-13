@@ -14,9 +14,11 @@ export const Route = createFileRoute("/api/mpesa/callback")({
           });
         } catch (error: any) {
           console.error("M-Pesa Callback Endpoint Error:", error);
-          // Safaricom expects a 200 OK with ResultCode != 0 for validation failures to acknowledge callback delivery
-          return new Response(JSON.stringify({ ResultCode: 1, ResultDesc: error.message || "Internal error" }), {
-            status: 200,
+          const msg = String(error?.message || "Internal error");
+          const isUnauthorized = /Unauthorized M-Pesa callback/i.test(msg);
+          // Reject unauthenticated callbacks with 401; acknowledge Safaricom payload validation failures with 200
+          return new Response(JSON.stringify({ ResultCode: 1, ResultDesc: msg }), {
+            status: isUnauthorized ? 401 : 200,
             headers: { "Content-Type": "application/json" },
           });
         }

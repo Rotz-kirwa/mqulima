@@ -185,22 +185,45 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
   }
 }
 
-export async function handlePaymentStatus(orderId: string): Promise<Response> {
+export async function handlePaymentStatus(orderId: string, request?: Request): Promise<Response> {
+  const user = request ? await authenticateRequest(request) : null;
+  if (!user) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized. Sign in to view payment status." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const sql = getDb();
+    let [o] = await sql`
+      SELECT id, user_id, status, payment_status
+      FROM orders
+      WHERE id = ${orderId} AND deleted_at IS NULL
+      LIMIT 1
+    `;
+
+    if (!o) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Order ${orderId} not found.` }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const isAdmin = user.role === "admin" || user.role === "super_admin";
+    if (!isAdmin && o.user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized access to this order." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     let [p] = await sql`
       SELECT id, status, provider, provider_ref, merchant_reference, receipt_number,
              result_code, result_description, failure_reason, amount, created_at, updated_at
       FROM payments
       WHERE order_id = ${orderId}
       ORDER BY created_at DESC
-      LIMIT 1
-    `;
-
-    let [o] = await sql`
-      SELECT status, payment_status
-      FROM orders
-      WHERE id = ${orderId}
       LIMIT 1
     `;
 
@@ -352,8 +375,16 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
 }
 
 export async function handlePaystackVerify(request: Request): Promise<Response> {
+  const user = await authenticateRequest(request);
+  if (!user) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized. Sign in to verify payment." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { reference } = body;
     if (!reference) {
       return new Response(
@@ -362,7 +393,37 @@ export async function handlePaystackVerify(request: Request): Promise<Response> 
       );
     }
 
+    const sql = getDb();
+    const [existingOrder] = await sql`
+      SELECT o.id, o.user_id
+      FROM payments p
+      JOIN orders o ON o.id = p.order_id
+      WHERE p.provider = 'paystack'
+        AND (p.provider_ref = ${reference} OR p.merchant_reference = ${reference})
+      LIMIT 1
+    `;
+
+    const isAdmin = user.role === "admin" || user.role === "super_admin";
+    if (existingOrder && !isAdmin && existingOrder.user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized access to this payment transaction." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const result = await PaymentService.verifyPaystackPayment(reference);
+    if (result?.orderId && !existingOrder && !isAdmin) {
+      const [verifiedOrder] = await sql`
+        SELECT user_id FROM orders WHERE id = ${result.orderId} LIMIT 1
+      `;
+      if (verifiedOrder && verifiedOrder.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Unauthorized access to this payment transaction." }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { "Content-Type": "application/json" },

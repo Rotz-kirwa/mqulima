@@ -94,7 +94,7 @@
       ]
     },
     {
-      "source": "/(favicon\\.(ico|svg)|favicon-.*\\.png|apple-touch-icon.*\\.png|manifest\\.webmanifest|icon-.*\\.png|mqulima-logo.*\\.png)",
+      "source": "/(favicon\\.ico|favicon\\.svg|favicon-.*\\.png|apple-touch-icon.*\\.png|manifest\\.webmanifest|icon-.*\\.png|mqulima-logo.*\\.png)",
       "headers": [
         {
           "key": "Cache-Control",

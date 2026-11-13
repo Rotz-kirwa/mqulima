@@ -101,7 +101,7 @@ export function Footer() {
           <FooterCol
             title="Support & Legal"
             links={[
-              { to: "/terms", label: "Privacy Policy" },
+              { to: "/privacy", label: "Privacy Policy" },
               { to: "/terms", label: "Terms & Conditions" },
               { to: "/contact", label: "Support Helpdesk" },
             ]}
@@ -168,7 +168,7 @@ export function Footer() {
             <span>·</span>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             <span>·</span>
-            <Link to="/terms" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           </div>
           <p className="font-bold text-white/40">Engineered by Webmakers</p>
         </div>

@@ -57,7 +57,7 @@ export async function authenticateRequest(request: Request): Promise<Authenticat
 
     const sql = getDb();
 
-    // Query profiles table
+    // Query profiles table (deleted or anonymized accounts immediately lose session access)
     let [dbProfile] = await sql`
       SELECT 
         p.id, p.email, p.full_name, p.phone, p.role, 
@@ -67,6 +67,7 @@ export async function authenticateRequest(request: Request): Promise<Authenticat
       LEFT JOIN users u ON u.id = p.id
       WHERE (p.id = ${userId || "00000000-0000-0000-0000-000000000000"} OR LOWER(p.email) = ${tokenEmail})
         AND p.deleted_at IS NULL
+        AND COALESCE(p.status, 'active') <> 'deleted'
       LIMIT 1
     `;
 
@@ -77,6 +78,7 @@ export async function authenticateRequest(request: Request): Promise<Authenticat
         FROM users
         WHERE (id = ${userId || "00000000-0000-0000-0000-000000000000"} OR LOWER(email) = ${tokenEmail})
           AND deleted_at IS NULL
+          AND COALESCE(status, 'active') <> 'deleted'
         LIMIT 1
       `;
       if (!dbUser) return null;

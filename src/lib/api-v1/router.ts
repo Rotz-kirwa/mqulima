@@ -1,4 +1,13 @@
-import { handleAuthRegister, handleAuthLogin, handleAuthMe, handleUpdateProfile } from "./auth";
+import {
+  handleAuthRegister,
+  handleAuthLogin,
+  handleAuthMe,
+  handleUpdateProfile,
+  handleForgotPassword,
+  handleResetPassword,
+  handleDeleteAccount,
+} from "./auth";
+import { applyCorsHeaders, corsOptionsResponse } from "./cors";
 import { handleListProducts, handleFeaturedProducts, handleGetProduct, handleGetCategories, handleGetProductsByIds } from "./products";
 import { handleCreateOrder, handleGetMyOrders } from "./orders";
 import { handleMpesaStkPush, handlePaymentStatus, handlePaystackInitialize, handlePaystackVerify } from "./payments";
@@ -33,29 +42,40 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
   const method = request.method.toUpperCase();
   const path = url.pathname.replace(/\/$/, "");
 
-  // CORS preflight handling for mobile web previews
+  // Explicit origin CORS preflight handling (no wildcard "*")
   if (method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Cache-Control, Accept, Range",
-        "Access-Control-Max-Age": "86400",
-      },
-    });
+    return corsOptionsResponse(request);
   }
 
+  const response = await dispatchApiV1Route(request, url, method, path);
+  return applyCorsHeaders(response, request);
+}
+
+async function dispatchApiV1Route(
+  request: Request,
+  url: URL,
+  method: string,
+  path: string
+): Promise<Response> {
   try {
-    // 1. Auth routes
+    // 1. Auth & Account Lifecycle routes
     if (path === "/api/v1/auth/register" && method === "POST") {
       return await handleAuthRegister(request);
     }
     if (path === "/api/v1/auth/login" && method === "POST") {
       return await handleAuthLogin(request);
     }
+    if (path === "/api/v1/auth/forgot-password" && method === "POST") {
+      return await handleForgotPassword(request);
+    }
+    if (path === "/api/v1/auth/reset-password" && method === "POST") {
+      return await handleResetPassword(request);
+    }
     if (path === "/api/v1/auth/me" && method === "GET") {
       return await handleAuthMe(request);
+    }
+    if ((path === "/api/v1/account" || path === "/api/v1/auth/me") && method === "DELETE") {
+      return await handleDeleteAccount(request);
     }
     if ((path === "/api/v1/user/profile" || path === "/api/v1/auth/profile") && (method === "PUT" || method === "POST")) {
       return await handleUpdateProfile(request);
@@ -93,7 +113,7 @@ export async function handleApiV1Request(request: Request, url: URL): Promise<Re
     }
     const paymentStatusMatch = path.match(/^\/api\/v1\/payments\/status\/([^/]+)$/);
     if (paymentStatusMatch && method === "GET") {
-      return await handlePaymentStatus(decodeURIComponent(paymentStatusMatch[1]));
+      return await handlePaymentStatus(decodeURIComponent(paymentStatusMatch[1]), request);
     }
     if (path === "/api/v1/payments/paystack/initialize" && method === "POST") {
       return await handlePaystackInitialize(request);
