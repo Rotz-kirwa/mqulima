@@ -152,9 +152,29 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { isOnline } = usePWA();
   const [mounted, setMounted] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setMounted(true);
+
+    // Restore last visited route when user reopens or restarts site at root
+    if (typeof window !== "undefined") {
+      try {
+        const lastRoute = localStorage.getItem("mqulima_last_route");
+        if (
+          window.location.pathname === "/" &&
+          !window.location.search &&
+          lastRoute &&
+          lastRoute !== "/" &&
+          !lastRoute.startsWith("/auth/") &&
+          !lastRoute.startsWith("/api/")
+        ) {
+          navigate({ to: lastRoute as any, replace: true });
+        }
+      } catch {}
+    }
+
     // Generate CSRF token on app initialization
     const initCsrf = async () => {
       try {
@@ -165,6 +185,26 @@ function RootComponent() {
     };
     initCsrf();
   }, []);
+
+  // Persist active route so restarting/refreshing always returns to the same page
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const searchStr = location.search && Object.keys(location.search).length > 0
+        ? `?${new URLSearchParams(location.search as any).toString()}`
+        : "";
+      const fullPath = location.pathname + searchStr;
+      if (
+        fullPath &&
+        !fullPath.startsWith("/auth/") &&
+        !fullPath.startsWith("/api/") &&
+        !fullPath.includes("error") &&
+        fullPath !== "/404"
+      ) {
+        localStorage.setItem("mqulima_last_route", fullPath);
+      }
+    } catch {}
+  }, [location.pathname, location.search]);
 
   return (
     <QueryClientProvider client={queryClient}>
