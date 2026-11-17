@@ -1,4 +1,4 @@
-const CACHE_NAME = "mqulima-cache-v3";
+const CACHE_NAME = "mqulima-cache-v4";
 const ASSETS_TO_CACHE = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 // Install Event
@@ -40,17 +40,23 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Avoid intercepting non-GET requests or non-http/https protocols
-  if (event.request.method !== "GET" || !url.protocol.startsWith("http")) {
+  // Avoid intercepting non-GET requests, non-http/https protocols, or DevTools only-if-cached cross-origin probes
+  if (
+    event.request.method !== "GET" ||
+    !url.protocol.startsWith("http") ||
+    (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin")
+  ) {
     return;
   }
 
-  // Bypass API endpoints, server functions, authentication pages, and admin panels
+  // Bypass API endpoints, server functions, authentication, account/checkout routes, and admin panels
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_server/") ||
     url.pathname.startsWith("/auth/") ||
     url.pathname.startsWith("/admin/") ||
+    url.pathname.startsWith("/dashboard") ||
+    url.pathname.startsWith("/payments") ||
     url.searchParams.has("_t")
   ) {
     return;
@@ -84,6 +90,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Only handle Cache-First for true static assets; never intercept document/prefetch/route fetches as assets
+  const isStaticAsset =
+    ["style", "script", "image", "font", "manifest"].includes(event.request.destination) ||
+    url.pathname.startsWith("/assets/") ||
+    url.pathname.startsWith("/images/") ||
+    url.pathname.startsWith("/fonts/") ||
+    /\.(?:js|mjs|css|png|jpg|jpeg|webp|gif|svg|ico|woff2?|ttf|eot|webmanifest)(\?.*)?$/i.test(
+      url.pathname,
+    );
+
+  if (!isStaticAsset) {
+    return;
+  }
+
   // Cache-First for static assets (JS, CSS, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
@@ -103,13 +123,17 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch((error) => {
-          console.warn("Service worker fetch failed for asset:", event.request.url, error);
-          // Return a 503 response to avoid uncaught promise rejections and HTML MIME type errors for assets
-          return new Response("Asset not available offline", {
-            status: 503,
-            statusText: "Service Unavailable",
-            headers: { "Content-Type": "text/plain" },
-          });
+          if (error && error.name !== "AbortError") {
+            console.warn("Service worker fetch failed for asset:", event.request.url, error);
+          }
+          if (self.navigator && self.navigator.onLine === false) {
+            return new Response("Asset not available offline", {
+              status: 503,
+              statusText: "Service Unavailable",
+              headers: { "Content-Type": "text/plain" },
+            });
+          }
+          return Response.error();
         });
     }),
   );

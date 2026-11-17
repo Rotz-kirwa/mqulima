@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
@@ -90,16 +90,7 @@ function Dashboard() {
 
   const queryClient = useQueryClient();
 
-  const cachedUser = (() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("mqulima_user_account");
-        if (stored) return JSON.parse(stored);
-      } catch (e) {}
-    }
-    return null;
-  })();
-
+  const [cachedUser, setCachedUser] = useState<any | null>(null);
   const activeUser = user || cachedUser;
   const isAdmin = activeUser?.role === "admin" || activeUser?.role === "super_admin";
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -139,8 +130,30 @@ function Dashboard() {
   });
 
   const [mounted, setMounted] = useState(false);
+  const redirectedRef = useRef(false);
+
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("mqulima_user_account");
+        if (stored) setCachedUser(JSON.parse(stored));
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isLoading || activeUser || redirectedRef.current) return;
+    redirectedRef.current = true;
+    navigate({
+      to: "/auth/sign-in",
+      search: { redirect: `/dashboard?tab=${activeTab}` } as any,
+      replace: true,
+    });
+  }, [mounted, isLoading, activeUser, activeTab, navigate]);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (activeUser && (activeUser.role === "admin" || activeUser.role === "super_admin")) {
       const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
       if (link) {
@@ -163,19 +176,14 @@ function Dashboard() {
         })
         .catch(() => {});
     }
-  }, [activeUser]);
+  }, [mounted, activeUser]);
 
-  if (!mounted || (isLoading && !activeUser)) {
+  if (!mounted || !activeUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FCFBF4]">
         <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
       </div>
     );
-  }
-
-  if (!activeUser) {
-    const redirectTarget = `/dashboard?tab=${activeTab}`;
-    return <Navigate to="/auth/sign-in" search={{ redirect: redirectTarget } as any} />;
   }
 
   const handleToggleChannel = async (key: "sowing" | "market" | "weather", value: boolean) => {

@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState, lazy, Suspense } from "react";
+import { type ReactNode, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { WifiOff } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { generateCsrfToken } from "@/lib/csrf.server";
@@ -154,25 +154,58 @@ function RootComponent() {
   const [mounted, setMounted] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const restoreHandledRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // Restore last visited route when user reopens or restarts site at root
+    let rafId = 0;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+
+    // Restore last visited route only after hydration settles (prevents React #418 mismatch)
     if (typeof window !== "undefined") {
       try {
         const lastRoute = localStorage.getItem("mqulima_last_route");
+        const hasStoredAuth =
+          Boolean(localStorage.getItem("mq_token")) ||
+          Boolean(localStorage.getItem("mqulima_user_account"));
+
         if (
           window.location.pathname === "/" &&
           !window.location.search &&
           lastRoute &&
           lastRoute !== "/" &&
           !lastRoute.startsWith("/auth/") &&
-          !lastRoute.startsWith("/api/")
+          !lastRoute.startsWith("/api/") &&
+          (!lastRoute.startsWith("/dashboard") || hasStoredAuth)
         ) {
-          navigate({ to: lastRoute as any, replace: true });
+          const parsed = new URL(lastRoute, window.location.origin);
+          if (parsed.origin === window.location.origin && parsed.pathname !== "/") {
+            const searchEntries = Array.from(parsed.searchParams.entries());
+            const searchObj =
+              searchEntries.length > 0 ? Object.fromEntries(searchEntries) : undefined;
+
+            rafId = window.requestAnimationFrame(() => {
+              timerId = setTimeout(() => {
+                restoreHandledRef.current = true;
+                if (window.location.pathname === "/" && !window.location.search) {
+                  navigate({
+                    to: parsed.pathname as any,
+                    ...(searchObj ? { search: searchObj as any } : {}),
+                    replace: true,
+                  });
+                }
+              }, 0);
+            });
+          } else {
+            restoreHandledRef.current = true;
+          }
+        } else {
+          restoreHandledRef.current = true;
         }
-      } catch {}
+      } catch {
+        restoreHandledRef.current = true;
+      }
     }
 
     // Generate CSRF token on app initialization
@@ -184,11 +217,23 @@ function RootComponent() {
       }
     };
     initCsrf();
-  }, []);
+
+    return () => {
+      if (rafId && typeof window !== "undefined") {
+        window.cancelAnimationFrame(rafId);
+      }
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+    };
+  }, [navigate]);
 
   // Persist active route so restarting/refreshing always returns to the same page
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!restoreHandledRef.current && location.pathname === "/") return;
+    restoreHandledRef.current = true;
+
     try {
       const searchStr = location.search && Object.keys(location.search).length > 0
         ? `?${new URLSearchParams(location.search as any).toString()}`
