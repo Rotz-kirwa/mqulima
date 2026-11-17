@@ -108,7 +108,7 @@ export const initiateStkPush = createServerFn({ method: "POST" })
 
       const { getMpesaWebhookSecret } = await import("../mpesa-helpers.server");
       const webhookSecret = getMpesaWebhookSecret();
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://mqulima.com";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "https://www.mqulima.com";
       const callbackUrl = `${appUrl.replace(/\/$/, "")}/api/mpesa/callback?token=${webhookSecret}`;
 
       const payload = {

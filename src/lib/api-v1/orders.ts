@@ -117,7 +117,7 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           ${authoritativeTotal},
           'pending',
           ${
-            paymentMethod === "manual"
+            paymentMethod === "manual" || paymentMethod === "mpesa"
               ? "mpesa"
               : paymentMethod === "airtel" || paymentMethod === "airtel_money"
               ? "airtel_money"
@@ -126,7 +126,7 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           'pending',
           ${deliveryAddress},
           'website',
-          ${`Mobile App Order via ${paymentMethod.toUpperCase()}`}
+          ${`Mobile App Order via ${paymentMethod === "manual" ? "PAY_ON_DELIVERY" : paymentMethod.toUpperCase()}`}
         )
         RETURNING id, created_at
       `;

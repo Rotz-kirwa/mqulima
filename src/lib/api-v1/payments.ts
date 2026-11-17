@@ -108,7 +108,7 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       ? "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
       : "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
 
-    const rawCallbackUrl = (process.env.MPESA_CALLBACK_URL || "https://mqulima.com/api/mpesa/callback").trim();
+    const rawCallbackUrl = (process.env.MPESA_CALLBACK_URL || "https://www.mqulima.com/api/mpesa/callback").trim();
     const webhookSecret = getMpesaWebhookSecret();
     const callbackUrl = rawCallbackUrl.includes("token=")
       ? rawCallbackUrl
@@ -128,7 +128,7 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       TransactionDesc: `Mqulima Order ${orderId.slice(0, 8)}`,
     };
 
-    const res = await fetch(stkUrl, {
+    let res = await fetch(stkUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -137,7 +137,22 @@ export async function handleMpesaStkPush(request: Request): Promise<Response> {
       body: JSON.stringify(stkPayload),
     });
 
-    const data = await res.json();
+    let data = await res.json();
+
+    if (data?.errorMessage?.includes("Invalid Access Token") || data?.errorCode === "404.001.03") {
+      const { clearMpesaTokenCache } = await import("../mpesa-helpers.server");
+      clearMpesaTokenCache();
+      const freshToken = await getMpesaToken(true);
+      res = await fetch(stkUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${freshToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(stkPayload),
+      });
+      data = await res.json();
+    }
 
     if (data.ResponseCode === "0") {
       // Record pending payment in DB
@@ -365,7 +380,7 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
       email: email || user.email,
       isAdmin: false,
       channels: resolvedChannels,
-      callbackUrl: isSafeCallback ? callbackUrl.trim() : "https://mqulima.com/payments/paystack/callback",
+      callbackUrl: isSafeCallback ? callbackUrl.trim() : "https://www.mqulima.com/payments/paystack/callback",
     });
 
     return new Response(JSON.stringify(result), {
