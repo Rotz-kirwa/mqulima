@@ -117,7 +117,7 @@ export async function handleCreateOrder(request: Request): Promise<Response> {
           ${authoritativeTotal},
           'pending',
           ${
-            paymentMethod === "manual" || paymentMethod === "mpesa"
+            paymentMethod === "manual"
               ? "mpesa"
               : paymentMethod === "airtel" || paymentMethod === "airtel_money"
               ? "airtel_money"

@@ -10,7 +10,13 @@ import {
 import { applyCorsHeaders, corsOptionsResponse } from "./cors";
 import { handleListProducts, handleFeaturedProducts, handleGetProduct, handleGetCategories, handleGetProductsByIds } from "./products";
 import { handleCreateOrder, handleGetMyOrders } from "./orders";
-import { handleMpesaStkPush, handlePaymentStatus, handlePaystackInitialize, handlePaystackVerify } from "./payments";
+import {
+  handleMpesaStkPush,
+  handlePaymentStatus,
+  handlePaystackInitialize,
+  handlePaystackMobileMoney,
+  handlePaystackVerify,
+} from "./payments";
 import {
   handleForumFeed,
   handleCreatePost,
@@ -117,6 +123,9 @@ async function dispatchApiV1Route(
     }
     if (path === "/api/v1/payments/paystack/initialize" && method === "POST") {
       return await handlePaystackInitialize(request);
+    }
+    if (path === "/api/v1/payments/paystack/mobile-money" && method === "POST") {
+      return await handlePaystackMobileMoney(request);
     }
     if (path === "/api/v1/payments/paystack/verify" && method === "POST") {
       return await handlePaystackVerify(request);

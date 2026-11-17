@@ -359,16 +359,26 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
 
   try {
     const body = await request.json();
-    const { orderId, email, channels, paymentMethod, callbackUrl } = body;
+    const { orderId, email, phone, channels, paymentMethod, callbackUrl } = body;
 
     const resolvedChannels =
       Array.isArray(channels) && channels.length > 0
         ? channels
         : paymentMethod === "mpesa" || paymentMethod === "airtel" || paymentMethod === "airtel_money"
         ? ["mobile_money"]
-        : paymentMethod === "visa" || paymentMethod === "mastercard"
+        : paymentMethod === "visa" || paymentMethod === "mastercard" || paymentMethod === "card"
         ? ["card"]
+        : paymentMethod === "bank" || paymentMethod === "pesalink"
+        ? ["bank", "bank_transfer"]
         : undefined;
+
+    const cleanDigits = String(phone || user.phone || "").replace(/[^0-9]/g, "");
+    const resolvedEmail =
+      typeof email === "string" && email.includes("@")
+        ? email.trim().toLowerCase()
+        : typeof user.email === "string" && user.email.includes("@")
+        ? user.email.trim().toLowerCase()
+        : `${cleanDigits || "shopper"}@mqulima.com`;
 
     const isSafeCallback =
       typeof callbackUrl === "string" &&
@@ -377,7 +387,7 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
     const result = await PaymentService.initiatePaystackPayment({
       orderId,
       userId: user.id,
-      email: email || user.email,
+      email: resolvedEmail,
       isAdmin: false,
       channels: resolvedChannels,
       callbackUrl: isSafeCallback ? callbackUrl.trim() : "https://www.mqulima.com/payments/paystack/callback",
@@ -390,6 +400,66 @@ export async function handlePaystackInitialize(request: Request): Promise<Respon
   } catch (err: any) {
     return new Response(
       JSON.stringify({ success: false, error: err?.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+export async function handlePaystackMobileMoney(request: Request): Promise<Response> {
+  const user = await authenticateRequest(request);
+  if (!user) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  try {
+    const body = await request.json();
+    const { orderId, phone, email, provider, paymentMethod } = body;
+
+    if (!orderId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "orderId is required." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const rawPhone = String(phone || user.phone || "").trim();
+    const cleanDigits = rawPhone.replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 9) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Valid Kenyan mobile number is required." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const resolvedProvider: "atl" | "mpesa" =
+      provider === "atl" || paymentMethod === "airtel" || paymentMethod === "airtel_money" ? "atl" : "mpesa";
+
+    const resolvedEmail =
+      typeof email === "string" && email.includes("@")
+        ? email.trim().toLowerCase()
+        : typeof user.email === "string" && user.email.includes("@")
+        ? user.email.trim().toLowerCase()
+        : `${cleanDigits}@mqulima.com`;
+
+    const result = await PaymentService.chargePaystackMobileMoney({
+      orderId,
+      userId: user.id,
+      phone: rawPhone,
+      email: resolvedEmail,
+      provider: resolvedProvider,
+      isAdmin: false,
+    });
+
+    return new Response(JSON.stringify(result), {
+      status: result.success ? 200 : 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ success: false, error: err?.message || "Failed to initiate Paystack mobile money payment." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

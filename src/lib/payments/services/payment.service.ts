@@ -520,6 +520,19 @@ export class PaymentService {
       }
     });
 
+    if (!chargeRes.success) {
+      return {
+        success: false,
+        orderId,
+        reference,
+        amount: serverAmount,
+        status: "failed",
+        displayText: chargeRes.error || "Failed to initiate Paystack mobile money prompt.",
+        isDirectPromptSuccess: false,
+        error: chargeRes.error || "Failed to initiate Paystack mobile money prompt."
+      };
+    }
+
     // 4. Save pending payment record in database
     const [insertedPayment] = await sql`
       INSERT INTO payments (
