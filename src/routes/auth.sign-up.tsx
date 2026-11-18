@@ -35,11 +35,13 @@ function SignUp() {
   const [phoneNumber, setPhoneNumber] = useState("+254");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [terms, setTerms] = useState(true);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const startedTrackedRef = useRef(false);
@@ -106,10 +108,12 @@ function SignUp() {
       ne["email"] = "Invalid email address";
     }
 
-    if (!password) {
-      ne["password"] = "4-digit password is required";
-    } else if (password.length < 4) {
-      ne["password"] = "Password / PIN must be at least 4 digits";
+    if (!/^\d{4}$/.test(password)) {
+      ne["password"] = "Enter a 4-digit password";
+    }
+
+    if (confirmPassword !== password) {
+      ne["confirmPassword"] = "Passwords do not match";
     }
 
     if (!terms) {
@@ -118,7 +122,7 @@ function SignUp() {
 
     if (Object.keys(ne).length > 0) {
       setErrors(ne);
-      setTouched({ fullName: true, phoneNumber: true, email: true, password: true, terms: true });
+      setTouched({ fullName: true, phoneNumber: true, email: true, password: true, confirmPassword: true, terms: true });
       setLoading(false);
       const firstErrKey = Object.keys(ne)[0];
       toast.error(ne[firstErrKey] || "Please fill in all required fields.");
@@ -186,10 +190,10 @@ function SignUp() {
           </Link>
 
           <h1 className="text-2xl sm:text-3xl font-black text-[#1C201D] tracking-tight">
-            Join Mqulima Today
+            Create your account
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-            Create your profile to buy, sell, and connect with Kenya's farming community.
+          <p className="text-sm font-bold italic tracking-wide mt-1 text-[#056B3A]">
+            ✨ ...taking you <span className="font-extrabold text-[#D97706]">first class</span> ✨
           </p>
         </div>
 
@@ -213,7 +217,7 @@ function SignUp() {
             <div className="bg-[#FAF8F0] rounded-2xl px-4 py-3 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60">
               <label htmlFor="fullName" className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5 uppercase">
                 <User className="w-3.5 h-3.5 text-[#056B3A]" />
-                <span>Full Name</span>
+                <span>Full Names</span>
               </label>
               <input
                 id="fullName"
@@ -237,7 +241,7 @@ function SignUp() {
                     setErrors(p => { const cp = { ...p }; delete cp.fullName; return cp; });
                   }
                 }}
-                placeholder="e.g. Peter Keff"
+                placeholder="e.g. Kosgei Kiprono"
                 required
                 className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
               />
@@ -277,77 +281,87 @@ function SignUp() {
             </div>
           </div>
 
-          {/* GRID ROW 2: EMAIL ADDRESS & 4-DIGIT PASSWORD / PIN */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* EMAIL ADDRESS */}
-            <div className="bg-[#FAF8F0] rounded-2xl px-4 py-3 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60">
-              <label htmlFor="email" className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5 uppercase">
-                <Mail className="w-3.5 h-3.5 text-[#056B3A]" />
-                <span>Email Address</span>
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (touched.email) {
-                    if (!e.target.value.trim() || !/\S+@\S+\.\S+/.test(e.target.value)) {
-                      setErrors(p => ({ ...p, email: "Enter a valid email address" }));
-                    } else {
-                      setErrors(p => { const cp = { ...p }; delete cp.email; return cp; });
-                    }
-                  }
-                }}
-                onBlur={() => {
-                  setTouched(p => ({ ...p, email: true }));
-                  if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+          {/* EMAIL ADDRESS */}
+          <div className="bg-[#FAF8F0] rounded-2xl px-4 py-3 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60">
+            <label htmlFor="email" className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5 uppercase">
+              <Mail className="w-3.5 h-3.5 text-[#056B3A]" />
+              <span>Email</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (touched.email) {
+                  if (!e.target.value.trim() || !/\S+@\S+\.\S+/.test(e.target.value)) {
                     setErrors(p => ({ ...p, email: "Enter a valid email address" }));
                   } else {
                     setErrors(p => { const cp = { ...p }; delete cp.email; return cp; });
                   }
-                }}
-                placeholder="farmer@gmail.com"
-                required
-                className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-              />
-              {errors.email && (
-                <p className="text-[10px] font-bold text-red-500 mt-1">{errors.email}</p>
-              )}
-            </div>
+                }
+              }}
+              onBlur={() => {
+                setTouched(p => ({ ...p, email: true }));
+                if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+                  setErrors(p => ({ ...p, email: "Enter a valid email address" }));
+                } else {
+                  setErrors(p => { const cp = { ...p }; delete cp.email; return cp; });
+                }
+              }}
+              placeholder="you@example.com"
+              required
+              className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+            />
+            {errors.email && (
+              <p className="text-[10px] font-bold text-red-500 mt-1">{errors.email}</p>
+            )}
+          </div>
 
-            {/* 4-DIGIT PASSWORD / PIN */}
+          {/* GRID ROW 2: 4-DIGIT PASSWORD & CONFIRM PASSWORD */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* 4-DIGIT PASSWORD */}
             <div className="bg-[#FAF8F0] rounded-2xl px-4 py-3 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60 relative">
               <label htmlFor="password" className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5 uppercase">
                 <Lock className="w-3.5 h-3.5 text-[#056B3A]" />
-                <span>Password / PIN (4+ digits)</span>
+                <span>4-Digit Password</span>
               </label>
               <div className="flex items-center justify-between">
                 <input
                   id="password"
                   type={showPw ? "text" : "password"}
+                  inputMode="numeric"
+                  maxLength={4}
                   name="password"
                   value={password}
                   onChange={(e) => {
-                    setPassword(e.target.value);
+                    const pin = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    setPassword(pin);
                     if (touched.password) {
-                      if (!e.target.value || e.target.value.length < 4) {
-                        setErrors(p => ({ ...p, password: "Must be at least 4 digits" }));
+                      if (!/^\d{4}$/.test(pin)) {
+                        setErrors(p => ({ ...p, password: "Enter a 4-digit password" }));
                       } else {
                         setErrors(p => { const cp = { ...p }; delete cp.password; return cp; });
+                      }
+                    }
+                    if (touched.confirmPassword) {
+                      if (confirmPassword !== pin) {
+                        setErrors(p => ({ ...p, confirmPassword: "Passwords do not match" }));
+                      } else {
+                        setErrors(p => { const cp = { ...p }; delete cp.confirmPassword; return cp; });
                       }
                     }
                   }}
                   onBlur={() => {
                     setTouched(p => ({ ...p, password: true }));
-                    if (!password || password.length < 4) {
-                      setErrors(p => ({ ...p, password: "Must be at least 4 digits" }));
+                    if (!/^\d{4}$/.test(password)) {
+                      setErrors(p => ({ ...p, password: "Enter a 4-digit password" }));
                     } else {
                       setErrors(p => { const cp = { ...p }; delete cp.password; return cp; });
                     }
                   }}
-                  placeholder="e.g. 1234"
+                  placeholder="Enter 4-digit password"
                   required
                   className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400 pr-8"
                 />
@@ -363,6 +377,58 @@ function SignUp() {
 
               {errors.password && (
                 <p className="text-[10px] font-bold text-red-500 mt-1">{errors.password}</p>
+              )}
+            </div>
+
+            {/* CONFIRM PASSWORD */}
+            <div className="bg-[#FAF8F0] rounded-2xl px-4 py-3 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60 relative">
+              <label htmlFor="confirmPassword" className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5 uppercase">
+                <Lock className="w-3.5 h-3.5 text-[#056B3A]" />
+                <span>Confirm Password</span>
+              </label>
+              <div className="flex items-center justify-between">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPw ? "text" : "password"}
+                  inputMode="numeric"
+                  maxLength={4}
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    const pin = e.target.value.replace(/\D/g, "").slice(0, 4);
+                    setConfirmPassword(pin);
+                    if (touched.confirmPassword) {
+                      if (pin !== password) {
+                        setErrors(p => ({ ...p, confirmPassword: "Passwords do not match" }));
+                      } else {
+                        setErrors(p => { const cp = { ...p }; delete cp.confirmPassword; return cp; });
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(p => ({ ...p, confirmPassword: true }));
+                    if (confirmPassword !== password) {
+                      setErrors(p => ({ ...p, confirmPassword: "Passwords do not match" }));
+                    } else {
+                      setErrors(p => { const cp = { ...p }; delete cp.confirmPassword; return cp; });
+                    }
+                  }}
+                  placeholder="Repeat 4-digit password"
+                  required
+                  className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400 pr-8"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPw(!showConfirmPw)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer p-0.5"
+                  aria-label={showConfirmPw ? "Hide password confirmation" : "Show password confirmation"}
+                >
+                  {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {errors.confirmPassword && (
+                <p className="text-[10px] font-bold text-red-500 mt-1">{errors.confirmPassword}</p>
               )}
             </div>
           </div>
@@ -389,7 +455,7 @@ function SignUp() {
             <p className="text-[10px] font-bold text-red-300 text-left px-1">{errors.terms}</p>
           )}
 
-          {/* SIGN UP BUTTON */}
+          {/* JOIN US BUTTON */}
           <div className="flex justify-center pt-2">
             <button
               type="submit"
@@ -402,7 +468,7 @@ function SignUp() {
                   <span>Creating Account...</span>
                 </>
               ) : (
-                <span>Sign Up</span>
+                <span>Join Us</span>
               )}
             </button>
           </div>

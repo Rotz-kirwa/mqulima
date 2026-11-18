@@ -59,8 +59,8 @@ function SignIn() {
       setLoading(false);
       return;
     }
-    if (!formData.password) {
-      setErrorMsg("Please enter your password");
+    if (!formData.password || formData.password.length < 4) {
+      setErrorMsg("Password must be at least 4 characters");
       setLoading(false);
       return;
     }
@@ -112,10 +112,16 @@ function SignIn() {
       {/* DEEP FOREST GREEN CARD BODY */}
       <div className="bg-[#056B3A] px-6 sm:px-7 pt-1 pb-8 text-white">
         
-        {/* TITLE */}
-        <h1 className="text-2xl sm:text-[26px] font-black text-white text-center tracking-tight mb-5 drop-shadow-xs">
-          Log In
+        {/* TITLE & SLOGAN */}
+        <h1 className="text-2xl sm:text-[26px] font-black text-white text-center tracking-tight drop-shadow-xs">
+          Welcome back
         </h1>
+        <p className="text-xs text-white/85 text-center mt-1">
+          Sign in to your Mqulima account
+        </p>
+        <p className="text-xs font-bold italic tracking-wide text-[#80E6A7] text-center mt-1 mb-5">
+          ✨ ...taking you <span className="font-extrabold text-[#FACC15]">first class</span> ✨
+        </p>
 
         {/* CONTEXTUAL BANNER FOR REDIRECTS */}
         {redirectParam && (
@@ -149,7 +155,7 @@ function SignIn() {
               name="identifier"
               value={formData.identifier}
               onChange={handleChange}
-              placeholder="johndoe@xyz.com"
+              placeholder="you@example.com"
               autoComplete="username"
               required
               className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
@@ -205,7 +211,7 @@ function SignIn() {
             </Link>
           </div>
 
-          {/* LOG IN BUTTON (VIBRANT YELLOW PILL - CENTERED & COMPACT) */}
+          {/* SIGN IN BUTTON (VIBRANT YELLOW PILL - CENTERED & COMPACT) */}
           <div className="flex justify-center pt-3">
             <button
               type="submit"
@@ -215,10 +221,10 @@ function SignIn() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-[#14120F]" />
-                  <span>Logging In...</span>
+                  <span>Signing In...</span>
                 </>
               ) : (
-                <span>Log In</span>
+                <span>Sign In</span>
               )}
             </button>
           </div>
@@ -226,13 +232,13 @@ function SignIn() {
 
         {/* FOOTER SWITCH LINK */}
         <p className="text-center text-xs text-white/90 pt-6 font-normal">
-          Don't have an account?{" "}
+          New to Mqulima?{" "}
           <Link
             to="/auth/sign-up"
             search={redirectParam ? { redirect: redirectParam } as any : undefined}
             className="font-bold text-[#80E6A7] hover:underline transition-colors ml-0.5"
           >
-            Sign Up
+            Join Us
           </Link>
         </p>
 
