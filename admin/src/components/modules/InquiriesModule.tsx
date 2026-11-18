@@ -20,6 +20,7 @@ import { adminFetch } from "../../lib/api";
 export const InquiriesModule: React.FC = () => {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
 
   // Filters & Search
@@ -51,20 +52,26 @@ export const InquiriesModule: React.FC = () => {
     }
   }, [openedTicketIds]);
 
-  const fetchInquiries = () => {
+  const fetchInquiries = (bypassCache = false) => {
     setLoading(true);
-    adminFetch("/api/admin/inquiries")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setInquiries(data.inquiries);
-          if (data.inquiries.length > 0) {
-            setSelectedTicket((prev: any) => prev || data.inquiries[0]);
-          }
+    setErrorMsg(null);
+    adminFetch("/api/admin/inquiries", { bypassCache })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        setInquiries(Array.isArray(data.inquiries) ? data.inquiries : []);
+        if (Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+          setSelectedTicket((prev: any) => prev || data.inquiries[0]);
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error("Fetch inquiries error:", err);
+        setErrorMsg(err?.message || "Failed to load inquiries");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -158,7 +165,7 @@ export const InquiriesModule: React.FC = () => {
         </div>
 
         <button
-          onClick={fetchInquiries}
+          onClick={() => fetchInquiries(true)}
           disabled={loading}
           className="inline-flex items-center gap-2 bg-[#E8F4F1] hover:bg-[#D4ECE6] text-[#0F3D3C] text-xs font-bold px-4 py-2.5 rounded-lg border border-[#CCE5E1] shadow-2xs transition cursor-pointer active:scale-95"
         >
@@ -168,6 +175,17 @@ export const InquiriesModule: React.FC = () => {
       </div>
 
       {/* High-Contrast Metrics Cards */}
+      {errorMsg && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-4 text-xs text-red-700 font-mono">
+          <span>Failed to load inquiries: {errorMsg}</span>
+          <button
+            onClick={() => fetchInquiries(true)}
+            className="px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition cursor-pointer shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Inquiries */}
         <div className="bg-white border border-[#CCE5E1] rounded-xl p-4 shadow-2xs hover:border-[#278C7B]/50 transition duration-200">

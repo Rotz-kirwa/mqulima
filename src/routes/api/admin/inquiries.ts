@@ -110,7 +110,16 @@ export const Route = createFileRoute("/api/admin/inquiries")({
 
           // Map partnership_applications
           partnerships.forEach((p: any, idx: number) => {
-            const details = typeof p.details === "string" ? JSON.parse(p.details || "{}") : (p.details || {});
+            let details: Record<string, any> = {};
+            if (typeof p.details === "string") {
+              try {
+                details = JSON.parse(p.details || "{}");
+              } catch {
+                details = {};
+              }
+            } else if (p.details && typeof p.details === "object") {
+              details = p.details;
+            }
             const contactName = details.contact_name || "Partnership Lead";
             const phone = details.phone || "+254 723 346 134";
             const goal = details.goal || "Partnership Proposal";
@@ -185,7 +194,7 @@ export const Route = createFileRoute("/api/admin/inquiries")({
         if ("response" in auth) return auth.response;
         try {
           const body = await request.json();
-          const { id, sourceTable, status, assignedStaff, adminNotes, actorId = "admin-desk" } = body;
+          const { id, sourceTable, status, assignedStaff, adminNotes, actorId = auth.user.id } = body;
 
           const sql = getDb();
 

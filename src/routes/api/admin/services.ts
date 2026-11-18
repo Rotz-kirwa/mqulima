@@ -3,7 +3,6 @@ import { db } from "@/lib/db.server";
 import { serviceRequests } from "@/db/schema/services";
 import { profiles } from "@/db/schema/profiles";
 import { eq, desc, inArray } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/auth-server";
 import { RBACService, SecurityUserContext, UserRole } from "@/lib/rbac.server";
 import { logAdminAction } from "@/lib/audit.server";
 import { requireAdminAuth } from "@/lib/api/admin-auth.server";
@@ -44,30 +43,8 @@ export const Route = createFileRoute("/api/admin/services")({
         const auth = await requireAdminAuth(request);
         if ("response" in auth) return auth.response;
         try {
-          // 1. Session Authentication & Guard
-          let currentUser = await getCurrentUser();
-          const isAdminRole = Boolean(currentUser?.role && ["admin", "super_admin", "operations_manager"].includes(currentUser.role));
-          if (!isAdminRole && process.env.NODE_ENV !== "production") {
-            currentUser = {
-              id: auth.user.id,
-              name: auth.user.name,
-              email: auth.user.email,
-              role: auth.user.role,
-              county: "Nairobi",
-              farmSize: "0",
-              crops: "",
-              livestock: "",
-            };
-          }
-
-          if (!currentUser) {
-            return new Response(
-              JSON.stringify({ success: false, error: "Unauthorized: Authentication required" }),
-              { status: 401, headers: { "Content-Type": "application/json" } }
-            );
-          }
-
-          // 2. Server-Side RBAC Authorization Guard
+          // 1. Server-Side RBAC Authorization Guard (authenticated via Bearer or cookie in requireAdminAuth)
+          const currentUser = auth.user;
           const secUser: SecurityUserContext = {
             id: currentUser.id,
             email: currentUser.email,
@@ -135,30 +112,8 @@ export const Route = createFileRoute("/api/admin/services")({
         const auth = await requireAdminAuth(request);
         if ("response" in auth) return auth.response;
         try {
-          // 1. Session Authentication & Guard
-          let currentUser = await getCurrentUser();
-          const isAdminRole = Boolean(currentUser?.role && ["admin", "super_admin", "operations_manager"].includes(currentUser.role));
-          if (!isAdminRole && process.env.NODE_ENV !== "production") {
-            currentUser = {
-              id: auth.user.id,
-              name: auth.user.name,
-              email: auth.user.email,
-              role: auth.user.role,
-              county: "Nairobi",
-              farmSize: "0",
-              crops: "",
-              livestock: "",
-            };
-          }
-
-          if (!currentUser) {
-            return new Response(
-              JSON.stringify({ success: false, error: "Unauthorized: Authentication required" }),
-              { status: 401, headers: { "Content-Type": "application/json" } }
-            );
-          }
-
-          // 2. Server-Side RBAC Authorization Guard
+          // 1. Server-Side RBAC Authorization Guard (authenticated via Bearer or cookie in requireAdminAuth)
+          const currentUser = auth.user;
           const secUser: SecurityUserContext = {
             id: currentUser.id,
             email: currentUser.email,

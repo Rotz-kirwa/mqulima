@@ -211,18 +211,32 @@ function invalidateRelatedCaches(url: string) {
   }
 }
 
+const PREFETCH_FAILURE_COOLDOWN_MS = 30_000;
+const failedPrefetches = new Map<string, number>();
+
 /**
  * Prefetches data into the cache ahead of navigation
  */
 export function prefetchAdminData(path: string): void {
   const fullUrl = getApiUrl(path);
-  // Avoid re-fetching if already fresh in cache or in flight
+  const normKey = adminCache.normalizeKey(fullUrl);
+  // Avoid re-fetching if already fresh in cache, in flight, or recently failed
   const { isFresh } = adminCache.get(fullUrl);
+  const lastFailedAt = failedPrefetches.get(normKey);
   if (isFresh || adminCache.getInFlight(fullUrl)) return;
+  if (lastFailedAt && Date.now() - lastFailedAt < PREFETCH_FAILURE_COOLDOWN_MS) return;
 
-  adminFetch(fullUrl).catch(() => {
-    // Silent fail for prefetch
-  });
+  adminFetch(fullUrl)
+    .then((res) => {
+      if (!res.ok) {
+        failedPrefetches.set(normKey, Date.now());
+      } else {
+        failedPrefetches.delete(normKey);
+      }
+    })
+    .catch(() => {
+      failedPrefetches.set(normKey, Date.now());
+    });
 }
 
 /**
@@ -236,5 +250,6 @@ export function invalidateAdminCache(pattern: string): void {
  * Clears all admin caches
  */
 export function clearAdminCache(): void {
+  failedPrefetches.clear();
   adminCache.clearAll();
 }
