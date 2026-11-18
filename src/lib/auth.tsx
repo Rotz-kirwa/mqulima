@@ -149,8 +149,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateUser = useCallback((partial: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("mqulima_user_account", JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,13 +2,15 @@ import { Link, useNavigate, useLocation, useRouterState } from "@tanstack/react-
 import {
   ShoppingCart, Menu, X, User, Download, Search, Bell, ChevronDown,
   Home, ShoppingBag, Briefcase, BookOpen, Users as UsersIcon, FileText, Wrench, Sparkles,
-  LogOut, LayoutDashboard, HelpCircle, ArrowRight, Check, ExternalLink
+  LogOut, LayoutDashboard, HelpCircle, ArrowRight, Check, ExternalLink, Heart, MessageSquare,
+  Settings, Receipt, ShieldCheck
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { MqulimaLogo } from "./MqulimaLogo";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/lib/cart-context";
+import { useWishlistIds } from "@/lib/wishlist";
 import { type ShopProduct } from "@/lib/shop-data";
 import { searchProducts } from "@/lib/api/products.server";
 import { motion, AnimatePresence } from "framer-motion";
@@ -109,7 +111,9 @@ export function Navbar() {
   const { isInstallable, triggerInstall } = usePWA();
   const { user, logout } = useAuth();
   const { cartItems, setCartOpen } = useCart();
+  const { wishlistIds } = useWishlistIds();
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const savedCount = wishlistIds.length;
 
   // Calculate unread notifications only if logged in
   const unreadNotifCount = user ? notifications.filter((n) => !n.read).length : 0;
@@ -558,71 +562,129 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-3 w-56 rounded-2xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#0F291E] p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] z-50 text-left"
+                    className="absolute right-0 mt-3 w-72 rounded-3xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#0F291E] p-3 shadow-[0_16px_48px_rgba(0,0,0,0.2)] z-50 text-left"
                   >
                     {user ? (
                       <>
-                        <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 mb-1.5">
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                          <div className="text-xs font-extrabold text-[#0B2117] dark:text-white truncate mt-0.5">{user.name || user.email}</div>
-                          <div className="text-[10px] text-gray-400 truncate">{user.email}</div>
+                        {/* Forest Hero Profile Card (matched to mobile app Account hub) */}
+                        <div className="p-3 rounded-2xl bg-[#0F291E] text-white mb-2.5 flex items-center gap-3 border border-white/10 shadow-xs">
+                          <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
+                            {user.avatarUrl ? (
+                              <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                            ) : (
+                              (user.name || user.email || "M").charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-black text-white truncate font-['Outfit',sans-serif]">
+                              {user.name || user.email}
+                            </div>
+                            <div className="text-[11px] text-white/75 truncate">{user.email}</div>
+                            {(user.phone || user.county) && (
+                              <div className="text-[10px] font-semibold text-[#85CC14] truncate mt-0.5">
+                                {[user.phone, user.county].filter(Boolean).join(" • ")}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <Link
-                          to="/dashboard"
-                          search={{ tab: "overview" }}
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
-                        >
-                          <LayoutDashboard className="h-4 w-4 text-[#16A34A] dark:text-[#85CC14]" />
-                          <span>My Dashboard</span>
-                        </Link>
-                        <Link
-                          to="/ai"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
-                        >
-                          <Sparkles className="h-4 w-4 text-emerald-500" />
-                          <span>Mqulima AI</span>
-                        </Link>
-                        <Link
-                          to="/dashboard"
-                          search={{ tab: "orders" }}
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
-                        >
-                          <ShoppingBag className="h-4 w-4 text-[#16A34A] dark:text-[#85CC14]" />
-                          <span>Shop Orders</span>
-                        </Link>
-                        <Link
-                          to="/dashboard"
-                          search={{ tab: "services" }}
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
-                        >
-                          <Briefcase className="h-4 w-4 text-[#16A34A] dark:text-[#85CC14]" />
-                          <span>Booked Services</span>
-                        </Link>
-                        <Link
-                          to="/dashboard"
-                          search={{ tab: "profile" }}
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
-                        >
-                          <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          <span>Account Settings</span>
-                        </Link>
+
+                        <div className="space-y-1">
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "overview" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-[#16A34A] text-white flex items-center justify-center shrink-0">
+                              <LayoutDashboard className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">My Account</span>
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "orders" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-[#2563EB] text-white flex items-center justify-center shrink-0">
+                              <Receipt className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">Order History</span>
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "saved" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-[#E11D48] text-white flex items-center justify-center shrink-0">
+                              <Heart className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">Saved Items</span>
+                            {mounted && savedCount > 0 && (
+                              <span className="px-2 py-0.5 rounded-full bg-[#E5F5D0] text-[#35610D] text-[10px] font-black">
+                                {savedCount}
+                              </span>
+                            )}
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "services" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-[#EA580C] text-white flex items-center justify-center shrink-0">
+                              <Briefcase className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">Booked Services</span>
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "posts" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0">
+                              <MessageSquare className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">My Forum Posts</span>
+                          </Link>
+                          <Link
+                            to="/ai"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                              <Sparkles className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">Mqulima AI</span>
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            search={{ tab: "profile" }}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold hover:bg-[#16382B]/10 dark:hover:bg-white/10 text-[#0B2117] dark:text-white transition-colors"
+                          >
+                            <span className="h-7 w-7 rounded-full bg-slate-600 text-white flex items-center justify-center shrink-0">
+                              <Settings className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="flex-1">Account Settings</span>
+                          </Link>
+                        </div>
                         {(user.role === "admin" || user.role === "super_admin") && (
                           <Link
                             to="/dashboard"
                             search={{ tab: "admin" }}
                             onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors my-1"
+                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors mt-1.5"
                           >
-                            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                            <span className="h-7 w-7 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                            </span>
                             <span>Admin Operations</span>
                           </Link>
                         )}
-                        <div className="my-1 border-t border-gray-100 dark:border-white/10" />
+                        <div className="my-2 border-t border-gray-100 dark:border-white/10" />
                         <button
                           onClick={async () => {
                             setUserDropdownOpen(false);
@@ -630,9 +692,9 @@ export function Navbar() {
                             toast.success("Successfully logged out");
                             navigate({ to: "/" });
                           }}
-                          className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
+                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50/70 dark:bg-red-950/30 px-3 py-2 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut className="h-3.5 w-3.5" />
                           <span>Sign Out</span>
                         </button>
                       </>
@@ -1011,9 +1073,23 @@ export function Navbar() {
               <div className="border-t border-white/10 pt-4 space-y-3">
                 {user ? (
                   <>
-                    <div className="px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Signed in as</div>
-                      <div className="text-xs font-extrabold text-white truncate">{user.name || user.email}</div>
+                    <div className="p-3 rounded-2xl bg-[#16382B] border border-white/15 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-black text-sm shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                        ) : (
+                          (user.name || user.email || "M").charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-extrabold text-white truncate">{user.name || user.email}</div>
+                        <div className="text-[10px] text-white/70 truncate">{user.email}</div>
+                        {(user.phone || user.county) && (
+                          <div className="text-[10px] text-[#85CC14] font-semibold truncate">
+                            {[user.phone, user.county].filter(Boolean).join(" • ")}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 mt-2">
                       <Link
@@ -1023,7 +1099,59 @@ export function Navbar() {
                         className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
                       >
                         <LayoutDashboard className="h-4 w-4 text-[#85CC14]" />
-                        <span>My Dashboard</span>
+                        <span>My Account</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "orders" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <Receipt className="h-4 w-4 text-blue-400" />
+                        <span>Order History</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "saved" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-between gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Heart className="h-4 w-4 text-rose-400" />
+                          <span>Saved Items</span>
+                        </span>
+                        {mounted && savedCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-[#85CC14] text-[#0B2117] text-[10px] font-black">
+                            {savedCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "services" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <Briefcase className="h-4 w-4 text-orange-400" />
+                        <span>Booked Services</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "posts" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <MessageSquare className="h-4 w-4 text-purple-400" />
+                        <span>My Forum Posts</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        search={{ tab: "profile" }}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
+                      >
+                        <Settings className="h-4 w-4 text-white/80" />
+                        <span>Account Settings</span>
                       </Link>
                       <Link
                         to="/ai"
@@ -1032,24 +1160,6 @@ export function Navbar() {
                       >
                         <Sparkles className="h-4 w-4 text-emerald-400" />
                         <span>Mqulima AI</span>
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        search={{ tab: "orders" }}
-                        onClick={() => setOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
-                      >
-                        <ShoppingBag className="h-4 w-4 text-[#85CC14]" />
-                        <span>Shop Orders</span>
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        search={{ tab: "services" }}
-                        onClick={() => setOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-[#16382B] px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-[#1C4636] transition-colors border border-white/10"
-                      >
-                        <Briefcase className="h-4 w-4 text-[#85CC14]" />
-                        <span>Booked Services</span>
                       </Link>
                       {(user.role === "admin" || user.role === "super_admin") && (
                         <Link

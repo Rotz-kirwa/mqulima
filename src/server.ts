@@ -184,6 +184,8 @@ Allow: /
 # Administrative & Console Routes
 Disallow: /admin
 Disallow: /admin/
+Disallow: /account
+Disallow: /account/
 Disallow: /dashboard
 Disallow: /dashboard/
 Disallow: /api/

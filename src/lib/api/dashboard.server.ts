@@ -172,3 +172,242 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+export const getUserForumPosts = createServerFn({ method: "GET" })
+  .inputValidator(UserIdSchema)
+  .handler(async ({ data: userId }) => {
+    await ensureAuthenticated(userId);
+    const { getDb } = await import("../db.server");
+    const sql = getDb();
+
+    const rows = await sql`
+      SELECT
+        id,
+        COALESCE(title, '') AS title,
+        COALESCE(caption, '') AS text,
+        COALESCE(tags, ARRAY[]::text[]) AS tags,
+        COALESCE(like_count, 0) AS likes,
+        COALESCE(comment_count, 0) AS comment_count,
+        media_urls,
+        created_at
+      FROM show_posts
+      WHERE user_id = ${userId}
+        AND deleted_at IS NULL
+        AND (status IS NULL OR status IN ('published', 'active'))
+      ORDER BY created_at DESC
+      LIMIT 50
+    `;
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      title: r.title || "Community Discussion",
+      text: r.text || "",
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      likes: Number(r.likes || 0),
+      commentCount: Number(r.comment_count || 0),
+      mediaUrls: Array.isArray(r.media_urls) ? r.media_urls : [],
+      createdAt: r.created_at
+        ? new Date(r.created_at).toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "numeric" })
+        : "Recently",
+    }));
+  });
+
+export const getUserSavedForumPosts = createServerFn({ method: "GET" })
+  .inputValidator(UserIdSchema)
+  .handler(async ({ data: userId }) => {
+    await ensureAuthenticated(userId);
+    const { getDb } = await import("../db.server");
+    const sql = getDb();
+
+    const rows = await sql`
+      SELECT
+        sp.id,
+        COALESCE(sp.title, '') AS title,
+        COALESCE(sp.caption, '') AS text,
+        COALESCE(sp.tags, ARRAY[]::text[]) AS tags,
+        COALESCE(sp.like_count, 0) AS likes,
+        COALESCE(sp.comment_count, 0) AS comment_count,
+        COALESCE(p.full_name, 'Mqulima Farmer') AS author,
+        sp.created_at
+      FROM show_bookmarks sb
+      INNER JOIN show_posts sp ON sp.id = sb.post_id
+      LEFT JOIN profiles p ON p.id = sp.user_id
+      WHERE sb.user_id = ${userId}
+        AND sp.deleted_at IS NULL
+        AND (sp.status IS NULL OR sp.status IN ('published', 'active'))
+      ORDER BY sb.created_at DESC
+      LIMIT 50
+    `;
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      title: r.title || "Saved Discussion",
+      text: r.text || "",
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      likes: Number(r.likes || 0),
+      commentCount: Number(r.comment_count || 0),
+      author: r.author || "Mqulima Farmer",
+      createdAt: r.created_at
+        ? new Date(r.created_at).toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "numeric" })
+        : "Recently",
+    }));
+  });
+
+const SavedProductsSchema = z.object({
+  ids: z.array(z.string()).max(100),
+});
+
+export const getSavedProductsDetails = createServerFn({ method: "GET" })
+  .inputValidator(SavedProductsSchema)
+  .handler(async ({ data }) => {
+    const ids = Array.from(new Set(data.ids.map((id) => id.trim()).filter(Boolean)));
+    if (ids.length === 0) return [];
+
+    const { getDb } = await import("../db.server");
+    const { resolveFastProductImage } = await import("./shop.server");
+    const sql = getDb();
+
+    const rows = await sql`
+      SELECT
+        p.id,
+        p.slug,
+        p.name,
+        p.base_price,
+        p.original_price,
+        p.stock_qty,
+        p.status,
+        p.unit,
+        p.county,
+        p.subcategory,
+        p.field,
+        p.image_urls,
+        COALESCE(sc.name, pc.name, p.subcategory, p.field, 'Farm Essentials') AS category_name
+      FROM products p
+      LEFT JOIN shop_categories sc ON p.category_id = sc.id
+      LEFT JOIN product_categories pc ON p.category_id = pc.id
+      WHERE (p.id::text = ANY(${ids}) OR p.external_product_id = ANY(${ids}) OR p.slug = ANY(${ids}))
+        AND p.deleted_at IS NULL
+    `;
+
+    return rows.map((p: any) => ({
+      id: p.id,
+      slug: p.slug || p.id,
+      name: p.name,
+      price: Number(p.base_price || 0),
+      originalPrice: p.original_price ? Number(p.original_price) : null,
+      stock: p.status === "draft" ? Number(p.stock_qty || 0) : 9999,
+      unit: p.unit || "/unit",
+      county: p.county || "Kenya",
+      category: p.category_name || "Farm Essentials",
+      image: resolveFastProductImage(p),
+    }));
+  });
+
+const UpdateAccountProfileSchema = z.object({
+  userId: z.string().uuid(),
+  name: z.string().trim().min(2, "Full name must be at least 2 characters"),
+  phone: z.string().trim().optional().default(""),
+  county: z.string().trim().min(2, "County is required"),
+  yearsFarming: z.number().int().min(0).max(100).optional().default(0),
+  crops: z.string().optional().default(""),
+  livestock: z.string().optional().default(""),
+  csrfToken: z.string(),
+});
+
+export const updateAccountProfile = createServerFn({ method: "POST" })
+  .inputValidator(UpdateAccountProfileSchema)
+  .handler(async ({ data }) => {
+    const { validateCsrfToken } = await import("../csrf-verify.server");
+    validateCsrfToken(data.csrfToken);
+
+    await ensureAuthenticated(data.userId);
+    const { getDb } = await import("../db.server");
+    const sql = getDb();
+
+    const cropsArr = data.crops
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const livestockArr = data.livestock
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const cleanPhone = data.phone.trim() || null;
+
+    await sql.begin(async (tx: any) => {
+      await tx`
+        UPDATE profiles
+        SET full_name = ${data.name},
+            phone = ${cleanPhone},
+            county_region = ${data.county},
+            years_farming = ${data.yearsFarming},
+            crops = ${cropsArr},
+            livestock = ${livestockArr},
+            updated_at = NOW()
+        WHERE id = ${data.userId}
+      `;
+
+      const [userRow] = await tx`SELECT id FROM users WHERE id = ${data.userId}`;
+      if (userRow) {
+        const parts = data.name.split(/\s+/);
+        const firstName = parts[0] || "";
+        const lastName = parts.slice(1).join(" ") || "";
+        await tx`
+          UPDATE users
+          SET first_name = ${firstName},
+              last_name = ${lastName},
+              phone_number = COALESCE(${cleanPhone}, phone_number),
+              county = ${data.county}
+          WHERE id = ${data.userId}
+        `;
+      }
+    });
+
+    return {
+      success: true,
+      user: {
+        name: data.name,
+        phone: data.phone.trim(),
+        county: data.county,
+        yearsFarming: data.yearsFarming,
+        farmSize: data.yearsFarming > 0 ? `${data.yearsFarming} years` : "",
+        crops: cropsArr.join(", "),
+        livestock: livestockArr.join(", "),
+      },
+    };
+  });
+
+const DeleteAccountSchema = z.object({
+  userId: z.string().uuid(),
+  csrfToken: z.string(),
+});
+
+export const deleteUserAccount = createServerFn({ method: "POST" })
+  .inputValidator(DeleteAccountSchema)
+  .handler(async ({ data }) => {
+    const { validateCsrfToken } = await import("../csrf-verify.server");
+    validateCsrfToken(data.csrfToken);
+
+    const caller = await ensureAuthenticated(data.userId);
+    if (caller.id !== data.userId) {
+      throw new Error("Forbidden: You can only delete your own account.");
+    }
+    if (caller.role === "admin" || caller.role === "super_admin") {
+      throw new Error("Administrator accounts cannot be self-deleted.");
+    }
+
+    const { anonymizeUserAccount } = await import("../account-anonymize.server");
+    await anonymizeUserAccount(data.userId);
+
+    const { setCookie } = await import("@tanstack/react-start/server");
+    setCookie("mq_session", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+
+    return { success: true, deleted: true };
+  });

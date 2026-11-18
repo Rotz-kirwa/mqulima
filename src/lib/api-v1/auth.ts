@@ -1,12 +1,11 @@
 import bcrypt from "bcryptjs";
-import crypto from "node:crypto";
 import { z } from "zod";
 import { getDb } from "../db.server";
 import { authenticateRequest, signUserToken } from "./auth-helper";
 import { performSignUp } from "../api/auth-shop.server";
 import { getClientIp, checkLoginRateLimit, checkSignupRateLimit } from "../rate-limit.server";
 import { executePasswordRecoveryRequest, executePasswordResetWithCode } from "../auth-recovery-ops.server";
-import { writeAuditLog } from "../audit.server";
+import { anonymizeUserAccount } from "../account-anonymize.server";
 import { corsJsonResponse, corsOptionsResponse } from "./cors";
 
 export { corsJsonResponse, corsOptionsResponse };
@@ -441,82 +440,7 @@ export async function handleDeleteAccount(request: Request): Promise<Response> {
   }
 
   try {
-    const sql = getDb();
-    const anonSuffix = `${user.id.replace(/[^a-f0-9]/gi, "").slice(0, 12)}_${Date.now()}`;
-    const anonymizedEmail = `deleted_${anonSuffix}@deleted.mqulima.local`;
-    const anonymizedUsername = `mqulima_deleted_${anonSuffix}`;
-    const revokedPasswordSentinel = `$2b$10$revoked${crypto.randomBytes(24).toString("hex")}`;
-
-    await sql.begin(async (tx: any) => {
-      const [profileRow] = await tx`
-        SELECT id, role, deleted_at
-        FROM profiles
-        WHERE id = ${user.id}
-        FOR UPDATE
-      `;
-
-      if (profileRow) {
-        if (profileRow.role === "admin" || profileRow.role === "super_admin") {
-          const forbiddenErr = new Error("Administrator accounts cannot be self-deleted.") as Error & { status?: number };
-          forbiddenErr.status = 403;
-          throw forbiddenErr;
-        }
-        if (profileRow.deleted_at) {
-          const goneErr = new Error("Account has already been deleted.") as Error & { status?: number };
-          goneErr.status = 404;
-          throw goneErr;
-        }
-
-        await tx`
-          UPDATE profiles
-          SET email = ${anonymizedEmail},
-              username = ${anonymizedUsername},
-              full_name = 'Deleted User',
-              phone = NULL,
-              id_number = NULL,
-              delivery_address = NULL,
-              avatar_url = NULL,
-              whatsapp_number = NULL,
-              bio = NULL,
-              website = NULL,
-              cover_image = NULL,
-              crops = '{}',
-              livestock = '{}',
-              password_hash = ${revokedPasswordSentinel},
-              status = 'deleted',
-              deleted_at = NOW(),
-              updated_at = NOW()
-          WHERE id = ${user.id}
-        `;
-      }
-
-      await tx`
-        UPDATE users
-        SET email = ${anonymizedEmail},
-            first_name = 'Deleted',
-            last_name = 'User',
-            phone_number = NULL,
-            national_id = NULL,
-            delivery_location = 'Deleted',
-            landmark = NULL,
-            password_hash = ${revokedPasswordSentinel},
-            status = 'deleted',
-            deleted_at = NOW()
-        WHERE id = ${user.id}
-      `.catch(() => {});
-
-      await tx`DELETE FROM recovery_tokens WHERE user_id = ${user.id}`.catch(() => {});
-      await tx`DELETE FROM email_verifications WHERE user_id = ${user.id}`.catch(() => {});
-    });
-
-    await writeAuditLog({
-      actorId: user.id,
-      action: "account.deleted",
-      ipAddress: getClientIp(request),
-      entityType: "profile",
-      entityId: user.id,
-      diff: { anonymized: true, retainedFinancialRecords: true },
-    }).catch(() => {});
+    await anonymizeUserAccount(user.id, getClientIp(request));
 
     const secureCookieFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
     return corsJsonResponse(

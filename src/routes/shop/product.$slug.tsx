@@ -352,6 +352,7 @@ function ProductDetailPage() {
     }
     setWishlist(newWish);
     localStorage.setItem("mqulima_wishlist", JSON.stringify(Array.from(newWish)));
+    window.dispatchEvent(new CustomEvent("mqulima-wishlist-updated", { detail: Array.from(newWish) }));
   };
 
   // Handle compare

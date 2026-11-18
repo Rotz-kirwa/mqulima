@@ -330,14 +330,14 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       const { getDb } = await import("./db.server");
       const sql = getDb();
       let [dbUser] = await sql`
-        SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
+        SELECT id, email, full_name, county_region, years_farming, crops, livestock, role, phone, avatar_url, username
         FROM profiles
         WHERE id = ${userId} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
       `;
 
       if (!dbUser && tokenEmail) {
         [dbUser] = await sql`
-          SELECT id, email, full_name, county_region, years_farming, crops, livestock, role
+          SELECT id, email, full_name, county_region, years_farming, crops, livestock, role, phone, avatar_url, username
           FROM profiles
           WHERE LOWER(email) = ${tokenEmail} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
           LIMIT 1
@@ -346,7 +346,7 @@ export const getCurrentUser = createServerFn({ method: "GET" })
 
       if (!dbUser) {
         const [rawUser] = await sql`
-          SELECT id, email, first_name, last_name, county
+          SELECT id, email, first_name, last_name, county, phone_number
           FROM users
           WHERE (id = ${userId} OR (email IS NOT NULL AND LOWER(email) = ${tokenEmail}))
             AND deleted_at IS NULL
@@ -362,7 +362,10 @@ export const getCurrentUser = createServerFn({ method: "GET" })
             years_farming: 0,
             crops: [],
             livestock: [],
-            role: "farmer"
+            role: "farmer",
+            phone: rawUser.phone_number || "",
+            avatar_url: "",
+            username: ""
           };
         }
       }
@@ -371,15 +374,20 @@ export const getCurrentUser = createServerFn({ method: "GET" })
         return null;
       }
 
+      const years = Number(dbUser.years_farming || 0);
       const user: User = {
         id: dbUser.id,
         name: dbUser.full_name,
         email: dbUser.email,
         county: dbUser.county_region || "",
-        farmSize: `${dbUser.years_farming || 0} years`,
+        farmSize: years > 0 ? `${years} years` : "",
+        yearsFarming: years,
         crops: dbUser.crops ? (Array.isArray(dbUser.crops) ? dbUser.crops.join(", ") : String(dbUser.crops)) : "",
         livestock: dbUser.livestock ? (Array.isArray(dbUser.livestock) ? dbUser.livestock.join(", ") : String(dbUser.livestock)) : "",
         role: dbUser.role,
+        phone: dbUser.phone || "",
+        avatarUrl: dbUser.avatar_url || "",
+        username: dbUser.username || "",
       };
 
       return user;

@@ -37,6 +37,14 @@ import {
   ShieldCheck,
   LayoutDashboard,
   ShoppingBag,
+  Receipt,
+  ChevronRight,
+  LogOut,
+  AlertTriangle,
+  Save,
+  User,
+  ThumbsUp,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/mqulima/AppLayout";
@@ -45,34 +53,57 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/lib/cart-context";
+import { useWishlistIds } from "@/lib/wishlist";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUserOrders, getUserServiceBookings, getUserNotifications, markNotificationRead } from "@/lib/api/dashboard.server";
+import {
+  getUserOrders,
+  getUserServiceBookings,
+  getUserNotifications,
+  markNotificationRead,
+  getUserForumPosts,
+  getUserSavedForumPosts,
+  getSavedProductsDetails,
+  updateAccountProfile,
+  deleteUserAccount,
+} from "@/lib/api/dashboard.server";
 import { getProducts } from "@/lib/api/products.server";
 import { adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminGetCategoriesList } from "@/lib/api/admin-shop.server";
 import { adminGetServiceRequests, adminAssignServiceExpert, adminUpdateServiceStatus } from "@/lib/api/admin-services.server";
 
 type DashboardSearch = {
-  tab?: "overview" | "orders" | "services" | "profile" | "admin";
+  tab?: "overview" | "orders" | "saved" | "services" | "posts" | "profile" | "admin";
 };
+
+const VALID_TABS = new Set(["overview", "orders", "saved", "services", "posts", "profile", "admin"]);
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => {
+    const raw = typeof search.tab === "string" ? search.tab : "overview";
     return {
-      tab: (search.tab as any) || "overview",
+      tab: (VALID_TABS.has(raw) ? raw : "overview") as DashboardSearch["tab"],
     };
   },
   component: Dashboard,
 });
 
 function Dashboard() {
-  const { user, logout, isLoading } = useAuth();
-  const { cartItems } = useCart();
+  const { user, logout, isLoading, updateUser } = useAuth();
+  const { cartItems, addToCart, setCartOpen } = useCart();
+  const { wishlistIds, removeWishlistId } = useWishlistIds();
   const search = Route.useSearch();
   const navigate = useNavigate();
   const activeTab = search.tab || "overview";
 
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null);
   const [selectedBookingDetails, setSelectedBookingDetails] = useState<any | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const [profileName, setProfileName] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profileCounty, setProfileCounty] = useState("");
+  const [profileYears, setProfileYears] = useState("0");
+  const [profileCrops, setProfileCrops] = useState("");
+  const [profileLivestock, setProfileLivestock] = useState("");
 
   const [channels, setChannels] = useState({
     sowing: true,
@@ -113,6 +144,24 @@ function Dashboard() {
     enabled: !!activeUser?.id && activeUser.id !== "user"
   });
 
+  const { data: myPosts, isLoading: myPostsLoading } = useQuery({
+    queryKey: ["userForumPosts", activeUser?.id],
+    queryFn: () => getUserForumPosts({ data: activeUser!.id }),
+    enabled: !!activeUser?.id && activeUser.id !== "user"
+  });
+
+  const { data: savedPosts, isLoading: savedPostsLoading } = useQuery({
+    queryKey: ["userSavedForumPosts", activeUser?.id],
+    queryFn: () => getUserSavedForumPosts({ data: activeUser!.id }),
+    enabled: !!activeUser?.id && activeUser.id !== "user"
+  });
+
+  const { data: savedProducts, isLoading: savedProductsLoading } = useQuery({
+    queryKey: ["savedProductsDetails", wishlistIds.join(",")],
+    queryFn: () => getSavedProductsDetails({ data: { ids: wishlistIds } }),
+    enabled: wishlistIds.length > 0
+  });
+
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { getCsrfTokenFromCookie } = await import("@/lib/csrf-client");
@@ -129,6 +178,56 @@ function Dashboard() {
     }
   });
 
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      const { ensureCsrfToken } = await import("@/lib/csrf-client");
+      const csrfToken = await ensureCsrfToken();
+      return updateAccountProfile({
+        data: {
+          userId: activeUser!.id,
+          name: profileName.trim(),
+          phone: profilePhone.trim(),
+          county: profileCounty.trim() || "Kenya",
+          yearsFarming: Number(profileYears) || 0,
+          crops: profileCrops.trim(),
+          livestock: profileLivestock.trim(),
+          csrfToken,
+        },
+      });
+    },
+    onSuccess: (res) => {
+      if (res?.user) {
+        updateUser(res.user);
+        setCachedUser((prev: any) => (prev ? { ...prev, ...res.user } : res.user));
+      }
+      toast.success("Account profile updated!");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to update account profile.");
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const { ensureCsrfToken } = await import("@/lib/csrf-client");
+      const csrfToken = await ensureCsrfToken();
+      return deleteUserAccount({
+        data: {
+          userId: activeUser!.id,
+          csrfToken,
+        },
+      });
+    },
+    onSuccess: async () => {
+      await logout();
+      toast.success("Account permanently deleted.");
+      navigate({ to: "/" });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Could not delete account right now. Please try again or email mqulima@mqulima.com.");
+    },
+  });
+
   const [mounted, setMounted] = useState(false);
   const redirectedRef = useRef(false);
 
@@ -141,6 +240,17 @@ function Dashboard() {
       } catch {}
     }
   }, []);
+
+  useEffect(() => {
+    if (!activeUser) return;
+    setProfileName(activeUser.name || "");
+    setProfilePhone(activeUser.phone || "");
+    setProfileCounty(activeUser.county || "Kenya");
+    const yrs = activeUser.yearsFarming ?? (parseInt(String(activeUser.farmSize || "0"), 10) || 0);
+    setProfileYears(String(yrs));
+    setProfileCrops(activeUser.crops || "");
+    setProfileLivestock(activeUser.livestock || "");
+  }, [activeUser]);
 
   useEffect(() => {
     if (!mounted || isLoading || activeUser || redirectedRef.current) return;
@@ -215,104 +325,152 @@ function Dashboard() {
   return (
     <AppLayout>
       {/* =========================================================================
-         DASHBOARD HERO BANNER
+         ACCOUNT & DASHBOARD HERO PROFILE CARD (Matched to Mqulima App)
          ========================================================================= */}
-      <section className="bg-[#0F291E] py-10 md:py-14 text-white border-b border-white/10 relative overflow-hidden">
+      <section className="bg-[#0F291E] py-8 md:py-12 text-white border-b border-white/10 relative overflow-hidden">
         <div className="absolute top-0 right-1/4 h-64 w-64 rounded-full bg-[#85CC14]/10 blur-[100px] pointer-events-none" />
-        
+
         <div className="container-px mx-auto max-w-7xl relative z-10">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div className="text-left space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#85CC14]">
-                  CUSTOMER PORTAL & DASHBOARD
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-extrabold text-[#85CC14]">
-                  <CheckCircle className="h-3.5 w-3.5 text-[#85CC14]" />
-                  <span>Verified {activeUser.role === "admin" ? "Administrator" : "Farmer Account"}</span>
-                </span>
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex items-center gap-4 sm:gap-5 text-left min-w-0">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-2xl sm:text-3xl shrink-0 border-2 border-[#85CC14]/70 shadow-lg overflow-hidden">
+                {activeUser.avatarUrl ? (
+                  <img src={activeUser.avatarUrl} alt={activeUser.name} className="h-full w-full object-cover" />
+                ) : (
+                  (activeUser.name || activeUser.email || "M").charAt(0).toUpperCase()
+                )}
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
-                Karibu, {activeUser.name.split(" ")[0]} 👋
-              </h1>
-              <p className="flex items-center gap-2 text-xs sm:text-sm text-white/80 font-normal">
-                <MapPin className="h-4 w-4 text-[#85CC14] shrink-0" /> 
-                <span>{activeUser.county || "Kenya"} · {activeUser.farmSize || "Farmer"} · {activeUser.crops || "AgroShop Customer"}</span>
-              </p>
+              <div className="space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-block rounded-full bg-[#85CC14]/20 border border-[#85CC14]/30 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#85CC14]">
+                    MY ACCOUNT
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-extrabold text-[#85CC14]">
+                    <CheckCircle className="h-3 w-3 text-[#85CC14]" />
+                    <span>Verified {activeUser.role === "admin" || activeUser.role === "super_admin" ? "Administrator" : "Farmer"}</span>
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight font-['Outfit',sans-serif] truncate">
+                  {activeUser.name || "Mqulima Farmer"}
+                </h1>
+                <p className="text-xs sm:text-sm text-white/85 truncate">{activeUser.email}</p>
+                <p className="flex items-center gap-1.5 text-xs text-white/75 font-medium truncate">
+                  <MapPin className="h-3.5 w-3.5 text-[#85CC14] shrink-0" />
+                  <span>
+                    {[activeUser.phone, activeUser.county || "Kenya"].filter(Boolean).join(" • ")}
+                    {activeUser.crops ? ` • ${activeUser.crops}` : ""}
+                  </span>
+                </p>
+              </div>
             </div>
 
             {/* Quick Stats Pill Ribbon */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 w-full sm:w-auto">
-              <Stat label="Total Shop Orders" value={orders?.length ? String(orders.length) : "0"} icon={Package} color="lime" />
-              <Stat label="Service Bookings" value={bookings?.length ? String(bookings.length) : "0"} icon={Calendar} color="yellow" />
-              <Stat label="Active Cart Items" value={String(cartCount)} icon={ShoppingCart} color="lime" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full lg:w-auto">
+              <button type="button" onClick={() => navigate({ search: { tab: "orders" } as any })} className="text-left cursor-pointer hover:scale-[1.02] transition-transform">
+                <Stat label="Order History" value={orders?.length ? String(orders.length) : "0"} icon={Receipt} color="lime" />
+              </button>
+              <button type="button" onClick={() => navigate({ search: { tab: "saved" } as any })} className="text-left cursor-pointer hover:scale-[1.02] transition-transform">
+                <Stat label="Saved Items" value={String(wishlistIds.length + (savedPosts?.length || 0))} icon={Heart} color="yellow" />
+              </button>
+              <button type="button" onClick={() => navigate({ search: { tab: "services" } as any })} className="text-left cursor-pointer hover:scale-[1.02] transition-transform">
+                <Stat label="Booked Services" value={bookings?.length ? String(bookings.length) : "0"} icon={Briefcase} color="yellow" />
+              </button>
+              <button type="button" onClick={() => setCartOpen(true)} className="text-left cursor-pointer hover:scale-[1.02] transition-transform">
+                <Stat label="My Cart" value={String(cartCount)} icon={ShoppingCart} color="lime" />
+              </button>
             </div>
           </div>
 
-          {/* MAIN DASHBOARD TOP NAVIGATION TABS */}
+          {/* MAIN ACCOUNT TOP NAVIGATION TABS */}
           <div className="mt-8 flex items-center gap-2 border-b border-white/15 pb-0.5 overflow-x-auto scrollbar-none">
             <button
               onClick={() => navigate({ search: { tab: "overview" } as any })}
-              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "overview"
                   ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
                   : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
               }`}
             >
               <LayoutDashboard className={`h-4 w-4 ${activeTab === "overview" ? "text-[#16A34A]" : "text-white/60"}`} />
-              <span>Overview & Shortcuts</span>
+              <span>Overview</span>
             </button>
 
             <button
               onClick={() => navigate({ search: { tab: "orders" } as any })}
-              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "orders"
                   ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
                   : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
               }`}
             >
-              <Package className={`h-4 w-4 ${activeTab === "orders" ? "text-[#16A34A]" : "text-white/60"}`} />
-              <span>Shop Orders</span>
-              {orders && orders.length > 0 && (
-                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "orders" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/20 text-white"}`}>
-                  {orders.length}
-                </span>
-              )}
+              <Receipt className={`h-4 w-4 ${activeTab === "orders" ? "text-[#2563EB]" : "text-blue-300/80"}`} />
+              <span>Order History</span>
+              <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "orders" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/15 text-white"}`}>
+                {orders?.length ?? 0}
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate({ search: { tab: "saved" } as any })}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "saved"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${activeTab === "saved" ? "text-[#E11D48]" : "text-rose-300/80"}`} />
+              <span>Saved Items</span>
+              <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "saved" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/15 text-white"}`}>
+                {wishlistIds.length + (savedPosts?.length ?? 0)}
+              </span>
             </button>
 
             <button
               onClick={() => navigate({ search: { tab: "services" } as any })}
-              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "services"
                   ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
                   : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
               }`}
             >
-              <Wrench className={`h-4 w-4 ${activeTab === "services" ? "text-[#F5A623]" : "text-amber-400/80"}`} />
+              <Briefcase className={`h-4 w-4 ${activeTab === "services" ? "text-[#EA580C]" : "text-amber-400/80"}`} />
               <span className={activeTab === "services" ? "text-[#0F291E]" : "text-amber-300/90"}>Booked Services</span>
-              {bookings && bookings.length > 0 && (
-                <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "services" ? "bg-[#F5A623] text-white" : "bg-amber-400/20 text-amber-300"}`}>
-                  {bookings.length}
-                </span>
-              )}
+              <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "services" ? "bg-[#F5A623] text-white" : "bg-amber-400/20 text-amber-300"}`}>
+                {bookings?.length ?? 0}
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate({ search: { tab: "posts" } as any })}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "posts"
+                  ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
+                  : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
+              }`}
+            >
+              <MessageSquare className={`h-4 w-4 ${activeTab === "posts" ? "text-[#7C3AED]" : "text-purple-300/80"}`} />
+              <span>My Forum Posts</span>
+              <span className={`ml-1 px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === "posts" ? "bg-[#16382B] text-[#85CC14]" : "bg-white/15 text-white"}`}>
+                {myPosts?.length ?? 0}
+              </span>
             </button>
 
             <button
               onClick={() => navigate({ search: { tab: "profile" } as any })}
-              className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "profile"
                   ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
                   : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
               }`}
             >
               <Settings className={`h-4 w-4 ${activeTab === "profile" ? "text-[#16A34A]" : "text-white/60"}`} />
-              <span>Account & App Settings</span>
+              <span>Account Settings</span>
             </button>
 
             {isAdmin && (
               <button
                 onClick={() => navigate({ search: { tab: "admin" } as any })}
-                className={`flex items-center gap-2.5 px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-extrabold uppercase tracking-wider rounded-t-2xl border-t border-x transition-all duration-200 cursor-pointer whitespace-nowrap ${
                   activeTab === "admin"
                     ? "bg-[#FAFBF9] text-[#0F291E] border-white/20 font-black shadow-md"
                     : "text-white/70 hover:text-white border-transparent hover:bg-white/10"
@@ -330,11 +488,105 @@ function Dashboard() {
       <section className="container-px mx-auto max-w-7xl py-6">
         {activeTab === "overview" && (
           <div className="space-y-8">
-            {/* 1. Quick Agricultural Shortcuts */}
+            {/* 1. Account Navigation Rows (Matched to Mqulima Mobile App Account Hub) */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-left">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#0F291E]">Quick Agricultural Shortcuts</h2>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#0F291E]">Your Account</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Manage orders, saved products, community posts, and services in one place</p>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  {
+                    id: "orders",
+                    label: "Order History",
+                    sub: "Track AgroShop deliveries & receipts",
+                    count: orders?.length ?? 0,
+                    icon: Receipt,
+                    bg: "bg-[#2563EB]",
+                    onClick: () => navigate({ search: { tab: "orders" } as any }),
+                  },
+                  {
+                    id: "saved",
+                    label: "Saved Items",
+                    sub: "Wishlisted products & saved posts",
+                    count: wishlistIds.length + (savedPosts?.length ?? 0),
+                    icon: Heart,
+                    bg: "bg-[#E11D48]",
+                    onClick: () => navigate({ search: { tab: "saved" } as any }),
+                  },
+                  {
+                    id: "cart",
+                    label: "My Cart",
+                    sub: "Review items ready for checkout",
+                    count: cartCount,
+                    icon: ShoppingCart,
+                    bg: "bg-[#16A34A]",
+                    onClick: () => setCartOpen(true),
+                  },
+                  {
+                    id: "posts",
+                    label: "My Forum Posts",
+                    sub: "Your farmer discussions & updates",
+                    count: myPosts?.length ?? 0,
+                    icon: MessageSquare,
+                    bg: "bg-[#7C3AED]",
+                    onClick: () => navigate({ search: { tab: "posts" } as any }),
+                  },
+                  {
+                    id: "services",
+                    label: "Booked Services",
+                    sub: "Specialist farm visits & requests",
+                    count: bookings?.length ?? 0,
+                    icon: Briefcase,
+                    bg: "bg-[#EA580C]",
+                    onClick: () => navigate({ search: { tab: "services" } as any }),
+                  },
+                  {
+                    id: "profile",
+                    label: "Account & Settings",
+                    sub: "Edit profile, alerts & security",
+                    icon: Settings,
+                    bg: "bg-[#0F291E]",
+                    onClick: () => navigate({ search: { tab: "profile" } as any }),
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={item.onClick}
+                      className="flex items-center gap-3.5 min-h-[68px] bg-white border border-slate-200/90 hover:border-[#16A34A]/40 hover:shadow-md rounded-2xl px-4 py-3 text-left transition-all cursor-pointer group"
+                    >
+                      <span className={`h-10 w-10 rounded-full ${item.bg} text-white flex items-center justify-center shrink-0 shadow-xs`}>
+                        <Icon className="h-4.5 w-4.5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-extrabold text-[#0F291E] group-hover:text-[#16A34A] transition-colors font-['Outfit',sans-serif]">
+                          {item.label}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">{item.sub}</div>
+                      </div>
+                      {item.count !== undefined && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#E5F5D0] text-[#35610D] text-xs font-black shrink-0">
+                          {item.count}
+                        </span>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#16A34A] group-hover:translate-x-0.5 transition-all shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Quick Agricultural Shortcuts */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl font-black text-[#0F291E]">Quick Agricultural Shortcuts</h2>
                   <p className="text-xs text-gray-500 mt-0.5">Direct access to your farming tools, AI assistance, and marketplace</p>
                 </div>
               </div>
@@ -389,78 +641,109 @@ function Dashboard() {
                 </Link>
 
                 <Link
-                  to="/community"
-                  preload="intent"
+                  to="/services"
                   className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 hover:shadow-md transition-all border border-slate-200 flex flex-col justify-between group"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-lime-50 text-lime-700 flex items-center justify-center font-bold">
-                      <MessageSquare className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+                      <Briefcase className="w-5 h-5" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Forum</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Services</span>
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-black text-[#0F291E] group-hover:text-lime-700 transition-colors">Farmers Network</h3>
-                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">Connect and trade with verified growers across 47 counties</p>
+                    <h3 className="text-sm font-black text-[#0F291E] group-hover:text-orange-600 transition-colors">Request a Service</h3>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">Soil testing, veterinary care & agronomist visits</p>
                   </div>
                 </Link>
               </div>
             </div>
 
-            {/* 2. Overview Summary Cards Grid */}
+            {/* 3. Overview Summary Cards Grid */}
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Recent Orders Overview */}
-              <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#16A34A] flex items-center justify-center">
-                      <Package className="w-4 h-4" />
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-[#2563EB] flex items-center justify-center">
+                        <Receipt className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-[#0F291E]">Recent Shop Purchases</h3>
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-[#0F291E]">Recent Shop Purchases</h3>
+                    <button
+                      onClick={() => navigate({ search: { tab: "orders" } as any })}
+                      className="text-xs font-bold text-[#16A34A] hover:underline cursor-pointer"
+                    >
+                      View All Orders →
+                    </button>
                   </div>
-                  <button
-                    onClick={() => navigate({ search: { tab: "orders" } as any })}
-                    className="text-xs font-bold text-[#16A34A] hover:underline cursor-pointer"
-                  >
-                    View All Orders →
-                  </button>
+
+                  {ordersLoading ? (
+                    <div className="py-8 text-center text-xs font-bold text-slate-400 animate-pulse">Loading orders...</div>
+                  ) : !orders || orders.length === 0 ? (
+                    <div className="py-8 text-center space-y-3">
+                      <p className="text-xs text-slate-500 font-medium">No product purchases made yet.</p>
+                      <Link
+                        to="/shop"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold shadow-xs hover:bg-[#74B510] transition"
+                      >
+                        <span>Explore AgroShop Products</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {orders.slice(0, 3).map((o: any) => (
+                        <div key={o.id} className="py-3 flex items-center justify-between gap-4">
+                          <div>
+                            <div className="text-xs font-extrabold text-[#0F291E] line-clamp-1">{o.item}</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{o.id} · {o.createdAt}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-xs font-black text-[#16A34A] block">KES {o.total.toLocaleString()}</span>
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {o.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {ordersLoading ? (
-                  <div className="py-8 text-center text-xs font-bold text-slate-400 animate-pulse">Loading orders...</div>
-                ) : !orders || orders.length === 0 ? (
-                  <div className="py-8 text-center space-y-3">
-                    <p className="text-xs text-slate-500 font-medium">No product purchases made yet.</p>
-                    <Link
-                      to="/shop"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold shadow-xs hover:bg-[#74B510] transition"
-                    >
-                      <span>Explore AgroShop Products</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-100">
-                    {orders.slice(0, 3).map((o: any) => (
-                      <div key={o.id} className="py-3 flex items-center justify-between gap-4">
-                        <div>
-                          <div className="text-xs font-extrabold text-[#0F291E] line-clamp-1">{o.item}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">{o.id} · {o.createdAt}</div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-xs font-black text-[#16A34A] block">KES {o.total.toLocaleString()}</span>
-                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {o.status}
-                          </span>
-                        </div>
+                {/* Account Notifications Feed */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                        <Bell className="w-4 h-4" />
                       </div>
-                    ))}
+                      <h3 className="text-sm font-black uppercase tracking-wider text-[#0F291E]">Recent Account Updates</h3>
+                    </div>
                   </div>
-                )}
+                  {notificationsLoading ? (
+                    <div className="py-6 text-center text-xs font-bold text-slate-400 animate-pulse">Loading updates...</div>
+                  ) : !notifications || notifications.length === 0 ? (
+                    <p className="text-xs text-slate-500 py-4 text-center">No new notifications. Order and booking alerts will show here.</p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {notifications.slice(0, 4).map((n: any) => (
+                        <Row
+                          key={n.id}
+                          title={n.title}
+                          sub={n.sub || "Account notification"}
+                          chip={n.readAt ? "Read" : "New"}
+                          chipClass={n.readAt ? "bg-slate-100 text-slate-500" : "bg-[#E5F5D0] text-[#35610D]"}
+                          onClick={!n.readAt ? () => markReadMutation.mutate(n.id) : undefined}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Verified Profile Card */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left flex flex-col justify-between">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4 text-left flex flex-col justify-between h-fit">
                 <div>
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
                     <div className="flex items-center gap-2">
@@ -475,31 +758,48 @@ function Dashboard() {
                   </div>
 
                   <div className="space-y-2.5 text-xs text-slate-600">
-                    <div className="flex justify-between py-1 border-b border-slate-50">
+                    <div className="flex justify-between gap-2 py-1.5 border-b border-slate-50">
                       <span className="text-slate-400 font-medium">Full Name</span>
-                      <span className="font-bold text-[#0F291E]">{activeUser.name}</span>
+                      <span className="font-bold text-[#0F291E] text-right">{activeUser.name}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-50">
+                    <div className="flex justify-between gap-2 py-1.5 border-b border-slate-50">
                       <span className="text-slate-400 font-medium">Email</span>
-                      <span className="font-bold text-[#0F291E] truncate max-w-[150px]">{activeUser.email}</span>
+                      <span className="font-bold text-[#0F291E] truncate max-w-[170px]">{activeUser.email}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-50">
+                    <div className="flex justify-between gap-2 py-1.5 border-b border-slate-50">
+                      <span className="text-slate-400 font-medium">Phone</span>
+                      <span className="font-bold text-[#0F291E]">{activeUser.phone || "Add phone"}</span>
+                    </div>
+                    <div className="flex justify-between gap-2 py-1.5 border-b border-slate-50">
                       <span className="text-slate-400 font-medium">County</span>
                       <span className="font-bold text-[#0F291E]">{activeUser.county || "Kenya"}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-50">
+                    <div className="flex justify-between gap-2 py-1.5 border-b border-slate-50">
                       <span className="text-slate-400 font-medium">Account Role</span>
                       <span className="font-bold text-[#16A34A] uppercase">{activeUser.role || "Farmer"}</span>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => navigate({ search: { tab: "profile" } as any })}
-                  className="w-full py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                >
-                  Manage Account Settings
-                </button>
+                <div className="space-y-2 pt-2">
+                  <button
+                    onClick={() => navigate({ search: { tab: "profile" } as any })}
+                    className="w-full py-2.5 rounded-xl bg-[#0F291E] text-white text-xs font-bold hover:bg-[#16382B] transition cursor-pointer"
+                  >
+                    Edit Profile & Settings
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      toast.success("Successfully signed out");
+                      navigate({ to: "/" });
+                    }}
+                    className="w-full py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -679,114 +979,448 @@ function Dashboard() {
           </div>
         )}
 
-        {activeTab === "profile" && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* PWA & Notification Center Card */}
-            <Card
-              title="PWA & Notification Center"
-              icon={Settings}
-              cta="App Settings"
-              link="/dashboard"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-left">
-                  <div>
-                    <div className="text-xs font-bold text-[#0F291E] font-['Outfit',sans-serif]">System Status</div>
-                    <div className="text-[11px] text-slate-500 font-normal">
-                      {isInstalled ? "Running as standalone app" : "Running in browser"}
-                    </div>
-                  </div>
-                  <div
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                      isOnline ? "bg-[#E5F5D0] text-[#35610D]" : "bg-rose-100 text-rose-700"
-                    }`}
-                  >
-                    {isOnline ? (
-                      <>
-                        <Wifi className="h-3 w-3 text-[#35610D]" /> Online
-                      </>
-                    ) : (
-                      <>
-                        <WifiOff className="h-3 w-3 text-rose-600" /> Offline
-                      </>
-                    )}
-                  </div>
-                </div>
+        {activeTab === "saved" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+              <div className="text-left">
+                <h2 className="text-2xl font-black text-[#0F291E]">Saved Items</h2>
+                <p className="text-xs text-gray-500 mt-0.5">AgroShop products you hearted and community discussions you bookmarked</p>
+              </div>
+              <Link to="/shop" className="px-4 py-2.5 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold hover:bg-[#74B510] transition-colors flex items-center gap-1.5 shadow-sm">
+                <ShoppingBag className="w-4 h-4" />
+                <span>Browse AgroShop</span>
+              </Link>
+            </div>
 
-                {isInstallable && (
-                  <div className="rounded-2xl border border-[#85CC14]/40 bg-[#85CC14]/10 p-4 text-center">
-                    <p className="text-xs font-medium text-[#0F291E] mb-3">
-                      Install Mqulima on your device for fast access to your orders and services.
-                    </p>
-                    <button
-                      onClick={triggerInstall}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] px-4 py-2.5 text-xs font-bold text-[#0B2117] transition shadow-sm cursor-pointer"
-                    >
-                      <Download className="h-4 w-4 stroke-[2.5]" /> Install App
-                    </button>
+            {savedProductsLoading ? (
+              <div className="py-12 text-center text-sm font-bold text-gray-400 animate-pulse">Loading your saved products...</div>
+            ) : (!savedProducts || savedProducts.length === 0) && (!savedPosts || savedPosts.length === 0) && !savedPostsLoading ? (
+              <div className="bg-white rounded-3xl p-12 border border-gray-200 text-center max-w-md mx-auto my-8 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-rose-50 text-[#E11D48] flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-black text-[#0F291E]">No saved items</h3>
+                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                  Tap the heart on any product in AgroShop or bookmark any forum post to save it here.
+                </p>
+                <Link to="/shop" className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#16382B] text-[#85CC14] font-bold text-xs hover:bg-[#0B2117] transition-all shadow-md">
+                  <span>Browse AgroShop</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              <>
+                {savedProducts && savedProducts.length > 0 && (
+                  <div className="space-y-3 text-left">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      Saved AgroShop Products ({savedProducts.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {savedProducts.map((p: any) => (
+                        <div key={p.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                          <Link to="/shop/product/$slug" params={{ slug: p.slug } as any} className="block group">
+                            <div className="relative h-44 bg-slate-100 overflow-hidden">
+                              <img src={p.image} alt={p.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-xs text-[10px] font-bold text-[#0F291E]">
+                                {p.category}
+                              </span>
+                            </div>
+                            <div className="p-4 space-y-1">
+                              <h4 className="text-sm font-black text-[#0F291E] line-clamp-2 group-hover:text-[#16A34A] transition-colors">{p.name}</h4>
+                              <div className="text-xs text-slate-500">{p.county}</div>
+                              <div className="text-base font-black text-[#16A34A] pt-1">
+                                KES {Number(p.price || 0).toLocaleString()}
+                                <span className="text-[11px] font-medium text-slate-400 ml-1">{p.unit}</span>
+                              </div>
+                            </div>
+                          </Link>
+                          <div className="px-4 pb-4 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addToCart({
+                                  id: p.id,
+                                  slug: p.slug,
+                                  name: p.name,
+                                  description: "",
+                                  price: p.price,
+                                  originalPrice: p.originalPrice,
+                                  stock: p.stock,
+                                  image: p.image,
+                                  category: p.category,
+                                  unit: p.unit,
+                                } as any, 1);
+                              }}
+                              className="flex-1 py-2 px-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                              <span>Add to Cart</span>
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Remove saved item"
+                              onClick={() => {
+                                removeWishlistId(p.id);
+                                toast.info("Removed from saved items");
+                              }}
+                              className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-[#E11D48] hover:bg-rose-100 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-3 pt-2 text-left">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Alert Subscriptions
-                  </h4>
-
-                  <div className="flex items-center justify-between">
-                    <div className="pr-2">
-                      <div className="text-xs font-bold text-[#0F291E]">Sowing Windows</div>
-                      <div className="text-[11px] text-slate-500 font-normal">Alerts for perfect planting times</div>
+                {savedPosts && savedPosts.length > 0 && (
+                  <div className="space-y-3 text-left">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      Saved Forum Discussions ({savedPosts.length})
+                    </h3>
+                    <div className="grid gap-3">
+                      {savedPosts.map((post: any) => (
+                        <Link
+                          key={post.id}
+                          to="/community"
+                          className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md transition-all flex items-start justify-between gap-4"
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <div className="text-sm font-black text-[#0F291E]">{post.title}</div>
+                            <p className="text-xs text-slate-600 line-clamp-2">{post.text}</p>
+                            <div className="text-[11px] text-slate-400">
+                              By {post.author} • {post.createdAt}
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 mt-1" />
+                        </Link>
+                      ))}
                     </div>
-                    <Switch
-                      checked={channels.sowing}
-                      onCheckedChange={(checked) => handleToggleChannel("sowing", checked)}
-                    />
                   </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
-                  <div className="flex items-center justify-between">
-                    <div className="pr-2">
-                      <div className="text-xs font-bold text-[#0F291E]">Market Rates</div>
-                      <div className="text-[11px] text-slate-500 font-normal">Daily updates for crop prices</div>
-                    </div>
-                    <Switch
-                      checked={channels.market}
-                      onCheckedChange={(checked) => handleToggleChannel("market", checked)}
-                    />
-                  </div>
+        {activeTab === "posts" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+              <div className="text-left">
+                <h2 className="text-2xl font-black text-[#0F291E]">My Forum Posts</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Discussions, agronomic questions, and updates you shared with Kenyan farmers</p>
+              </div>
+              <Link to="/community" className="px-4 py-2.5 rounded-xl bg-[#85CC14] text-[#0B2117] text-xs font-bold hover:bg-[#74B510] transition-colors flex items-center gap-1.5 shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>New Discussion</span>
+              </Link>
+            </div>
 
-                  <button
-                    onClick={() => {
-                      logout();
-                      toast.info("Signed out");
-                    }}
-                    className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 py-2.5 text-xs font-bold text-rose-700 transition cursor-pointer"
+            {myPostsLoading ? (
+              <div className="py-16 text-center text-sm font-bold text-gray-400 animate-pulse">Loading your forum discussions...</div>
+            ) : !myPosts || myPosts.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 border border-gray-200 text-center max-w-md mx-auto my-8 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-purple-50 text-[#7C3AED] flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-black text-[#0F291E]">No Forum Posts Yet</h3>
+                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                  Share a crop question, harvest update, or farming tip in the Mqulima Farmers Network to see it tracked here.
+                </p>
+                <Link to="/community" className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#16382B] text-[#85CC14] font-bold text-xs hover:bg-[#0B2117] transition-all shadow-md">
+                  <span>Open Farmers Forum</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {myPosts.map((post: any) => (
+                  <Link
+                    key={post.id}
+                    to="/community"
+                    className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs hover:shadow-md transition-all text-left block"
                   >
-                    Sign out
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1.5 min-w-0">
+                        <h3 className="text-base font-black text-[#0F291E]">{post.title}</h3>
+                        {post.text && <p className="text-xs text-slate-600 line-clamp-2">{post.text}</p>}
+                        {Array.isArray(post.tags) && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {post.tags.map((t: string) => (
+                              <span key={t} className="px-2 py-0.5 rounded-full bg-purple-50 text-[#7C3AED] text-[10px] font-bold">
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-400 shrink-0">{post.createdAt}</span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-4 text-xs font-bold text-slate-500">
+                      <span className="inline-flex items-center gap-1">
+                        <ThumbsUp className="w-3.5 h-3.5 text-[#16A34A]" /> {post.likes} likes
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#7C3AED]" /> {post.commentCount} comments
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Editable Farm & Personal Profile Card */}
+              <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm text-left space-y-4">
+                <div className="pb-3.5 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5F5D0] text-[#35610D]">
+                      <User className="h-4 w-4 stroke-[2.5]" />
+                    </div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F291E] font-['Outfit',sans-serif]">
+                      Edit Account & Farm Profile
+                    </h3>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-[#16A34A]">
+                    {activeUser.role || "Farmer"}
+                  </span>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!profileName.trim() || profileName.trim().length < 2) {
+                      toast.error("Please enter your full name.");
+                      return;
+                    }
+                    saveProfileMutation.mutate();
+                  }}
+                  className="space-y-3.5 text-xs"
+                >
+                  <div>
+                    <label className="block font-bold text-slate-600 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      required
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-600 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={activeUser.email}
+                      disabled
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-600 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={profilePhone}
+                        onChange={(e) => setProfilePhone(e.target.value)}
+                        placeholder="+2547..."
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-600 mb-1">County</label>
+                      <input
+                        type="text"
+                        value={profileCounty}
+                        onChange={(e) => setProfileCounty(e.target.value)}
+                        placeholder="e.g. Nakuru"
+                        required
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-600 mb-1">Years Farming</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={profileYears}
+                        onChange={(e) => setProfileYears(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-600 mb-1">Primary Crops</label>
+                      <input
+                        type="text"
+                        value={profileCrops}
+                        onChange={(e) => setProfileCrops(e.target.value)}
+                        placeholder="Maize, Beans, Avocado"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-600 mb-1">Livestock</label>
+                    <input
+                      type="text"
+                      value={profileLivestock}
+                      onChange={(e) => setProfileLivestock(e.target.value)}
+                      placeholder="Dairy Cows, Poultry, Goats"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-[#0F291E] focus:border-[#16A34A] focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={saveProfileMutation.isPending}
+                    className="w-full mt-2 py-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-60 text-white text-xs font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {saveProfileMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    <span>{saveProfileMutation.isPending ? "Saving Changes..." : "Save Profile Changes"}</span>
                   </button>
+                </form>
+              </div>
+
+              {/* PWA & Notification Center + Account Session */}
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm text-left space-y-4">
+                  <div className="pb-3.5 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5F5D0] text-[#35610D]">
+                        <Settings className="h-4 w-4 stroke-[2.5]" />
+                      </div>
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F291E] font-['Outfit',sans-serif]">
+                        Alerts & App Preferences
+                      </h3>
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                        isOnline ? "bg-[#E5F5D0] text-[#35610D]" : "bg-rose-100 text-rose-700"
+                      }`}
+                    >
+                      {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                      <span>{isOnline ? "Online" : "Offline"}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3">
+                    <div>
+                      <div className="text-xs font-bold text-[#0F291E]">App Environment</div>
+                      <div className="text-[11px] text-slate-500">
+                        {isInstalled ? "Running as standalone Mqulima app" : "Running in web browser"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isInstallable && (
+                    <div className="rounded-2xl border border-[#85CC14]/40 bg-[#85CC14]/10 p-4 text-center">
+                      <p className="text-xs font-medium text-[#0F291E] mb-3">
+                        Install Mqulima on your device for instant offline access to orders and services.
+                      </p>
+                      <button
+                        onClick={triggerInstall}
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#85CC14] hover:bg-[#74B510] px-4 py-2.5 text-xs font-bold text-[#0B2117] transition shadow-sm cursor-pointer"
+                      >
+                        <Download className="h-4 w-4 stroke-[2.5]" /> Install App
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 pt-1">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alert Subscriptions</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="pr-2">
+                        <div className="text-xs font-bold text-[#0F291E]">Sowing Windows</div>
+                        <div className="text-[11px] text-slate-500">Alerts for optimal planting times</div>
+                      </div>
+                      <Switch checked={channels.sowing} onCheckedChange={(checked) => handleToggleChannel("sowing", checked)} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="pr-2">
+                        <div className="text-xs font-bold text-[#0F291E]">Market Rates</div>
+                        <div className="text-[11px] text-slate-500">Daily updates for crop prices</div>
+                      </div>
+                      <Switch checked={channels.market} onCheckedChange={(checked) => handleToggleChannel("market", checked)} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="pr-2">
+                        <div className="text-xs font-bold text-[#0F291E]">Weather Advisories</div>
+                        <div className="text-[11px] text-slate-500">County rainfall & spray window warnings</div>
+                      </div>
+                      <Switch checked={channels.weather} onCheckedChange={(checked) => handleToggleChannel("weather", checked)} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Session & Account Deletion (Matched to Mobile App Account Screen) */}
+                <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm text-left space-y-4">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await logout();
+                      toast.success("Signed out cleanly.");
+                      navigate({ to: "/" });
+                    }}
+                    className="w-full rounded-2xl border border-slate-200 hover:bg-slate-50 py-3 text-sm font-bold text-[#0F291E] transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </button>
+
+                  {!isAdmin && (
+                    !confirmDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(true)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-[#DC2626] hover:bg-red-50 rounded-xl transition cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete My Account</span>
+                      </button>
+                    ) : (
+                      <div className="rounded-2xl bg-[#FEF2F2] border border-[#FECACA] p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-[#991B1B] font-extrabold text-sm">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          <span>Permanently Delete Account?</span>
+                        </div>
+                        <p className="text-xs text-[#7F1D1D] leading-relaxed">
+                          This removes your personal profile and signs you out immediately. Order receipts remain anonymized for regulatory records.
+                        </p>
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(false)}
+                            className="flex-1 py-2.5 rounded-xl border border-red-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deleteAccountMutation.isPending}
+                            onClick={() => deleteAccountMutation.mutate()}
+                            className="flex-1 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-60 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            {deleteAccountMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                            <span>{deleteAccountMutation.isPending ? "Deleting..." : "Confirm Delete"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
-            </Card>
-
-            <Card title="Farm Profile" icon={MapPin} cta="Edit profile" link="/dashboard">
-              <ul className="space-y-3 text-xs sm:text-sm text-left">
-                <li className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Name</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.name}</span>
-                </li>
-                <li className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Email</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.email}</span>
-                </li>
-                <li className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">County</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.county || "Kenya"}</span>
-                </li>
-                <li className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Farm size</span>
-                  <span className="font-bold text-[#0F291E]">{activeUser.farmSize || "Standard"}</span>
-                </li>
-              </ul>
-            </Card>
+            </div>
           </div>
         )}
 
@@ -1008,39 +1642,6 @@ function Stat({ label, value, icon: Icon, color = "lime" }: { label: string; val
         <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/80 mt-1 truncate">
           {label}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Card({
-  title,
-  icon: Icon,
-  cta,
-  link,
-  children,
-}: {
-  title: string;
-  icon: LucideIcon;
-  cta: string;
-  link: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left">
-      <div>
-        <div className="mb-5 flex items-center justify-between pb-3.5 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5F5D0] text-[#35610D]">
-              <Icon className="h-4 w-4 stroke-[2.5]" />
-            </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F291E] font-['Outfit',sans-serif]">{title}</h3>
-          </div>
-          <Link to={link} className="text-xs font-bold text-[#16A34A] hover:text-[#0F291E] hover:underline transition-colors">
-            {cta}
-          </Link>
-        </div>
-        <div className="space-y-3">{children}</div>
       </div>
     </div>
   );

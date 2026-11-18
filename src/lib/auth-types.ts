@@ -8,4 +8,7 @@ export type User = {
   livestock: string;
   role?: string;
   phone?: string;
+  avatarUrl?: string;
+  username?: string;
+  yearsFarming?: number;
 };

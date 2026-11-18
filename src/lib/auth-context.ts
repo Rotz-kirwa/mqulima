@@ -5,8 +5,9 @@ type AuthContextValue = {
   user: User | null;
   isLoading: boolean;
   login: (identifier: string, password: string, rememberMe?: boolean) => Promise<boolean>;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   register: (data: any) => Promise<boolean>;
+  updateUser: (partial: Partial<User>) => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

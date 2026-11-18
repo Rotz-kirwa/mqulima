@@ -582,6 +582,7 @@ function ShopPage() {
         toast.success("Added to wishlist!");
       }
       localStorage.setItem("mqulima_wishlist", JSON.stringify(Array.from(next)));
+      window.dispatchEvent(new CustomEvent("mqulima-wishlist-updated", { detail: Array.from(next) }));
       return next;
     });
   };
