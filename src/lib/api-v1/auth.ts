@@ -32,12 +32,12 @@ const RegisterSchema = z.object({
   email: z.string().email("Valid email address is required"),
   phoneNumber: z.string().min(9, "Valid phone number is required"),
   nationalId: z.string().optional(),
-  county: z.string().min(1, "County is required"),
-  deliveryLocation: z.string().min(1, "Delivery location is required"),
+  county: z.string().optional().default("Kenya"),
+  deliveryLocation: z.string().optional().default("Kenya"),
   farmingType: z.enum(["Crops", "Livestock", "Mixed", "Poultry", "Fish Farming", "Other"]).default("Crops"),
   specifyFarmingType: z.string().optional(),
   farmSizeAcres: z.number().optional().default(1),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(4, "Password must be at least 4 characters"),
 });
 
 export async function handleAuthRegister(request: Request): Promise<Response> {
