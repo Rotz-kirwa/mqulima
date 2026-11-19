@@ -8,22 +8,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check current session and initialize CSRF token on mount
+  // Check current session and initialize CSRF token on mount, and resync when returning to tab
   useEffect(() => {
-    async function initAuth() {
+    let cancelled = false;
+    let lastSyncedAt = 0;
+
+    async function syncSession(initialMount: boolean) {
+      const now = Date.now();
+      if (!initialMount && now - lastSyncedAt < 8000) return;
+      lastSyncedAt = now;
+
       try {
-        const { ensureCsrfToken } = await import("./csrf-client");
-        await ensureCsrfToken();
+        if (initialMount) {
+          const { ensureCsrfToken } = await import("./csrf-client");
+          await ensureCsrfToken();
+        }
 
         const storedToken = typeof window !== "undefined" ? localStorage.getItem("mq_token") : null;
         const cachedAccount = typeof window !== "undefined" ? localStorage.getItem("mqulima_user_account") : null;
+
+        // Clean any legacy non-profile object written by older checkout versions (missing .id)
+        if (cachedAccount && typeof window !== "undefined") {
+          try {
+            const parsed = JSON.parse(cachedAccount);
+            if (!parsed || !parsed.id) {
+              localStorage.removeItem("mqulima_user_account");
+            }
+          } catch {
+            localStorage.removeItem("mqulima_user_account");
+          }
+        }
 
         let currentUser: User | null = null;
         try {
           currentUser = await getCurrentUser({ data: { token: storedToken || undefined } });
         } catch (fetchErr) {
-          console.warn("Session verification network blip:", fetchErr);
+          if (initialMount) {
+            console.warn("Session verification network blip:", fetchErr);
+          }
+          return;
         }
+
+        if (cancelled) return;
 
         if (currentUser) {
           setUser(currentUser);
@@ -37,24 +63,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem("mqulima_user_account");
             localStorage.removeItem("mq_token");
           }
-        } else if (cachedAccount) {
-          // Keep cached user on mobile devices / Safari ITP rather than wiping their session
+        } else if (initialMount && cachedAccount) {
+          // Keep verified cached user on transient offline/cookie issues
           try {
             const parsed = JSON.parse(cachedAccount);
             if (parsed && parsed.id) {
               setUser(parsed);
             }
-          } catch (e) {}
-        } else {
+          } catch {}
+        } else if (initialMount) {
           setUser(null);
         }
-      } catch (error) {
+      } catch {
         // Keep cached user on transient network failure
       } finally {
-        setIsLoading(false);
+        if (initialMount && !cancelled) setIsLoading(false);
       }
     }
-    initAuth();
+
+    syncSession(true);
+
+    const onFocusOrVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      syncSession(false);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "mqulima_user_account" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && parsed.id) setUser(parsed);
+        } catch {}
+      } else if (e.key === "mqulima_user_account" && !e.newValue) {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("focus", onFocusOrVisible);
+    document.addEventListener("visibilitychange", onFocusOrVisible);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocusOrVisible);
+      document.removeEventListener("visibilitychange", onFocusOrVisible);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   const login = useCallback(async (identifier: string, password: string, rememberMe?: boolean) => {
@@ -75,8 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: response.user?.id || "user",
         name: response.user?.name || "Farmer",
         email: response.user?.email || identifier,
+        phone: (response.user as any)?.phone || "",
         county: response.user?.county || "",
         farmSize: response.user?.farmSize || "",
+        yearsFarming: (response.user as any)?.yearsFarming || 0,
+        avatarUrl: (response.user as any)?.avatarUrl || "",
+        username: (response.user as any)?.username || "",
         crops: response.user?.crops || "",
         livestock: response.user?.livestock || "",
         role: (response.user?.role as any) || "farmer",

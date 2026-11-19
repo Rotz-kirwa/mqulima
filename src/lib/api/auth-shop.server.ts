@@ -124,7 +124,7 @@ export async function performSignUp(data: z.infer<typeof SignUpSchema>): Promise
     : data.firstName.trim();
   const cleanFirstName = data.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const username = `mqulima_${cleanFirstName || "user"}_${Date.now().toString().slice(-4)}`;
-  const defaultCounty = data.county?.trim() || "Nairobi";
+  const defaultCounty = data.county?.trim() || "Kenya";
   const defaultLocation = data.deliveryLocation?.trim() || "Kenya";
   const defaultFarming = data.farmingType?.trim() || "General Agriculture";
 

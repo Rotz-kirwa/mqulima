@@ -216,7 +216,7 @@ export function CartDrawer() {
     );
   }, []);
 
-  // Pre-fill user data from account or localStorage
+  // Pre-fill user data from saved checkout address first, falling back to authenticated account
   useEffect(() => {
     try {
       if (user) {
@@ -225,7 +225,7 @@ export function CartDrawer() {
         if (user.email && !email) setEmail(user.email);
       }
 
-      const stored = localStorage.getItem("mqulima_user_account");
+      const stored = localStorage.getItem("mqulima_checkout_address");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (!fullName && parsed.name) setFullName(parsed.name);
@@ -243,6 +243,8 @@ export function CartDrawer() {
         else if (parsed.subCounty) setTown(parsed.subCounty);
         if (parsed.village) setVillage(parsed.village);
         if (parsed.instructions) setInstructions(parsed.instructions);
+      } else if (user?.county && user.county !== "Kenya") {
+        setCounty(user.county);
       }
     } catch (e) {
       console.warn("Could not load stored checkout details", e);
@@ -409,7 +411,7 @@ export function CartDrawer() {
         fulfillmentMethod === "pickup" ? selectedDepot.county : county.trim();
 
       localStorage.setItem(
-        "mqulima_user_account",
+        "mqulima_checkout_address",
         JSON.stringify({
           name: fullName.trim(),
           phone: phoneNumber.trim(),

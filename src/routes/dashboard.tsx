@@ -52,6 +52,7 @@ import { usePWA } from "@/hooks/usePWA";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { getUserInitials } from "@/lib/auth-types";
 import { useCart } from "@/lib/cart-context";
 import { useWishlistIds } from "@/lib/wishlist";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -236,7 +237,14 @@ function Dashboard() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("mqulima_user_account");
-        if (stored) setCachedUser(JSON.parse(stored));
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.id) {
+            setCachedUser(parsed);
+          } else {
+            localStorage.removeItem("mqulima_user_account");
+          }
+        }
       } catch {}
     }
   }, []);
@@ -333,11 +341,11 @@ function Dashboard() {
         <div className="container-px mx-auto max-w-7xl relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-5 text-left min-w-0">
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-2xl sm:text-3xl shrink-0 border-2 border-[#85CC14]/70 shadow-lg overflow-hidden">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-xl sm:text-2xl shrink-0 border-2 border-[#85CC14]/70 shadow-lg overflow-hidden">
                 {activeUser.avatarUrl ? (
                   <img src={activeUser.avatarUrl} alt={activeUser.name} className="h-full w-full object-cover" />
                 ) : (
-                  (activeUser.name || activeUser.email || "M").charAt(0).toUpperCase()
+                  getUserInitials(activeUser.name, activeUser.email)
                 )}
               </div>
               <div className="space-y-1 min-w-0">

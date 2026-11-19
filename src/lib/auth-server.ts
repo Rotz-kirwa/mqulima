@@ -45,24 +45,38 @@ export const loginUser = createServerFn({ method: "POST" })
     if (ident.includes("@")) {
       const cleanEmail = ident.toLowerCase();
       [dbUser] = await sql`
-        SELECT id, email, password_hash, full_name, role, county_region, years_farming, crops, livestock
-        FROM profiles
-        WHERE LOWER(email) = ${cleanEmail} AND deleted_at IS NULL
+        SELECT p.id, p.email, p.password_hash,
+               COALESCE(NULLIF(TRIM(p.full_name), ''), CONCAT_WS(' ', NULLIF(TRIM(u.first_name), ''), NULLIF(TRIM(u.last_name), '')), 'Mqulima Farmer') AS full_name,
+               p.role,
+               COALESCE(NULLIF(TRIM(p.county_region), ''), NULLIF(TRIM(u.county), ''), '') AS county_region,
+               COALESCE(NULLIF(TRIM(p.phone), ''), NULLIF(TRIM(u.phone_number), ''), '') AS phone,
+               p.avatar_url, p.username,
+               p.years_farming, p.crops, p.livestock
+        FROM profiles p
+        LEFT JOIN users u ON u.id = p.id
+        WHERE LOWER(p.email) = ${cleanEmail} AND p.deleted_at IS NULL
       `;
     } else {
       // Standardize phone number across all Kenyan formats (07..., +254..., 254..., 7...)
       const cleanPhone = ident.replace(/\s+/g, "");
       const basePhone = cleanPhone.replace(/^(\+?254|0)/, "");
       [dbUser] = await sql`
-        SELECT id, email, password_hash, full_name, role, county_region, years_farming, crops, livestock
-        FROM profiles
+        SELECT p.id, p.email, p.password_hash,
+               COALESCE(NULLIF(TRIM(p.full_name), ''), CONCAT_WS(' ', NULLIF(TRIM(u.first_name), ''), NULLIF(TRIM(u.last_name), '')), 'Mqulima Farmer') AS full_name,
+               p.role,
+               COALESCE(NULLIF(TRIM(p.county_region), ''), NULLIF(TRIM(u.county), ''), '') AS county_region,
+               COALESCE(NULLIF(TRIM(p.phone), ''), NULLIF(TRIM(u.phone_number), ''), '') AS phone,
+               p.avatar_url, p.username,
+               p.years_farming, p.crops, p.livestock
+        FROM profiles p
+        LEFT JOIN users u ON u.id = p.id
         WHERE (
-          phone = ${cleanPhone}
-          OR phone = ${'+254' + basePhone}
-          OR phone = ${'254' + basePhone}
-          OR phone = ${'0' + basePhone}
-          OR phone = ${basePhone}
-        ) AND deleted_at IS NULL
+          p.phone = ${cleanPhone}
+          OR p.phone = ${'+254' + basePhone}
+          OR p.phone = ${'254' + basePhone}
+          OR p.phone = ${'0' + basePhone}
+          OR p.phone = ${basePhone}
+        ) AND p.deleted_at IS NULL
       `;
     }
 
@@ -125,6 +139,7 @@ export const loginUser = createServerFn({ method: "POST" })
       diff: { email: dbUser.email, role: dbUser.role }
     });
 
+    const years = Number(dbUser.years_farming || 0);
     return {
       success: true,
       token: jwt,
@@ -134,7 +149,11 @@ export const loginUser = createServerFn({ method: "POST" })
         email: dbUser.email,
         role: dbUser.role,
         county: dbUser.county_region || "",
-        farmSize: `${dbUser.years_farming || 0} years`,
+        phone: dbUser.phone || "",
+        avatarUrl: dbUser.avatar_url || "",
+        username: dbUser.username || "",
+        yearsFarming: years,
+        farmSize: years > 0 ? `${years} years` : "",
         crops: dbUser.crops ? (Array.isArray(dbUser.crops) ? dbUser.crops.join(", ") : String(dbUser.crops)) : "",
         livestock: dbUser.livestock ? (Array.isArray(dbUser.livestock) ? dbUser.livestock.join(", ") : String(dbUser.livestock)) : "",
       }
@@ -214,7 +233,11 @@ export const registerUser = createServerFn({ method: "POST" })
         name: fullName,
         email: cleanEmail,
         role: "farmer",
-        county: signUpData.county || "",
+        county: signUpData.county || "Kenya",
+        phone: signUpData.phoneNumber?.trim() || "",
+        avatarUrl: "",
+        username: "",
+        yearsFarming: 0,
         farmSize: "",
         crops: "",
         livestock: ""
@@ -330,16 +353,28 @@ export const getCurrentUser = createServerFn({ method: "GET" })
       const { getDb } = await import("./db.server");
       const sql = getDb();
       let [dbUser] = await sql`
-        SELECT id, email, full_name, county_region, years_farming, crops, livestock, role, phone, avatar_url, username
-        FROM profiles
-        WHERE id = ${userId} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
+        SELECT p.id, p.email,
+               COALESCE(NULLIF(TRIM(p.full_name), ''), CONCAT_WS(' ', NULLIF(TRIM(u.first_name), ''), NULLIF(TRIM(u.last_name), '')), 'Mqulima Farmer') AS full_name,
+               COALESCE(NULLIF(TRIM(p.county_region), ''), NULLIF(TRIM(u.county), ''), '') AS county_region,
+               p.years_farming, p.crops, p.livestock, p.role,
+               COALESCE(NULLIF(TRIM(p.phone), ''), NULLIF(TRIM(u.phone_number), ''), '') AS phone,
+               p.avatar_url, p.username
+        FROM profiles p
+        LEFT JOIN users u ON u.id = p.id
+        WHERE p.id = ${userId} AND p.deleted_at IS NULL AND COALESCE(p.status, 'active') <> 'deleted'
       `;
 
       if (!dbUser && tokenEmail) {
         [dbUser] = await sql`
-          SELECT id, email, full_name, county_region, years_farming, crops, livestock, role, phone, avatar_url, username
-          FROM profiles
-          WHERE LOWER(email) = ${tokenEmail} AND deleted_at IS NULL AND COALESCE(status, 'active') <> 'deleted'
+          SELECT p.id, p.email,
+                 COALESCE(NULLIF(TRIM(p.full_name), ''), CONCAT_WS(' ', NULLIF(TRIM(u.first_name), ''), NULLIF(TRIM(u.last_name), '')), 'Mqulima Farmer') AS full_name,
+                 COALESCE(NULLIF(TRIM(p.county_region), ''), NULLIF(TRIM(u.county), ''), '') AS county_region,
+                 p.years_farming, p.crops, p.livestock, p.role,
+                 COALESCE(NULLIF(TRIM(p.phone), ''), NULLIF(TRIM(u.phone_number), ''), '') AS phone,
+                 p.avatar_url, p.username
+          FROM profiles p
+          LEFT JOIN users u ON u.id = p.id
+          WHERE LOWER(p.email) = ${tokenEmail} AND p.deleted_at IS NULL AND COALESCE(p.status, 'active') <> 'deleted'
           LIMIT 1
         `;
       }

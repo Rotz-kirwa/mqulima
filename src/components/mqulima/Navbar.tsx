@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { MqulimaLogo } from "./MqulimaLogo";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
+import { getUserInitials } from "@/lib/auth-types";
 import { useCart } from "@/lib/cart-context";
 import { useWishlistIds } from "@/lib/wishlist";
 import { type ShopProduct } from "@/lib/shop-data";
@@ -544,7 +545,7 @@ export function Navbar() {
                   className="h-7 w-7 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-[#85CC14]/50"
                   suppressHydrationWarning
                 >
-                  {mounted && user ? user.name.charAt(0).toUpperCase() : <User className="h-3.5 w-3.5" />}
+                  {mounted && user ? getUserInitials(user.name, user.email) : <User className="h-3.5 w-3.5" />}
                 </div>
                 <span
                   className="text-xs font-bold text-[#0B2117] dark:text-white max-w-[100px] truncate"
@@ -568,11 +569,11 @@ export function Navbar() {
                       <>
                         {/* Forest Hero Profile Card (matched to mobile app Account hub) */}
                         <div className="p-3 rounded-2xl bg-[#0F291E] text-white mb-2.5 flex items-center gap-3 border border-white/10 shadow-xs">
-                          <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
+                          <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-[#16382B] to-[#16A34A] text-white flex items-center justify-center font-black text-sm shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
                             {user.avatarUrl ? (
                               <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
                             ) : (
-                              (user.name || user.email || "M").charAt(0).toUpperCase()
+                              getUserInitials(user.name, user.email)
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1074,11 +1075,11 @@ export function Navbar() {
                 {user ? (
                   <>
                     <div className="p-3 rounded-2xl bg-[#16382B] border border-white/15 flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-black text-sm shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#0B2117] to-[#16A34A] text-white flex items-center justify-center font-black text-xs shrink-0 border-2 border-[#85CC14]/70 overflow-hidden">
                         {user.avatarUrl ? (
                           <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
                         ) : (
-                          (user.name || user.email || "M").charAt(0).toUpperCase()
+                          getUserInitials(user.name, user.email)
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
