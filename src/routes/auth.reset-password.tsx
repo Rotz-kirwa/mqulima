@@ -33,16 +33,15 @@ function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const hasMinLength = password.length >= 8;
-  const hasMixedChars = /[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password);
+  const isValidPin = /^\d{4}$/.test(password);
   const isMatch = password.length > 0 && password === confirmPassword;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!hasMinLength) {
-      setErrorMsg("Password must be at least 8 characters long.");
+    if (!isValidPin) {
+      setErrorMsg("Password must be exactly 4 digits.");
       return;
     }
     if (password !== confirmPassword) {
@@ -114,18 +113,20 @@ function ResetPasswordPage() {
           {/* NEW PASSWORD */}
           <div className="bg-[#FAF8F0] rounded-2xl px-4 py-2.5 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60 focus-within:border-transparent relative">
             <label htmlFor="new-password" className="block text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5">
-              New Password
+              New 4-Digit Password
             </label>
             <div className="flex items-center justify-between">
               <input
                 id="new-password"
                 type={showPassword ? "text" : "password"}
+                inputMode="numeric"
+                maxLength={4}
                 value={password}
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  setPassword(e.target.value.replace(/\D/g, "").slice(0, 4));
                   if (errorMsg) setErrorMsg("");
                 }}
-                placeholder="At least 8 characters"
+                placeholder="Enter 4-digit password"
                 autoComplete="new-password"
                 required
                 disabled={loading}
@@ -145,17 +146,19 @@ function ResetPasswordPage() {
           {/* CONFIRM PASSWORD */}
           <div className="bg-[#FAF8F0] rounded-2xl px-4 py-2.5 text-left shadow-xs transition-all focus-within:ring-2 focus-within:ring-[#8CB63D]/60 focus-within:border-transparent">
             <label htmlFor="confirm-password" className="block text-[11px] font-bold text-[#1C201D] tracking-tight mb-0.5">
-              Confirm New Password
+              Confirm 4-Digit Password
             </label>
             <input
               id="confirm-password"
               type={showPassword ? "text" : "password"}
+              inputMode="numeric"
+              maxLength={4}
               value={confirmPassword}
               onChange={(e) => {
-                setConfirmPassword(e.target.value);
+                setConfirmPassword(e.target.value.replace(/\D/g, "").slice(0, 4));
                 if (errorMsg) setErrorMsg("");
               }}
-              placeholder="Re-enter your new password"
+              placeholder="Repeat 4-digit password"
               autoComplete="new-password"
               required
               disabled={loading}
@@ -166,16 +169,10 @@ function ResetPasswordPage() {
           {/* PASSWORD REQUIREMENTS HINTS */}
           <div className="py-1 text-[11px] space-y-1 text-white/80">
             <div className="flex items-center gap-1.5">
-              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${hasMinLength ? "bg-[#80E6A7] text-black font-bold" : "bg-white/20 text-white"}`}>
-                {hasMinLength ? "✓" : "•"}
+              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${isValidPin ? "bg-[#80E6A7] text-black font-bold" : "bg-white/20 text-white"}`}>
+                {isValidPin ? "✓" : "•"}
               </span>
-              <span>At least 8 characters</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${hasMixedChars ? "bg-[#80E6A7] text-black font-bold" : "bg-white/20 text-white"}`}>
-                {hasMixedChars ? "✓" : "•"}
-              </span>
-              <span>Contains a number or symbol</span>
+              <span>Exactly 4 digits (numbers only)</span>
             </div>
             {confirmPassword.length > 0 && (
               <div className="flex items-center gap-1.5">
@@ -193,7 +190,7 @@ function ResetPasswordPage() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading || !hasMinLength || !isMatch}
+              disabled={loading || !isValidPin || !isMatch}
               className="w-full flex items-center justify-center gap-2 bg-[#E5A000] hover:bg-[#D49000] text-black font-extrabold text-sm py-3 px-8 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-98 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
             >
               {loading ? (

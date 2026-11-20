@@ -22,7 +22,7 @@ const ForgotPasswordSchema = z.object({
 const ResetPasswordSchema = z.object({
   identifier: z.string().trim().min(3, "Email address or phone number is required"),
   code: z.string().trim().regex(/^\d{6}$/, "A valid 6-digit recovery code is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters long"),
+  newPassword: z.string().regex(/^\d{4}$/, "Password must be exactly 4 digits"),
 });
 
 const RegisterSchema = z.object({
@@ -36,7 +36,7 @@ const RegisterSchema = z.object({
   farmingType: z.enum(["Crops", "Livestock", "Mixed", "Poultry", "Fish Farming", "Other"]).default("Crops"),
   specifyFarmingType: z.string().optional(),
   farmSizeAcres: z.number().optional().default(1),
-  password: z.string().min(4, "Password must be at least 4 characters"),
+  password: z.string().regex(/^\d{4}$/, "Password must be exactly 4 digits"),
 });
 
 export async function handleAuthRegister(request: Request): Promise<Response> {

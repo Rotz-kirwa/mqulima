@@ -174,7 +174,7 @@ function SignIn() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="••••••••••••••••"
+                placeholder="••••"
                 autoComplete="current-password"
                 required
                 className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400 pr-8"

@@ -390,8 +390,8 @@ export const verifyMagicLinkToken = createServerFn({ method: "POST" })
 export const setNewPasswordAfterRecovery = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      newPassword: z.string().min(8, "Password must be at least 8 characters long"),
-      confirmPassword: z.string().min(8),
+      newPassword: z.string().regex(/^\d{4}$/, "Password must be exactly 4 digits"),
+      confirmPassword: z.string().regex(/^\d{4}$/, "Password must be exactly 4 digits"),
     })
   )
   .handler(async ({ data }) => {

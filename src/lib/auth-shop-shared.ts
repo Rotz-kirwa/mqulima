@@ -11,7 +11,7 @@ export const SignUpSchema = z.object({
   landmark: z.string().optional().or(z.literal("")),
   farmingType: z.string().optional().or(z.literal("")),
   specifyFarmingType: z.string().optional().or(z.literal("")),
-  password: z.string().min(4, "PIN / Password must be at least 4 digits"),
+  password: z.string().regex(/^\d{4}$/, "Password must be exactly 4 digits"),
   confirmPassword: z.string().optional(),
   terms: z.boolean().optional().default(true)
 }).superRefine((data, ctx) => {
